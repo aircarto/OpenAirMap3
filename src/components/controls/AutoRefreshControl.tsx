@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 interface AutoRefreshControlProps {
   enabled: boolean;
@@ -17,6 +18,7 @@ const AutoRefreshControl: React.FC<AutoRefreshControlProps> = ({
   selectedTimeStep,
   historicalCurrentDate,
 }) => {
+  const { t } = useTranslation();
   const formatLastRefresh = (date: Date): string => {
     return date.toLocaleTimeString("fr-FR", {
       hour: "2-digit",
@@ -143,7 +145,9 @@ const AutoRefreshControl: React.FC<AutoRefreshControlProps> = ({
       </button>
 
       {/* Label */}
-      <span className="text-xs font-medium text-gray-700">Auto-refresh</span>
+      <span className="text-xs font-medium text-gray-700">
+        {t("controls.autoRefresh")}
+      </span>
 
       {/* Indicateur de statut */}
       <div className="flex items-center space-x-1">
@@ -161,7 +165,7 @@ const AutoRefreshControl: React.FC<AutoRefreshControlProps> = ({
         <>
           <div className="w-px h-4 bg-gray-300"></div>
           <div className="flex flex-col">
-            <span className="text-xs text-gray-600">Période:</span>
+            <span className="text-xs text-gray-600">{t("controls.period")}</span>
             <span className="text-xs font-medium text-gray-800">
               {displayedPeriod}
             </span>

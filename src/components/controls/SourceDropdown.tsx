@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { sources } from "../../constants/sources";
 import {
   DropdownMenu,
@@ -13,10 +14,9 @@ import { cn } from "../../lib/utils";
 import {
   isSourceCompatibleWithTimeStep,
   getSourceDisplayName,
-  getSupportedTimeStepNames,
+  getSupportedTimeStepsForSource,
   getFirstCompatibleTimeStep,
 } from "../../utils/sourceCompatibility";
-import { pasDeTemps } from "../../constants/timeSteps";
 import { Toast } from "../ui/toast";
 
 interface SourceDropdownProps {
@@ -34,6 +34,7 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
   onTimeStepChange,
   onToast,
 }) => {
+  const { t } = useTranslation();
   // Définir les sources communautaires (mobileair retiré car géré séparément)
   const communautaireSources = [
     "communautaire.nebuleair",
@@ -69,18 +70,25 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
 
         if (!isCompatible) {
           // Afficher une notification toast
-          const supportedSteps = getSupportedTimeStepNames(sourceCode);
+          const supportedStepCodes = getSupportedTimeStepsForSource(sourceCode);
+          const supportedStepsLabel = supportedStepCodes
+            .map((step) => t(`timeSteps.${step}`))
+            .join(", ");
           const firstCompatibleStep = getFirstCompatibleTimeStep(sourceCode);
           const sourceName = getSourceDisplayName(sourceCode);
 
           onToast({
-            title: `${sourceName} non disponible`,
-            description: `Cette source n'est disponible qu'aux pas de temps : ${supportedSteps.join(", ")}.`,
+            title: t("toast.sourceUnavailable", { name: sourceName }),
+            description: t("toast.sourceAvailableOnlyFor", {
+              steps: supportedStepsLabel,
+            }),
             variant: "warning",
             action:
               firstCompatibleStep && onTimeStepChange
                 ? {
-                    label: `Changer vers "${pasDeTemps[firstCompatibleStep]?.name || firstCompatibleStep}"`,
+                    label: t("toast.changeTo", {
+                      label: t(`timeSteps.${firstCompatibleStep}`),
+                    }),
                     onClick: () => {
                       onTimeStepChange(firstCompatibleStep);
                     },
@@ -125,7 +133,7 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
 
   const getDisplayText = () => {
     if (selectedSources.length === 0) {
-      return "Choisir des sources";
+      return t("controls.chooseSources");
     }
     if (selectedSources.length === 1) {
       const source = selectedSources[0];
@@ -139,7 +147,7 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
       }
       return source;
     }
-    return `${selectedSources.length} sources sélectionnées`;
+    return t("controls.sourcesSelected", { count: selectedSources.length });
   };
 
   return (
@@ -175,7 +183,7 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
         {/* Sources principales */}
         <div className="p-1">
           <DropdownMenuLabel className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 px-1">
-            Sources principales
+            {t("controls.mainSources")}
           </DropdownMenuLabel>
 
           {/* AtmoRef */}

@@ -34,8 +34,11 @@ import { ModelingLayerType } from "./constants/mapLayers";
 import { useToast } from "./hooks/useToast";
 import { ToastContainer } from "./components/ui/toast";
 import { cn } from "./lib/utils";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "./components/controls/LanguageSwitcher";
 
 const App: React.FC = () => {
+  const { t } = useTranslation();
   // Configuration basée sur le domaine
   const domainConfig = useDomainConfig();
 
@@ -376,14 +379,14 @@ const App: React.FC = () => {
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       {/* Header : barre unique avec regroupement logique des contrôles */}
-      <header className="relative bg-white border-b border-gray-200/80 shadow-sm z-[1600]">
+      <header className="relative bg-white border-b border-gray-200/80 shadow-sm z-[2500]">
         <div className="px-4 sm:px-5 py-2.5">
           <div className="flex items-center justify-between gap-3 flex-nowrap">
             {/* Marque : logo + titre */}
             <div className="flex items-center gap-3 min-w-0 shrink-0">
               <img
                 src={domainConfig.logo}
-                alt={`${domainConfig.organization} logo principal`}
+                alt={t("app.logoAlt", { organization: domainConfig.organization })}
                 className="h-8 md:h-9 object-contain"
               />
               <h1 className="text-base md:text-lg font-semibold text-[#4271B3] leading-tight truncate">
@@ -391,8 +394,8 @@ const App: React.FC = () => {
               </h1>
             </div>
 
-            {/* Menu burger — affiché sous xl (1280px) pour éviter débordement toolbar */}
-            <div className="xl:hidden flex items-center gap-2 shrink-0">
+            {/* Menu burger (langue intégrée dans le menu) — affiché sous xl pour éviter débordement toolbar */}
+            <div className="xl:hidden flex items-center shrink-0">
               <MobileMenuBurger
                 selectedPollutant={selectedPollutant}
                 onPollutantChange={setSelectedPollutant}
@@ -490,11 +493,12 @@ const App: React.FC = () => {
                   hasSignalAirData={hasSignalAirData}
                   hasMobileAirData={hasMobileAirData}
                 />
+                <LanguageSwitcher />
                 <button
                   type="button"
                   onClick={() => setIsInfoModalOpen(true)}
                   className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#325A96]/40 text-sm font-semibold text-[#325A96] transition-colors hover:bg-[#325A96]/10 focus:outline-none focus:ring-2 focus:ring-[#4271B3]/20"
-                  aria-label="Informations sur OpenAirMap"
+                  aria-label={t("app.infoButton")}
                 >
                   i
                 </button>
@@ -525,13 +529,12 @@ const App: React.FC = () => {
                 <div className="flex flex-col">
                   <span className="text-blue-600 text-sm font-medium">
                     {devices.length === 0
-                      ? "Chargement des données..."
-                      : "Mise à jour en cours..."}
+                      ? t("common.loadingData")
+                      : t("common.updating")}
                   </span>
                   {loadingSources.length > 0 && (
                     <span className="text-xs text-gray-500">
-                      {loadingSources.length} source
-                      {loadingSources.length > 1 ? "s" : ""} en cours
+                      {t("common.sourcesCount", { count: loadingSources.length })}
                       {loadingSources.length > 0 && (
                         <span className="ml-1">
                           ({loadingSources.slice(0, 2).join(", ")}
@@ -548,7 +551,7 @@ const App: React.FC = () => {
 
         {error && (
           <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-2 rounded-md shadow-lg z-[1500] max-w-xs">
-            <p className="text-xs">Erreur: {error}</p>
+            <p className="text-xs">{t("common.error")}: {error}</p>
           </div>
         )}
         {/* Carte */}

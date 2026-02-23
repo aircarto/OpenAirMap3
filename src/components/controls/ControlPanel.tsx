@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import PollutantDropdown from "./PollutantDropdown";
 import SourceDropdown from "./SourceDropdown";
 import TimeStepDropdown from "./TimeStepDropdown";
@@ -24,6 +25,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onTimeStepChange,
   onToast,
 }) => {
+  const { t } = useTranslation();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
@@ -37,7 +39,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
           className="absolute -top-2 -left-2 w-6 h-6 bg-[#4271B3] text-white rounded-full flex items-center justify-center text-xs hover:bg-[#325a96] transition-colors shadow-md z-[1001] group"
-          title={isCollapsed ? "Ouvrir les contrôles" : "Fermer les contrôles"}
+          title={isCollapsed ? t("controls.openControls") : t("controls.closeControls")}
         >
           {isCollapsed ? (
             <svg

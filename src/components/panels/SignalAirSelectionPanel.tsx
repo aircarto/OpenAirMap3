@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { pollutants } from "../../constants/pollutants";
 import SignalAirPeriodSelector from "../controls/SignalAirPeriodSelector";
 import { getMarkerPath } from "../../utils";
@@ -70,6 +71,7 @@ const SignalAirSelectionPanel: React.FC<SignalAirSelectionPanelProps> = ({
   hasLoaded = false,
   reportsCount = 0,
 }) => {
+  const { t } = useTranslation();
   const [internalPanelSize, setInternalPanelSize] =
     useState<PanelSize>("normal");
 
@@ -172,7 +174,7 @@ const SignalAirSelectionPanel: React.FC<SignalAirSelectionPanelProps> = ({
             title={
               currentPanelSize === "fullscreen"
                 ? "Réduire le panneau"
-                : "Afficher en plein écran"
+                : t("panels.fullscreen")
             }
           >
             <svg
@@ -202,7 +204,7 @@ const SignalAirSelectionPanel: React.FC<SignalAirSelectionPanelProps> = ({
           <button
             onClick={onClose}
             className="p-1.5 sm:p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-            title="Fermer le panel et désactiver SignalAir"
+            title={t("panels.closeAndDisableSignalAir")}
           >
             <svg
               className="w-4 h-4"
@@ -315,7 +317,7 @@ const SignalAirSelectionPanel: React.FC<SignalAirSelectionPanelProps> = ({
               }`}
             >
               {isLoading
-                ? "Chargement en cours..."
+                ? t("panels.loadingInProgress")
                 : "Charger les signalements"}
             </button>
             {selectedTypes.length === 0 && (
@@ -330,7 +332,7 @@ const SignalAirSelectionPanel: React.FC<SignalAirSelectionPanelProps> = ({
                   ? `${reportsCount} signalement${
                       reportsCount > 1 ? "s" : ""
                     } affiché${reportsCount > 1 ? "s" : ""} sur la carte.`
-                  : "Aucun signalement trouvé pour la période sélectionnée."}
+                  : t("panels.noReportFound")}
               </p>
             )}
           </div>

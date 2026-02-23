@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +31,7 @@ const SpecialSourceHeaderDropdown: React.FC<SpecialSourceHeaderDropdownProps> = 
   hasMobileAirData,
   disabled = false,
 }) => {
+  const { t } = useTranslation();
   const hasAny = hasSignalAirData || hasMobileAirData;
 
   return (
@@ -116,7 +118,7 @@ const SpecialSourceHeaderDropdown: React.FC<SpecialSourceHeaderDropdownProps> = 
                   ? "bg-emerald-500 text-white hover:bg-emerald-600"
                   : "bg-gray-200 text-gray-600 hover:bg-gray-300"
               )}
-              aria-label={isSignalAirVisible ? "Masquer SignalAir" : "Afficher SignalAir"}
+              aria-label={isSignalAirVisible ? t("panels.hideSignalAirAria") : t("panels.showSignalAirAria")}
               aria-pressed={isSignalAirVisible}
             >
               {isSignalAirVisible ? "✓" : "✕"}
@@ -170,7 +172,7 @@ const SpecialSourceHeaderDropdown: React.FC<SpecialSourceHeaderDropdownProps> = 
                   ? "bg-emerald-500 text-white hover:bg-emerald-600"
                   : "bg-gray-200 text-gray-600 hover:bg-gray-300"
               )}
-              aria-label={isMobileAirVisible ? "Masquer MobileAir" : "Afficher MobileAir"}
+              aria-label={isMobileAirVisible ? t("panels.hideMobileAirAria") : t("panels.showMobileAirAria")}
               aria-pressed={isMobileAirVisible}
             >
               {isMobileAirVisible ? "✓" : "✕"}

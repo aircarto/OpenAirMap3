@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   PollutionEpisodeService,
   PollutionEpisode,
@@ -25,6 +26,7 @@ const PollutionEpisodeCalendar: React.FC<PollutionEpisodeCalendarProps> = ({
   maxDateRange,
   className = "",
 }) => {
+  const { t } = useTranslation();
   const [episodes, setEpisodes] = useState<PollutionEpisode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -311,7 +313,7 @@ const PollutionEpisodeCalendar: React.FC<PollutionEpisodeCalendarProps> = ({
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             />
           </svg>
-          <span>Chargement des épisodes...</span>
+          <span>{t("calendar.loadingEpisodes")}</span>
         </div>
       </div>
     );
@@ -357,9 +359,9 @@ const PollutionEpisodeCalendar: React.FC<PollutionEpisodeCalendarProps> = ({
             type="button"
             onClick={goToToday}
             className="px-3 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-            title="Aujourd'hui"
+            title={t("calendar.today")}
           >
-            Aujourd'hui
+            {t("calendar.today")}
           </button>
         </div>
         <button
@@ -389,11 +391,11 @@ const PollutionEpisodeCalendar: React.FC<PollutionEpisodeCalendarProps> = ({
         <div className="px-3 py-2 bg-gray-50 border-b border-gray-200 flex items-center justify-center space-x-4 text-xs">
           <div className="flex items-center space-x-1">
             <div className="w-4 h-4 rounded bg-orange-400/70"></div>
-            <span className="text-gray-600">Information</span>
+            <span className="text-gray-600">{t("calendar.information")}</span>
           </div>
           <div className="flex items-center space-x-1">
             <div className="w-4 h-4 rounded bg-red-500/70"></div>
-            <span className="text-gray-600">Alerte</span>
+            <span className="text-gray-600">{t("calendar.alert")}</span>
           </div>
         </div>
       )}
@@ -515,7 +517,7 @@ const PollutionEpisodeCalendar: React.FC<PollutionEpisodeCalendarProps> = ({
               if (departments.length > 0) {
                 return (
                   <div className="border-t border-gray-700 pt-2 mt-2">
-                    <div className="font-medium mb-1">Départements concernés :</div>
+                    <div className="font-medium mb-1">{t("calendar.departmentsConcerned")}</div>
                     <div className="text-gray-300">
                       {departments.join(", ")}
                     </div>
@@ -546,12 +548,12 @@ const PollutionEpisodeCalendar: React.FC<PollutionEpisodeCalendarProps> = ({
               />
             </svg>
             <span>
-              Période sélectionnée :{" "}
-              {Math.ceil(
-                (new Date(rangeEnd).getTime() - new Date(rangeStart).getTime()) /
-                  (1000 * 60 * 60 * 24)
-              )}{" "}
-              jour(s)
+              {t("historical.periodSelectedDays", {
+                days: Math.ceil(
+                  (new Date(rangeEnd).getTime() - new Date(rangeStart).getTime()) /
+                    (1000 * 60 * 60 * 24)
+                ),
+              })}
             </span>
           </div>
         </div>
@@ -586,7 +588,7 @@ const PollutionEpisodeCalendar: React.FC<PollutionEpisodeCalendarProps> = ({
                   }
                 }}
                 className="ml-2 px-2 py-1 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors flex items-center space-x-1"
-                title={`Sélectionner le dernier épisode : ${new Date(lastEpisode.date).toLocaleDateString("fr-FR")}`}
+                title={`${t("calendar.selectLastEpisode")}: ${new Date(lastEpisode.date).toLocaleDateString("fr-FR")}`}
               >
                 <svg
                   className="w-3 h-3"
@@ -601,7 +603,7 @@ const PollutionEpisodeCalendar: React.FC<PollutionEpisodeCalendarProps> = ({
                     d="M13 7l5 5m0 0l-5 5m5-5H6"
                   />
                 </svg>
-                <span>Dernier épisode</span>
+                <span>{t("calendar.lastEpisodeLabel")}</span>
               </button>
             )}
           </div>
@@ -609,19 +611,19 @@ const PollutionEpisodeCalendar: React.FC<PollutionEpisodeCalendarProps> = ({
       )}
       {selectedPollutant && episodes.length === 0 && !loading && (
         <div className="px-3 py-2 bg-gray-50 border-t border-gray-200 text-xs text-gray-500">
-          Aucun épisode de pollution trouvé pour ce polluant
+          {t("calendar.noEpisodeFound")}
         </div>
       )}
       {!selectedPollutant && (
         <div className="px-3 py-2 bg-amber-50 border-t border-gray-200 text-xs text-amber-700">
-          Sélectionnez un polluant pour afficher les épisodes de pollution
+          {t("calendar.selectPollutantForEpisodes")}
         </div>
       )}
 
       {/* Limitation de période */}
       {maxDateRange && (
         <div className="px-3 py-2 bg-amber-50 border-t border-gray-200 text-xs text-amber-700">
-          Durée maximale de la période : {maxDateRange} jours
+          {t("historical.maxPeriodDays", { days: maxDateRange })}
         </div>
       )}
     </div>

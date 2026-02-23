@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { SignalAirReport } from "../../types";
 import { convertWGS84ToLambert93 } from "../../utils/coordinateUtils";
 
@@ -47,6 +48,7 @@ const SignalAirDetailPanel: React.FC<SignalAirDetailPanelProps> = ({
   panelSize: externalPanelSize,
   onCenterMap,
 }) => {
+  const { t } = useTranslation();
   const [internalPanelSize, setInternalPanelSize] =
     useState<PanelSize>("normal");
 
@@ -471,7 +473,7 @@ const SignalAirDetailPanel: React.FC<SignalAirDetailPanelProps> = ({
                     type="button"
                     onClick={() => handleCopyCoordinate("x")}
                     className="inline-flex items-center justify-center p-1.5 text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors"
-                    title="Copier la coordonnée X (Lambert 93)"
+                    title={t("panels.copyCoordX")}
                     disabled={!lambert93Coords}
                   >
                     <svg
@@ -504,7 +506,7 @@ const SignalAirDetailPanel: React.FC<SignalAirDetailPanelProps> = ({
                     type="button"
                     onClick={() => handleCopyCoordinate("y")}
                     className="inline-flex items-center justify-center p-1.5 text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors"
-                    title="Copier la coordonnée Y (Lambert 93)"
+                    title={t("panels.copyCoordY")}
                     disabled={!lambert93Coords}
                   >
                     <svg

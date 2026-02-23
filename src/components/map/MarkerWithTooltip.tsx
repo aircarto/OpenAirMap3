@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { Marker, MarkerProps, Tooltip, useMap } from "react-leaflet";
 import L from "leaflet";
 import { MeasurementDevice } from "../../types";
@@ -24,6 +25,7 @@ const MarkerTooltipContent: React.FC<{
   minZoom: number;
   tooltipRef?: React.MutableRefObject<L.Tooltip | null>;
 }> = ({ device, sensorMetadata, minZoom, tooltipRef: parentTooltipRef }) => {
+  const { t, i18n } = useTranslation();
   // Toujours rendre le Tooltip pour éviter l'erreur Leaflet "this._tooltip is null".
   // L'ouverture au survol est limitée par le zoom dans handleMouseOver du parent.
   // Quand le zoom est insuffisant, on ne l'ouvre pas (voir handleMouseOver) au lieu de le démonter.
@@ -64,7 +66,7 @@ const MarkerTooltipContent: React.FC<{
     return normalizedLabel;
   };
 
-  const formattedDate = formatTooltipDate(device.timestamp);
+  const formattedDate = formatTooltipDate(device.timestamp, t, i18n.language);
   
   // Obtenir le modèle du capteur
   let sensorModel: string | null = null;
@@ -110,15 +112,15 @@ const MarkerTooltipContent: React.FC<{
         </div>
         {sensorModel && (
           <div style={{ marginBottom: 4, fontSize: 10 }}>
-            <span style={{ fontWeight: 500 }}>Modèle :</span> {sensorModel}
+            <span style={{ fontWeight: 500 }}>{t("tooltip.model")}</span> {sensorModel}
           </div>
         )}
         <div style={{ marginBottom: 4, fontSize: 10 }}>
-          <span style={{ fontWeight: 500 }}>Dernière mise à jour :</span> {formattedDate}
+          <span style={{ fontWeight: 500 }}>{t("tooltip.lastUpdate")}</span> {formattedDate}
         </div>
         {normalizedPollutants.length > 0 && (
           <div style={{ marginTop: 4, paddingTop: 4, borderTop: "1px solid rgba(0,0,0,0.1)" }}>
-            <div style={{ fontWeight: 500, marginBottom: 2, fontSize: 10 }}>Polluants mesurés :</div>
+            <div style={{ fontWeight: 500, marginBottom: 2, fontSize: 10 }}>{t("tooltip.measuredPollutants")}</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
               {normalizedPollutants.map((pollutant, idx) => (
                 <span

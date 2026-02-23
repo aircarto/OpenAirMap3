@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   MapContainer,
   TileLayer,
@@ -211,6 +212,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
   openSignalAirPanelRequest = 0,
   openMobileAirPanelRequest = 0,
 }) => {
+  const { t } = useTranslation();
   // Configuration des clusters et spiderfier
   const [clusterConfig, setClusterConfig] = useState(defaultClusterConfig);
   const [spiderfyConfig, setSpiderfyConfig] = useState(defaultSpiderfyConfig);
@@ -1206,7 +1208,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
                 type="button"
                 onClick={signalAir.handleDismissSignalAirFeedback}
                 className="text-blue-600 hover:text-blue-800"
-                aria-label="Fermer le message SignalAir"
+                aria-label={t("panels.closeSignalAirMessage")}
               >
                 <svg
                   className="w-4 h-4"
@@ -1288,7 +1290,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           wildfire.wildfireLoading &&
           wildfire.wildfireReports.length === 0 && (
             <div className="absolute top-24 right-4 z-[1000] max-w-xs bg-white border border-orange-200 text-orange-700 text-xs px-3 py-2 rounded-md shadow-lg">
-              Chargement des signalements d'incendies…
+              {t("panels.loadingFireReports")}
             </div>
           )}
 
@@ -1374,13 +1376,13 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
                 className="bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition-colors"
                 title={
                   sidePanels.comparisonState.isComparisonMode
-                    ? "Rouvrir le panneau de comparaison"
-                    : "Rouvrir le panneau de données"
+                    ? t("panels.openComparisonPanel")
+                    : t("panels.openDataPanel")
                 }
                 aria-label={
                   sidePanels.comparisonState.isComparisonMode
-                    ? "Rouvrir le panneau de comparaison"
-                    : "Rouvrir le panneau de données"
+                    ? t("panels.openComparisonPanel")
+                    : t("panels.openDataPanel")
                 }
               >
                 <svg
@@ -1418,7 +1420,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
                 }
                 className="block rounded-full hover:opacity-80 transition-opacity overflow-hidden p-0 border-0"
                 title="Rouvrir le panneau SignalAir"
-                aria-label="Rouvrir le panneau SignalAir"
+                aria-label={t("panels.openSignalAirPanel")}
               >
                 <img
                   src={getSignalAirIconPath(
@@ -1461,7 +1463,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
                 }}
                 className="block rounded-full hover:opacity-80 transition-opacity overflow-hidden p-0 border-2"
                 title="Rouvrir le panneau de sélection SignalAir"
-                aria-label="Rouvrir le panneau de sélection SignalAir"
+                aria-label={t("panels.openSignalAirSelection")}
               >
                 <div
                   id="signalair-svg-container"
@@ -1489,7 +1491,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
                 onClick={mobileAir.handleOpenMobileAirDetailPanel}
                 className="bg-green-600 text-white p-3 rounded-full shadow-lg hover:bg-green-700 transition-colors"
                 title="Rouvrir le panneau MobileAir (détail)"
-                aria-label="Rouvrir le panneau MobileAir (détail)"
+                aria-label={t("panels.openMobileAirPanel")}
               >
                 <svg
                   className="w-5 h-5"
@@ -1530,7 +1532,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
                 }}
                 className="bg-green-600 text-white p-3 rounded-full shadow-lg hover:bg-green-700 transition-colors"
                 title="Rouvrir le panneau de sélection MobileAir"
-                aria-label="Rouvrir le panneau de sélection MobileAir"
+                aria-label={t("panels.openMobileAirSelection")}
               >
                 <svg
                   className="w-5 h-5"

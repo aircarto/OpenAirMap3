@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { MeasurementDevice, SignalAirReport } from "../../types";
 import StatisticsPanel from "./StatisticsPanel";
 import { cn } from "../../lib/utils";
@@ -34,6 +35,7 @@ const DeviceStatistics: React.FC<DeviceStatisticsProps> = ({
   sourceStatistics, // OPTIMISATION : Stats par source pré-calculées
   showDetails = false,
 }) => {
+  const { t } = useTranslation();
   const [isPanelOpen, setIsPanelOpen] = useState(false);
 
   // OPTIMISATION : Utiliser les statistiques pré-calculées si disponibles
@@ -102,16 +104,8 @@ const DeviceStatistics: React.FC<DeviceStatisticsProps> = ({
 
   // Obtenir le nom lisible du niveau de qualité
   const getQualityName = (level: string): string => {
-    const qualityNames: Record<string, string> = {
-      bon: "Bon",
-      moyen: "Moyen",
-      degrade: "Dégradé",
-      mauvais: "Mauvais",
-      tresMauvais: "Très mauvais",
-      extrMauvais: "Extrêmement mauvais",
-      default: "Pas de mesure récente",
-    };
-    return qualityNames[level] || level;
+    const key = level === "default" ? "panels.noMeasureRecent" : `quality.${level}`;
+    return t(key);
   };
 
   // Couleurs pour les niveaux de qualité
@@ -147,17 +141,17 @@ const DeviceStatistics: React.FC<DeviceStatisticsProps> = ({
             }
           }
         }}
-        aria-label="Afficher les statistiques détaillées"
+        aria-label={t("panels.showStats")}
       >
         {/* Affichage principal : nombre d'appareils visibles */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-1">
             <span className="font-medium">
-              {visibleDevices.length} appareil{visibleDevices.length > 1 ? "s" : ""} visibles
+              {t("statistics.devicesVisible", { count: visibleDevices.length })}
               {visibleDevices.length !== totalDevices && totalDevices > 0 && (
                 <span className="text-gray-500 font-normal">
                   {" "}
-                  / {totalDevices} au total
+                  {t("statistics.ofTotal", { total: totalDevices })}
                 </span>
               )}
             </span>
@@ -186,12 +180,11 @@ const DeviceStatistics: React.FC<DeviceStatisticsProps> = ({
         {visibleReports.length > 0 && (
           <div className="mt-1">
             <span>
-              {visibleReports.length} signalement
-              {visibleReports.length > 1 ? "s" : ""} visible
+              {t("statistics.reportsVisible", { count: visibleReports.length })}
               {visibleReports.length !== totalReports && totalReports > 0 && (
                 <span className="text-gray-500">
                   {" "}
-                  / {totalReports} au total
+                  {t("statistics.ofTotal", { total: totalReports })}
                 </span>
               )}
             </span>

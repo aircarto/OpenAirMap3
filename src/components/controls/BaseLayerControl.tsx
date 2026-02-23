@@ -1,5 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { baseLayers, BaseLayerKey } from "../../constants/mapLayers";
+
+const BASE_LAYER_I18N_KEYS: Record<BaseLayerKey, string> = {
+  "Carte standard": "baseLayer.standard",
+  "Carte OSM": "baseLayer.osm",
+  "Satellite IGN": "baseLayer.satelliteIgn",
+};
 
 interface BaseLayerControlProps {
   currentBaseLayer: BaseLayerKey;
@@ -15,6 +22,7 @@ const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
   isCommunalLayerEnabled,
   onCommunalLayerToggle,
 }) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -41,6 +49,9 @@ const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
     e.stopPropagation();
     onCommunalLayerToggle(!isCommunalLayerEnabled);
   };
+
+  const getLayerLabel = (layerKey: BaseLayerKey) =>
+    t(BASE_LAYER_I18N_KEYS[layerKey]);
 
   const getLayerIcon = (layerKey: BaseLayerKey) => {
     if (layerKey === "Satellite IGN") {
@@ -90,7 +101,7 @@ const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="bg-white/90 backdrop-blur-sm border border-gray-200/50 rounded-md p-2 text-center shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500/50 hover:border-gray-300/70 transition-colors"
-        title={`Fond de carte: ${currentBaseLayer}`}
+        title={`${t("baseLayer.title")}: ${getLayerLabel(currentBaseLayer)}`}
       >
         <div className="flex items-center justify-center">
           <span className="text-gray-700">
@@ -124,7 +135,7 @@ const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
                     <div className="w-1.5 h-1.5 rounded-full bg-blue-600" />
                   )}
                 </div>
-                <span>{layerKey}</span>
+                <span>{getLayerLabel(layerKey as BaseLayerKey)}</span>
               </button>
             ))}
             
@@ -162,7 +173,7 @@ const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
                   </svg>
                 )}
               </div>
-              <span>Découpage communal</span>
+              <span>{t("baseLayer.communal")}</span>
             </button>
           </div>
         </div>

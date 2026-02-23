@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { MeasurementDevice } from "../../types";
 import { pollutants } from "../../constants/pollutants";
 import { formatTooltipDate } from "../../utils/dateUtils";
@@ -98,8 +99,8 @@ const MarkerTooltip: React.FC<MarkerTooltipProps> = ({
   sensorMetadata,
   isHidden = false,
 }) => {
-  // Formater la dernière mise à jour
-  const formattedDate = formatTooltipDate(device.timestamp);
+  const { t, i18n } = useTranslation();
+  const formattedDate = formatTooltipDate(device.timestamp, t, i18n.language);
 
   // Déterminer les polluants mesurés et les séparer en deux catégories
   const getMeasuredPollutants = (): {
@@ -285,14 +286,14 @@ const MarkerTooltip: React.FC<MarkerTooltipProps> = ({
         {/* Modèle du capteur */}
         {sensorModel && (
           <div className="mb-1 text-[10px] text-gray-800 pointer-events-none">
-            <span className="font-medium pointer-events-none">Modèle :</span>{" "}
+            <span className="font-medium pointer-events-none">{t("tooltip.model")}</span>{" "}
             <span className="pointer-events-none">{sensorModel}</span>
           </div>
         )}
 
         {/* Dernière mise à jour */}
         <div className="mb-1 text-[10px] text-gray-800 pointer-events-none">
-          <span className="font-medium pointer-events-none">Dernière mise à jour :</span>{" "}
+          <span className="font-medium pointer-events-none">{t("tooltip.lastUpdate")}</span>{" "}
           <span className="text-gray-700 pointer-events-none">{formattedDate}</span>
         </div>
 
@@ -303,7 +304,7 @@ const MarkerTooltip: React.FC<MarkerTooltipProps> = ({
             {availableOnOpenAirMap.length > 0 && (
               <div className="mb-1 pointer-events-none">
                 <div className="font-medium mb-0.5 text-[10px] text-gray-800 pointer-events-none">
-                  Polluants OpenAirMap :
+                  {t("tooltip.pollutantsOpenAirMap")}
                 </div>
                 <div className="flex flex-wrap gap-0.5 pointer-events-none">
                   {availableOnOpenAirMap.map((pollutant, index) => (
@@ -322,7 +323,7 @@ const MarkerTooltip: React.FC<MarkerTooltipProps> = ({
             {others.length > 0 && (
               <div className="pointer-events-none">
                 <div className="font-medium mb-0.5 text-[10px] text-gray-800 pointer-events-none">
-                  Autres polluants :
+                  {t("tooltip.otherPollutants")}
                 </div>
                 <div className="flex flex-wrap gap-0.5 pointer-events-none">
                   {others.map((pollutant, index) => (

@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { TemporalDataPoint } from "../../types";
 
 interface TemporalPlaybackControlsProps {
@@ -34,6 +35,7 @@ const TemporalPlaybackControls: React.FC<TemporalPlaybackControlsProps> = ({
   dataPointsCount,
   dataPoints,
 }) => {
+  const { t } = useTranslation();
   // Vitesses de lecture disponibles
   const speeds = [
     { value: 0.5, label: "0.5x" },
@@ -272,18 +274,18 @@ const TemporalPlaybackControls: React.FC<TemporalPlaybackControlsProps> = ({
               }`}
             />
             <span className="text-gray-700">
-              {isPlaying ? "Lecture en cours" : "En pause"}
+              {isPlaying ? t("historical.playing") : t("historical.paused")}
             </span>
           </div>
 
           <div className="text-gray-500">
-            {dataPointsCount} points temporels
+            {t("historical.pointsCount", { count: dataPointsCount })}
           </div>
         </div>
 
         {playbackSpeed !== 1 && (
           <div className="mt-2 text-xs text-blue-600">
-            Vitesse de lecture : {playbackSpeed}x
+            {t("historical.playbackSpeedLabel", { value: playbackSpeed })}
           </div>
         )}
       </div>

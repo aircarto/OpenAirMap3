@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "../../lib/utils";
 
 interface SpecialSourceControlsProps {
@@ -22,6 +23,7 @@ const SpecialSourceControls: React.FC<SpecialSourceControlsProps> = ({
   hasSignalAirData,
   hasMobileAirData,
 }) => {
+  const { t } = useTranslation();
   // Détecter si on est sur mobile (breakpoint sm = 640px)
   const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
 
@@ -322,7 +324,7 @@ const SpecialSourceControls: React.FC<SpecialSourceControlsProps> = ({
                     ? "gap-0 p-2 sm:p-2.5" 
                     : "gap-2 sm:gap-3 px-2.5 sm:px-3.5 py-2 sm:py-3"
                 )}
-                aria-label="Ouvrir le panneau de sélection SignalAir"
+                aria-label={t("panels.openSignalAirSelection")}
               >
                 {/* Icône SignalAir SVG */}
                 <div className={cn(
@@ -366,8 +368,8 @@ const SpecialSourceControls: React.FC<SpecialSourceControlsProps> = ({
                   )}
                   aria-label={
                     isSignalAirVisible
-                      ? "Masquer les données SignalAir"
-                      : "Afficher les données SignalAir"
+                      ? t("panels.hideSignalAir")
+                      : t("panels.showSignalAir")
                   }
                   aria-pressed={isSignalAirVisible}
                 >
@@ -416,7 +418,7 @@ const SpecialSourceControls: React.FC<SpecialSourceControlsProps> = ({
                     ? "gap-0 p-2 sm:p-2.5" 
                     : "gap-2 sm:gap-3 px-2.5 sm:px-3.5 py-2 sm:py-3"
                 )}
-                aria-label="Ouvrir le panneau de sélection MobileAir"
+                aria-label={t("panels.openMobileAirSelection")}
               >
                 {/* Icône MobileAir SVG */}
                 <div className={cn(
@@ -476,8 +478,8 @@ const SpecialSourceControls: React.FC<SpecialSourceControlsProps> = ({
                   )}
                   aria-label={
                     isMobileAirVisible
-                      ? "Masquer les données MobileAir"
-                      : "Afficher les données MobileAir"
+                      ? t("panels.hideMobileAir")
+                      : t("panels.showMobileAir")
                   }
                   aria-pressed={isMobileAirVisible}
                 >

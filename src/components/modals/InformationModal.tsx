@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { DomainConfig } from "../../config/domainConfig";
 import {
   getDefaultLevel,
@@ -7,8 +8,10 @@ import {
 
 type TimeStepStatus = "available" | "limited" | "unavailable";
 
+type TimeStepCode = "instantane" | "deuxMin" | "quartHeure" | "heure" | "jour";
+
 interface TimeStepInfo {
-  label: string;
+  stepCode: TimeStepCode;
   status: TimeStepStatus;
   note?: string;
 }
@@ -24,11 +27,8 @@ type IconDescriptor =
 
 interface DataSourceItem {
   id: string;
-  title: string;
-  category: string;
   icon: IconDescriptor;
   timeSteps: TimeStepInfo[];
-  description: React.ReactNode;
   provider: DataProvider;
   highlights?: string[];
 }
@@ -36,123 +36,75 @@ interface DataSourceItem {
 const DATA_SOURCES: DataSourceItem[] = [
   {
     id: "atmo-ref",
-    title: "Stations de référence AtmoSud",
-    category: "station de mesure",
     icon: { kind: "marker", source: "atmoRef" },
     timeSteps: [
-      { label: "Scan", status: "available"},
-      { label: "2 min", status: "unavailable" },
-      { label: "QH", status: "available" },
-      { label: "H", status: "available" },
-      { label: "J", status: "available" },
+      { stepCode: "instantane", status: "available" },
+      { stepCode: "deuxMin", status: "unavailable" },
+      { stepCode: "quartHeure", status: "available" },
+      { stepCode: "heure", status: "available" },
+      { stepCode: "jour", status: "available" },
     ],
-    description:
-      "Stations de référence installées dans le cadre de la mission de surveillance de la qualité de l'air d'AtmoSud.",
     provider: { label: "AtmoSud", href: "https://www.atmosud.org" },
   },
   {
     id: "atmo-micro",
-    title: "Microcapteurs qualifiés AtmoSud",
-    category: "microcapteur",
     icon: { kind: "marker", source: "atmoMicro" },
     timeSteps: [
-      { label: "Scan", status: "available"},
-      { label: "2 min", status: "available" },
-      { label: "QH", status: "available" },
-      { label: "H", status: "available" },
-      { label: "J", status: "unavailable"},
+      { stepCode: "instantane", status: "available" },
+      { stepCode: "deuxMin", status: "available" },
+      { stepCode: "quartHeure", status: "available" },
+      { stepCode: "heure", status: "available" },
+      { stepCode: "jour", status: "unavailable" },
     ],
-    description: (
-      <span className="inline-flex items-center gap-2">
-        <span>
-          Microcapteurs déployés par AtmoSud. Les données horaires sont consolidées
-        </span>
-        <span className="inline-flex h-5 w-6 items-center justify-center rounded-full bg-[#0074d9]/70 leading-none">
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 16 16"
-            className="h-5 w-5 text-white"
-            role="img"
-            aria-label="Données consolidées"
-          >
-            <path
-              fill="currentColor"
-              d="M5.338 1.59a61.44 61.44 0 0 0-2.837.856.481.481 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.725 10.725 0 0 0 2.287 2.233c.346.244.652.42.893.533.12.057.218.095.293.118a.55.55 0 0 0 .101.025.615.615 0 0 0 .1-.025c.076-.023.174-.061.294-.118.24-.113.547-.29.893-.533a10.726 10.726 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.465 9.99a11.775 11.775 0 0 1-2.517 2.453 7.159 7.159 0 0 1-1.048.625c-.28.132-.581.24-.829.24s-.548-.108-.829-.24a7.158 7.158 0 0 1-1.048-.625 11.777 11.777 0 0 1-2.517-2.453C1.928 10.487.545 7.169 1.141 2.692A1.54 1.54 0 0 1 2.185 1.43 62.456 62.456 0 0 1 5.072.56z"
-            />
-            <path
-              fill="currentColor"
-              d="M10.854 5.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 7.793l2.646-2.647a.5.5 0 0 1 .708 0z"
-            />
-          </svg>
-        </span>
-      </span>
-    ),
     provider: { label: "AtmoSud", href: "https://www.atmosud.org" },
     highlights: ["NebuleAir", "Kunak", "Nexelec"],
   },
   {
     id: "nebuleair",
-    title: "Capteurs NebuleAir",
-    category: "microcapteur",
     icon: { kind: "marker", source: "nebuleair" },
     timeSteps: [
-      { label: "Scan", status: "available"},
-      { label: "2 min", status: "available" },
-      { label: "QH", status: "available" },
-      { label: "H", status: "available"},
-      { label: "J", status: "available" },
+      { stepCode: "instantane", status: "available" },
+      { stepCode: "deuxMin", status: "available" },
+      { stepCode: "quartHeure", status: "available" },
+      { stepCode: "heure", status: "available" },
+      { stepCode: "jour", status: "available" },
     ],
-    description:
-      "Microcapteurs open source co-développés par AirCarto et AtmoSud.",
     provider: { label: "AirCarto", href: "https://aircarto.com" },
   },
   {
     id: "sensor-community",
-    title: "Capteurs Sensor.Community",
-    category: "microcapteur",
     icon: { kind: "marker", source: "sensorCommunity" },
     timeSteps: [
-      { label: "Scan", status: "available"},
-      { label: "2 min", status: "available" },
-      { label: "QH", status: "unavailable" },
-      { label: "H", status: "unavailable" },
-      { label: "J", status: "unavailable" },
+      { stepCode: "instantane", status: "available" },
+      { stepCode: "deuxMin", status: "available" },
+      { stepCode: "quartHeure", status: "unavailable" },
+      { stepCode: "heure", status: "unavailable" },
+      { stepCode: "jour", status: "unavailable" },
     ],
-    description:
-      "Microcapteurs open source fabriqués par des citoyens bénévoles.",
     provider: { label: "Sensor.Community", href: "https://sensor.community" },
   },
   {
     id: "purpleair",
-    title: "Capteurs PurpleAir",
-    category: "microcapteur",
     icon: { kind: "marker", source: "purpleair" },
     timeSteps: [
-      { label: "Scan", status: "available"},
-      { label: "2 min", status: "available"},
-      { label: "QH", status: "unavailable" },
-      { label: "H", status: "unavailable" },
-      { label: "J", status: "unavailable" },
+      { stepCode: "instantane", status: "available" },
+      { stepCode: "deuxMin", status: "available" },
+      { stepCode: "quartHeure", status: "unavailable" },
+      { stepCode: "heure", status: "unavailable" },
+      { stepCode: "jour", status: "unavailable" },
     ],
-    description:
-      "Microcapteurs commercialisés par l'entreprise américaine PurpleAir Inc.",
     provider: { label: "PurpleAir", href: "https://www.purpleair.com" },
   },
   {
     id: "modeling-pm",
-    title: "Modélisation horaire par polluant AtmoSud",
-    category: "modélisation",
     icon: { kind: "badge", label: "mod" },
     timeSteps: [
-      { label: "Scan", status: "unavailable" },
-      { label: "2 min", status: "unavailable" },
-      { label: "QH", status: "available" },
-      { label: "H", status: "available" },
-      { label: "J", status: "unavailable" },
+      { stepCode: "instantane", status: "unavailable" },
+      { stepCode: "deuxMin", status: "unavailable" },
+      { stepCode: "quartHeure", status: "available" },
+      { stepCode: "heure", status: "available" },
+      { stepCode: "jour", status: "unavailable" },
     ],
-    description:
-      "Modélisation des particules fines à l'échelle horaire sur toute la région PACA.",
     provider: { label: "AtmoSud", href: "https://www.atmosud.org" },
   },
 ];
@@ -174,6 +126,7 @@ const InformationModal: React.FC<InformationModalProps> = ({
   onClose,
   domainConfig,
 }) => {
+  const { t } = useTranslation();
   if (!isOpen) {
     return null;
   }
@@ -185,7 +138,7 @@ const InformationModal: React.FC<InformationModalProps> = ({
       return (
         <img
           src={path}
-          alt={`Icône ${icon.source}`}
+          alt={t("infoModal.iconAlt", { source: icon.source })}
           className="h-9 w-9 object-contain drop-shadow"
         />
       );
@@ -205,7 +158,7 @@ const InformationModal: React.FC<InformationModalProps> = ({
           <button
             onClick={onClose}
             className="absolute right-4 top-4 rounded-full border border-gray-200 p-1.5 text-gray-600 shadow-sm transition hover:bg-gray-50 hover:text-gray-900"
-            aria-label="Fermer la fenêtre d'information"
+            aria-label={t("panels.closeInfoModal")}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -228,22 +181,16 @@ const InformationModal: React.FC<InformationModalProps> = ({
           <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex flex-col gap-2">
               <h2 className="text-2xl font-semibold text-slate-800">
-                Bienvenue sur OpenAirMap
+                {t("infoModal.welcome")}
               </h2>
               <p className="max-w-2xl text-sm text-slate-600">
-                L'application OpenAirMap est un projet open source porté par AirCarto et
-                AtmoSud pour afficher en temps réel les mesures de qualité de l'air
-                effectué par les stations de mesures et les microcapteurs. Les informations
-                affichées sur la carte sont récupérées via différentes plateforme de mise à
-                disposition de données de mesure (API). A noter que cette application est en
-                constante évolution et amélioration. Pour toutes questions et suggestions
-                n'hésitez pas à déposer un message sur le GitHub du projet.
+                {t("infoModal.intro")}
               </p>
             </div>
             <div className="flex flex-col items-center gap-4">
               <img
                 src={domainConfig.logo2}
-                alt="Logo AirCarto"
+                alt={t("infoModal.logoAirCarto")}
                 className="h-12 w-auto object-contain"
               />
               <img
@@ -257,18 +204,18 @@ const InformationModal: React.FC<InformationModalProps> = ({
           <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
             <div className="px-6 pb-3 pt-5 sm:px-10">
               <h3 className="text-lg font-semibold text-slate-800">
-                Liste des données proposées par OpenAirMap
+                {t("infoModal.dataListTitle")}
               </h3>
               <p className="mt-2 text-sm text-slate-600">
-                A noter que pour certains appareils, la donnée n'est pas disponible pour tous les pas de temps (2 minutes, quart-horaire, horaire et journalier). Dans ce cas l'icône est grisée.
+                {t("infoModal.dataListNote")}
               </p>
             </div>
             <div className="hidden border-b border-slate-100 bg-slate-50 px-6 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 sm:grid sm:grid-cols-12 sm:gap-4">
-              <div className="col-span-3">Type de mesure</div>
-              <div className="col-span-1">Icône</div>
-              <div className="col-span-4">Pas de temps</div>
-              <div className="col-span-3">Description</div>
-              <div className="col-span-1 text-center">Source</div>
+              <div className="col-span-3">{t("infoModal.measureType")}</div>
+              <div className="col-span-1">{t("infoModal.icon")}</div>
+              <div className="col-span-4">{t("controls.timeStep")}</div>
+              <div className="col-span-3">{t("infoModal.description")}</div>
+              <div className="col-span-1 text-center">{t("infoModal.source")}</div>
             </div>
             <div className="divide-y divide-slate-100">
               {DATA_SOURCES.map((item) => (
@@ -278,10 +225,10 @@ const InformationModal: React.FC<InformationModalProps> = ({
                 >
                   <div className="col-span-12 flex flex-col gap-1 sm:col-span-3">
                     <span className="text-sm font-semibold text-slate-800">
-                      {item.title}
+                      {t(`infoModal.sources.${item.id}.title`)}
                     </span>
                     <span className="text-xs uppercase tracking-wide text-slate-500">
-                      {item.category}
+                      {t(`infoModal.sources.${item.id}.category`)}
                     </span>
                     {item.highlights && (
                       <div className="flex flex-wrap gap-1.5 pt-1">
@@ -298,7 +245,7 @@ const InformationModal: React.FC<InformationModalProps> = ({
                   </div>
                   <div className="col-span-12 flex flex-col sm:col-span-1 sm:flex-row sm:items-center sm:justify-center">
                     <span className="text-[10px] font-medium uppercase tracking-wide text-slate-500 sm:hidden">
-                      Icône
+                      {t("infoModal.icon")}
                     </span>
                     <div className="mt-1 sm:mt-0 flex items-center justify-start">
                       {renderIcon(item.icon)}
@@ -306,15 +253,15 @@ const InformationModal: React.FC<InformationModalProps> = ({
                   </div>
                   <div className="col-span-12 sm:col-span-4">
                     <span className="text-[10px] font-medium uppercase tracking-wide text-slate-500 sm:hidden">
-                      Pas de temps
+                      {t("controls.timeStep")}
                     </span>
                     <div className="mt-1 flex flex-wrap items-start gap-2">
                       {item.timeSteps.map((step) => (
-                        <div key={step.label} className="flex flex-col items-start">
+                        <div key={step.stepCode} className="flex flex-col items-start">
                           <span
                             className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium ${STEP_STYLES[step.status]}`}
                           >
-                            {step.label}
+                            {t(`timeSteps.${step.stepCode}`)}
                           </span>
                           {step.note && (
                             <span className="mt-1 text-[11px] text-slate-500">
@@ -327,15 +274,27 @@ const InformationModal: React.FC<InformationModalProps> = ({
                   </div>
                   <div className="col-span-12 sm:col-span-3">
                     <span className="text-[10px] font-medium uppercase tracking-wide text-slate-500 sm:hidden">
-                      Description
+                      {t("infoModal.description")}
                     </span>
                     <div className="mt-1 text-sm leading-snug text-slate-600 sm:mt-0">
-                      {item.description}
+                      {item.id === "atmo-micro" ? (
+                        <span className="inline-flex items-center gap-2">
+                          <span>{t(`infoModal.sources.${item.id}.description`)}</span>
+                          <span className="inline-flex h-5 w-6 items-center justify-center rounded-full bg-[#0074d9]/70 leading-none" role="img" aria-label={t("infoModal.consolidatedData")}>
+                            <svg width="14" height="14" viewBox="0 0 16 16" className="h-5 w-5 text-white">
+                              <path fill="currentColor" d="M5.338 1.59a61.44 61.44 0 0 0-2.837.856.481.481 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.725 10.725 0 0 0 2.287 2.233c.346.244.652.42.893.533.12.057.218.095.293.118a.55.55 0 0 0 .101.025.615.615 0 0 0 .1-.025c.076-.023.174-.061.294-.118.24-.113.547-.29.893-.533a10.726 10.726 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.465 9.99a11.775 11.775 0 0 1-2.517 2.453 7.159 7.159 0 0 1-1.048.625c-.28.132-.581.24-.829.24s-.548-.108-.829-.24a7.158 7.158 0 0 1-1.048-.625 11.777 11.777 0 0 1-2.517-2.453C1.928 10.487.545 7.169 1.141 2.692A1.54 1.54 0 0 1 2.185 1.43 62.456 62.456 0 0 1 5.072.56z" />
+                              <path fill="currentColor" d="M10.854 5.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 7.793l2.646-2.647a.5.5 0 0 1 .708 0z" />
+                            </svg>
+                          </span>
+                        </span>
+                      ) : (
+                        t(`infoModal.sources.${item.id}.description`)
+                      )}
                     </div>
                   </div>
                   <div className="col-span-12 flex flex-col items-start justify-start sm:col-span-1 sm:flex-row sm:items-center sm:justify-center">
                     <span className="text-[10px] font-medium uppercase tracking-wide text-slate-500 sm:hidden">
-                      Source
+                      {t("infoModal.source")}
                     </span>
                     {item.provider.href ? (
                       <div className="mt-1 sm:mt-0">
@@ -361,30 +320,30 @@ const InformationModal: React.FC<InformationModalProps> = ({
 
           <section className="rounded-xl border border-slate-200 bg-white px-6 py-6 text-sm text-slate-600 shadow-sm">
             <h3 className="text-base font-semibold text-slate-800">
-              Découvrir le mode historique
+              {t("infoModal.discoverHistorical")}
             </h3>
             <p className="mt-2 leading-relaxed">
-              Le mode historique vous permet de rejouer la chronologie d&apos;un épisode de pollution ou d&apos;une journée type. Sélectionnez une date passée puis utilisez le curseur temporel pour faire défiler les mesures disponibles pas à pas. Les données se mettent à jour sur la carte ainsi que dans les panneaux associés afin de visualiser l&apos;évolution du phénomène dans le temps.
+              {t("infoModal.discoverHistoricalText")}
             </p>
             <ul className="mt-3 list-disc space-y-1 pl-5">
-              <li>Choisissez d&apos;abord la période dans le sélecteur dédié.</li>
-              <li>Réglez ensuite la vitesse de lecture ou parcourez manuellement grâce au curseur.</li>
-              <li>Lancer la lecture en cliquant sur le bouton "Play".</li>
-              <li>Quitter le mode historique en cliquant à nouveau sur le bouton "Mode Historique".</li>
+              <li>{t("infoModal.discoverHistoricalBullet1")}</li>
+              <li>{t("infoModal.discoverHistoricalBullet2")}</li>
+              <li>{t("infoModal.discoverHistoricalBullet3")}</li>
+              <li>{t("infoModal.discoverHistoricalBullet4")}</li>
             </ul>
           </section>
 
           <section className="rounded-xl border border-slate-200 bg-white px-6 py-6 text-sm text-slate-600 shadow-sm">
             <h3 className="text-base font-semibold text-slate-800">
-              Utiliser la comparaison multi-capteurs
+              {t("infoModal.comparisonTitle")}
             </h3>
             <p className="mt-2 leading-relaxed">
-              La comparaison multi-capteurs facilite l&apos;analyse simultanée des mesures de plusieurs dispositifs. Activez ce mode depuis le panneau latéral pour sélectionner jusqu&apos;à cinque capteurs ou stations et afficher leurs séries temporelles côte à côte dans les graphiques.
+              {t("infoModal.comparisonText")}
             </p>
             <ul className="mt-3 list-disc space-y-1 pl-5">
-              <li>Sélectionnez les capteurs directement sur la carte.</li>
-              <li>Les donnés s'ajoutent automatiquement dans le graphique de comparaison.</li>
-              <li>Quitter le mode comparaison en cliquant sur le bouton "Désactiver comparaison".</li>
+              <li>{t("infoModal.comparisonBullet1")}</li>
+              <li>{t("infoModal.comparisonBullet2")}</li>
+              <li>{t("infoModal.comparisonBullet3")}</li>
             </ul>
           </section>
 
@@ -393,14 +352,14 @@ const InformationModal: React.FC<InformationModalProps> = ({
 
           <footer className="flex flex-col items-start justify-between gap-3 border-t border-slate-200 bg-white px-6 py-4 text-xs text-slate-500 sm:flex-row sm:items-center sm:px-10">
               <span>
-                OpenAirMap est en amélioration continue. Partagez vos retours via
-                notre site <a className="text-[#4271B3] hover:underline" href={`${domainConfig.links.website}/contact`}>{domainConfig.organization}</a>.
+                {t("infoModal.footer")}{" "}
+                <a className="text-[#4271B3] hover:underline" href={`${domainConfig.links.website}/contact`}>{domainConfig.organization}</a>.
               </span>
               <button
                 onClick={onClose}
                 className="inline-flex items-center rounded-md bg-[#4271B3] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#325a96]"
               >
-                Compris
+                {t("infoModal.understood")}
               </button>
             </footer>
         </div>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "../../lib/utils";
 
 export interface Toast {
@@ -19,6 +20,7 @@ interface ToastProps {
 }
 
 const ToastComponent: React.FC<ToastProps> = ({ toast, onClose }) => {
+  const { t } = useTranslation();
   const [isVisible, setIsVisible] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
 
@@ -167,7 +169,7 @@ const ToastComponent: React.FC<ToastProps> = ({ toast, onClose }) => {
           "flex-shrink-0 rounded-md p-1 transition-colors hover:bg-black/5",
           iconColors[toast.variant || "default"]
         )}
-        aria-label="Fermer"
+        aria-label={t("common.close")}
       >
         <svg
           className="h-4 w-4"

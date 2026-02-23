@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { ToggleGroup, ToggleGroupItem } from "../ui/button-group";
 import { cn } from "../../lib/utils";
 
@@ -68,6 +69,7 @@ const getPresetDays = (preset: "3h" | "24h" | "7d" | "30d"): number => {
 const HistoricalTimeRangeSelector: React.FC<
   HistoricalTimeRangeSelectorProps
 > = ({ timeRange, onTimeRangeChange, className = "", timeStep }) => {
+  const { t } = useTranslation();
   const [isCustomOpen, setIsCustomOpen] = useState(false);
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
@@ -335,7 +337,7 @@ const HistoricalTimeRangeSelector: React.FC<
             d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
           />
         </svg>
-        <span className="text-sm font-medium text-gray-700">Historique</span>
+        <span className="text-sm font-medium text-gray-700">{t("historical.periodLabel")}</span>
       </div>
 
       {/* Boutons des périodes prédéfinies */}
@@ -404,7 +406,7 @@ const HistoricalTimeRangeSelector: React.FC<
                 d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
               />
             </svg>
-            {isCustomSelected ? getDisplayText() : "Période personnalisée"}
+            {isCustomSelected ? getDisplayText() : t("historical.customPeriod")}
           </span>
           <svg
             className={`w-3 h-3 transition-transform ${
@@ -477,7 +479,7 @@ const HistoricalTimeRangeSelector: React.FC<
             {/* Sélection personnalisée */}
             <div>
               <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
-                Période personnalisée
+                {t("historical.customPeriod")}
               </div>
               <div className="space-y-2">
                 <div>

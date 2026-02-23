@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { MeasurementDevice, SignalAirReport } from "../../types";
 import { cn } from "../../lib/utils";
 import { QUALITY_COLORS } from "../../constants/qualityColors";
@@ -35,6 +36,7 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
   statistics, // OPTIMISATION : Statistiques pré-calculées
   sourceStatistics, // OPTIMISATION : Stats par source pré-calculées
 }) => {
+  const { t } = useTranslation();
   // Vérifier si SignalAir est actif
   const isSignalAirActive = selectedSources.includes("signalair");
   /**
@@ -241,16 +243,8 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
 
   // Obtenir le nom lisible du niveau de qualité
   const getQualityName = (level: string): string => {
-    const qualityNames: Record<string, string> = {
-      bon: "Bon",
-      moyen: "Moyen",
-      degrade: "Dégradé",
-      mauvais: "Mauvais",
-      tresMauvais: "Très mauvais",
-      extrMauvais: "Extrêmement mauvais",
-      default: "Pas de mesure récente",
-    };
-    return qualityNames[level] || level;
+    const key = level === "default" ? "panels.noMeasureRecent" : `quality.${level}`;
+    return t(key);
   };
 
   // Couleurs pour les niveaux de qualité - utilise les couleurs réelles des seuils
@@ -343,14 +337,9 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
 
   // Obtenir le nom lisible du type de signalement
   const getSignalTypeName = (type: string): string => {
-    const typeNames: Record<string, string> = {
-      odeur: "Odeurs",
-      bruit: "Bruits",
-      brulage: "Brûlage",
-      visuel: "Visuel",
-      pollen: "Pollen",
-    };
-    return typeNames[type] || type;
+    const key = `statistics.signalType.${type}`;
+    const translated = t(key);
+    return translated !== key ? translated : type;
   };
 
   if (!isOpen) return null;
@@ -381,13 +370,12 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <div>
             <h3 className="text-lg font-semibold text-gray-900">
-              Statistiques
+              {t("statistics.title")}
             </h3>
             <p className="text-sm text-gray-500 mt-0.5">
-              {visibleDevices.length} appareil
-              {visibleDevices.length > 1 ? "s" : ""}
+              {t("statistics.device", { count: visibleDevices.length })}
               {isSignalAirActive && reportsStats && reportsStats.total > 0 && (
-                <> • {reportsStats.total} signalement{reportsStats.total > 1 ? "s" : ""}</>
+                <> • {t("statistics.report", { count: reportsStats.total })}</>
               )}
               {visibleDevices.length > 0 && <> • {pollutants[selectedPollutant]?.name || selectedPollutant.toUpperCase()}</>}
             </p>
@@ -395,7 +383,7 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
           <button
             onClick={onClose}
             className="rounded-md p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-            aria-label="Fermer"
+            aria-label={t("common.close")}
           >
             <svg
               className="h-5 w-5"
@@ -430,9 +418,9 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
                   d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
                 />
               </svg>
-              <p className="text-sm font-medium text-gray-900">Aucun appareil visible</p>
+              <p className="text-sm font-medium text-gray-900">{t("panels.noDeviceVisible")}</p>
               <p className="text-xs text-gray-500 mt-1">
-                Zoomer ou déplacer la carte pour voir des appareils
+                {t("statistics.zoomHint")}
               </p>
             </div>
           ) : (
@@ -440,29 +428,29 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
               {/* Statistiques globales */}
               <div className="space-y-3">
             <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-              Statistiques globales
+              {t("statistics.globalTitle")}
             </h4>
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                <p className="text-xs text-gray-500 mb-1">Moyenne</p>
+                <p className="text-xs text-gray-500 mb-1">{t("statistics.average")}</p>
                 <p className="text-lg font-semibold text-gray-900">
                   {formatNumber(globalStats.average)} {globalStats.unit}
                 </p>
               </div>
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                <p className="text-xs text-gray-500 mb-1">Médiane</p>
+                <p className="text-xs text-gray-500 mb-1">{t("statistics.median")}</p>
                 <p className="text-lg font-semibold text-gray-900">
                   {formatNumber(globalStats.median)} {globalStats.unit}
                 </p>
               </div>
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                <p className="text-xs text-gray-500 mb-1">Minimum</p>
+                <p className="text-xs text-gray-500 mb-1">{t("statistics.minimum")}</p>
                 <p className="text-lg font-semibold text-gray-900">
                   {formatNumber(globalStats.min)} {globalStats.unit}
                 </p>
               </div>
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                <p className="text-xs text-gray-500 mb-1">Maximum</p>
+                <p className="text-xs text-gray-500 mb-1">{t("statistics.maximum")}</p>
                 <p className="text-lg font-semibold text-gray-900">
                   {formatNumber(globalStats.max)} {globalStats.unit}
                 </p>
@@ -474,7 +462,7 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
           {qualityDistribution.length > 0 && (
             <div className="space-y-3">
               <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-                Distribution par seuil
+                {t("statistics.distributionByThreshold")}
               </h4>
               <div className="space-y-2">
                 {qualityDistribution.map(({ level, count, percentage }) => {
@@ -524,7 +512,7 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
           {statsBySource.length > 0 && (
             <div className="space-y-3">
               <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-                Détail par type d'appareil de mesure
+                {t("statistics.detailByDeviceType")}
               </h4>
               <div className="space-y-4">
                 {statsBySource.map((sourceStats) => (
@@ -537,33 +525,32 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
                         {getSourceName(sourceStats.source)}
                       </h5>
                       <span className="text-xs text-gray-500">
-                        {sourceStats.count} appareil
-                        {sourceStats.count > 1 ? "s" : ""}
+                        {t("statistics.device", { count: sourceStats.count })}
                       </span>
                     </div>
 
                     {/* Statistiques de la source */}
                     <div className="grid grid-cols-2 gap-2">
                       <div className="rounded border border-gray-200 bg-white p-2">
-                        <p className="text-[10px] text-gray-500 mb-0.5">Moyenne</p>
+                        <p className="text-[10px] text-gray-500 mb-0.5">{t("statistics.average")}</p>
                         <p className="text-sm font-semibold text-gray-900">
                           {formatNumber(sourceStats.average)} {sourceStats.unit}
                         </p>
                       </div>
                       <div className="rounded border border-gray-200 bg-white p-2">
-                        <p className="text-[10px] text-gray-500 mb-0.5">Médiane</p>
+                        <p className="text-[10px] text-gray-500 mb-0.5">{t("statistics.median")}</p>
                         <p className="text-sm font-semibold text-gray-900">
                           {formatNumber(sourceStats.median)} {sourceStats.unit}
                         </p>
                       </div>
                       <div className="rounded border border-gray-200 bg-white p-2">
-                        <p className="text-[10px] text-gray-500 mb-0.5">Min</p>
+                        <p className="text-[10px] text-gray-500 mb-0.5">{t("statistics.min")}</p>
                         <p className="text-sm font-semibold text-gray-900">
                           {formatNumber(sourceStats.min)} {sourceStats.unit}
                         </p>
                       </div>
                       <div className="rounded border border-gray-200 bg-white p-2">
-                        <p className="text-[10px] text-gray-500 mb-0.5">Max</p>
+                        <p className="text-[10px] text-gray-500 mb-0.5">{t("statistics.max")}</p>
                         <p className="text-sm font-semibold text-gray-900">
                           {formatNumber(sourceStats.max)} {sourceStats.unit}
                         </p>
@@ -574,7 +561,7 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
                     {Object.keys(sourceStats.qualityDistribution).length > 0 && (
                       <div className="space-y-1.5 pt-2 border-t border-gray-200">
                         <p className="text-xs font-medium text-gray-700 mb-1.5">
-                          Distribution par seuil
+                          {t("statistics.distributionByThreshold")}
                         </p>
                         <div className="space-y-1">
                           {(() => {
@@ -651,19 +638,19 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
           {reportsStats && reportsStats.total > 0 && (
             <div className="space-y-3">
               <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-                Statistiques des signalements
+                {t("statistics.reportsTitle")}
               </h4>
 
               {/* Statistiques générales */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                  <p className="text-xs text-gray-500 mb-1">Total</p>
+                  <p className="text-xs text-gray-500 mb-1">{t("statistics.total")}</p>
                   <p className="text-lg font-semibold text-gray-900">
                     {reportsStats.total}
                   </p>
                 </div>
                 <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                  <p className="text-xs text-gray-500 mb-1">Avec symptômes</p>
+                  <p className="text-xs text-gray-500 mb-1">{t("statistics.withSymptoms")}</p>
                   <p className="text-lg font-semibold text-gray-900">
                     {reportsStats.withSymptoms} (
                     {formatNumber(
@@ -678,14 +665,14 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
               {/* Distribution avec/sans symptômes */}
               <div className="space-y-3">
                 <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                  Répartition avec/sans symptômes
+                  {t("statistics.splitWithWithoutSymptoms")}
                 </h5>
                 <div className="space-y-2">
                   {/* Avec symptômes */}
                   <div className="rounded-lg border border-red-200 bg-red-50 p-3">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium text-gray-900">
-                        Avec symptômes
+                        {t("statistics.withSymptoms")}
                       </span>
                       <span className="text-sm font-semibold text-gray-900">
                         {reportsStats.withSymptoms} (
@@ -710,7 +697,7 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
                   <div className="rounded-lg border border-green-200 bg-green-50 p-3">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium text-gray-900">
-                        Sans symptômes
+                        {t("statistics.withoutSymptoms")}
                       </span>
                       <span className="text-sm font-semibold text-gray-900">
                         {reportsStats.withoutSymptoms} (
@@ -737,7 +724,7 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
               {Object.keys(reportsStats.distributionByType).length > 0 && (
                 <div className="space-y-3">
                   <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                    Distribution par type
+                    {t("statistics.distributionByType")}
                   </h5>
                   <div className="space-y-2">
                     {Object.entries(reportsStats.distributionByType)
@@ -778,7 +765,7 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
                 0 && (
                 <div className="space-y-3">
                   <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                    Distribution par niveau de gêne
+                    {t("statistics.distributionByNuisanceLevel")}
                   </h5>
                   <div className="space-y-2">
                     {Object.entries(reportsStats.distributionByNuisanceLevel)

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { DateRangeSelectorProps } from "../../types";
 
 const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
@@ -9,6 +10,7 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
   maxDateRange = 365,
   disabled = false,
 }) => {
+  const { t } = useTranslation();
   const [errors, setErrors] = useState<{
     startDate?: string;
     endDate?: string;
@@ -25,16 +27,15 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 
       // Vérifier que la date de début est antérieure à la date de fin
       if (start >= end) {
-        newErrors.endDate =
-          "La date de fin doit être postérieure à la date de début";
+        newErrors.endDate = t("historical.validationEndAfterStart");
       }
 
       // Vérifier que les dates ne sont pas dans le futur
       if (start > today) {
-        newErrors.startDate = "La date de début ne peut pas être dans le futur";
+        newErrors.startDate = t("historical.validationStartNotFuture");
       }
       if (end > today) {
-        newErrors.endDate = "La date de fin ne peut pas être dans le futur";
+        newErrors.endDate = t("historical.validationEndNotFuture");
       }
 
       // Vérifier la durée maximale
@@ -42,12 +43,12 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
         (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
       );
       if (diffInDays > maxDateRange) {
-        newErrors.endDate = `La période ne peut pas dépasser ${maxDateRange} jours`;
+        newErrors.endDate = t("historical.validationMaxPeriod", { max: maxDateRange });
       }
     }
 
     setErrors(newErrors);
-  }, [startDate, endDate, maxDateRange]);
+  }, [startDate, endDate, maxDateRange, t]);
 
   // Calculer la date maximale (aujourd'hui)
   const today = new Date().toISOString().split("T")[0];
@@ -59,7 +60,7 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
   return (
     <div className="space-y-4">
       <div className="text-sm font-medium text-gray-700">
-        Sélectionner une période temporelle
+        {t("historical.selectTimePeriod")}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -69,7 +70,7 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
             htmlFor="start-date"
             className="block text-sm font-medium text-gray-600"
           >
-            Date de début
+            {t("historical.startDate")}
           </label>
           <input
             id="start-date"
@@ -100,7 +101,7 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
             htmlFor="end-date"
             className="block text-sm font-medium text-gray-600"
           >
-            Date de fin
+            {t("historical.endDate")}
           </label>
           <input
             id="end-date"
@@ -144,12 +145,12 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
               />
             </svg>
             <span>
-              Période sélectionnée :{" "}
-              {Math.ceil(
-                (new Date(endDate).getTime() - new Date(startDate).getTime()) /
-                  (1000 * 60 * 60 * 24)
-              )}{" "}
-              jour(s)
+              {t("historical.periodSelectedDays", {
+                days: Math.ceil(
+                  (new Date(endDate).getTime() - new Date(startDate).getTime()) /
+                    (1000 * 60 * 60 * 24)
+                ),
+              })}
             </span>
           </div>
         </div>
@@ -157,7 +158,7 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 
       {/* Limitation de période */}
       <div className="text-xs text-gray-500">
-        Durée maximale de la période : {maxDateRange} jours
+        {t("historical.maxPeriodDays", { days: maxDateRange })}
       </div>
     </div>
   );

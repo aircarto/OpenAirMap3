@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { TemporalVisualizationState, TemporalControls } from "../../types";
 import TemporalTimeline from "./TemporalTimeline";
 import { cn } from "../../lib/utils";
@@ -22,6 +23,7 @@ const HistoricalPlaybackControl: React.FC<HistoricalPlaybackControlProps> = ({
   onGoToPrevious,
   onGoToNext,
 }) => {
+  const { t, i18n } = useTranslation();
   // Position initiale : même position que le panel de sélection (haut à droite : top-[60px] right-4)
   // right-4 = 16px, top-[60px] = 60px
   // On utilise useEffect pour calculer après le premier rendu car on a besoin de la largeur du conteneur
@@ -116,12 +118,13 @@ const HistoricalPlaybackControl: React.FC<HistoricalPlaybackControlProps> = ({
     };
   }, [isDragging, dragOffset]);
 
-  // Formater la date pour l'affichage
+  // Formater la date pour l'affichage (locale utilisateur)
   const formatDate = (dateString: string): string => {
     if (!dateString) return "--";
     const date = new Date(dateString);
     if (Number.isNaN(date.getTime())) return "--";
-    return date.toLocaleDateString("fr-FR", {
+    const locale = i18n.language === "fr" ? "fr-FR" : i18n.language === "en" ? "en-GB" : i18n.language;
+    return date.toLocaleDateString(locale, {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
@@ -162,7 +165,7 @@ const HistoricalPlaybackControl: React.FC<HistoricalPlaybackControlProps> = ({
         userSelect: isDragging ? "none" : undefined,
       }}
       role="toolbar"
-      aria-label="Contrôles de lecture du mode historique"
+      aria-label={t("historical.playback")}
     >
       <div
         className={cn(
@@ -186,8 +189,8 @@ const HistoricalPlaybackControl: React.FC<HistoricalPlaybackControlProps> = ({
             onTouchStart={handleDragHandleTouchStart}
             role="button"
             tabIndex={-1}
-            aria-label="Glisser pour déplacer le panneau"
-            title="Glisser pour déplacer"
+            aria-label={t("historical.dragPanel")}
+            title={t("historical.dragPanel")}
           >
             <div className="flex flex-col gap-0.5 opacity-60 group-hover/drag:opacity-100 transition-opacity">
               <div className="w-4 h-0.5 bg-gray-400 rounded-full" />
@@ -195,7 +198,7 @@ const HistoricalPlaybackControl: React.FC<HistoricalPlaybackControlProps> = ({
               <div className="w-4 h-0.5 bg-gray-400 rounded-full" />
             </div>
             <h4 className="text-sm font-semibold text-gray-900 select-none">
-              Contrôles de lecture
+              {t("historical.playbackShort")}
             </h4>
           </div>
           <div className="flex items-center gap-1">
@@ -209,8 +212,8 @@ const HistoricalPlaybackControl: React.FC<HistoricalPlaybackControlProps> = ({
                 "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-gray-500 disabled:hover:bg-transparent",
                 "active:scale-95 touch-manipulation min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1.5 flex items-center justify-center"
               )}
-              title="Ouvrir le panel de sélection de date"
-              aria-label="Ouvrir le panel de sélection de date"
+              title={t("historical.openDatePanel")}
+              aria-label={t("historical.openDatePanel")}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -226,8 +229,8 @@ const HistoricalPlaybackControl: React.FC<HistoricalPlaybackControlProps> = ({
                 "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-gray-500 disabled:hover:bg-transparent",
                 "active:scale-95 touch-manipulation min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1.5 flex items-center justify-center"
               )}
-              title="Désactiver le mode historique"
-              aria-label="Désactiver le mode historique"
+              title={t("historical.disableHistorical")}
+              aria-label={t("historical.disableHistorical")}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -250,7 +253,7 @@ const HistoricalPlaybackControl: React.FC<HistoricalPlaybackControlProps> = ({
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
               </svg>
               <span className="text-sm font-medium text-blue-900">
-                Chargement des données en cours…
+                {t("historical.loadingDataInProgress")}
               </span>
             </div>
           </div>
@@ -258,7 +261,7 @@ const HistoricalPlaybackControl: React.FC<HistoricalPlaybackControlProps> = ({
 
         {/* Date actuelle + indication heure locale */}
         <div className={cn("mb-4 text-center", state.loading && "opacity-50 pointer-events-none")}>
-          <div className="text-xs font-medium text-gray-700 mb-1">Date actuelle</div>
+          <div className="text-xs font-medium text-gray-700 mb-1">{t("historical.currentDate")}</div>
           <div className="text-base font-semibold text-gray-900 tabular-nums">
             {formatDate(state.currentDate)}
           </div>
@@ -266,7 +269,7 @@ const HistoricalPlaybackControl: React.FC<HistoricalPlaybackControlProps> = ({
             <svg className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span>Heure locale</span>
+            <span>{t("historical.localTime")}</span>
           </div>
         </div>
 
@@ -274,7 +277,7 @@ const HistoricalPlaybackControl: React.FC<HistoricalPlaybackControlProps> = ({
         {hasData && !state.loading && (
           <div className="mb-4">
             <div className="flex justify-between text-xs font-medium text-gray-700 mb-2">
-              <span>Navigation temporelle</span>
+              <span>{t("historical.temporalNavigation")}</span>
               <span className="tabular-nums text-gray-800">{Math.round(progressPercentage)} %</span>
             </div>
             <TemporalTimeline
@@ -305,8 +308,8 @@ const HistoricalPlaybackControl: React.FC<HistoricalPlaybackControlProps> = ({
                 "transition-all duration-200 active:scale-95 touch-manipulation",
                 "focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400/40 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
               )}
-              title="Étape précédente"
-              aria-label="Étape précédente"
+              title={t("historical.previous")}
+              aria-label={t("historical.previous")}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -322,8 +325,8 @@ const HistoricalPlaybackControl: React.FC<HistoricalPlaybackControlProps> = ({
                 "transition-all duration-200 active:scale-95 touch-manipulation",
                 "focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400/40 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
               )}
-              title={state.isPlaying ? "Pause" : "Lecture"}
-              aria-label={state.isPlaying ? "Pause" : "Lecture"}
+              title={state.isPlaying ? t("historical.pause") : t("historical.play")}
+              aria-label={state.isPlaying ? t("historical.pause") : t("historical.play")}
               aria-pressed={state.isPlaying}
             >
               {state.isPlaying ? (
@@ -351,8 +354,8 @@ const HistoricalPlaybackControl: React.FC<HistoricalPlaybackControlProps> = ({
                 "transition-all duration-200 active:scale-95 touch-manipulation",
                 "focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400/40 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
               )}
-              title="Étape suivante"
-              aria-label="Étape suivante"
+              title={t("historical.next")}
+              aria-label={t("historical.next")}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -364,7 +367,7 @@ const HistoricalPlaybackControl: React.FC<HistoricalPlaybackControlProps> = ({
         {/* Vitesse de lecture — style liquid glass harmonisé */}
         {hasData && !state.loading && (
           <div className="flex items-center justify-between gap-3 mb-3">
-            <span className="text-xs font-medium text-gray-700">Vitesse</span>
+            <span className="text-xs font-medium text-gray-700">{t("historical.speedLabel")}</span>
             <div className="flex gap-1.5 flex-wrap justify-end">
               {[0.5, 1, 2, 4, 8].map((speed) => (
                 <button
@@ -381,7 +384,7 @@ const HistoricalPlaybackControl: React.FC<HistoricalPlaybackControlProps> = ({
                         ? "bg-gray-200/70 backdrop-blur-sm border border-gray-300/50 text-gray-900"
                         : "bg-white/70 backdrop-blur-sm border border-gray-200/60 text-gray-700 hover:bg-gray-100/80 hover:border-gray-300/60 hover:text-gray-900 active:scale-95")
                   )}
-                  aria-label={`Vitesse ${speed}x`}
+                  aria-label={t("historical.speed", { value: speed })}
                   aria-pressed={state.playbackSpeed === speed}
                 >
                   {speed}x
@@ -400,7 +403,7 @@ const HistoricalPlaybackControl: React.FC<HistoricalPlaybackControlProps> = ({
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                <span className="text-gray-700">Chargement…</span>
+                <span className="text-gray-700">{t("historical.loading")}</span>
               </>
             ) : (
               <>
@@ -411,18 +414,18 @@ const HistoricalPlaybackControl: React.FC<HistoricalPlaybackControlProps> = ({
                   )}
                   aria-hidden
                 />
-                <span className="text-gray-700">{state.isPlaying ? "Lecture" : "Pause"}</span>
+                <span className="text-gray-700">{state.isPlaying ? t("historical.play") : t("historical.pause")}</span>
               </>
             )}
           </div>
           {hasData && !state.loading && (
-            <span className="text-gray-600 tabular-nums">{state.data.length} points</span>
+            <span className="text-gray-600 tabular-nums">{t("historical.pointsCount", { count: state.data.length })}</span>
           )}
         </div>
 
         {!hasData && !state.loading && (
           <div className="text-xs text-center text-gray-600 py-4" role="status">
-            Aucune donnée chargée
+            {t("historical.noDataLoaded")}
           </div>
         )}
       </div>

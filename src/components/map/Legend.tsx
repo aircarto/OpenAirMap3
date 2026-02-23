@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { pollutants } from "../../constants/pollutants";
 import { QUALITY_COLORS } from "../../constants/qualityColors";
 
@@ -15,10 +16,9 @@ const Legend: React.FC<LegendProps> = ({
   panelSize = "normal",
   isComparisonPanelVisible = false,
 }) => {
-  // Utiliser les couleurs centralisées
+  const { t } = useTranslation();
   const colors = QUALITY_COLORS;
 
-  // Obtenir les seuils du polluant sélectionné
   const pollutant = pollutants[selectedPollutant];
   const thresholds = pollutant?.thresholds;
 
@@ -28,43 +28,43 @@ const Legend: React.FC<LegendProps> = ({
 
   const legendItems = [
     {
-      label: "Pas de donnée",
+      label: t("quality.noData"),
       shortLabel: "N/A",
       color: colors.noData,
     },
     {
-      label: "Bon",
-      shortLabel: "Bon",
+      label: t("quality.bon"),
+      shortLabel: t("quality.bon"),
       color: colors.bon,
       range: `${thresholds.bon.min}-${thresholds.bon.max}`,
     },
     {
-      label: "Moyen",
-      shortLabel: "Moyen",
+      label: t("quality.moyen"),
+      shortLabel: t("quality.moyen"),
       color: colors.moyen,
       range: `${thresholds.moyen.min}-${thresholds.moyen.max}`,
     },
     {
-      label: "Dégradé",
-      shortLabel: "Dégradé",
+      label: t("quality.degrade"),
+      shortLabel: t("quality.degrade"),
       color: colors.degrade,
       range: `${thresholds.degrade.min}-${thresholds.degrade.max}`,
     },
     {
-      label: "Mauvais",
-      shortLabel: "Mauvais",
+      label: t("quality.mauvais"),
+      shortLabel: t("quality.mauvais"),
       color: colors.mauvais,
       range: `${thresholds.mauvais.min}-${thresholds.mauvais.max}`,
     },
     {
-      label: "Très mauvais",
-      shortLabel: "Très M.",
+      label: t("quality.tresMauvais"),
+      shortLabel: t("quality.tresMauvaisShort"),
       color: colors.tresMauvais,
       range: `${thresholds.tresMauvais.min}-${thresholds.tresMauvais.max}`,
     },
     {
-      label: "Extrêmement mauvais",
-      shortLabel: "Extr. M.",
+      label: t("quality.extrMauvais"),
+      shortLabel: t("quality.extrMauvaisShort"),
       color: colors.extrMauvais,
       range: `${thresholds.extrMauvais.min}+`,
     },

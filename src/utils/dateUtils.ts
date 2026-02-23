@@ -175,14 +175,26 @@ export const normalizeTimestamp = (ts: string | number): number => {
   return new Date(ts).getTime();
 };
 
+/** Fonction de traduction optionnelle pour formatTooltipDate (clé + options pour le pluriel) */
+export type TooltipDateTranslateFn = (
+  key: string,
+  options?: Record<string, number | string>
+) => string;
+
 /**
  * Formate une date pour l'affichage dans un tooltip
- * Affiche la date et l'heure en locale française avec format relatif si récent
+ * Affiche la date et l'heure en locale avec format relatif si récent
  *
  * @param timestamp - Timestamp en format ISO string
+ * @param t - Fonction de traduction (si fournie, les libellés relatifs sont traduits)
+ * @param locale - Code de langue pour la date absolue (ex: "fr-FR", "en-US")
  * @returns Date formatée avec indication relative si récent
  */
-export const formatTooltipDate = (timestamp: string): string => {
+export const formatTooltipDate = (
+  timestamp: string,
+  t?: TooltipDateTranslateFn,
+  locale?: string
+): string => {
   try {
     const date = new Date(timestamp);
     const now = new Date();
@@ -190,28 +202,35 @@ export const formatTooltipDate = (timestamp: string): string => {
     const diffMinutes = Math.floor(diffMs / (1000 * 60));
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const lang = locale || "fr";
 
-    // Si moins de 1 minute, afficher "À l'instant"
-    if (diffMinutes < 1) {
-      return "À l'instant";
+    if (t) {
+      if (diffMinutes < 1) return t("tooltip.date.instant");
+      if (diffHours < 1)
+        return t("tooltip.date.minutesAgo", { count: diffMinutes });
+      if (diffDays < 1)
+        return t("tooltip.date.hoursAgo", { count: diffHours });
+      if (diffDays < 7) return t("tooltip.date.daysAgo", { count: diffDays });
+      return date.toLocaleString(lang, {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
     }
 
-    // Si moins de 1 heure, afficher en minutes
+    // Comportement par défaut (français) sans i18n
+    if (diffMinutes < 1) return "À l'instant";
     if (diffHours < 1) {
       return `Il y a ${diffMinutes} minute${diffMinutes > 1 ? "s" : ""}`;
     }
-
-    // Si moins de 24 heures, afficher en heures
     if (diffDays < 1) {
       return `Il y a ${diffHours} heure${diffHours > 1 ? "s" : ""}`;
     }
-
-    // Si moins de 7 jours, afficher en jours
     if (diffDays < 7) {
       return `Il y a ${diffDays} jour${diffDays > 1 ? "s" : ""}`;
     }
-
-    // Sinon, afficher la date complète
     return date.toLocaleString("fr-FR", {
       day: "2-digit",
       month: "short",
@@ -221,6 +240,6 @@ export const formatTooltipDate = (timestamp: string): string => {
     });
   } catch (error) {
     console.error("Erreur lors du formatage de la date:", error);
-    return "Date inconnue";
+    return t ? t("tooltip.date.unknown") : "Date inconnue";
   }
 };

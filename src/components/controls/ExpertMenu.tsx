@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,6 +34,7 @@ const ExpertMenu: React.FC<ExpertMenuProps> = ({
   onRawDataChange,
   rawDataAvailable = false,
 }) => {
+  const { t } = useTranslation();
   // Compter le nombre d'options actives pour l'indicateur
   const activeOptionsCount =
     (showModeling ? 1 : 0) + (showRawData ? 1 : 0);
@@ -49,7 +51,7 @@ const ExpertMenu: React.FC<ExpertMenuProps> = ({
             "focus:outline-none focus:ring-2 focus:ring-[#4271B3]/20 focus:border-[#4271B3]",
             "backdrop-blur-sm"
           )}
-          aria-label="Options avancées"
+          aria-label={t("controls.advancedOptions")}
         >
           {/* Icône d'engrenage */}
           <svg
@@ -70,8 +72,8 @@ const ExpertMenu: React.FC<ExpertMenuProps> = ({
               d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
             />
           </svg>
-          <span className="hidden sm:inline">Options avancées</span>
-          <span className="sm:hidden">Options</span>
+          <span className="hidden sm:inline">{t("controls.advancedOptions")}</span>
+          <span className="sm:hidden">{t("controls.advancedOptionsShort")}</span>
           
           {/* Indicateur d'options actives */}
           {activeOptionsCount > 0 && (
@@ -102,7 +104,7 @@ const ExpertMenu: React.FC<ExpertMenuProps> = ({
         sideOffset={5}
       >
         <DropdownMenuLabel className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
-          Options avancées
+          {t("controls.advancedOptions")}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
 

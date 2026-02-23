@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { createPortal } from "react-dom";
 import {
   StationInfo,
@@ -46,6 +47,7 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
   onLoadComparisonData,
   panelSize: externalPanelSize,
 }) => {
+  const { t } = useTranslation();
   const [internalPanelSize, setInternalPanelSize] =
     useState<PanelSize>("normal");
   const [showPollutantsList, setShowPollutantsList] = useState(false);
@@ -569,7 +571,7 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
                   <button
                     onClick={() => onRemoveStation(station.id)}
                     className="ml-2 p-1 text-gray-400 hover:text-red-600 transition-colors"
-                    title="Supprimer de la comparaison"
+                    title={t("panels.removeFromComparison")}
                   >
                     <svg
                       className="w-4 h-4"
@@ -602,7 +604,7 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
                 <div className="flex flex-col items-center space-y-2">
                   <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-600"></div>
                   <span className="text-xs sm:text-sm text-gray-500">
-                    Chargement des données...
+                    {t("panels.loadingData")}
                   </span>
                 </div>
               </div>
@@ -823,7 +825,7 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
                         />
                       </svg>
                       <span className="text-sm font-medium text-gray-700">
-                        Pas de temps
+                        {t("controls.timeStep")}
                       </span>
                     </div>
                     <div className="grid grid-cols-4 gap-1">

@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { TemporalDataPoint } from "../../types";
 
 interface TemporalTimelineProps {
@@ -20,6 +21,7 @@ const TemporalTimeline: React.FC<TemporalTimelineProps> = ({
   timeStep,
   disabled = false,
 }) => {
+  const { t } = useTranslation();
   const timelineRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [hoverPosition, setHoverPosition] = useState<number | null>(null);
@@ -241,13 +243,13 @@ const TemporalTimeline: React.FC<TemporalTimelineProps> = ({
           <span className="tabular-nums flex-shrink-0">{formatDate(effectiveEndDate)}</span>
         </div>
         <p className="mt-1 text-[11px] text-gray-600 text-center" role="note">
-          Heure locale
+          {t("historical.localTime")}
         </p>
       </div>
 
       {dataPoints.length > 0 && (
         <div className="flex justify-end text-xs text-gray-600">
-          {dataPoints.length} points temporels
+          {t("historical.pointsCount", { count: dataPoints.length })}
         </div>
       )}
 

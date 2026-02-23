@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { HistoricalModeButtonProps } from "../../types";
 import { Toggle } from "../ui/toggle";
 import { cn } from "../../lib/utils";
@@ -8,11 +9,12 @@ const HistoricalModeButton: React.FC<HistoricalModeButtonProps> = ({
   onToggle,
   disabled = false,
 }) => {
+  const { t } = useTranslation();
   const title = disabled
-    ? "Mode historique disponible uniquement pour les pas 15 min, heure et jour"
+    ? t("controls.historicalModeUnavailableTooltip")
     : isActive
-      ? "Désactiver le mode historique"
-      : "Activer le mode historique";
+      ? t("controls.historicalModeDeactivate")
+      : t("controls.historicalModeActivate");
 
   return (
     <Toggle
@@ -48,7 +50,9 @@ const HistoricalModeButton: React.FC<HistoricalModeButtonProps> = ({
 
       {/* Texte du bouton : "(indisponible)" comme le menu modélisation */}
       <span className="font-medium text-sm">
-        {disabled ? "Mode Historique (indisponible)" : "Mode Historique"}
+        {disabled
+          ? t("controls.historicalModeUnavailable")
+          : t("controls.historicalMode")}
       </span>
 
       {/* Indicateur d'état */}

@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   pollutants,
   isPollutantSupportedForTimeStep,
@@ -24,6 +25,7 @@ const PollutantDropdown: React.FC<PollutantDropdownProps> = ({
   onPollutantChange,
   selectedTimeStep,
 }) => {
+  const { t } = useTranslation();
   const availablePollutants = useMemo(
     () =>
       Object.entries(pollutants).filter(([code]) =>
@@ -42,14 +44,14 @@ const PollutantDropdown: React.FC<PollutantDropdownProps> = ({
         isPollutantSupportedForTimeStep(selectedPollutant, selectedTimeStep));
 
     if (isSupported) {
-      return `${pollutant.name}`;
+      return t(`pollutants.${selectedPollutant}`);
     }
 
     if (availablePollutants.length > 0) {
-      return `${availablePollutants[0][1].name}`;
+      return t(`pollutants.${availablePollutants[0][0]}`);
     }
 
-    return "Aucun polluant disponible";
+    return t("pollutants.noAvailable");
   };
 
   return (
@@ -96,7 +98,7 @@ const PollutantDropdown: React.FC<PollutantDropdownProps> = ({
                   "bg-[#e7eef8] text-[#1f3c6d]"
               )}
             >
-              {pollutant.name}
+              {t(`pollutants.${code}`)}
             </DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>

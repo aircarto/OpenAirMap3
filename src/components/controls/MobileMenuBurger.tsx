@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import PollutantDropdown from "./PollutantDropdown";
 import SourceDropdown from "./SourceDropdown";
 import TimeStepDropdown from "./TimeStepDropdown";
 import HistoricalModeButton from "./HistoricalModeButton";
 import AutoRefreshControl from "./AutoRefreshControl";
 import ModelingLayerControl from "./ModelingLayerControl";
+import LanguageSwitcher from "./LanguageSwitcher";
 import { ModelingLayerType } from "../../constants/mapLayers";
 import { Toast } from "../ui/toast";
 
@@ -49,6 +51,7 @@ const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
   onOpenSignalAirPanel,
   onOpenMobileAirPanel,
 }) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -75,7 +78,7 @@ const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="p-3 min-h-[44px] min-w-[44px] rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors touch-manipulation flex items-center justify-center"
-        aria-label="Menu"
+        aria-label={t("controls.menu")}
       >
         <svg
           className="w-6 h-6 text-gray-700 shrink-0"
@@ -103,12 +106,12 @@ const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
 
       {/* Menu déroulant */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-[min(100vw-2rem,28rem)] max-w-sm sm:max-w-md bg-white rounded-xl shadow-xl border border-gray-200 z-[2000] max-h-[80vh] overflow-y-auto overscroll-contain">
+        <div className="absolute right-0 top-full mt-2 w-[min(100vw-2rem,28rem)] max-w-sm sm:max-w-md bg-white rounded-xl shadow-xl border border-gray-200 z-[3000] max-h-[80vh] overflow-y-auto overscroll-contain">
           <div className="p-4 space-y-3 sm:space-y-2">
             {/* Polluant */}
             <div className="space-y-1">
               <label className="text-sm font-medium text-gray-700">
-                Polluant
+                {t("controls.pollutant")}
               </label>
               <PollutantDropdown
                 selectedPollutant={selectedPollutant}
@@ -120,7 +123,7 @@ const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
             {/* Sources */}
             <div className="space-y-1">
               <label className="text-sm font-medium text-gray-700">
-                Sources de données
+                {t("controls.sources")}
               </label>
               <SourceDropdown
                 selectedSources={selectedSources}
@@ -134,7 +137,7 @@ const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
             {/* Pas de temps */}
             <div className="space-y-1">
               <label className="text-sm font-medium text-gray-700">
-                Pas de temps
+                {t("controls.timeStep")}
               </label>
               <TimeStepDropdown
                 selectedTimeStep={selectedTimeStep}
@@ -148,7 +151,7 @@ const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
             {/* Carte de modélisation */}
             <div className="space-y-1">
               <label className="text-sm font-medium text-gray-700">
-                Carte de modélisation
+                {t("controls.modeling")}
               </label>
               <ModelingLayerControl
                 currentModelingLayer={currentModelingLayer}
@@ -162,7 +165,7 @@ const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
             {(onOpenSignalAirPanel || onOpenMobileAirPanel) && (
               <div className="space-y-1 border-t border-gray-200 pt-4">
                 <label className="text-sm font-medium text-gray-700">
-                  Sources spéciales
+                  {t("controls.specialSources")}
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {onOpenSignalAirPanel && (
@@ -174,7 +177,7 @@ const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
                       }}
                       className="px-3 py-2.5 min-h-[44px] text-sm font-medium rounded-lg border border-[#13A0DB]/40 text-[#13A0DB] bg-[#13A0DB]/5 hover:bg-[#13A0DB]/10 active:bg-[#13A0DB]/15 transition-colors touch-manipulation"
                     >
-                      Ouvrir SignalAir
+                      {t("controls.openSignalAir")}
                     </button>
                   )}
                   {onOpenMobileAirPanel && (
@@ -186,7 +189,7 @@ const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
                       }}
                       className="px-3 py-2.5 min-h-[44px] text-sm font-medium rounded-lg border border-green-500/40 text-green-700 bg-green-500/5 hover:bg-green-500/10 active:bg-green-500/15 transition-colors touch-manipulation"
                     >
-                      Ouvrir MobileAir
+                      {t("controls.openMobileAir")}
                     </button>
                   )}
                 </div>
@@ -195,7 +198,7 @@ const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
 
             {/* Mode historique */}
             <div className="space-y-1 border-t border-gray-200 pt-4">
-              <label className="text-sm font-medium text-gray-700">Mode</label>
+              <label className="text-sm font-medium text-gray-700">{t("controls.mode")}</label>
               <HistoricalModeButton
                 isActive={isHistoricalModeActive}
                 onToggle={onToggleHistoricalMode}
@@ -206,7 +209,7 @@ const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
             {/* Auto-refresh */}
             <div className="space-y-1 border-t border-gray-200 pt-4">
               <label className="text-sm font-medium text-gray-700">
-                Actualisation
+                {t("controls.refresh")}
               </label>
               <AutoRefreshControl
                 enabled={autoRefreshEnabled && !isHistoricalModeActive}
@@ -217,13 +220,21 @@ const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
               />
             </div>
 
+            {/* Langue */}
+            <div className="space-y-1 border-t border-gray-200 pt-4">
+              <label className="text-sm font-medium text-gray-700">
+                {t("common.chooseLanguage")}
+              </label>
+              <LanguageSwitcher />
+            </div>
+
             {/* Bouton fermer */}
             <div className="border-t border-gray-200 pt-4">
               <button
                 onClick={() => setIsOpen(false)}
                 className="w-full px-4 py-2 bg-[#4271B3] text-white rounded-md hover:bg-[#325a96] transition-colors"
               >
-                Fermer
+                {t("common.close")}
               </button>
             </div>
           </div>

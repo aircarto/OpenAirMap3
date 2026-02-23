@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { pasDeTemps } from "../../constants/timeSteps";
 import { sources } from "../../constants/sources";
 import {
@@ -31,6 +32,7 @@ const TimeStepDropdown: React.FC<TimeStepDropdownProps> = ({
   onSourceChange,
   onToast,
 }) => {
+  const { t } = useTranslation();
   // Fonction pour obtenir les pas de temps supportés par les sources sélectionnées
   const supportedTimeSteps = useMemo(() => {
     if (!selectedSources || selectedSources.length === 0) {
@@ -167,7 +169,7 @@ const TimeStepDropdown: React.FC<TimeStepDropdownProps> = ({
 
   const getDisplayText = () => {
     const timeStep = pasDeTemps[selectedTimeStep as keyof typeof pasDeTemps];
-    return timeStep ? timeStep.name : "Choisir un pas de temps";
+    return timeStep ? t(`timeSteps.${selectedTimeStep}`) : t("timeSteps.choose");
   };
 
   return (
@@ -216,7 +218,7 @@ const TimeStepDropdown: React.FC<TimeStepDropdownProps> = ({
                     "bg-[#e7eef8] text-[#1f3c6d]"
                 )}
               >
-                {timeStep.name}
+                {t(`timeSteps.${code}`)}
               </DropdownMenuRadioItem>
             ))}
         </DropdownMenuRadioGroup>

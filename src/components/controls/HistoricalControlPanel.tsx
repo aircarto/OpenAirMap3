@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { HistoricalControlPanelProps } from "../../types";
 import PollutionEpisodeCalendar from "./PollutionEpisodeCalendar";
 
@@ -28,6 +29,7 @@ const HistoricalControlPanel: React.FC<
     onOpenPlaybackPanel,
     selectedPollutant,
 }) => {
+  const { t } = useTranslation();
   // Fonction pour développer le panel (exposée via ref)
   const expandPanel = useCallback(() => {
     setIsExpanded(true);
@@ -144,7 +146,7 @@ const HistoricalControlPanel: React.FC<
                 />
               </svg>
               <h3 className="text-lg font-semibold text-gray-900">
-                Mode Historique
+                {t("historical.panelTitle")}
               </h3>
             </div>
             <div className="flex items-center space-x-2">
@@ -154,7 +156,7 @@ const HistoricalControlPanel: React.FC<
                   type="button"
                   onClick={onOpenPlaybackPanel}
                   className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                  title="Rouvrir le panel de contrôle de lecture"
+                  title={t("historical.reopenPlaybackPanel")}
                 >
                   <svg
                     className="w-4 h-4"
@@ -186,7 +188,7 @@ const HistoricalControlPanel: React.FC<
                   }
                 }}
                 className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                title={isExpanded ? "Réduire" : "Développer"}
+                title={isExpanded ? t("common.collapse") : t("common.expand")}
               >
                 <svg
                   className={`w-4 h-4 transition-transform ${
@@ -210,7 +212,7 @@ const HistoricalControlPanel: React.FC<
                   setIsExpanded(false);
                 }}
                 className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                title="Rabattre le panel"
+                title={t("historical.collapsePanel")}
               >
                 <svg
                   className="w-4 h-4"
@@ -231,7 +233,7 @@ const HistoricalControlPanel: React.FC<
                   type="button"
                   onClick={onToggleHistoricalMode}
                   className="p-1 text-red-400 hover:text-red-600 transition-colors"
-                  title="Désactiver le mode historique"
+                  title={t("historical.disableHistorical")}
                 >
                   <svg
                     className="w-4 h-4"
@@ -272,23 +274,19 @@ const HistoricalControlPanel: React.FC<
                   </svg>
                   <div>
                     <p className="font-medium text-blue-800">
-                      Sélectionnez une période pour analyser les données
-                      historiques
+                      {t("historical.instructionTitle")}
                     </p>
                     <p className="text-blue-700 mt-1">
-                      Les marqueurs actuels seront remplacés par les données de
-                      la période sélectionnée.
+                      {t("historical.instructionMarkers")}
                     </p>
-                    {state.timeStep === "qh" && (
+                    {(state.timeStep === "qh" || state.timeStep === "quartHeure") && (
                       <p className="text-blue-700 mt-1 italic">
-                        ⏱️ Durée maximale de la période limitée à 7 jours pour
-                        le pas de temps 15 minutes
+                        {t("historical.limit7days")}
                       </p>
                     )}
-                    {state.timeStep === "h" && (
+                    {(state.timeStep === "h" || state.timeStep === "heure") && (
                       <p className="text-blue-700 mt-1 italic">
-                        ⏱️ Durée maximale de la période limitée à 30 jours pour
-                        le pas de temps horaire
+                        {t("historical.limit30days")}
                       </p>
                     )}
                   </div>
@@ -298,7 +296,7 @@ const HistoricalControlPanel: React.FC<
               {/* Calendrier des épisodes de pollution */}
               <div className="space-y-4">
                 <div className="text-sm font-medium text-gray-700">
-                  Sélectionner une période temporelle
+                  {t("historical.selectTimePeriod")}
                 </div>
                 <PollutionEpisodeCalendar
                   selectedPollutant={selectedPollutant || ""}
@@ -335,7 +333,7 @@ const HistoricalControlPanel: React.FC<
                     />
                   </svg>
                   <span className="text-sm">
-                    Chargement des données historiques...
+                    {t("historical.loadingHistorical")}
                   </span>
                 </div>
               )}
@@ -375,7 +373,7 @@ const HistoricalControlPanel: React.FC<
                 }
               `}
                 >
-                  {state.loading ? "Chargement..." : "Charger les données"}
+                  {state.loading ? t("common.loading") : t("historical.loadData")}
                 </button>
 
                 <button
@@ -383,7 +381,7 @@ const HistoricalControlPanel: React.FC<
                   onClick={controls.onReset}
                   className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium"
                 >
-                  Réinitialiser
+                  {t("common.reset")}
                 </button>
               </div>
 
@@ -405,7 +403,7 @@ const HistoricalControlPanel: React.FC<
                       />
                     </svg>
                     <span className="text-sm font-medium">
-                      Données chargées : {state.data.length} points temporels
+                      {t("historical.dataLoadedPoints", { count: state.data.length })}
                     </span>
                   </div>
                 </div>
@@ -414,7 +412,7 @@ const HistoricalControlPanel: React.FC<
             </div>
           ) : (
             <div className="p-2 text-center text-sm text-gray-500">
-              Panel réduit - Cliquez sur le bouton pour développer
+              {t("historical.panelCollapsed")}
             </div>
           )}
         </div>

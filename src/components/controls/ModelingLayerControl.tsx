@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
-import { ModelingLayerType, modelingLayers } from "../../constants/mapLayers";
+import { useTranslation } from "react-i18next";
+import { ModelingLayerType } from "../../constants/mapLayers";
 import { pollutants } from "../../constants/pollutants";
 import { isModelingAvailable } from "../../services/ModelingLayerService";
 import {
@@ -24,6 +25,7 @@ const ModelingLayerControl: React.FC<ModelingLayerControlProps> = ({
   selectedPollutant,
   selectedTimeStep = "heure",
 }) => {
+  const { t } = useTranslation();
   const handleLayerSelect = (layerType: ModelingLayerType) => {
     // Toggle: si le layer est déjà sélectionné, on le désélectionne
     if (currentModelingLayer === layerType) {
@@ -35,18 +37,17 @@ const ModelingLayerControl: React.FC<ModelingLayerControlProps> = ({
 
   const getDisplayLabel = (layerType: ModelingLayerType): string => {
     if (layerType === "pollutant" && selectedPollutant) {
-      const pollutantName =
-        pollutants[selectedPollutant]?.name || selectedPollutant;
-      return `Modélisation ${pollutantName}`;
+      const pollutantName = t(`pollutants.${selectedPollutant}`);
+      return `${t("controls.modelingPollutant")} ${pollutantName}`;
     }
-    return modelingLayers[layerType];
+    return t("controls.modelingVent");
   };
 
   const getDisplayText = () => {
     if (currentModelingLayer) {
       return getDisplayLabel(currentModelingLayer);
     }
-    return "Carte de modélisation";
+    return t("controls.modeling");
   };
 
   const layerTypes: ModelingLayerType[] = ["pollutant", "vent"];
@@ -89,14 +90,14 @@ const ModelingLayerControl: React.FC<ModelingLayerControlProps> = ({
           )}
           title={
             isDisabled
-              ? "Modélisations non disponibles pour le pas de temps sélectionné"
+              ? t("controls.modelingUnavailable")
               : currentModelingLayer
-              ? `Carte de modélisation: ${getDisplayLabel(currentModelingLayer)}`
-              : "Carte de modélisation"
+              ? `${t("controls.modeling")}: ${getDisplayLabel(currentModelingLayer)}`
+              : t("controls.modeling")
           }
         >
           <span className="block truncate pr-6">
-            {isDisabled ? "Modélisation (indisponible)" : getDisplayText()}
+            {isDisabled ? t("controls.modelingUnavailable") : getDisplayText()}
           </span>
           {!isDisabled && (
             <span className="absolute inset-y-0 right-0 flex items-center pr-2.5 pointer-events-none text-gray-600">

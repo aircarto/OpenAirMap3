@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import L from "leaflet";
 import { MeasurementDevice } from "../../types";
 import { getMarkerPath } from "../../utils";
@@ -51,6 +52,7 @@ const CustomSearchControl: React.FC<CustomSearchControlProps> = ({
   mapRef,
   onSensorSelected,
 }) => {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -382,7 +384,7 @@ const CustomSearchControl: React.FC<CustomSearchControlProps> = ({
     if (device.status === "active" && device.value >= 0) {
       return `${Math.round(device.value)} ${device.unit}`;
     }
-    return "Pas de données";
+    return t("search.noData");
   };
 
   // Composant pour afficher le marqueur avec la valeur
@@ -504,7 +506,7 @@ const CustomSearchControl: React.FC<CustomSearchControlProps> = ({
           <button
             onClick={handleToggleExpand}
             className="w-10 h-10 bg-white border border-gray-300 rounded-lg shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-            aria-label="Ouvrir la recherche"
+            aria-label={t("search.openSearch")}
           >
             <svg
               className="h-5 w-5 text-gray-600"
@@ -537,7 +539,7 @@ const CustomSearchControl: React.FC<CustomSearchControlProps> = ({
                     setIsOpen(true);
                   }
                 }}
-                placeholder="Rechercher une adresse ou une station/capteur..."
+                placeholder={t("search.placeholder")}
                 className="w-full px-4 py-2 pr-20 border border-gray-300 rounded-lg shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
               />
               <div className="absolute right-10 top-1/2 -translate-y-1/2">
@@ -582,7 +584,7 @@ const CustomSearchControl: React.FC<CustomSearchControlProps> = ({
               <button
                 onClick={handleToggleExpand}
                 className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
-                aria-label="Fermer la recherche"
+                aria-label={t("search.closeSearch")}
               >
                 <svg
                   className="h-4 w-4"

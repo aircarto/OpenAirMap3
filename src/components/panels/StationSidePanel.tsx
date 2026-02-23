@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import {
   StationInfo,
   ChartControls,
@@ -46,6 +47,7 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
   onComparisonModeToggle,
   isComparisonMode = false,
 }) => {
+  const { t } = useTranslation();
   const [state, setState] = useState<SidePanelState>({
     isOpen: false,
     selectedStation: null,
@@ -480,13 +482,13 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
         setState((prev) => ({
           ...prev,
           loading: false,
-          error: "Erreur lors du chargement des données historiques",
+          error: t("panels.stationSidePanel.historicalDataLoadError"),
         }));
       } finally {
         isLoadingRef.current = false;
       }
     },
-    [] // Les services sont stables via useRef, pas besoin de dépendances
+    [t]
   );
 
   const getDateRange = (
@@ -607,7 +609,9 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
       if (wasAdjusted) {
         const maxDays = getMaxHistoryDays(prev.chartControls.timeStep);
         if (maxDays) {
-          infoMessage = `La période a été automatiquement ajustée à ${maxDays} jours maximum pour le pas de temps sélectionné.`;
+          infoMessage = t("panels.stationSidePanel.periodAutoAdjusted", {
+            maxDays,
+          });
           // Faire disparaître le message après 5 secondes
           setTimeout(() => {
             setState((current) => ({
@@ -747,7 +751,9 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
       if (wasAdjusted) {
         const maxDays = getMaxHistoryDays(timeStep);
         if (maxDays) {
-          infoMessage = `La période a été automatiquement ajustée à ${maxDays} jours maximum pour le pas de temps sélectionné.`;
+          infoMessage = t("panels.stationSidePanel.periodAutoAdjusted", {
+            maxDays,
+          });
           // Faire disparaître le message après 5 secondes
           setTimeout(() => {
             setState((current) => ({
@@ -887,12 +893,12 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
-                Comparaison multi-polluants
+                {t("panels.stationSidePanel.comparisonTitle")}
               </h2>
               {/* Rappel visuel du bouton de réouverture */}
               <div
                 className="p-1 rounded bg-blue-600 border border-blue-600"
-                title="Bouton bleu pour rouvrir le panel"
+                title={t("panels.stationSidePanel.reopenButtonTooltip")}
               >
                 <svg
                   className="w-3 h-3 text-white"
@@ -923,8 +929,8 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
               className="p-1.5 sm:p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
               title={
                 currentPanelSize === "fullscreen"
-                  ? "Rétrécir le panel"
-                  : "Agrandir le panel"
+                  ? t("panels.shrinkPanel")
+                  : t("panels.expandPanel")
               }
             >
               <svg
@@ -955,7 +961,7 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
             <button
               onClick={() => handlePanelSizeChange("hidden")}
               className="p-1.5 sm:p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-              title="Rabattre le panel"
+              title={t("panels.collapsePanel")}
             >
               <svg
                 className="w-3.5 h-3.5 sm:w-4 sm:h-4"
@@ -985,7 +991,7 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
                     {selectedStation.name.replace("_", " ")}
                   </p>
                   <p className="text-xs text-gray-500 truncate">
-                    Station de référence AtmoSud
+                    {t("panels.stationSidePanel.stationSourceAtmoRef")}
                     {selectedStation.address
                       ? ` · ${selectedStation.address}`
                       : ""}
@@ -1022,8 +1028,8 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
                       />
                     </svg>
                     {isComparisonMode
-                      ? "Désactiver comparaison"
-                      : "Activer comparaison"}
+                      ? t("panels.stationSidePanel.disableComparison")
+                      : t("panels.stationSidePanel.enableComparison")}
                   </button>
                 )}
               </div>
@@ -1033,7 +1039,7 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
             <div className="flex-1 min-h-64 sm:min-h-80 md:min-h-96 lg:min-h-[28rem]">
               <div className="mb-2 sm:mb-3">
                 <h3 className="text-sm font-medium text-gray-700">
-                  Évolution temporelle
+                  {t("panels.stationSidePanel.temporalEvolution")}
                 </h3>
               </div>
               {state.loading ? (
@@ -1041,7 +1047,7 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
                   <div className="flex flex-col items-center space-y-2">
                     <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-[#4271B3]"></div>
                     <span className="text-xs sm:text-sm text-gray-500">
-                      Chargement des données...
+                      {t("panels.loadingData")}
                     </span>
                   </div>
                 </div>
@@ -1089,11 +1095,16 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
                           />
                         </svg>
                         <span className="text-sm font-medium text-gray-700 truncate">
-                          Polluants affichés
+                          {t("panels.stationSidePanel.pollutantsDisplayed")}
                         </span>
                         <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full flex-shrink-0">
-                          {state.chartControls.selectedPollutants.length}{" "}
-                          sélectionné(s)
+                          {t(
+                            "panels.stationSidePanel.selectedCount",
+                            {
+                              count: state.chartControls.selectedPollutants
+                                .length,
+                            }
+                          )}
                         </span>
                       </div>
                       <svg
@@ -1151,9 +1162,13 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
                                 }
                                 title={
                                   isLastSelectedAndDisabled
-                                    ? "Au moins un polluant doit rester sélectionné"
+                                    ? t(
+                                        "panels.stationSidePanel.atLeastOnePollutant"
+                                      )
                                     : !isEnabled
-                                    ? "Ce polluant n'est pas disponible pour cette station"
+                                    ? t(
+                                        "panels.stationSidePanel.pollutantNotAvailable"
+                                      )
                                     : undefined
                                 }
                                 className={`w-full flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-md text-sm transition-all duration-200 ${
@@ -1196,11 +1211,13 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
                                   )}
                                 </div>
                                 <span className="flex-1 text-left truncate">
-                                  {pollutant.name}
+                                  {t(`pollutants.${pollutantCode}`)}
                                 </span>
                                 {!isEnabled && (
                                   <span className="text-xs text-gray-400 flex-shrink-0">
-                                    Non disponible
+                                    {t(
+                                      "panels.stationSidePanel.notAvailable"
+                                    )}
                                   </span>
                                 )}
                               </button>
@@ -1273,7 +1290,9 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
                       modelingDisabled={state.chartControls.timeStep !== "heure"}
                       modelingDisabledReason={
                         state.chartControls.timeStep !== "heure"
-                          ? "Disponible uniquement au pas de temps horaire"
+                          ? t(
+                              "panels.stationSidePanel.modelingOnlyHourly"
+                            )
                           : undefined
                       }
                     />
@@ -1325,7 +1344,7 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
                           />
                         </svg>
                         <span className="text-sm font-medium text-gray-700">
-                          Pas de temps
+                          {t("controls.timeStep")}
                         </span>
                       </div>
                       <ToggleGroup
@@ -1377,7 +1396,10 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
 
                           let tooltip = label;
                           if (isDisabledByRange && maxDays) {
-                            tooltip = `Limité à ${maxDays} jours pour ce pas de temps. Réduisez la période historique.`;
+                            tooltip = t(
+                              "panels.stationSidePanel.timeStepRangeLimit",
+                              { maxDays }
+                            );
                           }
 
                           return (
@@ -1434,11 +1456,12 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
                           return (
                             <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-md">
                               <p className="text-[11px] sm:text-xs text-amber-700">
-                                <span className="font-medium"></span> Les pas de
-                                temps {timeStepLabels.join(" et ")} sont
-                                désactivés car la période sélectionnée dépasse
-                                leur limite. Réduisez la période historique pour
-                                les activer.
+                                {t(
+                                  "panels.stationSidePanel.timeStepsDisabledByRange",
+                                  {
+                                    labels: timeStepLabels.join(", "),
+                                  }
+                                )}
                               </p>
                             </div>
                           );
