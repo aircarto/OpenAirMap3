@@ -530,11 +530,8 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
     );
   };
 
-  // Wrapper pour désactiver les clics SignalAir en mode historique
+  // Wrapper : en mode historique les signalements restent cliquables pour ouvrir le détail
   const handleSignalAirMarkerClickWrapper = (report: SignalAirReport) => {
-    if (isHistoricalModeActive) {
-      return;
-    }
     signalAir.handleSignalAirMarkerClick(report);
   };
 
