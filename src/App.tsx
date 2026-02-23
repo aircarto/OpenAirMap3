@@ -28,10 +28,12 @@ import HistoricalControlPanel from "./components/controls/HistoricalControlPanel
 import HistoricalPlaybackControl from "./components/controls/HistoricalPlaybackControl";
 import MobileMenuBurger from "./components/controls/MobileMenuBurger";
 import ModelingLayerControl from "./components/controls/ModelingLayerControl";
+import SpecialSourceHeaderDropdown from "./components/controls/SpecialSourceHeaderDropdown";
 import InformationModal from "./components/modals/InformationModal";
 import { ModelingLayerType } from "./constants/mapLayers";
 import { useToast } from "./hooks/useToast";
 import { ToastContainer } from "./components/ui/toast";
+import { cn } from "./lib/utils";
 
 const App: React.FC = () => {
   // Configuration basée sur le domaine
@@ -110,6 +112,8 @@ const App: React.FC = () => {
     string | null
   >(null);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+  const [openSignalAirPanelRequest, setOpenSignalAirPanelRequest] = useState(0);
+  const [openMobileAirPanelRequest, setOpenMobileAirPanelRequest] = useState(0);
 
   // États pour gérer SignalAir et MobileAir indépendamment du système de sources
   const [isSignalAirEnabled, setIsSignalAirEnabled] = useState(false);
@@ -322,6 +326,11 @@ const App: React.FC = () => {
       hasHistoricalData &&
       temporalState.historicalSignalAirReports?.length > 0);
 
+  const hasSignalAirData =
+    hasSignalAirLoaded &&
+    reportsForMap.filter((r) => r.source === "signalair").length > 0;
+  const hasMobileAirData = devices.some((d) => d.source === "mobileair");
+
   // Fonction pour gérer le chargement des données historiques
   const handleLoadHistoricalData = () => {
     if (temporalState.startDate && temporalState.endDate) {
@@ -352,114 +361,155 @@ const App: React.FC = () => {
   const mapCenter = domainConfig.mapCenter;
   const mapZoom = domainConfig.mapZoom;
 
+  const handleSignalAirHeaderClick = useCallback(() => {
+    setOpenSignalAirPanelRequest((r) => r + 1);
+    handleSignalAirPanelOpen();
+  }, []);
+
+  const handleMobileAirHeaderClick = useCallback(() => {
+    setOpenMobileAirPanelRequest((r) => r + 1);
+    handleMobileAirPanelOpen();
+  }, []);
+
+  const headerDisabled = isHistoricalModeActive && temporalState.isPlaying;
+
   return (
     <div className="h-screen flex flex-col bg-gray-50">
-      {/* Header avec contrôles intégrés */}
-      <header className="bg-white border-b border-gray-200 px-4 py-1 z-[1600]">
-        <div className="flex items-center justify-between">
-          {/* Titre et logo groupés à gauche */}
-          <div className="flex items-start space-x-3 md:space-x-4">
-            <div className="flex items-center space-x-2">
+      {/* Header : barre unique avec regroupement logique des contrôles */}
+      <header className="relative bg-white border-b border-gray-200/80 shadow-sm z-[1600]">
+        <div className="px-4 sm:px-5 py-2.5">
+          <div className="flex items-center justify-between gap-3 flex-nowrap">
+            {/* Marque : logo + titre */}
+            <div className="flex items-center gap-3 min-w-0 shrink-0">
               <img
                 src={domainConfig.logo}
                 alt={`${domainConfig.organization} logo principal`}
-                className="h-8 md:h-11"
+                className="h-8 md:h-9 object-contain"
               />
+              <h1 className="text-base md:text-lg font-semibold text-[#4271B3] leading-tight truncate">
+                {domainConfig.title}
+              </h1>
             </div>
 
-            <h1 className="text-lg md:text-xl font-semibold text-[#4271B3] leading-none">
-              {domainConfig.title}
-            </h1>
-          </div>
-
-          {/* Menu burger sur mobile */}
-          <MobileMenuBurger
-            selectedPollutant={selectedPollutant}
-            onPollutantChange={setSelectedPollutant}
-            selectedSources={selectedSources}
-            onSourceChange={setSelectedSources}
-            selectedTimeStep={selectedTimeStep}
-            onTimeStepChange={setSelectedTimeStep}
-            isHistoricalModeActive={isHistoricalModeActive}
-            onToggleHistoricalMode={toggleHistoricalMode}
-            isHistoricalModeAllowed={isHistoricalModeAllowed}
-            autoRefreshEnabled={autoRefreshEnabled}
-            onToggleAutoRefresh={setAutoRefreshEnabled}
-            lastRefresh={lastRefresh}
-            loading={loading}
-            currentModelingLayer={currentModelingLayer}
-            onModelingLayerChange={setCurrentModelingLayer}
-            onToast={addToast}
-          />
-
-          {/* Contrôles intégrés dans l'en-tête - Desktop uniquement */}
-          <div className="hidden lg:flex items-center space-x-2">
-            <div className={`flex items-center space-x-3 ${isHistoricalModeActive && temporalState.isPlaying ? "opacity-50 pointer-events-none" : ""}`}>
-              <PollutantDropdown
+            {/* Menu burger — affiché sous xl (1280px) pour éviter débordement toolbar */}
+            <div className="xl:hidden flex items-center gap-2 shrink-0">
+              <MobileMenuBurger
                 selectedPollutant={selectedPollutant}
                 onPollutantChange={setSelectedPollutant}
-                selectedTimeStep={selectedTimeStep}
-              />
-              <SourceDropdown
                 selectedSources={selectedSources}
-                selectedTimeStep={selectedTimeStep}
                 onSourceChange={setSelectedSources}
-                onTimeStepChange={setSelectedTimeStep}
-                onToast={addToast}
-              />
-              <TimeStepDropdown
                 selectedTimeStep={selectedTimeStep}
-                selectedSources={selectedSources}
                 onTimeStepChange={setSelectedTimeStep}
-                onSourceChange={setSelectedSources}
-                onToast={addToast}
-              />
-            </div>
-
-            <div className={`flex items-center space-x-4 border-gray-300 pl-6 text-xs text-gray-600 ${isHistoricalModeActive && temporalState.isPlaying ? "opacity-50 pointer-events-none" : ""}`}>
-              <AutoRefreshControl
-                enabled={autoRefreshEnabled && !isHistoricalModeActive}
-                onToggle={setAutoRefreshEnabled}
+                isHistoricalModeActive={isHistoricalModeActive}
+                onToggleHistoricalMode={toggleHistoricalMode}
+                isHistoricalModeAllowed={isHistoricalModeAllowed}
+                autoRefreshEnabled={autoRefreshEnabled}
+                onToggleAutoRefresh={setAutoRefreshEnabled}
                 lastRefresh={lastRefresh}
                 loading={loading}
-                selectedTimeStep={selectedTimeStep}
-                historicalCurrentDate={isHistoricalModeActive && temporalState.isPlaying ? temporalState.currentDate : undefined}
-              />
-            </div>
-            <div className={`flex items-center space-x-4 border-gray-300 pl-2 border-l ${isHistoricalModeActive && temporalState.isPlaying ? "opacity-50 pointer-events-none" : ""}`}>
-              <ModelingLayerControl
                 currentModelingLayer={currentModelingLayer}
                 onModelingLayerChange={setCurrentModelingLayer}
-                selectedPollutant={selectedPollutant}
-                selectedTimeStep={selectedTimeStep}
-              />
-            </div>
-            <div className="flex items-center space-x-3 border-l border-r border-gray-300 pl-2 pr-2">
-              <HistoricalModeButton
-                isActive={isHistoricalModeActive}
-                onToggle={toggleHistoricalMode}
-                disabled={!isHistoricalModeAllowed}
+                onToast={addToast}
+                onOpenSignalAirPanel={() => {
+                  setOpenSignalAirPanelRequest((r) => r + 1);
+                  handleSignalAirPanelOpen();
+                }}
+                onOpenMobileAirPanel={() => {
+                  setOpenMobileAirPanelRequest((r) => r + 1);
+                  handleMobileAirPanelOpen();
+                }}
               />
             </div>
 
-            <button
-              type="button"
-              onClick={() => setIsInfoModalOpen(true)}
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-[#325A96] text-medium font-semibold text-[#325A96] transition hover:bg-gray-100 hover:text-gray-900"
-              aria-label="Informations sur OpenAirMap"
+            {/* Barre d’outils — desktop */}
+            <div
+              className={cn(
+                "hidden xl:flex items-center gap-2 flex-1 min-w-0 justify-end flex-nowrap overflow-hidden",
+                headerDisabled && "opacity-50 pointer-events-none"
+              )}
             >
-              i
-            </button>
+              {/* Filtres : polluant, sources, pas de temps */}
+              <div className="flex items-center gap-2 rounded-lg bg-gray-50/80 px-2 py-1.5 border border-gray-200/60 min-w-0 shrink">
+                <PollutantDropdown
+                  selectedPollutant={selectedPollutant}
+                  onPollutantChange={setSelectedPollutant}
+                  selectedTimeStep={selectedTimeStep}
+                />
+                <SourceDropdown
+                  selectedSources={selectedSources}
+                  selectedTimeStep={selectedTimeStep}
+                  onSourceChange={setSelectedSources}
+                  onTimeStepChange={setSelectedTimeStep}
+                  onToast={addToast}
+                />
+                <TimeStepDropdown
+                  selectedTimeStep={selectedTimeStep}
+                  selectedSources={selectedSources}
+                  onTimeStepChange={setSelectedTimeStep}
+                  onSourceChange={setSelectedSources}
+                  onToast={addToast}
+                />
+              </div>
+
+              {/* Actualisation + Modélisation */}
+              <div className="flex items-center gap-2 pl-1 border-l border-gray-200/80 min-w-0 shrink">
+                <AutoRefreshControl
+                  enabled={autoRefreshEnabled && !isHistoricalModeActive}
+                  onToggle={setAutoRefreshEnabled}
+                  lastRefresh={lastRefresh}
+                  loading={loading}
+                  selectedTimeStep={selectedTimeStep}
+                  historicalCurrentDate={
+                    isHistoricalModeActive && temporalState.isPlaying
+                      ? temporalState.currentDate
+                      : undefined
+                  }
+                />
+                <ModelingLayerControl
+                  currentModelingLayer={currentModelingLayer}
+                  onModelingLayerChange={setCurrentModelingLayer}
+                  selectedPollutant={selectedPollutant}
+                  selectedTimeStep={selectedTimeStep}
+                />
+              </div>
+
+              {/* Mode historique + Sources spéciales + Info */}
+              <div className="flex items-center gap-2 pl-1 border-l border-gray-200/80 min-w-0 shrink">
+                <HistoricalModeButton
+                  isActive={isHistoricalModeActive}
+                  onToggle={toggleHistoricalMode}
+                  disabled={!isHistoricalModeAllowed}
+                />
+                <SpecialSourceHeaderDropdown
+                  onSignalAirClick={handleSignalAirHeaderClick}
+                  onMobileAirClick={handleMobileAirHeaderClick}
+                  isSignalAirVisible={isSignalAirVisible}
+                  isMobileAirVisible={isMobileAirVisible}
+                  onSignalAirToggle={setIsSignalAirVisible}
+                  onMobileAirToggle={setIsMobileAirVisible}
+                  hasSignalAirData={hasSignalAirData}
+                  hasMobileAirData={hasMobileAirData}
+                />
+                <button
+                  type="button"
+                  onClick={() => setIsInfoModalOpen(true)}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#325A96]/40 text-sm font-semibold text-[#325A96] transition-colors hover:bg-[#325A96]/10 focus:outline-none focus:ring-2 focus:ring-[#4271B3]/20"
+                  aria-label="Informations sur OpenAirMap"
+                >
+                  i
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Barre de progression pour le chargement */}
         {loading && (
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-200">
+          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-100">
             <div
-              className="h-full bg-blue-600 animate-pulse"
+              className="h-full bg-[#4271B3] animate-pulse rounded-full"
               style={{ width: "100%" }}
-            ></div>
+            />
           </div>
         )}
       </header>
@@ -537,6 +587,8 @@ const App: React.FC = () => {
           onMobileAirToggle={setIsMobileAirVisible}
           onSignalAirPanelOpen={handleSignalAirPanelOpen}
           onMobileAirPanelOpen={handleMobileAirPanelOpen}
+          openSignalAirPanelRequest={openSignalAirPanelRequest}
+          openMobileAirPanelRequest={openMobileAirPanelRequest}
         />
 
         {/* Panel de contrôle historique (sélection de date) - Visible si mode historique actif ET panel de date visible */}

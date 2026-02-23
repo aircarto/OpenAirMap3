@@ -25,6 +25,8 @@ interface MobileMenuBurgerProps {
   currentModelingLayer: ModelingLayerType | null;
   onModelingLayerChange: (layerType: ModelingLayerType | null) => void;
   onToast?: (toast: Omit<Toast, "id">) => void;
+  onOpenSignalAirPanel?: () => void;
+  onOpenMobileAirPanel?: () => void;
 }
 
 const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
@@ -44,6 +46,8 @@ const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
   currentModelingLayer,
   onModelingLayerChange,
   onToast,
+  onOpenSignalAirPanel,
+  onOpenMobileAirPanel,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -66,15 +70,15 @@ const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
   }, [isOpen]);
 
   return (
-    <div className="relative lg:hidden" ref={menuRef}>
+    <div className="relative xl:hidden" ref={menuRef}>
       {/* Bouton burger */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="p-2 rounded-md hover:bg-gray-100 transition-colors"
+        className="p-3 min-h-[44px] min-w-[44px] rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors touch-manipulation flex items-center justify-center"
         aria-label="Menu"
       >
         <svg
-          className="w-6 h-6 text-gray-700"
+          className="w-6 h-6 text-gray-700 shrink-0"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -99,8 +103,8 @@ const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
 
       {/* Menu déroulant */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-screen max-w-sm sm:max-w-md bg-white rounded-lg shadow-xl border border-gray-200 z-[2000] max-h-[80vh] overflow-y-auto">
-          <div className="p-4 space-y-2">
+        <div className="absolute right-0 top-full mt-2 w-[min(100vw-2rem,28rem)] max-w-sm sm:max-w-md bg-white rounded-xl shadow-xl border border-gray-200 z-[2000] max-h-[80vh] overflow-y-auto overscroll-contain">
+          <div className="p-4 space-y-3 sm:space-y-2">
             {/* Polluant */}
             <div className="space-y-1">
               <label className="text-sm font-medium text-gray-700">
@@ -141,7 +145,7 @@ const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
               />
             </div>
 
-            {/* Période SignalAir */}
+            {/* Carte de modélisation */}
             <div className="space-y-1">
               <label className="text-sm font-medium text-gray-700">
                 Carte de modélisation
@@ -153,6 +157,41 @@ const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
                 selectedTimeStep={selectedTimeStep}
               />
             </div>
+
+            {/* Sources spéciales */}
+            {(onOpenSignalAirPanel || onOpenMobileAirPanel) && (
+              <div className="space-y-1 border-t border-gray-200 pt-4">
+                <label className="text-sm font-medium text-gray-700">
+                  Sources spéciales
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {onOpenSignalAirPanel && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onOpenSignalAirPanel();
+                        setIsOpen(false);
+                      }}
+                      className="px-3 py-2.5 min-h-[44px] text-sm font-medium rounded-lg border border-[#13A0DB]/40 text-[#13A0DB] bg-[#13A0DB]/5 hover:bg-[#13A0DB]/10 active:bg-[#13A0DB]/15 transition-colors touch-manipulation"
+                    >
+                      Ouvrir SignalAir
+                    </button>
+                  )}
+                  {onOpenMobileAirPanel && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onOpenMobileAirPanel();
+                        setIsOpen(false);
+                      }}
+                      className="px-3 py-2.5 min-h-[44px] text-sm font-medium rounded-lg border border-green-500/40 text-green-700 bg-green-500/5 hover:bg-green-500/10 active:bg-green-500/15 transition-colors touch-manipulation"
+                    >
+                      Ouvrir MobileAir
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Mode historique */}
             <div className="space-y-1 border-t border-gray-200 pt-4">

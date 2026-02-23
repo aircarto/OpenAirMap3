@@ -49,8 +49,6 @@ import CustomSpiderfiedMarkers from "./CustomSpiderfiedMarkers";
 import CustomSpiderfiedSignalAirMarkers from "./CustomSpiderfiedSignalAirMarkers";
 import MarkerWithTooltip from "./MarkerWithTooltip";
 import DeviceStatistics from "./DeviceStatistics";
-import SpecialSourceControls from "./SpecialSourceControls";
-
 import { AtmoRefService } from "../../services/AtmoRefService";
 import { AtmoMicroService } from "../../services/AtmoMicroService";
 import { NebuleAirService } from "../../services/NebuleAirService";
@@ -133,6 +131,10 @@ interface AirQualityMapProps {
   onMobileAirToggle?: (visible: boolean) => void;
   onSignalAirPanelOpen?: () => void;
   onMobileAirPanelOpen?: () => void;
+  /** Incrémenter pour demander l'ouverture du panel SignalAir (depuis le header) */
+  openSignalAirPanelRequest?: number;
+  /** Incrémenter pour demander l'ouverture du panel MobileAir (depuis le header) */
+  openMobileAirPanelRequest?: number;
 }
 
 const defaultClusterConfig = {
@@ -206,6 +208,8 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
   onMobileAirToggle,
   onSignalAirPanelOpen,
   onMobileAirPanelOpen,
+  openSignalAirPanelRequest = 0,
+  openMobileAirPanelRequest = 0,
 }) => {
   // Configuration des clusters et spiderfier
   const [clusterConfig, setClusterConfig] = useState(defaultClusterConfig);
@@ -270,6 +274,19 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
     onMobileAirSensorSelected,
     isEnabled: isMobileAirEnabled,
   });
+
+  // Ouvrir les panels SignalAir / MobileAir quand le header demande (bouton "Sources spéciales")
+  useEffect(() => {
+    if (openSignalAirPanelRequest > 0) {
+      signalAir.handleOpenSignalAirPanel();
+    }
+  }, [openSignalAirPanelRequest]);
+
+  useEffect(() => {
+    if (openMobileAirPanelRequest > 0) {
+      mobileAir.handleOpenMobileAirSelectionPanel();
+    }
+  }, [openMobileAirPanelRequest]);
 
   // Hook pour gérer le tooltip au hover sur les marqueurs (désactivé - on utilise les tooltips Leaflet natifs maintenant)
   // const { tooltip, showTooltip, hideTooltip, isHidden } = useMarkerTooltip({
@@ -1165,24 +1182,6 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
             />
           )}
         </MapContainer>
-
-        {/* Contrôles spéciaux pour SignalAir et MobileAir */}
-        <SpecialSourceControls
-          onSignalAirClick={() => {
-            signalAir.handleOpenSignalAirPanel();
-            if (onSignalAirPanelOpen) onSignalAirPanelOpen();
-          }}
-          onMobileAirClick={() => {
-            mobileAir.handleOpenMobileAirSelectionPanel();
-            if (onMobileAirPanelOpen) onMobileAirPanelOpen();
-          }}
-          isSignalAirVisible={isSignalAirVisible}
-          isMobileAirVisible={isMobileAirVisible}
-          onSignalAirToggle={onSignalAirToggle || (() => {})}
-          onMobileAirToggle={onMobileAirToggle || (() => {})}
-          hasSignalAirData={signalAirHasLoaded && reports.length > 0}
-          hasMobileAirData={mobileAir.mobileAirRoutes.length > 0}
-        />
 
         {signalAir.signalAirFeedback && (
           <div className="absolute top-24 right-4 z-[1000] max-w-sm bg-white border border-blue-200 text-blue-800 text-sm px-3 py-2 rounded-lg shadow-lg">
