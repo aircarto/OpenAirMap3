@@ -15,28 +15,11 @@ interface SignalAirDetailPanelProps {
   onCenterMap?: (report: SignalAirReport) => void;
 }
 
-const SIGNAL_TYPE_LABELS: Record<string, { label: string; emoji: string }> = {
-  odeur: { label: "Odeurs", emoji: "👃" },
-  bruit: { label: "Bruits", emoji: "🔊" },
-  brulage: { label: "Brûlage", emoji: "🔥" },
-  visuel: { label: "Visuel", emoji: "👀" },
-};
-
-const formatDateTime = (value?: string | null) => {
-  if (!value) {
-    return "Non spécifiée";
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return date.toLocaleString("fr-FR", {
-    dateStyle: "long",
-    timeStyle: "short",
-  });
+const SIGNAL_TYPE_EMOJI: Record<string, string> = {
+  odeur: "👃",
+  bruit: "🔊",
+  brulage: "🔥",
+  visuel: "👀",
 };
 
 const SignalAirDetailPanel: React.FC<SignalAirDetailPanelProps> = ({
@@ -48,9 +31,24 @@ const SignalAirDetailPanel: React.FC<SignalAirDetailPanelProps> = ({
   panelSize: externalPanelSize,
   onCenterMap,
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [internalPanelSize, setInternalPanelSize] =
     useState<PanelSize>("normal");
+
+  const formatDateTime = (value?: string | null) => {
+    if (!value) {
+      return t("panels.signalAirDetail.dateNotSpecified");
+    }
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return value;
+    }
+    const locale = i18n.language === "fr" ? "fr-FR" : i18n.language === "en" ? "en-GB" : i18n.language;
+    return date.toLocaleString(locale, {
+      dateStyle: "long",
+      timeStyle: "short",
+    });
+  };
 
   useEffect(() => {
     if (isOpen && report) {
@@ -89,14 +87,11 @@ const SignalAirDetailPanel: React.FC<SignalAirDetailPanelProps> = ({
     if (!report?.signalType) {
       return null;
     }
-
-    return (
-      SIGNAL_TYPE_LABELS[report.signalType] ?? {
-        label: report.signalType,
-        emoji: "ℹ️",
-      }
-    );
-  }, [report?.signalType]);
+    const labelKey = `panels.signalAirSelection.types.${report.signalType}.label`;
+    const label = t(labelKey);
+    const emoji = SIGNAL_TYPE_EMOJI[report.signalType] ?? "ℹ️";
+    return { label: label !== labelKey ? label : report.signalType, emoji };
+  }, [report?.signalType, t]);
 
   const handlePanelSizeChange = (newSize: PanelSize) => {
     if (onSizeChange) {
@@ -177,7 +172,7 @@ const SignalAirDetailPanel: React.FC<SignalAirDetailPanelProps> = ({
       <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 bg-gray-50">
         <div className="flex-1 min-w-0">
           <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
-            {report.name || "Signalement SignalAir"}
+            {report.name || t("panels.signalAirDetail.defaultReportName")}
           </h2>
           <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-600 mt-1">
             {typeInformation && (
@@ -188,7 +183,7 @@ const SignalAirDetailPanel: React.FC<SignalAirDetailPanelProps> = ({
                 <span>
                   {typeInformation.label ||
                     report.signalType ||
-                    "Type non spécifié"}
+                    t("panels.signalAirDetail.typeUnspecified")}
                 </span>
               </span>
             )}
@@ -237,8 +232,8 @@ const SignalAirDetailPanel: React.FC<SignalAirDetailPanelProps> = ({
             className="p-1.5 sm:p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
             title={
               currentPanelSize === "fullscreen"
-                ? "Rétrécir le panel"
-                : "Agrandir le panel"
+                ? t("panels.shrinkPanel")
+                : t("panels.expandPanel")
             }
           >
             <svg
@@ -268,7 +263,7 @@ const SignalAirDetailPanel: React.FC<SignalAirDetailPanelProps> = ({
           <button
             onClick={() => handlePanelSizeChange("hidden")}
             className="p-1.5 sm:p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-            title="Rabattre le panel"
+            title={t("panels.collapsePanel")}
           >
             <svg
               className="w-3.5 h-3.5 sm:w-4 sm:h-4"
@@ -293,7 +288,7 @@ const SignalAirDetailPanel: React.FC<SignalAirDetailPanelProps> = ({
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-xs uppercase tracking-wide text-gray-500">
-                  Chronologie
+                  {t("panels.signalAirDetail.timeline")}
                 </p>
                 <p className="text-sm font-semibold text-gray-900">
                   {formatDateTime(report.signalCreatedAt)}
@@ -317,21 +312,21 @@ const SignalAirDetailPanel: React.FC<SignalAirDetailPanelProps> = ({
                       d="M12 2l7 7-7 7-7-7 7-7z"
                     />
                   </svg>
-                  Centrer sur la carte
+                  {t("panels.signalAirDetail.centerOnMap")}
                 </button>
               )}
             </div>
 
             <div className="space-y-2">
               {renderInfoLine(
-                "Observation",
+                t("panels.signalAirDetail.observation"),
                 report.signalDate ? formatDateTime(report.signalDate) : null
               )}
               {renderInfoLine(
-                "Déclarée le",
+                t("panels.signalAirDetail.declaredOn"),
                 formatDateTime(report.signalCreatedAt)
               )}
-              {renderInfoLine("Durée déclarée", report.signalDuration)}
+              {renderInfoLine(t("panels.signalAirDetail.declaredDuration"), report.signalDuration)}
               
             </div>
           </div>
@@ -344,19 +339,19 @@ const SignalAirDetailPanel: React.FC<SignalAirDetailPanelProps> = ({
             report.nuisanceLevel) && (
             <div className="border border-gray-200 rounded-lg p-3 sm:p-4 space-y-3">
               <p className="text-sm font-semibold text-gray-900">
-                Informations sur la nuisance
+                {t("panels.signalAirDetail.nuisanceInfoTitle")}
               </p>
               <div className="space-y-2">
-                {renderInfoLine("Origine déclarée", report.nuisanceOrigin)}
+                {renderInfoLine(t("panels.signalAirDetail.declaredOrigin"), report.nuisanceOrigin)}
                 {renderInfoLine(
-                  "Description de l'origine",
+                  t("panels.signalAirDetail.originDescription"),
                   report.nuisanceOriginDescription
                 )}
                 {renderInfoLine(
-                  "Source industrielle potentielle",
+                  t("panels.signalAirDetail.industrialSource"),
                   report.industrialSource
                 )}
-                {renderInfoLine("Niveau de gêne", report.nuisanceLevel)}
+                {renderInfoLine(t("panels.signalAirDetail.nuisanceLevel"), report.nuisanceLevel)}
               </div>
             </div>
           )}
@@ -367,7 +362,7 @@ const SignalAirDetailPanel: React.FC<SignalAirDetailPanelProps> = ({
             <div className="border border-orange-200 bg-orange-50 rounded-lg p-3 sm:p-4 space-y-3">
               <div className="flex items-center space-x-2">
                 <p className="text-sm font-semibold text-orange-800">
-                  Santé & ressentis
+                  {t("panels.signalAirDetail.healthAndFeelings")}
                 </p>
                 {report.signalHasSymptoms && (
                   <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-white text-orange-700 border border-orange-200">
@@ -391,7 +386,9 @@ const SignalAirDetailPanel: React.FC<SignalAirDetailPanelProps> = ({
                 !report.symptomsDetails &&
                 report.signalHasSymptoms && (
                   <p className="text-sm text-orange-900">
-                    Réponse du déclarant : {report.signalHasSymptoms}.
+                    {t("panels.signalAirDetail.declarantResponse", {
+                      value: report.signalHasSymptoms,
+                    })}
                   </p>
                 )}
             </div>
@@ -400,7 +397,7 @@ const SignalAirDetailPanel: React.FC<SignalAirDetailPanelProps> = ({
           {remarks && (
             <div className="border border-gray-200 rounded-lg p-3 sm:p-4 space-y-2">
               <p className="text-sm font-semibold text-gray-900">
-                Remarque / commentaire
+                {t("panels.signalAirDetail.remarkComment")}
               </p>
               <p className="text-sm text-gray-700 whitespace-pre-line">
                 {remarks}
@@ -411,7 +408,7 @@ const SignalAirDetailPanel: React.FC<SignalAirDetailPanelProps> = ({
           {additionalDescription && (
             <div className="border border-gray-200 rounded-lg p-3 sm:p-4 space-y-2">
               <p className="text-sm font-semibold text-gray-900">
-                Description complémentaire
+                {t("panels.signalAirDetail.additionalDescription")}
               </p>
               <p className="text-sm text-gray-700 whitespace-pre-line">
                 {additionalDescription}
@@ -422,7 +419,7 @@ const SignalAirDetailPanel: React.FC<SignalAirDetailPanelProps> = ({
           {report.photoUrl && report.photoUrl.trim() && (
             <div className="border border-gray-200 rounded-lg p-3 sm:p-4 space-y-2">
               <p className="text-sm font-semibold text-gray-900">
-                Ressource associée
+                {t("panels.signalAirDetail.associatedResource")}
               </p>
               <a
                 href={report.photoUrl}
@@ -443,7 +440,7 @@ const SignalAirDetailPanel: React.FC<SignalAirDetailPanelProps> = ({
                     d="M15 10l4.553-4.553a2.121 2.121 0 00-3-3L12 7l-1.5-1.5M17 17H7m0 0l4-4m-4 4l4 4"
                   />
                 </svg>
-                Consulter la ressource
+                {t("panels.signalAirDetail.viewResource")}
               </a>
             </div>
           )}
@@ -455,18 +452,18 @@ const SignalAirDetailPanel: React.FC<SignalAirDetailPanelProps> = ({
             report.groupName) && (
             <div className="border border-gray-200 rounded-lg p-3 sm:p-4 space-y-3">
               <p className="text-sm font-semibold text-gray-900">
-                Zone concernée
+                {t("panels.signalAirDetail.concernedArea")}
               </p>
               <div className="space-y-2">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm text-gray-700">
                   <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-3">
                     <span className="font-medium text-gray-900 sm:w-48">
-                      X (Lambert 93)
+                      {t("panels.signalAirDetail.coordXLambert93")}
                     </span>
                     <span className="flex-1 font-mono">
                       {lambert93Coords
                         ? Math.round(lambert93Coords.x).toString()
-                        : "Calcul en cours..."}
+                        : t("panels.signalAirDetail.calculating")}
                     </span>
                   </div>
                   <button
@@ -494,12 +491,12 @@ const SignalAirDetailPanel: React.FC<SignalAirDetailPanelProps> = ({
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm text-gray-700">
                   <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-3">
                     <span className="font-medium text-gray-900 sm:w-48">
-                      Y (Lambert 93)
+                      {t("panels.signalAirDetail.coordYLambert93")}
                     </span>
                     <span className="flex-1 font-mono">
                       {lambert93Coords
                         ? Math.round(lambert93Coords.y).toString()
-                        : "Calcul en cours..."}
+                        : t("panels.signalAirDetail.calculating")}
                     </span>
                   </div>
                   <button
@@ -524,11 +521,11 @@ const SignalAirDetailPanel: React.FC<SignalAirDetailPanelProps> = ({
                     </svg>
                   </button>
                 </div>
-                {renderInfoLine("Ville", report.city)}
-                {renderInfoLine("Code postal", report.postalCode)}
-                {renderInfoLine("Pays", report.countryCode)}
+                {renderInfoLine(t("panels.signalAirDetail.city"), report.city)}
+                {renderInfoLine(t("panels.signalAirDetail.postalCode"), report.postalCode)}
+                {renderInfoLine(t("panels.signalAirDetail.country"), report.countryCode)}
                 {renderInfoLine(
-                  "Adresse / lieu",
+                  t("panels.signalAirDetail.addressOrPlace"),
                   report.address || report.locationHint
                 )}
               </div>
@@ -537,11 +534,10 @@ const SignalAirDetailPanel: React.FC<SignalAirDetailPanelProps> = ({
           <div className="border border-gray-200 rounded-lg p-3 sm:p-4 space-y-3">
             <div>
               <p className="text-sm font-semibold text-gray-900 mb-1">
-                Besoin d&apos;agir ?
+                {t("panels.signalAirDetail.needToActTitle")}
               </p>
               <p className="text-sm text-gray-600">
-                Participez à la plateforme SignalAir pour compléter les
-                informations ou effectuer un nouveau signalement.
+                {t("panels.signalAirDetail.needToActDescription")}
               </p>
             </div>
 
@@ -564,7 +560,7 @@ const SignalAirDetailPanel: React.FC<SignalAirDetailPanelProps> = ({
                   d="M12 6v6m0 0v6m0-6h6m-6 0H6"
                 />
               </svg>
-              Signaler une nouvelle nuisance
+              {t("panels.signalAirDetail.reportNewNuisance")}
             </a>
           </div>
         </div>

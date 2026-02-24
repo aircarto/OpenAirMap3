@@ -46,10 +46,10 @@ const SpecialSourceHeaderDropdown: React.FC<SpecialSourceHeaderDropdownProps> = 
             "transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#4271B3]/20 focus:border-[#4271B3] min-w-[100px] max-w-[160px]",
             disabled && "opacity-60 pointer-events-none"
           )}
-          aria-label="Sources spéciales (SignalAir, MobileAir)"
+          aria-label={t("controls.specialSourcesAria")}
         >
           <span className="flex items-center gap-1.5 min-w-0 flex-1">
-            <span className="truncate">Sources spéciales</span>
+            <span className="truncate">{t("controls.specialSources")}</span>
             {hasAny && (
               <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" aria-hidden title="Au moins une source active" />
             )}
@@ -67,7 +67,7 @@ const SpecialSourceHeaderDropdown: React.FC<SpecialSourceHeaderDropdownProps> = 
         className="min-w-[220px] max-w-[min(220px,calc(100vw-1rem))] p-2"
       >
         <DropdownMenuLabel className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-2 py-1.5">
-          Signalements & mobile
+          {t("controls.specialSourcesMenuLabel")}
         </DropdownMenuLabel>
 
         {/* SignalAir */}

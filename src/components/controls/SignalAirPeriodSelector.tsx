@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 interface SignalAirPeriodSelectorProps {
   startDate: string;
@@ -7,11 +8,11 @@ interface SignalAirPeriodSelectorProps {
   disabled?: boolean;
 }
 
-const QUICK_RANGES: Array<{ label: string; days: number }> = [
-  { label: "Dernières 24h", days: 1 },
-  { label: "Derniers 2 jours", days: 2 },
-  { label: "Dernière semaine", days: 7 },
-  { label: "Dernier mois", days: 30 },
+const QUICK_RANGE_KEYS: Array<{ key: string; days: number }> = [
+  { key: "quickRangeLast24h", days: 1 },
+  { key: "quickRangeLast2Days", days: 2 },
+  { key: "quickRangeLastWeek", days: 7 },
+  { key: "quickRangeLastMonth", days: 30 },
 ];
 
 const formatDateForInput = (date: Date): string =>
@@ -33,6 +34,8 @@ const SignalAirPeriodSelector: React.FC<SignalAirPeriodSelectorProps> = ({
   onPeriodChange,
   disabled = false,
 }) => {
+  const { t } = useTranslation();
+
   const handleQuickSelect = (days: number) => {
     const end = normalizeEndDate(new Date());
     const start = normalizeStartDate(new Date());
@@ -73,17 +76,17 @@ const SignalAirPeriodSelector: React.FC<SignalAirPeriodSelectorProps> = ({
     >
       <div>
         <h4 className="text-sm font-medium text-gray-700 mb-2">
-          Sélections rapides
+          {t("panels.signalAirSelection.period.quickSelections")}
         </h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {QUICK_RANGES.map((range) => (
+          {QUICK_RANGE_KEYS.map((range) => (
             <button
               key={range.days}
               type="button"
               onClick={() => handleQuickSelect(range.days)}
               className="px-3 py-2 rounded-md border border-gray-200 text-sm text-gray-700 bg-white hover:border-[#4271B3] hover:text-[#4271B3] transition-colors"
             >
-              {range.label}
+              {t(`panels.signalAirSelection.period.${range.key}`)}
             </button>
           ))}
         </div>
@@ -91,12 +94,12 @@ const SignalAirPeriodSelector: React.FC<SignalAirPeriodSelectorProps> = ({
 
       <div>
         <h4 className="text-sm font-medium text-gray-700 mb-2">
-          Période personnalisée
+          {t("panels.signalAirSelection.period.customPeriod")}
         </h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="flex flex-col space-y-1">
             <label className="text-xs font-medium text-gray-600">
-              Date de début
+              {t("panels.signalAirSelection.period.startDateLabel")}
             </label>
             <input
               type="date"
@@ -108,7 +111,7 @@ const SignalAirPeriodSelector: React.FC<SignalAirPeriodSelectorProps> = ({
           </div>
           <div className="flex flex-col space-y-1">
             <label className="text-xs font-medium text-gray-600">
-              Date de fin
+              {t("panels.signalAirSelection.period.endDateLabel")}
             </label>
             <input
               type="date"
@@ -121,8 +124,7 @@ const SignalAirPeriodSelector: React.FC<SignalAirPeriodSelectorProps> = ({
           </div>
         </div>
         <p className="mt-2 text-xs text-gray-500">
-          Les signalements SignalAir sont disponibles sur un horizon glissant de
-          30 jours maximum.
+          {t("panels.signalAirSelection.period.slidingWindowNote")}
         </p>
       </div>
     </div>

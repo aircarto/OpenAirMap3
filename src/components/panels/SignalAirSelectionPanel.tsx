@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { pollutants } from "../../constants/pollutants";
 import SignalAirPeriodSelector from "../controls/SignalAirPeriodSelector";
 import { getMarkerPath } from "../../utils";
 
@@ -23,37 +22,12 @@ interface SignalAirSelectionPanelProps {
   reportsCount?: number;
 }
 
-const SIGNAL_TYPES: Array<{
-  id: "odeur" | "bruit" | "brulage" | "visuel";
-  label: string;
-  description: string;
-  emoji: string;
-}> = [
-  {
-    id: "odeur",
-    label: "Odeurs",
-    description: "Nuisances olfactives (odeurs persistantes, fumées...)",
-    emoji: "👃",
-  },
-  {
-    id: "bruit",
-    label: "Bruits",
-    description: "Tapage nocturne, nuisances sonores ponctuelles ou continues",
-    emoji: "🔊",
-  },
-  {
-    id: "brulage",
-    label: "Brûlage",
-    description: "Brûlage à l'air libre, fumées d'incinération",
-    emoji: "🔥",
-  },
-  {
-    id: "visuel",
-    label: "Visuel",
-    description: "Brouillard, poussières, visibilité réduite",
-    emoji: "👀",
-  },
-];
+const SIGNAL_TYPE_IDS = [
+  "odeur",
+  "bruit",
+  "brulage",
+  "visuel",
+] as const;
 
 const SignalAirSelectionPanel: React.FC<SignalAirSelectionPanelProps> = ({
   isOpen,
@@ -79,9 +53,9 @@ const SignalAirSelectionPanel: React.FC<SignalAirSelectionPanelProps> = ({
 
   const markerPreview = useMemo(
     () =>
-      SIGNAL_TYPES.map((type) => ({
-        ...type,
-        markerPath: getMarkerPath("signalair", type.id),
+      SIGNAL_TYPE_IDS.map((id) => ({
+        id,
+        markerPath: getMarkerPath("signalair", id),
       })),
     []
   );
@@ -107,10 +81,10 @@ const SignalAirSelectionPanel: React.FC<SignalAirSelectionPanelProps> = ({
   };
 
   const handleSelectAll = () => {
-    if (selectedTypes.length === SIGNAL_TYPES.length) {
+    if (selectedTypes.length === SIGNAL_TYPE_IDS.length) {
       onTypesChange([]);
     } else {
-      onTypesChange(SIGNAL_TYPES.map((type) => type.id));
+      onTypesChange([...SIGNAL_TYPE_IDS]);
     }
   };
 
@@ -134,8 +108,9 @@ const SignalAirSelectionPanel: React.FC<SignalAirSelectionPanelProps> = ({
     return null;
   }
 
-  const pollutantLabel =
-    pollutants[selectedPollutant]?.name || selectedPollutant;
+  const pollutantLabel = t(`pollutants.${selectedPollutant}`, {
+    defaultValue: selectedPollutant,
+  });
 
   const isLoadDisabled = selectedTypes.length === 0 || isLoading;
 
@@ -146,10 +121,10 @@ const SignalAirSelectionPanel: React.FC<SignalAirSelectionPanelProps> = ({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
-              Sélection SignalAir
+              {t("panels.signalAirSelection.title")}
             </h2>
             {/* Rappel visuel du bouton de réouverture */}
-            <div className="p-1 rounded bg-[#13A0DB]/10 border border-[#13A0DB]/30" title="Bouton SignalAir pour rouvrir le panel">
+            <div className="p-1 rounded bg-[#13A0DB]/10 border border-[#13A0DB]/30" title={t("panels.signalAirSelection.reopenButtonTooltip")}>
               <div
                 className="w-5 h-5"
                 dangerouslySetInnerHTML={{
@@ -173,7 +148,7 @@ const SignalAirSelectionPanel: React.FC<SignalAirSelectionPanelProps> = ({
             className="p-1.5 sm:p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
             title={
               currentPanelSize === "fullscreen"
-                ? "Réduire le panneau"
+                ? t("panels.shrinkPanel")
                 : t("panels.fullscreen")
             }
           >
@@ -232,16 +207,18 @@ const SignalAirSelectionPanel: React.FC<SignalAirSelectionPanelProps> = ({
           <div className="border border-gray-200 rounded-lg p-3 sm:p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-medium text-gray-700">
-                Types de signalements ({selectedTypes.length}/
-                {SIGNAL_TYPES.length})
+                {t("panels.signalAirSelection.typesTitle", {
+                  selected: selectedTypes.length,
+                  total: SIGNAL_TYPE_IDS.length,
+                })}
               </h3>
               <button
                 onClick={handleSelectAll}
                 className="text-xs text-blue-600 hover:text-blue-800 font-medium"
               >
-                {selectedTypes.length === SIGNAL_TYPES.length
-                  ? "Tout désélectionner"
-                  : "Tout sélectionner"}
+                {selectedTypes.length === SIGNAL_TYPE_IDS.length
+                  ? t("panels.signalAirSelection.deselectAll")
+                  : t("panels.signalAirSelection.selectAll")}
               </button>
             </div>
 
@@ -273,18 +250,20 @@ const SignalAirSelectionPanel: React.FC<SignalAirSelectionPanelProps> = ({
                     <div className="flex-shrink-0">
                       <img
                         src={type.markerPath}
-                        alt={`Marqueur ${type.label}`}
+                        alt={t("panels.signalAirSelection.markerAlt", {
+                          type: t(`panels.signalAirSelection.types.${type.id}.label`),
+                        })}
                         className="w-8 h-8 object-contain"
                       />
                     </div>
                     <div className="flex-1 text-left">
                       <div className="flex items-center space-x-1">
                         <h4 className="text-sm font-semibold text-gray-900">
-                          {type.label}
+                          {t(`panels.signalAirSelection.types.${type.id}.label`)}
                         </h4>
                       </div>
                       <p className="text-xs text-gray-600 mt-1">
-                        {type.description}
+                        {t(`panels.signalAirSelection.types.${type.id}.description`)}
                       </p>
                     </div>
                   </button>
@@ -296,7 +275,7 @@ const SignalAirSelectionPanel: React.FC<SignalAirSelectionPanelProps> = ({
           {/* Period */}
           <div className="border border-gray-200 rounded-lg p-3 sm:p-4">
             <h3 className="text-sm font-medium text-gray-700 mb-3">
-              Période d&apos;analyse
+              {t("panels.signalAirSelection.periodTitle")}
             </h3>
             <SignalAirPeriodSelector
               startDate={period.startDate}
@@ -318,20 +297,19 @@ const SignalAirSelectionPanel: React.FC<SignalAirSelectionPanelProps> = ({
             >
               {isLoading
                 ? t("panels.loadingInProgress")
-                : "Charger les signalements"}
+                : t("panels.signalAirSelection.loadReports")}
             </button>
             {selectedTypes.length === 0 && (
               <p className="text-xs text-red-600">
-                Sélectionnez au moins un type de signalement pour lancer le
-                chargement.
+                {t("panels.signalAirSelection.selectAtLeastOne")}
               </p>
             )}
             {hasLoaded && selectedTypes.length > 0 && (
               <p className="text-xs text-gray-600">
                 {reportsCount > 0
-                  ? `${reportsCount} signalement${
-                      reportsCount > 1 ? "s" : ""
-                    } affiché${reportsCount > 1 ? "s" : ""} sur la carte.`
+                  ? t("panels.signalAirSelection.reportsOnMap", {
+                      count: reportsCount,
+                    })
                   : t("panels.noReportFound")}
               </p>
             )}
