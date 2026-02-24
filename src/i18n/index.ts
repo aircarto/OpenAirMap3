@@ -6,10 +6,10 @@ import es from "../locales/es.json";
 import it from "../locales/it.json";
 
 export const supportedLanguages = [
-  { code: "fr", label: "Français", short: "FR" },
-  { code: "en", label: "English", short: "EN" },
-  { code: "es", label: "Español", short: "ES" },
-  { code: "it", label: "Italiano", short: "IT" },
+  { code: "fr", label: "Français", short: "FR", flag: "🇫🇷" },
+  { code: "en", label: "English", short: "EN", flag: "🇬🇧" },
+  { code: "es", label: "Español", short: "ES", flag: "🇪🇸" },
+  { code: "it", label: "Italiano", short: "IT", flag: "🇮🇹" },
 ] as const;
 
 export type SupportedLocale = (typeof supportedLanguages)[number]["code"];

@@ -71,14 +71,17 @@ const LanguageSwitcher: React.FC = () => {
                   type="button"
                   onClick={() => handleSelect(lang.code)}
                   className={cn(
-                    "w-full px-2.5 py-1.5 text-left text-xs font-medium transition-colors",
+                    "w-full flex items-center gap-2 px-2.5 py-1.5 text-left text-xs font-medium transition-colors",
                     i18n.language === lang.code
                       ? "bg-[#4271B3]/10 text-[#4271B3]"
                       : "text-gray-700 hover:bg-gray-50"
                   )}
                   title={lang.label}
                 >
-                  {lang.short}
+                  <span className="text-sm leading-none shrink-0" aria-hidden>
+                    {lang.flag}
+                  </span>
+                  <span>{lang.short}</span>
                 </button>
               </li>
             ))}
@@ -105,7 +108,7 @@ const LanguageSwitcher: React.FC = () => {
         title={currentLang.label}
       >
         <span className="text-sm leading-none" aria-hidden>
-          🌐
+          {currentLang.flag}
         </span>
         <span>{currentLang.short}</span>
         <svg
