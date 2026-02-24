@@ -3,6 +3,7 @@
  */
 
 import { useMemo, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { HistoricalDataPoint, StationInfo } from "../../../types";
 import {
   transformData,
@@ -39,6 +40,10 @@ export const useHistoricalChartData = ({
   timeStep,
   modelingData,
 }: UseHistoricalChartDataProps) => {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language || "fr";
+  const localeForDate = locale.includes("fr") ? "fr-FR" : locale.includes("en") ? "en-GB" : locale.includes("es") ? "es-ES" : locale.includes("it") ? "it-IT" : "fr-FR";
+
   // Ref pour mémoriser le dernier résultat de fusion
   const lastMergedDataRef = useRef<{
     dataString: string;
@@ -171,8 +176,8 @@ export const useHistoricalChartData = ({
 
   // Déterminer le format optimal pour les labels de l'axe X
   const xAxisDateFormat = useMemo(() => {
-    return getXAxisDateFormat(chartData, isMobile);
-  }, [chartData, isMobile]);
+    return getXAxisDateFormat(chartData, isMobile, localeForDate);
+  }, [chartData, isMobile, localeForDate]);
 
   // Obtenir les seuils communs
   const commonThresholds = useMemo(() => {
@@ -235,6 +240,7 @@ export const useHistoricalChartData = ({
       timeStep,
       chartDataLength: chartData.length,
       modelingSeriesPresent, // Inclure la présence de séries de modélisation
+      locale: localeForDate, // Invalider le cache quand la langue change
     });
 
     // Si la configuration n'a pas changé, retourner le résultat précédent
@@ -256,7 +262,8 @@ export const useHistoricalChartData = ({
       useSolidNebuleAirLines,
       fallbackColors,
       timeStep,
-      chartData
+      chartData,
+      t
     );
 
     // Mémoriser le résultat
@@ -277,6 +284,7 @@ export const useHistoricalChartData = ({
     useSolidNebuleAirLines,
     timeStep,
     chartData,
+    t,
   ]);
 
   // Détecter si des données corrigées sont disponibles (pour AtmoMicro ou en mode comparaison avec stations atmoMicro)

@@ -122,7 +122,7 @@ const ExpertMenu: React.FC<ExpertMenuProps> = ({
                   <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-[#4271B3]"></div>
                 )}
                 <span className="text-sm font-medium text-gray-900">
-                  Modélisation AZUR
+                  {t("controls.modelingAzur")}
                 </span>
               </div>
               {modelingDisabledReason && (
@@ -131,7 +131,7 @@ const ExpertMenu: React.FC<ExpertMenuProps> = ({
                 </span>
               )}
               <span className="text-xs text-gray-500 ml-5">
-                Affiche les prévisions de modélisation sur le graphique
+                {t("controls.modelingAzurDescription")}
               </span>
             </div>
           </DropdownMenuCheckboxItem>
@@ -148,10 +148,10 @@ const ExpertMenu: React.FC<ExpertMenuProps> = ({
             >
               <div className="flex flex-col gap-1">
                 <span className="text-sm font-medium text-gray-900">
-                  Données brutes
+                  {t("controls.rawData")}
                 </span>
                 <span className="text-xs text-gray-500 ml-5">
-                  Affiche les données non corrigées sur le graphique
+                  {t("controls.rawDataDescription")}
                 </span>
               </div>
             </DropdownMenuCheckboxItem>

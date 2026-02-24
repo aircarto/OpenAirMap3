@@ -4,6 +4,7 @@
 
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
+import i18n from "i18next";
 import { pollutants } from "../../../constants/pollutants";
 import { QUALITY_COLORS } from "../../../constants/qualityColors";
 import { encodeUnit } from "./historicalChartUtils";
@@ -39,13 +40,14 @@ export const createSeriesTooltip = (
     const data = (dataItem as any).dataContext as any;
     const value = data?.[seriesConfig.dataKey];
     
-    // Formater la date
+    // Formater la date (locale courante)
+    const locale = i18n.language?.startsWith("fr") ? "fr-FR" : i18n.language?.startsWith("en") ? "en-GB" : i18n.language?.startsWith("es") ? "es-ES" : i18n.language?.startsWith("it") ? "it-IT" : "fr-FR";
     let dateStr = "";
     if (data?.timestamp) {
       const timestampValue = data.timestamp;
       const date = typeof timestampValue === "number" ? new Date(timestampValue) : new Date(timestampValue);
       if (!isNaN(date.getTime())) {
-        dateStr = date.toLocaleString("fr-FR", {
+        dateStr = date.toLocaleString(locale, {
           year: "numeric",
           month: "2-digit",
           day: "2-digit",
@@ -54,37 +56,35 @@ export const createSeriesTooltip = (
         });
       }
     }
-    
-    // Obtenir le nom du polluant
-    // Extraire le polluant de base en retirant les suffixes _corrected, _raw, _modeling
+
+    // Obtenir le nom du polluant (traduit)
     const isModeling = seriesConfig.dataKey.endsWith("_modeling");
     const isRaw = seriesConfig.dataKey.endsWith("_raw");
     const isCorrected = seriesConfig.dataKey.endsWith("_corrected");
     const pollutantKey = seriesConfig.dataKey.replace(/_corrected$|_raw$|_modeling$/, "");
-    const pollutantName = pollutants[pollutantKey]?.name || seriesConfig.name;
-    
+    const pollutantName = i18n.exists(`pollutants.${pollutantKey}`) ? i18n.t(`pollutants.${pollutantKey}`) : (pollutants[pollutantKey]?.name || seriesConfig.name);
+
     // Obtenir l'unité
-    // Pour les données de modélisation, utiliser l'unité du polluant de base (même que les mesures)
     let unit = data?.[`${pollutantKey}_unit`] || "";
     if (!unit && pollutants[pollutantKey]) {
       unit = pollutants[pollutantKey].unit;
     }
     const encodedUnit = encodeUnit(unit);
-    
+
     // Construire le texte du tooltip
     let tooltipText = "";
     if (dateStr) {
       tooltipText += `${dateStr}\n`;
     }
-    
-    // Construire le label avec les indications appropriées
+
+    // Construire le label avec les indications appropriées (traduites)
     let label = pollutantName;
     if (isModeling) {
-      label += " (modélisation)";
+      label += " " + i18n.t("chart.modelingSuffix");
     } else if (isRaw) {
-      label += " (brute)";
+      label += " " + i18n.t("chart.rawSuffix");
     } else if (isCorrected) {
-      label += " (corrigé)";
+      label += " " + i18n.t("chart.correctedSuffix");
     }
     
     tooltipText += `${label}: ${typeof value === "number" ? value.toFixed(1) : value} ${encodedUnit}`;

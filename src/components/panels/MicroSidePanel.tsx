@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import {
   StationInfo,
   ChartControls,
@@ -46,6 +47,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
   onComparisonModeToggle,
   isComparisonMode = false,
 }) => {
+  const { t } = useTranslation();
   const [state, setState] = useState<SidePanelState>({
     isOpen: false,
     selectedStation: null,
@@ -279,12 +281,12 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
         setState((prev) => ({
           ...prev,
           loading: false,
-          error: "Erreur lors du chargement des données historiques",
+          error: t("panels.stationSidePanel.historicalDataLoadError"),
           infoMessage: null,
         }));
       }
     },
-    [atmoMicroService, modelingService]
+    [t, atmoMicroService, modelingService]
   );
 
   // Mettre à jour l'état uniquement lors de l'ouverture du panel ou du changement de station
@@ -586,7 +588,9 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
       if (wasAdjusted) {
         const maxDays = getMaxHistoryDays(prev.chartControls.timeStep);
         if (maxDays) {
-          infoMessage = `La période a été automatiquement ajustée à ${maxDays} jours maximum pour le pas de temps sélectionné.`;
+          infoMessage = t("panels.stationSidePanel.periodAutoAdjusted", {
+            maxDays,
+          });
           // Faire disparaître le message après 5 secondes
           setTimeout(() => {
             setState((current) => ({
@@ -722,7 +726,9 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
       if (wasAdjusted) {
         const maxDays = getMaxHistoryDays(timeStep);
         if (maxDays) {
-          infoMessage = `La période a été automatiquement ajustée à ${maxDays} jours maximum pour le pas de temps sélectionné.`;
+          infoMessage = t("panels.stationSidePanel.periodAutoAdjusted", {
+            maxDays,
+          });
           // Faire disparaître le message après 5 secondes
           setTimeout(() => {
             setState((current) => ({
@@ -828,7 +834,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
 
   // Fonction pour formater le pas de temps en secondes vers un format lisible
   const formatTimeStep = (seconds: number | null): string => {
-    if (seconds === null) return "Scan";
+    if (seconds === null) return t("timeSteps.instantane");
 
     if (seconds < 60) {
       return `scan:${seconds}s`;
@@ -892,12 +898,12 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
-                Comparaison multi-polluants
+                {t("panels.stationSidePanel.comparisonTitle")}
               </h2>
               {/* Rappel visuel du bouton de réouverture */}
               <div
                 className="p-1 rounded bg-blue-600 border border-blue-600"
-                title="Bouton bleu pour rouvrir le panel"
+                title={t("panels.stationSidePanel.reopenButtonTooltip")}
               >
                 <svg
                   className="w-3 h-3 text-white"
@@ -928,8 +934,8 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
               className="p-1.5 sm:p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
               title={
                 currentPanelSize === "fullscreen"
-                  ? "Rétrécir le panel"
-                  : "Agrandir le panel"
+                  ? t("panels.shrinkPanel")
+                  : t("panels.expandPanel")
               }
             >
               <svg
@@ -960,7 +966,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
             <button
               onClick={() => handlePanelSizeChange("hidden")}
               className="p-1.5 sm:p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-              title="Rabattre le panel"
+              title={t("panels.collapsePanel")}
             >
               <svg
                 className="w-3.5 h-3.5 sm:w-4 sm:h-4"
@@ -990,7 +996,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                     {selectedStation.name}
                   </p>
                   <p className="text-xs text-gray-500 truncate">
-                    Microcapteur qualifié AtmoSud
+                    {t("panels.microSidePanel.sourceLabel")}
                   </p>
                 </div>
 
@@ -1024,8 +1030,8 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                       />
                     </svg>
                     {isComparisonMode
-                      ? "Désactiver comparaison"
-                      : "Activer comparaison"}
+                      ? t("panels.stationSidePanel.disableComparison")
+                      : t("panels.stationSidePanel.enableComparison")}
                   </button>
                 )}
               </div>
@@ -1035,7 +1041,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
             <div className="flex-1 min-h-64 sm:min-h-72 md:min-h-80 lg:min-h-96">
               <div className="mb-2 sm:mb-3">
                 <h3 className="text-sm font-medium text-gray-700">
-                  Évolution temporelle (AtmoMicro)
+                  {t("panels.microSidePanel.temporalEvolutionAtmoMicro")}
                 </h3>
               </div>
               {state.loading ? (
@@ -1043,7 +1049,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                   <div className="flex flex-col items-center space-y-2">
                     <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-[#4271B3]"></div>
                     <span className="text-xs sm:text-sm text-gray-500">
-                      Chargement des données...
+                      {t("panels.loadingData")}
                     </span>
                   </div>
                 </div>
@@ -1095,7 +1101,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                             />
                           </svg>
                           <span className="text-xs sm:text-sm font-medium text-gray-700 truncate">
-                            Polluants
+                            {t("panels.microSidePanel.pollutantsLabel")}
                           </span>
                           <span className="text-[10px] sm:text-xs text-gray-500 bg-gray-100 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full flex-shrink-0">
                             {state.chartControls.selectedPollutants.length}
@@ -1146,9 +1152,13 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                                   }
                                   title={
                                     isLastSelectedAndDisabled
-                                      ? "Au moins un polluant doit rester sélectionné"
+                                      ? t(
+                                          "panels.stationSidePanel.atLeastOnePollutant"
+                                        )
                                       : !isEnabled
-                                      ? "Ce polluant n'est pas disponible pour cette station"
+                                      ? t(
+                                          "panels.stationSidePanel.pollutantNotAvailable"
+                                        )
                                       : undefined
                                   }
                                   className={`w-full flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-md text-sm transition-all duration-200 ${
@@ -1191,11 +1201,13 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                                     )}
                                   </div>
                                   <span className="flex-1 text-left truncate">
-                                    {pollutant.name}
+                                    {t(`pollutants.${pollutantCode}`)}
                                   </span>
                                   {!isEnabled && (
                                     <span className="text-xs text-gray-400 flex-shrink-0">
-                                      Non disponible
+                                      {t(
+                                        "panels.stationSidePanel.notAvailable"
+                                      )}
                                     </span>
                                   )}
                                 </button>
@@ -1238,7 +1250,9 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                       modelingDisabled={state.chartControls.timeStep !== "heure"}
                       modelingDisabledReason={
                         state.chartControls.timeStep !== "heure"
-                          ? "Disponible uniquement au pas de temps horaire"
+                          ? t(
+                              "panels.stationSidePanel.modelingOnlyHourly"
+                            )
                           : undefined
                       }
                       showRawData={showRawData}
@@ -1317,7 +1331,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                           />
                         </svg>
                         <span className="text-sm font-medium text-gray-700">
-                          Pas de temps
+                          {t("controls.timeStep")}
                         </span>
                       </div>
                       <ToggleGroup
@@ -1356,7 +1370,10 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                               ? formatTimeStep(sensorTimeStep)
                               : label;
                           if (isDisabledByRange && maxDays) {
-                            tooltip = `Limité à ${maxDays} jours pour ce pas de temps. Réduisez la période historique.`;
+                            tooltip = t(
+                              "panels.stationSidePanel.timeStepRangeLimit",
+                              { maxDays }
+                            );
                           }
 
                           return (
@@ -1414,11 +1431,12 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                           return (
                             <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-md">
                               <p className="text-[11px] sm:text-xs text-amber-700">
-                                <span className="font-medium"></span> Les pas de
-                                temps {timeStepLabels.join(" et ")} sont
-                                désactivés car la période sélectionnée dépasse
-                                leur limite. Réduisez la période historique pour
-                                les activer.
+                                {t(
+                                  "panels.stationSidePanel.timeStepsDisabledByRange",
+                                  {
+                                    labels: timeStepLabels.join(", "),
+                                  }
+                                )}
                               </p>
                             </div>
                           );
@@ -1440,9 +1458,10 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                     <div className="relative w-full aspect-video">
                       <img
                         src={getSensorModelImage(selectedStation.sensorModel)!}
-                        alt={`Capteur ${
-                          selectedStation.sensorModel || "AtmoMicro"
-                        }`}
+                        alt={t("panels.microSidePanel.sensorAlt", {
+                          model:
+                            selectedStation.sensorModel || "AtmoMicro",
+                        })}
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           // Masquer l'image si elle ne se charge pas
@@ -1452,7 +1471,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                       {selectedStation.sensorModel && (
                         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
                           <p className="text-white text-xs sm:text-sm font-medium">
-                            Modèle : {selectedStation.sensorModel}
+                            {t("tooltip.model")} {selectedStation.sensorModel}
                           </p>
                         </div>
                       )}
@@ -1475,7 +1494,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                         </svg>
                         <p className="text-blue-600 text-xs font-medium">
                           {selectedStation.sensorModel ||
-                            "Microcapteur AtmoSud"}
+                            t("panels.microSidePanel.sensorFallback")}
                         </p>
                       </div>
                     </div>
@@ -1498,14 +1517,14 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                         d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                       />
                     </svg>
-                    Informations
+                    {t("panels.microSidePanel.infoCardTitle")}
                   </h3>
                   <div className="space-y-2">
                     <div className="flex items-start">
                       <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 mr-2"></div>
                       <div className="flex-1">
                         <p className="text-xs text-gray-600">
-                          Informations supplémentaires à venir
+                          {t("panels.microSidePanel.infoCardComingSoon")}
                         </p>
                       </div>
                     </div>

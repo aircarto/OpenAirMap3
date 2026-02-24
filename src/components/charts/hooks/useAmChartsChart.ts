@@ -3,6 +3,7 @@
  */
 
 import { useEffect, useRef } from "react";
+import i18n from "i18next";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
@@ -175,11 +176,11 @@ export const useAmChartsChart = ({
         })
       );
 
-      // Ajouter le label
+      // Ajouter le label (traduit)
       yAxis.children.push(
         am5.Label.new(root, {
           rotation: -90,
-          text: `Conc. (${unit})`,
+          text: i18n.t("chart.concentrationLabel", { unit }),
           y: am5.p50,
           centerX: am5.p50,
           fontSize: isMobile ? 8 : isLandscapeMobile ? 10 : 12,
@@ -255,6 +256,21 @@ export const useAmChartsChart = ({
       }
     };
   }, []); // Création initiale uniquement
+
+  // Mettre à jour les labels de l'axe Y quand la langue change
+  useEffect(() => {
+    if (!chartRef.current || !unitKeys.length) return;
+    const chart = chartRef.current;
+    chart.yAxes.values.forEach((yAxis, index) => {
+      const unit = unitKeys[index];
+      if (unit && yAxis.children) {
+        const label = yAxis.children.values[0];
+        if (label && typeof (label as any).set === "function") {
+          (label as any).set("text", i18n.t("chart.concentrationLabel", { unit }));
+        }
+      }
+    });
+  }, [unitKeys, i18n.language]);
 
   // Ref pour mémoriser les dernières données et éviter les mises à jour inutiles
   const lastAmChartsDataRef = useRef<string>("");

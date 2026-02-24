@@ -6,6 +6,7 @@ import React, {
   useMemo,
 } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import {
   StationInfo,
   ChartControls,
@@ -93,6 +94,7 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
   onComparisonModeToggle,
   isComparisonMode = false,
 }) => {
+  const { t, i18n } = useTranslation();
   const initialTimeStep = getInitialTimeStepForPollutants(
     initialPollutant ? [initialPollutant] : [],
     "heure"
@@ -320,7 +322,7 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
         setState((prev) => ({
           ...prev,
           loading: false,
-          error: "Erreur lors du chargement des données historiques",
+          error: t("panels.stationSidePanel.historicalDataLoadError"),
         }));
 
         // Réinitialiser le flag de chargement en cas d'erreur
@@ -328,7 +330,7 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
         loadingRef.current = false;
       }
     },
-    [nebuleAirService, modelingService]
+    [t, nebuleAirService, modelingService]
   );
 
   // Mettre à jour l'état uniquement lors de l'ouverture du panel ou du changement de station
@@ -657,7 +659,9 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
       if (wasAdjusted) {
         const maxDays = getMaxHistoryDays(prev.chartControls.timeStep);
         if (maxDays) {
-          infoMessage = `La période a été automatiquement ajustée à ${maxDays} jours maximum pour le pas de temps sélectionné.`;
+          infoMessage = t("panels.stationSidePanel.periodAutoAdjusted", {
+            maxDays,
+          });
           // Faire disparaître le message après 5 secondes
           setTimeout(() => {
             setState((current) => ({
@@ -813,7 +817,9 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
       if (wasAdjusted) {
         const maxDays = getMaxHistoryDays(timeStep);
         if (maxDays) {
-          infoMessage = `La période a été automatiquement ajustée à ${maxDays} jours maximum pour le pas de temps sélectionné.`;
+          infoMessage = t("panels.stationSidePanel.periodAutoAdjusted", {
+            maxDays,
+          });
           // Faire disparaître le message après 5 secondes
           setTimeout(() => {
             setState((current) => ({
@@ -962,24 +968,31 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
     const diffInHours = Math.floor(diffInMinutes / 60);
     const diffInDays = Math.floor(diffInHours / 24);
 
+    const locale = i18n.language?.startsWith("fr") ? "fr-FR" : i18n.language?.startsWith("en") ? "en-GB" : i18n.language?.startsWith("es") ? "es-ES" : i18n.language?.startsWith("it") ? "it-IT" : "fr-FR";
     // Format relatif pour les périodes récentes
     if (diffInMinutes < 1) {
-      return `Il y a moins d'une minute`;
+      return t("panels.nebuleAirSidePanel.lastSeenLessThanMinute");
     } else if (diffInMinutes < 60) {
-      return `Il y a ${diffInMinutes} minute${diffInMinutes > 1 ? "s" : ""}`;
+      return t("panels.nebuleAirSidePanel.lastSeenMinutes", {
+        count: diffInMinutes,
+      });
     } else if (diffInHours < 24) {
-      return `Il y a ${diffInHours} heure${diffInHours > 1 ? "s" : ""}`;
+      return t("panels.nebuleAirSidePanel.lastSeenHours", {
+        count: diffInHours,
+      });
     } else if (diffInDays < 7) {
-      return `Il y a ${diffInDays} jour${diffInDays > 1 ? "s" : ""}`;
+      return t("panels.nebuleAirSidePanel.lastSeenDays", {
+        count: diffInDays,
+      });
     } else {
-      // Pour les périodes plus longues, afficher la date complète
-      return `Dernière émission : ${lastSeenDate.toLocaleDateString("fr-FR", {
+      const dateStr = lastSeenDate.toLocaleDateString(locale, {
         day: "numeric",
         month: "long",
         year: "numeric",
         hour: "2-digit",
         minute: "2-digit",
-      })}`;
+      });
+      return t("panels.nebuleAirSidePanel.lastSeenEmission", { date: dateStr });
     }
   };
 
@@ -996,12 +1009,12 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
-                {selectedStation.id}, Microcapteur AirCarto
+                {t("panels.stationSidePanel.comparisonTitle")}
               </h2>
               {/* Rappel visuel du bouton de réouverture */}
               <div
                 className="p-1 rounded bg-blue-600 border border-blue-600"
-                title="Bouton bleu pour rouvrir le panel"
+                title={t("panels.stationSidePanel.reopenButtonTooltip")}
               >
                 <svg
                   className="w-3 h-3 text-white"
@@ -1021,7 +1034,7 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
             {selectedStation.lastSeenSec !== undefined && (
               <p className="text-xs sm:text-sm text-gray-500 mt-1">
                 {formatLastSeen(selectedStation.lastSeenSec) ||
-                  "Information non disponible"}
+                  t("panels.nebuleAirSidePanel.infoNotAvailable")}
               </p>
             )}
           </div>
@@ -1038,8 +1051,8 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
               className="p-1.5 sm:p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
               title={
                 currentPanelSize === "fullscreen"
-                  ? "Rétrécir le panel"
-                  : "Agrandir le panel"
+                  ? t("panels.shrinkPanel")
+                  : t("panels.expandPanel")
               }
             >
               <svg
@@ -1070,7 +1083,7 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
             <button
               onClick={() => handlePanelSizeChange("hidden")}
               className="p-1.5 sm:p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-              title="Rabattre le panel"
+              title={t("panels.collapsePanel")}
             >
               <svg
                 className="w-3.5 h-3.5 sm:w-4 sm:h-4"
@@ -1100,7 +1113,7 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                     {selectedStation.name}
                   </p>
                   <p className="text-xs text-gray-500 truncate">
-                    NebuleAir AirCarto
+                    {t("panels.nebuleAirSidePanel.sourceLabel")}
                     {selectedStation.address
                       ? ` · ${selectedStation.address}`
                       : ""}
@@ -1137,8 +1150,8 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                       />
                     </svg>
                     {isComparisonMode
-                      ? "Désactiver comparaison"
-                      : "Activer comparaison"}
+                      ? t("panels.stationSidePanel.disableComparison")
+                      : t("panels.stationSidePanel.enableComparison")}
                   </button>
                 )}
               </div>
@@ -1147,14 +1160,14 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
             {/* Graphique avec contrôles intégrés */}
             <div className="flex-1 min-h-80 sm:min-h-96 md:min-h-[28rem]">
               <h3 className="text-sm font-medium text-gray-700 mb-2 sm:mb-3">
-                Évolution temporelle (NebuleAir)
+                {t("panels.nebuleAirSidePanel.temporalEvolutionNebuleAir")}
               </h3>
               {state.loading ? (
                 <div className="flex items-center justify-center h-80 sm:h-96 md:h-[28rem] bg-gray-50 rounded-lg">
                   <div className="flex flex-col items-center space-y-2">
                     <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-[#4271B3]"></div>
                     <span className="text-xs sm:text-sm text-gray-500">
-                      Chargement des données...
+                      {t("panels.loadingData")}
                     </span>
                   </div>
                 </div>
@@ -1202,11 +1215,16 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                           />
                         </svg>
                         <span className="text-sm font-medium text-gray-700 truncate">
-                          Polluants affichés
+                          {t("panels.stationSidePanel.pollutantsDisplayed")}
                         </span>
                         <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full flex-shrink-0">
-                          {state.chartControls.selectedPollutants.length}{" "}
-                          sélectionné(s)
+                          {t(
+                            "panels.stationSidePanel.selectedCount",
+                            {
+                              count: state.chartControls.selectedPollutants
+                                .length,
+                            }
+                          )}
                         </span>
                       </div>
                       <svg
@@ -1254,9 +1272,13 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                                 }
                                 title={
                                   isLastSelectedAndDisabled
-                                    ? "Au moins un polluant doit rester sélectionné"
+                                    ? t(
+                                        "panels.stationSidePanel.atLeastOnePollutant"
+                                      )
                                     : !isEnabled
-                                    ? "Ce polluant n'est pas disponible pour cette station"
+                                    ? t(
+                                        "panels.stationSidePanel.pollutantNotAvailable"
+                                      )
                                     : undefined
                                 }
                                 className={`w-full flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-md text-sm transition-all duration-200 ${
@@ -1298,12 +1320,14 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                                     </svg>
                                   )}
                                 </div>
-                                <span className="flex-1 text-left truncate">
-                                  {pollutant.name}
-                                </span>
+<span className="flex-1 text-left truncate">
+                                    {t(`pollutants.${pollutantCode}`)}
+                                  </span>
                                 {!isEnabled && (
                                   <span className="text-xs text-gray-400 flex-shrink-0">
-                                    Non disponible
+                                    {t(
+                                      "panels.stationSidePanel.notAvailable"
+                                    )}
                                   </span>
                                 )}
                               </button>
@@ -1366,7 +1390,9 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                       modelingDisabled={state.chartControls.timeStep !== "heure"}
                       modelingDisabledReason={
                         state.chartControls.timeStep !== "heure"
-                          ? "Disponible uniquement au pas de temps horaire"
+                          ? t(
+                              "panels.stationSidePanel.modelingOnlyHourly"
+                            )
                           : undefined
                       }
                     />
@@ -1418,7 +1444,7 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                           />
                         </svg>
                         <span className="text-sm font-medium text-gray-700">
-                          Pas de temps
+                          {t("controls.timeStep")}
                         </span>
                       </div>
                       <ToggleGroup
@@ -1453,10 +1479,14 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
 
                           let tooltip = label;
                           if (isDisabledByRange && maxDays) {
-                            tooltip = `Limité à ${maxDays} jours pour ce pas de temps. Réduisez la période historique.`;
+                            tooltip = t(
+                              "panels.stationSidePanel.timeStepRangeLimit",
+                              { maxDays }
+                            );
                           } else if (isDisabledBySupport) {
-                            tooltip =
-                              "Pas de temps non supporté pour les polluants sélectionnés";
+                            tooltip = t(
+                              "panels.nebuleAirSidePanel.timeStepNotSupported"
+                            );
                           }
 
                           return (
@@ -1510,11 +1540,12 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                           return (
                             <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-md">
                               <p className="text-[11px] sm:text-xs text-amber-700">
-                                <span className="font-medium"></span> Les pas de
-                                temps {timeStepLabels.join(" et ")} sont
-                                désactivés car la période sélectionnée dépasse
-                                leur limite. Réduisez la période historique pour
-                                les activer.
+                                {t(
+                                  "panels.stationSidePanel.timeStepsDisabledByRange",
+                                  {
+                                    labels: timeStepLabels.join(", "),
+                                  }
+                                )}
                               </p>
                             </div>
                           );
@@ -1526,8 +1557,12 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                         restrictedPollutants.length > 0 && (
                           <p className="mt-2 text-[11px] sm:text-xs text-gray-500">
                             {restrictedPollutants.includes("bruit")
-                              ? "Le bruit n'est disponible qu'en mode Scan (≤2 min), les autres pas de temps sont désactivés."
-                              : "Certains polluants sélectionnés ne sont pas disponibles pour tous les pas de temps."}
+                              ? t(
+                                  "panels.nebuleAirSidePanel.restrictedPollutantsNoise"
+                                )
+                              : t(
+                                  "panels.nebuleAirSidePanel.restrictedPollutantsSome"
+                                )}
                           </p>
                         )}
                     </div>

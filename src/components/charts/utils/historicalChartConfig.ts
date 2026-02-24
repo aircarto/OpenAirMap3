@@ -2,6 +2,7 @@
  * Configuration pour HistoricalChart (séries, formatage, seuils)
  */
 
+import type { TFunction } from "i18next";
 import { pollutants } from "../../../constants/pollutants";
 import { QUALITY_COLORS } from "../../../constants/qualityColors";
 import { areThresholdsEqual } from "./historicalChartUtils";
@@ -71,18 +72,23 @@ export const getCommonThresholds = (
   return allHaveSameThresholds ? firstThresholds : null;
 };
 
+/** Locale pour le formatage des dates (ex: "fr-FR", "en-GB") */
+const getLocale = (locale?: string): string => locale || "fr-FR";
+
 /**
  * Détermine le format optimal pour les labels de l'axe X selon la plage de dates
  */
 export const getXAxisDateFormat = (
   chartData: any[],
-  isMobile: boolean
+  isMobile: boolean,
+  locale?: string
 ): { type: string; format: (date: Date) => string } => {
+  const loc = getLocale(locale);
   if (chartData.length === 0) {
     return {
       type: "hour",
       format: (date: Date) =>
-        date.toLocaleString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+        date.toLocaleString(loc, { hour: "2-digit", minute: "2-digit" }),
     };
   }
 
@@ -104,7 +110,7 @@ export const getXAxisDateFormat = (
     return {
       type: "hour",
       format: (date: Date) =>
-        date.toLocaleString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+        date.toLocaleString(loc, { hour: "2-digit", minute: "2-digit" }),
     };
   }
 
@@ -127,7 +133,7 @@ export const getXAxisDateFormat = (
         if (isMobile) {
           return `${date.getMonth() + 1}/${date.getFullYear()}`;
         }
-        return date.toLocaleString("fr-FR", {
+        return date.toLocaleString(loc, {
           month: "short",
           year: "numeric",
         });
@@ -140,7 +146,7 @@ export const getXAxisDateFormat = (
         if (isMobile) {
           return `${date.getMonth() + 1}/${date.getFullYear()}`;
         }
-        return date.toLocaleString("fr-FR", {
+        return date.toLocaleString(loc, {
           month: "short",
           year: "numeric",
         });
@@ -153,7 +159,7 @@ export const getXAxisDateFormat = (
         if (isMobile) {
           return `${date.getDate()}/${date.getMonth() + 1}`;
         }
-        return date.toLocaleString("fr-FR", { month: "short", day: "2-digit" });
+        return date.toLocaleString(loc, { month: "short", day: "2-digit" });
       },
     };
   } else if (diffDays > 1) {
@@ -167,7 +173,7 @@ export const getXAxisDateFormat = (
           const minutes = String(date.getMinutes()).padStart(2, "0");
           return `${day}/${month} ${hours}:${minutes}`;
         }
-        return date.toLocaleString("fr-FR", { day: "2-digit", month: "short" });
+        return date.toLocaleString(loc, { day: "2-digit", month: "short" });
       },
     };
   } else if (diffDays > 0) {
@@ -181,7 +187,7 @@ export const getXAxisDateFormat = (
           const minutes = String(date.getMinutes()).padStart(2, "0");
           return `${day}/${month} ${hours}:${minutes}`;
         }
-        return date.toLocaleString("fr-FR", {
+        return date.toLocaleString(loc, {
           day: "2-digit",
           month: "short",
           hour: "2-digit",
@@ -198,7 +204,7 @@ export const getXAxisDateFormat = (
           const minutes = String(date.getMinutes()).padStart(2, "0");
           return `${hours}:${minutes}`;
         }
-        return date.toLocaleString("fr-FR", {
+        return date.toLocaleString(loc, {
           hour: "2-digit",
           minute: "2-digit",
         });
@@ -224,8 +230,14 @@ export const generateSeriesConfigs = (
   useSolidNebuleAirLines: boolean,
   fallbackColors: string[],
   timeStep?: string,
-  chartData?: any[]
+  chartData?: any[],
+  t?: TFunction
 ): SeriesConfig[] => {
+  const suffix = (key: "correctedSuffix" | "rawSuffix" | "modelingSuffix") =>
+    t ? t(`chart.${key}`) : key === "correctedSuffix" ? " (corrigé)" : key === "rawSuffix" ? " (brute)" : " (modélisation)";
+  const pollName = (code: string) =>
+    t ? t(`pollutants.${code}`) : (pollutants[code]?.name || code);
+
   // Pour les pas de temps agrégés, insérer des points null et utiliser connect: false
   // pour créer des gaps visuels dans la ligne
   // Les points null sont insérés par fillGapsInData
@@ -239,7 +251,7 @@ export const generateSeriesConfigs = (
     stations.forEach((station, index) => {
       const pollutant = selectedPollutants[0];
       const stationColor = fallbackColors[index % fallbackColors.length];
-      const pollutantName = pollutants[pollutant]?.name || pollutant;
+      const pollutantName = pollName(pollutant);
 
       // Pour les stations atmoMicro, gérer les données corrigées et brutes
       if (station.source === "atmoMicro" && chartData) {
@@ -255,7 +267,7 @@ export const generateSeriesConfigs = (
         if (hasCorrected) {
           configs.push({
             dataKey: `${station.id}_corrected`,
-            name: `${station.name} - ${pollutantName} (corrigé)`,
+            name: `${station.name} - ${pollutantName} ${suffix("correctedSuffix")}`,
             color: stationColor,
             strokeWidth: 2,
             strokeDasharray: "0",
@@ -268,7 +280,7 @@ export const generateSeriesConfigs = (
         if (hasRaw && (showRawData || !hasCorrected)) {
           configs.push({
             dataKey: `${station.id}_raw`,
-            name: `${station.name} - ${pollutantName} (brute)`,
+            name: `${station.name} - ${pollutantName} ${suffix("rawSuffix")}`,
             color: stationColor,
             strokeWidth: 2,
             strokeDasharray: "3 3",
@@ -316,7 +328,7 @@ export const generateSeriesConfigs = (
 
     pollutantsInUnit.forEach((pollutant, pollutantIndex) => {
       const pollutantColor = getPollutantColor(pollutant, pollutantIndex);
-      const pollutantName = pollutants[pollutant]?.name || pollutant;
+      const pollutantName = pollName(pollutant);
       const flags = pollutantDataFlags[pollutant] || {
         hasCorrected: false,
         hasRaw: false,
@@ -343,7 +355,7 @@ export const generateSeriesConfigs = (
         if (hasCorrectedData) {
           configs.push({
             dataKey: `${pollutant}_corrected`,
-            name: `${pollutantName} (corrigé)`,
+            name: `${pollutantName} ${suffix("correctedSuffix")}`,
             color: pollutantColor,
             strokeWidth: 2,
             strokeDasharray: "0",
@@ -354,7 +366,7 @@ export const generateSeriesConfigs = (
         if (hasRawData && (showRawData || !hasCorrectedData)) {
           configs.push({
             dataKey: `${pollutant}_raw`,
-            name: `${pollutantName} (brute)`,
+            name: `${pollutantName} ${suffix("rawSuffix")}`,
             color: pollutantColor,
             strokeWidth: 2,
             strokeDasharray: "3 3",
@@ -399,7 +411,7 @@ export const generateSeriesConfigs = (
           const modelingColor = lightenColor(pollutantColor, 0.3); // Éclaircir de 30%
           configs.push({
             dataKey: modelingKey,
-            name: `${pollutantName} (modélisation)`,
+            name: `${pollutantName} ${suffix("modelingSuffix")}`,
             color: modelingColor,
             strokeWidth: 2,
             strokeDasharray: "5 5", // Pointillés plus espacés pour distinguer de la mesure

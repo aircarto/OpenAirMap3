@@ -46,6 +46,12 @@
     "tresMauvaisShort": "Molto c.",
     "extrMauvaisShort": "Estr. c."
   },
+  "chart": {
+    "concentrationLabel": "Conc. ({{unit}})",
+    "modelingSuffix": "(modellizzazione)",
+    "rawSuffix": "(grezzo)",
+    "correctedSuffix": "(corretto)"
+  },
   "controls": {
     "pollutant": "Inquinante",
     "sources": "Fonti dati",
@@ -74,7 +80,11 @@
     "autoRefresh": "Aggiornamento automatico",
     "period": "Periodo:",
     "advancedOptions": "Opzioni avanzate",
-    "advancedOptionsShort": "Opzioni"
+    "advancedOptionsShort": "Opzioni",
+    "modelingAzur": "Modellizzazione AZUR",
+    "modelingAzurDescription": "Mostra le previsioni di modellizzazione sul grafico",
+    "rawData": "Dati grezzi",
+    "rawDataDescription": "Mostra i dati non corretti sul grafico"
   },
   "historical": {
     "periodLabel": "Storico",
@@ -194,7 +204,33 @@
     "exportChart": "Esporta grafico",
     "exporting": "Esportazione in corso...",
     "exportPNG": "Esporta in PNG",
-    "exportCSV": "Esporta in CSV"
+    "exportCSV": "Esporta in CSV",
+    "microSidePanel": {
+      "sourceLabel": "Microsensore qualificato AtmoSud",
+      "temporalEvolutionAtmoMicro": "Evoluzione temporale",
+      "pollutantsLabel": "Inquinanti visualizzati",
+      "sensorFallback": "Microsensore AtmoSud",
+      "sensorAlt": "Sensore {{model}}",
+      "infoCardTitle": "Informazioni",
+      "infoCardComingSoon": "Ulteriori informazioni in arrivo"
+    },
+    "nebuleAirSidePanel": {
+      "sourceLabel": "NebuleAir AirCarto",
+      "microSensorAirCarto": "Microsensore AirCarto",
+      "temporalEvolutionNebuleAir": "Evoluzione temporale",
+      "infoNotAvailable": "Informazione non disponibile",
+      "lastSeenLessThanMinute": "Meno di un minuto fa",
+      "lastSeenMinutes": "{{count}} minuto fa",
+      "lastSeenMinutes_other": "{{count}} minuti fa",
+      "lastSeenHours": "{{count}} ora fa",
+      "lastSeenHours_other": "{{count}} ore fa",
+      "lastSeenDays": "{{count}} giorno fa",
+      "lastSeenDays_other": "{{count}} giorni fa",
+      "lastSeenEmission": "Ultima emissione: {{date}}",
+      "timeStepNotSupported": "Passo temporale non supportato per gli inquinanti selezionati",
+      "restrictedPollutantsNoise": "Il rumore è disponibile solo in modalità Scan (≤2 min); gli altri passi temporali sono disattivati.",
+      "restrictedPollutantsSome": "Alcuni inquinanti selezionati non sono disponibili per tutti i passi temporali."
+    }
   },
   "search": {
     "placeholder": "Cerca un indirizzo o stazione/sensore...",

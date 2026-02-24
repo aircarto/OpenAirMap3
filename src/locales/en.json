@@ -46,6 +46,12 @@
     "tresMauvaisShort": "Very b.",
     "extrMauvaisShort": "Extr. b."
   },
+  "chart": {
+    "concentrationLabel": "Conc. ({{unit}})",
+    "modelingSuffix": "(modeling)",
+    "rawSuffix": "(raw)",
+    "correctedSuffix": "(corrected)"
+  },
   "controls": {
     "pollutant": "Pollutant",
     "sources": "Data sources",
@@ -74,7 +80,11 @@
     "autoRefresh": "Auto-refresh",
     "period": "Period:",
     "advancedOptions": "Advanced options",
-    "advancedOptionsShort": "Options"
+    "advancedOptionsShort": "Options",
+    "modelingAzur": "AZUR modeling",
+    "modelingAzurDescription": "Show modeling forecasts on the chart",
+    "rawData": "Raw data",
+    "rawDataDescription": "Show uncorrected data on the chart"
   },
   "historical": {
     "periodLabel": "Historical",
@@ -194,7 +204,33 @@
     "exportChart": "Export chart",
     "exporting": "Exporting...",
     "exportPNG": "Export as PNG",
-    "exportCSV": "Export as CSV"
+    "exportCSV": "Export as CSV",
+    "microSidePanel": {
+      "sourceLabel": "AtmoSud qualified micro-sensor",
+      "temporalEvolutionAtmoMicro": "Temporal evolution",
+      "pollutantsLabel": "Pollutants displayed",
+      "sensorFallback": "AtmoSud micro-sensor",
+      "sensorAlt": "Sensor {{model}}",
+      "infoCardTitle": "Information",
+      "infoCardComingSoon": "Additional information coming soon"
+    },
+    "nebuleAirSidePanel": {
+      "sourceLabel": "NebuleAir AirCarto",
+      "microSensorAirCarto": "AirCarto micro-sensor",
+      "temporalEvolutionNebuleAir": "Temporal evolution",
+      "infoNotAvailable": "Information not available",
+      "lastSeenLessThanMinute": "Less than a minute ago",
+      "lastSeenMinutes": "{{count}} minute ago",
+      "lastSeenMinutes_other": "{{count}} minutes ago",
+      "lastSeenHours": "{{count}} hour ago",
+      "lastSeenHours_other": "{{count}} hours ago",
+      "lastSeenDays": "{{count}} day ago",
+      "lastSeenDays_other": "{{count}} days ago",
+      "lastSeenEmission": "Last emission: {{date}}",
+      "timeStepNotSupported": "Time step not supported for selected pollutants",
+      "restrictedPollutantsNoise": "Noise is only available in Scan mode (≤2 min); other time steps are disabled.",
+      "restrictedPollutantsSome": "Some selected pollutants are not available for all time steps."
+    }
   },
   "search": {
     "placeholder": "Search for an address or station/sensor...",
