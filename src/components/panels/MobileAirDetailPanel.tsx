@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   MobileAirRoute,
   MobileAirDataPoint,
@@ -48,6 +49,7 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
   onRouteSelect,
   panelSize: externalPanelSize,
 }) => {
+  const { t, i18n } = useTranslation();
   const [internalPanelSize, setInternalPanelSize] =
     useState<PanelSize>("normal");
   const [hoveredPoint, setHoveredPoint] = useState<MobileAirDataPoint | null>(
@@ -94,10 +96,10 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
   const supportedPollutants = useMemo(() => {
     return Object.entries(MOBILEAIR_POLLUTANT_MAPPING).map(([key, value]) => ({
       code: value,
-      label: pollutants[value]?.name || key,
+      label: t(`pollutants.${value}`, { defaultValue: key }),
       key: key,
     }));
-  }, []);
+  }, [t]);
 
   // Fonction pour obtenir une couleur pour un polluant
   const getPollutantColor = useCallback((pollutantCode: string, index: number): string => {
@@ -132,18 +134,21 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
   // Fonction pour formater la durée
   const formatDuration = (minutes: number): string => {
     if (minutes < 60) {
-      return `${Math.round(minutes)} min`;
-    } else {
-      const hours = Math.floor(minutes / 60);
-      const remainingMinutes = Math.round(minutes % 60);
-      return `${hours}h ${remainingMinutes}min`;
+      return t("panels.mobileAirDetail.durationMin", { count: Math.round(minutes) });
     }
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = Math.round(minutes % 60);
+    return t("panels.mobileAirDetail.durationHrMin", {
+      hours,
+      minutes: remainingMinutes,
+    });
   };
 
   // Fonction pour formater la date
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
-    return date.toLocaleString("fr-FR", {
+    const locale = i18n.language === "fr" ? "fr-FR" : i18n.language === "en" ? "en-GB" : i18n.language;
+    return date.toLocaleString(locale, {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
@@ -247,25 +252,23 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
 
   // Configuration des séries (une par polluant sélectionné)
   const series: AmChartsLineSeries[] = useMemo(() => {
-    return localSelectedPollutants.map((pollutantCode, index) => {
-      const pollutantConfig = pollutants[pollutantCode];
-      return {
-        dataKey: pollutantCode,
-        name: pollutantConfig?.name || pollutantCode,
-        color: getPollutantColor(pollutantCode, index),
-        strokeWidth: 2,
-        yAxisId: "left",
-      };
-    });
-  }, [localSelectedPollutants, getPollutantColor]);
+    return localSelectedPollutants.map((pollutantCode, index) => ({
+      dataKey: pollutantCode,
+      name: t(`pollutants.${pollutantCode}`, { defaultValue: pollutantCode }),
+      color: getPollutantColor(pollutantCode, index),
+      strokeWidth: 2,
+      yAxisId: "left",
+    }));
+  }, [localSelectedPollutants, getPollutantColor, t]);
 
   // Formatage de l'axe X
   const xAxisLabelFormatter = useCallback((date: Date) => {
-    return date.toLocaleString("fr-FR", {
+    const locale = i18n.language === "fr" ? "fr-FR" : i18n.language === "en" ? "en-GB" : i18n.language;
+    return date.toLocaleString(locale, {
       hour: "2-digit",
       minute: "2-digit",
     });
-  }, []);
+  }, [i18n.language]);
 
   // Formatage du tooltip - non utilisé car on le configure dans handleChartReady
   const tooltipFormatter = undefined;
@@ -290,41 +293,41 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
         addThresholdZones(yAxisMap, commonThresholds);
       }
 
-      // Récupérer toutes les séries et les stocker
-      chart.series.each((seriesItem) => {
+      // Récupérer toutes les séries et les stocker (ordre = localSelectedPollutants)
+      chart.series.each((seriesItem, index) => {
         const lineSeries = seriesItem as am5xy.LineSeries;
-        const seriesName = lineSeries.get("name");
-        if (seriesName) {
-          // Trouver le polluant correspondant
-          const pollutantCode = localSelectedPollutants.find(
-            (p) => pollutants[p]?.name === seriesName
-          );
-          if (pollutantCode) {
-            seriesRefs.current.set(pollutantCode, lineSeries);
-          }
+        const pollutantCode = localSelectedPollutants[index];
+        if (pollutantCode) {
+          seriesRefs.current.set(pollutantCode, lineSeries);
         }
       });
 
+      const locale = i18n.language === "fr" ? "fr-FR" : i18n.language === "en" ? "en-GB" : i18n.language;
+      const formatDateForTooltip = (dateString: string) =>
+        new Date(dateString).toLocaleString(locale, {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
       // Configurer le tooltip pour chaque série
-      chart.series.each((seriesItem) => {
+      chart.series.each((seriesItem, index) => {
         const lineSeries = seriesItem as am5xy.LineSeries;
         const seriesName = lineSeries.get("name");
-        
+        const pollutantCode = localSelectedPollutants[index] || localSelectedPollutants[0];
+        const config = pollutants[pollutantCode];
+
         const tooltip = am5.Tooltip.new(root, {});
         tooltip.label.adapters.add("text", (text, target) => {
           const dataItem = target.dataItem as am5.DataItem<am5xy.ILineSeriesDataItem>;
           if (dataItem) {
             const data = dataItem.dataContext as { point: MobileAirDataPoint };
             const value = (dataItem as any).get("valueY") as number;
-            
+
             if (data && data.point && typeof value === "number" && seriesName) {
-              // Trouver le polluant correspondant à cette série
-              const pollutantForSeries = localSelectedPollutants.find(
-                (p) => pollutants[p]?.name === seriesName
-              ) || localSelectedPollutants[0];
-              const config = pollutants[pollutantForSeries];
-              
-              return `${formatDate(data.point.time)} - ${seriesName}: ${value.toFixed(1)} ${config?.unit || "µg/m³"}`;
+              return `${formatDateForTooltip(data.point.time)} - ${seriesName}: ${value.toFixed(1)} ${config?.unit || "µg/m³"}`;
             }
             if (typeof value === "number") {
               return `${value.toFixed(1)} µg/m³`;
@@ -496,7 +499,7 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
       // Stocker l'intervalle pour le nettoyage
       (root as any).__cursorCheckInterval = cursorCheckInterval;
     },
-    [localSelectedPollutants, onPointHover] // Ne pas inclure highlightedPoint pour éviter les recréations
+    [localSelectedPollutants, onPointHover, i18n.language]
   );
 
   // Nettoyer l'intervalle du curseur au démontage
@@ -548,10 +551,10 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
-              Session {routeToUse.sessionId}
+              {t("panels.mobileAirDetail.sessionTitle", { sessionId: routeToUse.sessionId })}
             </h2>
             {/* Rappel visuel du bouton de réouverture */}
-            <div className="p-1 rounded bg-green-600 border border-green-600" title="Bouton vert pour rouvrir le panel">
+            <div className="p-1 rounded bg-green-600 border border-green-600" title={t("panels.mobileAirSelection.reopenButtonTooltip")}>
               <svg
                 className="w-3 h-3 text-white"
                 fill="none"
@@ -568,7 +571,7 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
             </div>
           </div>
           <p className="text-xs sm:text-sm text-gray-600 truncate">
-            Capteur {routeToUse.sensorId}
+            {t("panels.mobileAirDetail.sensorLabel", { sensorId: routeToUse.sensorId })}
           </p>
         </div>
 
@@ -584,8 +587,8 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
             className="p-1.5 sm:p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
             title={
               currentPanelSize === "fullscreen"
-                ? "Rétrécir le panel"
-                : "Agrandir le panel"
+                ? t("panels.shrinkPanel")
+                : t("panels.expandPanel")
             }
           >
             <svg
@@ -616,7 +619,7 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
           <button
             onClick={() => handlePanelSizeChange("hidden")}
             className="p-1.5 sm:p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-            title="Rabattre le panel"
+            title={t("panels.collapsePanel")}
           >
             <svg
               className="w-3.5 h-3.5 sm:w-4 sm:h-4"
@@ -641,7 +644,7 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
           {/* Sélection de polluants */}
           <div className="border border-gray-200 rounded-lg p-3 sm:p-4">
             <h3 className="text-sm font-medium text-gray-700 mb-3 text-center">
-              Polluants affichés ({localSelectedPollutants.length})
+              {t("panels.mobileAirDetail.pollutantsDisplayed", { count: localSelectedPollutants.length })}
             </h3>
             <div className="flex flex-wrap gap-2 justify-center">
               {supportedPollutants.map((pollutant) => {
@@ -702,7 +705,7 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
           {allRoutes.length > 0 && (
             <div className="border border-gray-200 rounded-lg p-3 sm:p-4">
               <h3 className="text-sm font-medium text-gray-700 mb-3 text-center">
-                Sessions disponibles ({allRoutes.length})
+                {t("panels.mobileAirDetail.sessionsAvailable", { count: allRoutes.length })}
               </h3>
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {allRoutes
@@ -728,11 +731,11 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
                             <div className={`text-sm font-medium ${
                               isCurrentSession ? "text-blue-900" : "text-gray-900"
                             }`}>
-                              Session {route.sessionId}
+                              {t("panels.mobileAirDetail.sessionLabel", { sessionId: route.sessionId })}
                             </div>
                             {isCurrentSession && (
                               <span className="px-2 py-0.5 text-xs font-medium bg-blue-500 text-white rounded-full">
-                                Actuelle
+                                {t("panels.mobileAirDetail.currentBadge")}
                               </span>
                             )}
                           </div>
@@ -753,7 +756,7 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
                           <div className={`text-xs ${
                             isCurrentSession ? "text-blue-700" : "text-gray-600"
                           }`}>
-                            {route.points.length} points
+                            {t("panels.mobileAirDetail.pointsCount", { count: route.points.length })}
                           </div>
                         </div>
                       </button>
@@ -766,7 +769,7 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
           {/* Graphique */}
           <div className="border border-gray-200 rounded-lg p-3 sm:p-4">
             <h3 className="text-sm font-medium text-gray-700 mb-3 text-center">
-              Évolution temporelle
+              {t("panels.mobileAirDetail.temporalEvolution")}
             </h3>
             {!isPollutantSupported ? (
               <div className="h-64 flex items-center justify-center">
@@ -785,14 +788,14 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
                     />
                   </svg>
                   <h4 className="text-sm font-medium text-red-800 mb-2">
-                    Polluant non supporté
+                    {t("panels.mobileAirDetail.pollutantNotSupported")}
                   </h4>
                   <p className="text-xs text-red-600 mb-3">
-                    Les polluants sélectionnés ne peuvent pas être affichés.
+                    {t("panels.mobileAirDetail.pollutantsCannotBeDisplayed")}
                   </p>
                   <div className="bg-red-50 rounded-md p-2">
                     <p className="text-xs text-red-700">
-                      Seuls PM₁, PM₂.₅ et PM₁₀ sont supportés par MobileAir.
+                      {t("panels.mobileAirDetail.onlyPmSupported")}
                     </p>
                   </div>
                 </div>
@@ -806,7 +809,7 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
                   yAxes={[
                     {
                       id: "left",
-                      label: "Concentration",
+                      label: t("panels.mobileAirDetail.concentration"),
                       unit: localSelectedPollutants.length > 0 && pollutants[localSelectedPollutants[0]]?.unit 
                         ? pollutants[localSelectedPollutants[0]].unit 
                         : "µg/m³",
@@ -829,24 +832,24 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
             <div className="border border-yellow-300 rounded-lg p-3 sm:p-4 bg-blue-50">
               <h3 className="text-sm font-medium text-yellow-800 mb-3 flex items-center">
                 <span className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
-                Point mis en surbrillance
+                {t("panels.mobileAirDetail.highlightedPoint")}
               </h3>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <span className="text-gray-600">Heure:</span>
+                  <span className="text-gray-600">{t("panels.mobileAirDetail.timeLabel")}</span>
                   <p className="font-medium">
                     {formatDate(hoveredPoint.time)}
                   </p>
                 </div>
                 <div>
-                  <span className="text-gray-600">Position:</span>
+                  <span className="text-gray-600">{t("panels.mobileAirDetail.positionLabel")}</span>
                   <p className="font-medium text-xs">
                     {hoveredPoint.lat.toFixed(6)},{" "}
                     {hoveredPoint.lon.toFixed(6)}
                   </p>
                 </div>
                 <div>
-                  <span className="text-gray-600">Valeur:</span>
+                  <span className="text-gray-600">{t("panels.mobileAirDetail.valueLabel")}</span>
                   {localSelectedPollutants.length > 0 ? (
                     <div className="space-y-1 mt-1">
                       {localSelectedPollutants.map((pollutantCode, index) => {
@@ -863,7 +866,7 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
                               style={{ backgroundColor: getPollutantColor(pollutantCode, index) }}
                             />
                             <span className="text-xs font-medium">
-                              {config?.name || pollutantCode}: {value?.toFixed(1) || "N/A"} {config?.unit || "µg/m³"}
+                              {t(`pollutants.${pollutantCode}`, { defaultValue: pollutantCode })}: {value?.toFixed(1) || "N/A"} {config?.unit || "µg/m³"}
                             </span>
                           </div>
                         );
@@ -874,7 +877,7 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
                   )}
                 </div>
                 <div>
-                  <span className="text-gray-600">Niveau:</span>
+                  <span className="text-gray-600">{t("panels.mobileAirDetail.levelLabel")}</span>
                   {localSelectedPollutants.length > 0 && (
                     <div className="space-y-1 mt-1">
                       {localSelectedPollutants.map((pollutantCode, index) => {
@@ -895,7 +898,7 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
                                 color: getQualityColor(value || 0, pollutantCode, pollutants),
                               }}
                             >
-                              {pollutants[pollutantCode]?.name}: {getQualityLevel(value || 0, pollutantCode, pollutants)}
+                              {t(`pollutants.${pollutantCode}`, { defaultValue: pollutantCode })}: {t(`quality.${getQualityLevel(value || 0, pollutantCode, pollutants)}`)}
                             </p>
                           </div>
                         );
@@ -912,27 +915,27 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
           {/* Informations de la session */}
           <div className="border border-gray-200 rounded-lg p-3 sm:p-4">
             <h3 className="text-sm font-medium text-gray-700 mb-3 text-center">
-              Informations de la session
+              {t("panels.mobileAirDetail.sessionInfoTitle")}
             </h3>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
-                <span className="text-gray-600">Début:</span>
+                <span className="text-gray-600">{t("panels.mobileAirDetail.startLabel")}</span>
                 <p className="font-medium">
                   {formatDate(routeToUse.startTime)}
                 </p>
               </div>
               <div>
-                <span className="text-gray-600">Fin:</span>
+                <span className="text-gray-600">{t("panels.mobileAirDetail.endLabel")}</span>
                 <p className="font-medium">{formatDate(routeToUse.endTime)}</p>
               </div>
               <div>
-                <span className="text-gray-600">Durée:</span>
+                <span className="text-gray-600">{t("panels.mobileAirDetail.durationLabel")}</span>
                 <p className="font-medium">
                   {formatDuration(routeToUse.duration)}
                 </p>
               </div>
               <div>
-                <span className="text-gray-600">Points:</span>
+                <span className="text-gray-600">{t("panels.mobileAirDetail.pointsLabel")}</span>
                 <p className="font-medium">{routeToUse.points.length}</p>
               </div>
             </div>
@@ -941,11 +944,11 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
           {/* Statistiques */}
           <div className="border border-gray-200 rounded-lg p-3 sm:p-4">
             <h3 className="text-sm font-medium text-gray-700 mb-3 text-center">
-              Statistiques
+              {t("panels.mobileAirDetail.statsTitle")}
             </h3>
             <div className="grid grid-cols-3 gap-3 text-sm">
               <div className="text-center">
-                <span className="text-gray-600 block">Moyenne</span>
+                <span className="text-gray-600 block">{t("panels.mobileAirDetail.average")}</span>
                 <p className="font-medium text-lg">
                   {routeToUse.averageValue.toFixed(1)}
                 </p>
@@ -956,7 +959,7 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
                 </p>
               </div>
               <div className="text-center">
-                <span className="text-gray-600 block">Maximum</span>
+                <span className="text-gray-600 block">{t("panels.mobileAirDetail.maximum")}</span>
                 <p className="font-medium text-lg">
                   {routeToUse.maxValue.toFixed(1)}
                 </p>
@@ -967,7 +970,7 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
                 </p>
               </div>
               <div className="text-center">
-                <span className="text-gray-600 block">Minimum</span>
+                <span className="text-gray-600 block">{t("panels.mobileAirDetail.minimum")}</span>
                 <p className="font-medium text-lg">
                   {routeToUse.minValue.toFixed(1)}
                 </p>

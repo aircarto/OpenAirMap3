@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import { StationInfo } from "../../types";
 import { getAirQualityLevel } from "../../utils";
 import { pollutants } from "../../constants/pollutants";
@@ -39,6 +40,7 @@ const PurpleAirSidePanel: React.FC<PurpleAirSidePanelProps> = ({
   initialPollutant,
   panelSize: externalPanelSize,
 }) => {
+  const { t } = useTranslation();
   const [internalPanelSize, setInternalPanelSize] =
     useState<PanelSize>("normal");
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
@@ -158,25 +160,9 @@ const PurpleAirSidePanel: React.FC<PurpleAirSidePanelProps> = ({
     );
   };
 
-  // Labels des niveaux de qualité
-  const getQualityLabel = (level: string) => {
-    switch (level) {
-      case "bon":
-        return "Bon";
-      case "moyen":
-        return "Moyen";
-      case "degrade":
-        return "Dégradé";
-      case "mauvais":
-        return "Mauvais";
-      case "tresMauvais":
-        return "Très mauvais";
-      case "extrMauvais":
-        return "Extrêmement mauvais";
-      default:
-        return "Inconnu";
-    }
-  };
+  // Labels des niveaux de qualité (i18n)
+  const getQualityLabel = (level: string) =>
+    level === "default" ? t("quality.noData") : t(`quality.${level}`);
 
   // Lien vers PurpleAir
   const purpleAirUrl = `https://www.purpleair.com/map?select=${selectedStation?.id || ""}`;
@@ -229,7 +215,7 @@ const PurpleAirSidePanel: React.FC<PurpleAirSidePanelProps> = ({
               {selectedStation.name}
             </h2>
             {/* Rappel visuel du bouton de réouverture */}
-            <div className="p-1 rounded bg-blue-600 border border-blue-600" title="Bouton bleu pour rouvrir le panel">
+            <div className="p-1 rounded bg-blue-600 border border-blue-600" title={t("panels.stationSidePanel.reopenButtonTooltip")}>
               <svg
                 className="w-3 h-3 text-white"
                 fill="none"
@@ -246,7 +232,7 @@ const PurpleAirSidePanel: React.FC<PurpleAirSidePanelProps> = ({
             </div>
           </div>
           <p className="text-xs text-gray-500 truncate">
-            Capteur PurpleAir #{selectedStation.id}
+            {t("panels.purpleAirSidePanel.sensorLabel", { id: selectedStation.id })}
           </p>
         </div>
 
@@ -262,8 +248,8 @@ const PurpleAirSidePanel: React.FC<PurpleAirSidePanelProps> = ({
             className="p-1.5 sm:p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
             title={
               currentPanelSize === "fullscreen"
-                ? "Rétrécir le panel"
-                : "Agrandir le panel"
+                ? t("panels.shrinkPanel")
+                : t("panels.expandPanel")
             }
           >
             <svg
@@ -294,7 +280,7 @@ const PurpleAirSidePanel: React.FC<PurpleAirSidePanelProps> = ({
           <button
             onClick={() => handlePanelSizeChange("hidden")}
             className="p-1.5 sm:p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-            title="Rabattre le panel"
+            title={t("panels.collapsePanel")}
           >
             <svg
               className="w-3.5 h-3.5 sm:w-4 sm:h-4"
@@ -319,12 +305,12 @@ const PurpleAirSidePanel: React.FC<PurpleAirSidePanelProps> = ({
           {/* Informations générales */}
           <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4">
             <h3 className="text-sm font-medium text-gray-700 mb-3">
-              Informations du capteur
+              {t("panels.purpleAirSidePanel.sensorInfoTitle")}
             </h3>
             <div className="grid grid-cols-2 gap-3 sm:gap-4 text-sm">
               <div>
                 <span className="text-gray-500 block text-xs mb-1">
-                  Confiance
+                  {t("panels.purpleAirSidePanel.confidence")}
                 </span>
                 <span
                   className={`font-medium block ${
@@ -339,22 +325,22 @@ const PurpleAirSidePanel: React.FC<PurpleAirSidePanelProps> = ({
                 </span>
                 <span className="text-xs text-gray-400">
                   {deviceData.confidence >= 90
-                    ? "Excellente"
+                    ? t("panels.purpleAirSidePanel.confidenceExcellent")
                     : deviceData.confidence >= 70
-                    ? "Bonne"
-                    : "Faible"}
+                    ? t("panels.purpleAirSidePanel.confidenceGood")
+                    : t("panels.purpleAirSidePanel.confidenceLow")}
                 </span>
               </div>
               <div>
                 <span className="text-gray-500 block text-xs mb-1">
-                  Température
+                  {t("panels.purpleAirSidePanel.temperature")}
                 </span>
                 <span className="font-medium text-gray-900">
                   {Math.round(((deviceData.temperature - 32) * 5) / 9)}°C
                 </span>
               </div>
               <div>
-                <span className="text-gray-500 block text-xs mb-1">Humidité</span>
+                <span className="text-gray-500 block text-xs mb-1">{t("panels.purpleAirSidePanel.humidity")}</span>
                 <span className="font-medium text-gray-900">
                   {deviceData.humidity}%
                 </span>
@@ -365,7 +351,7 @@ const PurpleAirSidePanel: React.FC<PurpleAirSidePanelProps> = ({
           {/* Cartes des polluants */}
           <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4">
             <h3 className="text-sm font-medium text-gray-700 mb-3 sm:mb-4">
-              Mesures de qualité de l'air
+              {t("panels.purpleAirSidePanel.airQualityMeasures")}
             </h3>
 
             <div className="space-y-3 sm:space-y-4">
@@ -385,7 +371,7 @@ const PurpleAirSidePanel: React.FC<PurpleAirSidePanelProps> = ({
                         style={{ backgroundColor: getIndicatorColor(pm1Level) }}
                       ></div>
                       <span className="text-sm font-medium text-gray-700">
-                        PM₁
+                        {t("pollutants.pm1")}
                       </span>
                     </div>
                     <span
@@ -421,7 +407,7 @@ const PurpleAirSidePanel: React.FC<PurpleAirSidePanelProps> = ({
                       }}
                     ></div>
                     <span className="text-sm font-medium text-gray-700">
-                      PM₂.₅
+                      {t("pollutants.pm25")}
                     </span>
                   </div>
                   <span
@@ -457,7 +443,7 @@ const PurpleAirSidePanel: React.FC<PurpleAirSidePanelProps> = ({
                         }}
                       ></div>
                       <span className="text-sm font-medium text-gray-700">
-                        PM₁₀
+                        {t("pollutants.pm10")}
                       </span>
                     </div>
                     <span
@@ -490,15 +476,14 @@ const PurpleAirSidePanel: React.FC<PurpleAirSidePanelProps> = ({
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
               </svg>
               <span className="text-sm sm:text-base">
-                Voir les données sur PurpleAir
+                {t("panels.purpleAirSidePanel.viewOnPurpleAir")}
               </span>
             </a>
 
             <div className="text-xs text-gray-500 mt-3 space-y-1">
-              <p>Données en temps réel • Capteur communautaire</p>
+              <p>{t("panels.purpleAirSidePanel.realtimeCommunity")}</p>
               <p>
-                La confiance indique la cohérence entre les deux capteurs internes
-                (A et B)
+                {t("panels.purpleAirSidePanel.confidenceDescription")}
               </p>
             </div>
           </div>

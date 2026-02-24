@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { MobileAirSensor, MOBILEAIR_POLLUTANT_MAPPING } from "../../types";
-import { pollutants } from "../../constants/pollutants";
 import { MobileAirService } from "../../services/MobileAirService";
 import HistoricalTimeRangeSelector, {
   TimeRange,
@@ -30,6 +30,7 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
   onSensorSelected,
   panelSize: externalPanelSize,
 }) => {
+  const { t } = useTranslation();
   const [internalPanelSize, setInternalPanelSize] =
     useState<PanelSize>("normal");
   const [sensors, setSensors] = useState<MobileAirSensor[]>([]);
@@ -85,7 +86,7 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
       }
     } catch (err) {
       console.error("Erreur lors du chargement des capteurs MobileAir:", err);
-      setError("Erreur lors du chargement des capteurs");
+      setError("loadError");
     } finally {
       setLoading(false);
     }
@@ -112,7 +113,7 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
 
   const handleLoadRoutes = () => {
     if (!selectedSensor) {
-      setError("Veuillez sélectionner un capteur");
+      setError("selectSensorRequired");
       return;
     }
 
@@ -177,21 +178,22 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
     const diffMinutes = Math.floor(diffMs / (1000 * 60));
 
     if (diffDays > 0) {
-      return `Il y a ${diffDays} jour${diffDays > 1 ? "s" : ""}`;
-    } else if (diffHours > 0) {
-      return `Il y a ${diffHours} heure${diffHours > 1 ? "s" : ""}`;
-    } else if (diffMinutes > 0) {
-      return `Il y a ${diffMinutes} minute${diffMinutes > 1 ? "s" : ""}`;
-    } else {
-      return "À l'instant";
+      return t("panels.mobileAirSelection.lastSeenDays", { count: diffDays });
     }
+    if (diffHours > 0) {
+      return t("panels.mobileAirSelection.lastSeenHours", { count: diffHours });
+    }
+    if (diffMinutes > 0) {
+      return t("panels.mobileAirSelection.lastSeenMinutes", { count: diffMinutes });
+    }
+    return t("panels.mobileAirSelection.lastSeenNow");
   };
 
   const getSensorStatus = (
     sensor: MobileAirSensor
   ): { status: string; color: string } => {
     if (sensor.connected) {
-      return { status: "Connecté", color: "text-green-600" };
+      return { status: t("panels.mobileAirSelection.statusConnected"), color: "text-green-600" };
     }
 
     const lastSeenDate = new Date(sensor.time);
@@ -200,10 +202,9 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
       (now.getTime() - lastSeenDate.getTime()) / (1000 * 60 * 60);
 
     if (diffHours < 24) {
-      return { status: "Récent", color: "text-yellow-600" };
-    } else {
-      return { status: "Inactif", color: "text-red-600" };
+      return { status: t("panels.mobileAirSelection.statusRecent"), color: "text-yellow-600" };
     }
+    return { status: t("panels.mobileAirSelection.statusInactive"), color: "text-red-600" };
   };
 
   const handlePanelSizeChange = (newSize: PanelSize) => {
@@ -252,10 +253,10 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
-              Sélection MobileAir
+              {t("panels.mobileAirSelection.title")}
             </h2>
             {/* Rappel visuel du bouton de réouverture */}
-            <div className="p-1 rounded bg-green-600 border border-green-600" title="Bouton vert pour rouvrir le panel">
+            <div className="p-1 rounded bg-green-600 border border-green-600" title={t("panels.mobileAirSelection.reopenButtonTooltip")}>
               <svg
                 className="w-3 h-3 text-white"
                 fill="none"
@@ -286,7 +287,7 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
             </div>
           </div>
           <p className="text-xs sm:text-sm text-gray-600 truncate">
-            {pollutants[initialPollutant]?.name || initialPollutant}
+            {t(`pollutants.${initialPollutant}`, { defaultValue: initialPollutant })}
           </p>
         </div>
 
@@ -301,9 +302,9 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
             }
             className="p-1.5 sm:p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
             title={
-              currentPanelSize === "fullscreen" 
-                ? "Rétrécir le panel" 
-                : "Agrandir le panel"
+              currentPanelSize === "fullscreen"
+                ? t("panels.shrinkPanel")
+                : t("panels.expandPanel")
             }
           >
             <svg
@@ -334,7 +335,7 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
           <button
             onClick={onClose}
             className="p-1.5 sm:p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-            title="Fermer le panel"
+            title={t("panels.closePanel")}
           >
             <svg
               className="w-3.5 h-3.5 sm:w-4 sm:h-4"
@@ -374,16 +375,14 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
               </svg>
               <div className="flex-1">
                 <h3 className="text-sm font-medium text-blue-800 mb-2">
-                  Limitation de sélection
+                  {t("panels.mobileAirSelection.selectionLimitTitle")}
                 </h3>
                 <p className="text-sm text-blue-700 mb-3">
-                  Pour protéger l'API Air Carto, vous ne pouvez sélectionner
-                  qu'un seul capteur MobileAir à la fois.
+                  {t("panels.mobileAirSelection.selectionLimitDescription")}
                 </p>
                 <div className="bg-blue-100 rounded-md p-3">
                   <p className="text-xs font-medium text-blue-800 mb-1">
-                    💡 Conseil : Sélectionnez un capteur, analysez ses données,
-                    puis changez de capteur si nécessaire.
+                    💡 {t("panels.mobileAirSelection.selectionLimitTip")}
                   </p>
                 </div>
               </div>
@@ -409,28 +408,26 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
                 </svg>
                 <div className="flex-1">
                   <h3 className="text-sm font-medium text-red-800 mb-2">
-                    Polluant non supporté par MobileAir
+                    {t("panels.mobileAirSelection.pollutantNotSupportedTitle")}
                   </h3>
                   <p className="text-sm text-red-700 mb-3">
-                    Le polluant{" "}
-                    <strong>
-                      {pollutants[initialPollutant]?.name || initialPollutant}
-                    </strong>{" "}
-                    ne peut pas être analysé avec les capteurs MobileAir.
+                    {t("panels.mobileAirSelection.pollutantNotSupportedDescription", {
+                      pollutant: t(`pollutants.${initialPollutant}`, { defaultValue: initialPollutant }),
+                    })}
                   </p>
                   <div className="bg-red-100 rounded-md p-3">
                     <p className="text-xs font-medium text-red-800 mb-1">
-                      Polluants supportés par MobileAir :
+                      {t("panels.mobileAirSelection.supportedPollutantsLabel")}
                     </p>
                     <div className="flex flex-wrap gap-2">
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-200 text-red-800">
-                        PM₁
+                        {t("pollutants.pm1")}
                       </span>
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-200 text-red-800">
-                        PM₂.₅
+                        {t("pollutants.pm25")}
                       </span>
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-200 text-red-800">
-                        PM₁₀
+                        {t("pollutants.pm10")}
                       </span>
                     </div>
                   </div>
@@ -446,7 +443,7 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
             }`}
           >
             <h3 className="text-sm font-medium text-gray-700 mb-3">
-              Période d'analyse
+              {t("panels.mobileAirSelection.periodTitle")}
             </h3>
             <HistoricalTimeRangeSelector
               timeRange={timeRange}
@@ -462,20 +459,20 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
           >
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-medium text-gray-700">
-                Capteurs disponibles ({availableSensors.length})
+                {t("panels.mobileAirSelection.sensorsAvailable", { count: availableSensors.length })}
               </h3>
               <div className="flex space-x-2">
                 <button
                   onClick={handleSelectFirst}
                   className="text-xs text-blue-600 hover:text-blue-800 font-medium"
                 >
-                  Sélectionner le premier
+                  {t("panels.selectFirst")}
                 </button>
                 <button
                   onClick={handleDeselectAll}
                   className="text-xs text-gray-600 hover:text-gray-800 font-medium"
                 >
-                  Désélectionner
+                  {t("panels.mobileAirSelection.deselect")}
                 </button>
               </div>
             </div>
@@ -485,7 +482,7 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
                 <div className="flex flex-col items-center space-y-2">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
                   <span className="text-sm text-gray-500">
-                    Chargement des capteurs...
+                    {t("panels.loadSensors")}
                   </span>
                 </div>
               </div>
@@ -505,7 +502,7 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
                       d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  <p className="text-sm text-red-600">{error}</p>
+                  <p className="text-sm text-red-600">{t(`panels.mobileAirSelection.${error}`)}</p>
                 </div>
               </div>
             ) : (
@@ -548,11 +545,11 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
                           </span>
                         </div>
                         <p className="text-xs text-gray-600 mt-1">
-                          Dernière activité: {formatLastSeen(sensor)}
+                          {t("panels.mobileAirSelection.lastActivity", { value: formatLastSeen(sensor) })}
                         </p>
                         {sensor.wifi_signal && (
                           <p className="text-xs text-gray-500">
-                            Signal WiFi: {sensor.wifi_signal} dBm
+                            {t("panels.mobileAirSelection.wifiSignal", { value: sensor.wifi_signal })}
                           </p>
                         )}
                       </div>
@@ -575,13 +572,13 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
               }`}
             >
               {!selectedSensor
-                ? "Sélectionnez un capteur"
-                : `Charger le parcours du capteur ${selectedSensor}`}
+                ? t("panels.mobileAirSelection.selectSensor")
+                : t("panels.mobileAirSelection.loadSensorRoute", { sensorId: selectedSensor })}
             </button>
 
             {selectedSensor && (
               <p className="text-xs text-gray-600 mt-2 text-center">
-                Capteur {selectedSensor} sélectionné
+                {t("panels.mobileAirSelection.sensorSelected", { sensorId: selectedSensor })}
               </p>
             )}
           </div>

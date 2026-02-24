@@ -423,10 +423,10 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
-              Comparaison multi-sources
+              {t("panels.comparisonSidePanel.title")}
             </h2>
             {/* Rappel visuel du bouton de réouverture */}
-            <div className="p-1 rounded bg-blue-600 border border-blue-600" title="Bouton bleu pour rouvrir le panel">
+            <div className="p-1 rounded bg-blue-600 border border-blue-600" title={t("panels.stationSidePanel.reopenButtonTooltip")}>
               <svg
                 className="w-3 h-3 text-white"
                 fill="none"
@@ -443,13 +443,16 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
             </div>
           </div>
           <p className="text-xs sm:text-sm text-gray-600 truncate">
-            {comparisonState.comparedStations.length}/{MAX_COMPARISON_STATIONS} station(s) sélectionnée(s)
+            {t("panels.comparisonSidePanel.stationsSelected", {
+              count: comparisonState.comparedStations.length,
+              max: MAX_COMPARISON_STATIONS,
+            })}
           </p>
           <p className="text-[11px] sm:text-xs text-gray-500 mt-0.5 flex items-center gap-1" role="status">
             <svg className="w-3.5 h-3.5 flex-shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span>Comparaison limitée à {MAX_COMPARISON_STATIONS} capteurs simultanés.</span>
+            <span>{t("panels.comparisonSidePanel.limitMessage", { max: MAX_COMPARISON_STATIONS })}</span>
           </p>
         </div>
 
@@ -464,9 +467,9 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
             }
             className="p-1.5 sm:p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
             title={
-              currentPanelSize === "fullscreen" 
-                ? "Rétrécir le panel" 
-                : "Agrandir le panel"
+              currentPanelSize === "fullscreen"
+                ? t("panels.shrinkPanel")
+                : t("panels.expandPanel")
             }
           >
             <svg
@@ -497,7 +500,7 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
           <button
             onClick={() => handlePanelSizeChange("hidden")}
             className="p-1.5 sm:p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-            title="Rabattre le panel"
+            title={t("panels.collapsePanel")}
           >
             <svg
               className="w-3.5 h-3.5 sm:w-4 sm:h-4"
@@ -523,12 +526,12 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
           <div className="border border-gray-200 rounded-lg p-3 sm:p-4">
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-sm font-medium text-gray-700">
-                Stations sélectionnées
+                {t("panels.comparisonSidePanel.stationsSelectedTitle")}
               </h3>
               
               {/* Bouton désactiver comparaison - repositionné au-dessus de l'encart station */}
               <button
-                onClick={onComparisonModeToggle}
+                onClick={() => onComparisonModeToggle()}
                 className="px-3 py-1.5 rounded-md text-xs transition-all duration-200 flex items-center text-red-700 hover:bg-red-50 border border-red-200"
               >
                 <svg
@@ -544,7 +547,7 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
                     d="M6 18L18 6M6 6l12 12"
                   />
                 </svg>
-                Désactiver comparaison
+                {t("panels.comparisonSidePanel.disableComparison")}
               </button>
             </div>
             <div className="space-y-2">
@@ -559,12 +562,12 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
                     </p>
                     <p className="text-xs text-gray-500 truncate">
                       {station.source === "atmoRef"
-                        ? "Station de référence"
+                        ? t("panels.comparisonSidePanel.sourceAtmoRef")
                         : station.source === "atmoMicro"
-                        ? "Microcapteur"
+                        ? t("panels.comparisonSidePanel.sourceAtmoMicro")
                         : station.source === "nebuleair"
-                        ? "NebuleAir"
-                        : "Autre source"}{" "}
+                        ? t("panels.comparisonSidePanel.sourceNebuleAir")
+                        : t("panels.comparisonSidePanel.sourceOther")}{" "}
                       - {station.address}
                     </p>
                   </div>
@@ -596,7 +599,7 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
           <div className="flex-1 min-h-80 sm:min-h-96">
             <div className="mb-2 sm:mb-3">
               <h3 className="text-sm font-medium text-gray-700">
-                Comparaison des données
+                {t("panels.comparisonSidePanel.dataComparisonTitle")}
               </h3>
             </div>
             {comparisonState.loading ? (
@@ -654,11 +657,12 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
                           />
                         </svg>
                         <span className="text-sm font-medium text-gray-700 truncate">
-                          Polluant comparé
+                          {t("panels.comparisonSidePanel.pollutantCompared")}
                         </span>
                         <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full flex-shrink-0">
-                          {pollutants[comparisonState.selectedPollutant]?.name ||
-                            comparisonState.selectedPollutant}
+                          {t(`pollutants.${comparisonState.selectedPollutant}`, {
+                            defaultValue: comparisonState.selectedPollutant,
+                          })}
                         </span>
                       </div>
                       <svg
@@ -717,7 +721,9 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
                               )}
                             </div>
                             <span className="flex-1 text-left truncate">
-                              {pollutant?.name || pollutantCode}
+                              {t(`pollutants.${pollutantCode}`, {
+                                defaultValue: pollutantCode,
+                              })}
                             </span>
                           </button>
                         );
@@ -746,7 +752,7 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
                               />
                             </svg>
                             <span className="text-xs sm:text-sm font-medium text-gray-700 truncate">
-                              Données brutes
+                              {t("panels.comparisonSidePanel.rawData")}
                             </span>
                           </div>
                           <button
@@ -773,10 +779,10 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
                   {comparisonState.timeStep === "instantane" && (
                     <div className="mb-2 p-2.5 sm:p-3 bg-blue-50 border border-blue-200 rounded-lg">
                       <p className="text-xs sm:text-sm text-blue-800 font-medium">
-                        Mode Scan – Résolutions temporelles variables
+                        {t("panels.comparisonSidePanel.scanModeTitle")}
                       </p>
                       <p className="text-xs text-blue-700 mt-1">
-                        Chaque source affiche sa résolution réelle : stations de référence toutes les 15 min, microcapteurs entre 1 et 5 min selon le capteur. Les différences de densité des points sont normales.
+                        {t("panels.comparisonSidePanel.scanModeDescription")}
                       </p>
                     </div>
                   )}
@@ -830,18 +836,21 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
                     </div>
                     <div className="grid grid-cols-4 gap-1">
                       {[
-                        { key: "instantane", label: "Scan" },
-                        { key: "quartHeure", label: "15min" },
-                        { key: "heure", label: "1h" },
-                        { key: "jour", label: "1j" },
-                      ].map(({ key, label }) => {
+                        { key: "instantane", labelKey: "timeStepScan" },
+                        { key: "quartHeure", labelKey: "timeStep15min" },
+                        { key: "heure", labelKey: "timeStep1h" },
+                        { key: "jour", labelKey: "timeStep1j" },
+                      ].map(({ key, labelKey }) => {
                         const isDisabledByRange = !isTimeStepValidForCurrentRange(key);
                         const isSelected = comparisonState.timeStep === key;
                         const maxDays = getMaxHistoryDays(key);
+                        const label = t(`panels.comparisonSidePanel.${labelKey}`);
 
                         let tooltip = label;
                         if (isDisabledByRange && maxDays) {
-                          tooltip = `Limité à ${maxDays} jours pour ce pas de temps. Réduisez la période historique.`;
+                          tooltip = t("panels.stationSidePanel.timeStepRangeLimit", {
+                            maxDays,
+                          });
                         }
 
                         return (
@@ -867,26 +876,34 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
                     {/* Message explicatif si des boutons sont désactivés à cause de la période */}
                     {(() => {
                       const disabledByRange = [
-                        { key: "instantane", label: "Scan" },
-                        { key: "quartHeure", label: "15min" },
-                        { key: "heure", label: "1h" },
-                        { key: "jour", label: "1j" },
+                        { key: "instantane", labelKey: "timeStepScan" },
+                        { key: "quartHeure", labelKey: "timeStep15min" },
+                        { key: "heure", labelKey: "timeStep1h" },
+                        { key: "jour", labelKey: "timeStep1j" },
                       ].filter(({ key }) => !isTimeStepValidForCurrentRange(key));
 
                       if (disabledByRange.length > 0) {
                         const timeStepLabels = disabledByRange
-                          .map(({ key, label }) => {
+                          .map(({ key, labelKey }) => {
                             const maxDays = getMaxHistoryDays(key);
                             if (!maxDays) return null;
-                            const daysText = maxDays === 60 ? "2 mois" : maxDays === 180 ? "6 mois" : `${maxDays} jours`;
-                            return `${label} (max ${daysText})`;
+                            const daysText =
+                              maxDays === 60
+                                ? t("panels.comparisonSidePanel.twoMonths")
+                                : maxDays === 180
+                                ? t("panels.comparisonSidePanel.sixMonths")
+                                : t("panels.comparisonSidePanel.daysUnit", { count: maxDays });
+                            return `${t(`panels.comparisonSidePanel.${labelKey}`)} (max ${daysText})`;
                           })
                           .filter(Boolean);
 
                         return (
                           <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-md">
                             <p className="text-[11px] sm:text-xs text-amber-700">
-                              <span className="font-medium">Limitation :</span> Les pas de temps {timeStepLabels.join(" et ")} sont désactivés car la période sélectionnée dépasse leur limite. Réduisez la période historique pour les activer.
+                              <span className="font-medium">{t("panels.comparisonSidePanel.limitationLabel")}</span>{" "}
+                              {t("panels.stationSidePanel.timeStepsDisabledByRange", {
+                                labels: timeStepLabels.join(t("panels.comparisonSidePanel.timeStepLabelsSeparator")),
+                              })}
                             </p>
                           </div>
                         );

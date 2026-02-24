@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import { StationInfo } from "../../types";
 
 interface SensorCommunitySidePanelProps {
@@ -23,6 +24,7 @@ const SensorCommunitySidePanel: React.FC<SensorCommunitySidePanelProps> = ({
   initialPollutant,
   panelSize: externalPanelSize,
 }) => {
+  const { t } = useTranslation();
   const [internalPanelSize, setInternalPanelSize] =
     useState<PanelSize>("normal");
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
@@ -160,7 +162,7 @@ const SensorCommunitySidePanel: React.FC<SensorCommunitySidePanelProps> = ({
               {selectedStation.name || selectedStation.id}
             </h2>
             {/* Rappel visuel du bouton de réouverture */}
-            <div className="p-1 rounded bg-blue-600 border border-blue-600" title="Bouton bleu pour rouvrir le panel">
+            <div className="p-1 rounded bg-blue-600 border border-blue-600" title={t("panels.stationSidePanel.reopenButtonTooltip")}>
               <svg
                 className="w-3 h-3 text-white"
                 fill="none"
@@ -177,7 +179,7 @@ const SensorCommunitySidePanel: React.FC<SensorCommunitySidePanelProps> = ({
             </div>
           </div>
           <p className="text-xs text-gray-500 truncate">
-            Capteur Sensor Community #{sensorId}
+            {t("panels.sensorCommunitySidePanel.sensorLabel", { sensorId })}
           </p>
         </div>
 
@@ -193,8 +195,8 @@ const SensorCommunitySidePanel: React.FC<SensorCommunitySidePanelProps> = ({
             className="p-1.5 sm:p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
             title={
               currentPanelSize === "fullscreen"
-                ? "Rétrécir le panel"
-                : "Agrandir le panel"
+                ? t("panels.shrinkPanel")
+                : t("panels.expandPanel")
             }
           >
             <svg
@@ -225,7 +227,7 @@ const SensorCommunitySidePanel: React.FC<SensorCommunitySidePanelProps> = ({
           <button
             onClick={() => handlePanelSizeChange("hidden")}
             className="p-1.5 sm:p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-            title="Rabattre le panel"
+            title={t("panels.collapsePanel")}
           >
             <svg
               className="w-3.5 h-3.5 sm:w-4 sm:h-4"
@@ -250,7 +252,7 @@ const SensorCommunitySidePanel: React.FC<SensorCommunitySidePanelProps> = ({
           {/* Graphique Grafana avec contrôles intégrés */}
           <div className="flex-1 min-h-80 sm:min-h-96 md:min-h-[28rem]">
             <h3 className="text-sm font-medium text-gray-700 mb-2 sm:mb-3">
-              Historique des données (Sensor Community)
+              {t("panels.sensorCommunitySidePanel.dataHistoryTitle")}
             </h3>
             <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4">
               {/* Sélection des polluants - en haut du graphique (GRISÉE) */}
@@ -274,10 +276,10 @@ const SensorCommunitySidePanel: React.FC<SensorCommunitySidePanelProps> = ({
                       />
                     </svg>
                     <span className="text-sm font-medium text-gray-700 truncate">
-                      Polluants affichés
+                      {t("panels.sensorCommunitySidePanel.pollutantsDisplayed")}
                     </span>
                     <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full flex-shrink-0">
-                      Non disponible
+                      {t("panels.sensorCommunitySidePanel.notAvailable")}
                     </span>
                   </div>
                   <svg
@@ -304,20 +306,20 @@ const SensorCommunitySidePanel: React.FC<SensorCommunitySidePanelProps> = ({
                     width="100%"
                     height="100%"
                     frameBorder="0"
-                    title={`Historique Sensor Community - Capteur ${sensorId}`}
+                    title={t("panels.sensorCommunitySidePanel.iframeTitle", { sensorId })}
                     className="rounded-lg"
                   />
                 </div>
                 <div className="mt-3 text-xs text-gray-500">
                   <p>
-                    Graphique fourni par{" "}
+                    {t("panels.sensorCommunitySidePanel.chartProvidedBy")}{" "}
                     <a
                       href="https://grafana.sensor.community"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-600 hover:text-blue-800"
                     >
-                      Sensor Community Grafana
+                      {t("panels.sensorCommunitySidePanel.grafanaLink")}
                     </a>
                   </p>
                 </div>
@@ -342,16 +344,16 @@ const SensorCommunitySidePanel: React.FC<SensorCommunitySidePanelProps> = ({
                       />
                     </svg>
                     <span className="text-sm font-medium text-gray-700">
-                      Historique
+                      {t("panels.sensorCommunitySidePanel.historyLabel")}
                     </span>
                   </div>
                   <div className="grid grid-cols-4 gap-1 mb-2">
                     {[
-                      { key: "3h", label: "3h", active: false },
-                      { key: "24h", label: "24h", active: true },
-                      { key: "7d", label: "7j", active: false },
-                      { key: "30d", label: "30j", active: false },
-                    ].map(({ key, label, active }) => (
+                      { key: "3h", labelKey: "period3h", active: false },
+                      { key: "24h", labelKey: "period24h", active: true },
+                      { key: "7d", labelKey: "period7d", active: false },
+                      { key: "30d", labelKey: "period30d", active: false },
+                    ].map(({ key, labelKey, active }) => (
                       <button
                         key={key}
                         disabled={!active}
@@ -363,7 +365,7 @@ const SensorCommunitySidePanel: React.FC<SensorCommunitySidePanelProps> = ({
                             : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                         }`}
                       >
-                        {label}
+                        {t(`panels.sensorCommunitySidePanel.${labelKey}`)}
                       </button>
                     ))}
                   </div>
@@ -387,7 +389,7 @@ const SensorCommunitySidePanel: React.FC<SensorCommunitySidePanelProps> = ({
                             d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                           />
                         </svg>
-                        Période personnalisée
+                        {t("historical.customPeriod")}
                       </span>
                     </div>
                   </button>
@@ -410,16 +412,16 @@ const SensorCommunitySidePanel: React.FC<SensorCommunitySidePanelProps> = ({
                       />
                     </svg>
                     <span className="text-sm font-medium text-gray-700">
-                      Pas de temps
+                      {t("controls.timeStep")}
                     </span>
                   </div>
                   <div className="grid grid-cols-4 gap-1">
                     {[
-                      { key: "instantane", label: "Scan 2min", active: true },
-                      { key: "quartHeure", label: "15min", active: false },
-                      { key: "heure", label: "1h", active: false },
-                      { key: "jour", label: "1j", active: false },
-                    ].map(({ key, label, active }) => (
+                      { key: "instantane", labelKey: "timeStepScan2min", active: true },
+                      { key: "quartHeure", labelKey: "timeStep15min", active: false },
+                      { key: "heure", labelKey: "timeStep1h", active: false },
+                      { key: "jour", labelKey: "timeStep1j", active: false },
+                    ].map(({ key, labelKey, active }) => (
                       <button
                         key={key}
                         disabled={!active}
@@ -431,7 +433,7 @@ const SensorCommunitySidePanel: React.FC<SensorCommunitySidePanelProps> = ({
                             : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                         }`}
                       >
-                        {label}
+                        {t(`panels.sensorCommunitySidePanel.${labelKey}`)}
                       </button>
                     ))}
                   </div>
@@ -441,10 +443,8 @@ const SensorCommunitySidePanel: React.FC<SensorCommunitySidePanelProps> = ({
               {/* Note d'information */}
               <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
                 <p className="text-xs text-blue-700">
-                  <strong>Note:</strong> Les contrôles ne sont pas disponibles
-                  pour les données Sensor Community. Le graphique est fourni
-                  directement par Sensor Community Grafana et ne peut pas être
-                  contrôlé depuis cette interface.
+                  <strong>{t("panels.sensorCommunitySidePanel.noteLabel")}:</strong>{" "}
+                  {t("panels.sensorCommunitySidePanel.controlsNote")}
                 </p>
               </div>
             </div>
