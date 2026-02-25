@@ -233,11 +233,12 @@ const HistoricalChart: React.FC<HistoricalChartProps> = ({
         onExportCSV={handleExportCSV}
       />
 
-      {/* Graphique */}
-      <div className="flex-1">
+      {/* Graphique (zoom/pan axe Y via scrollbar Y native amCharts) */}
+      <div className="flex-1 min-h-0">
         <div
           ref={containerRef}
           id={containerIdRef.current}
+          className="w-full h-full"
           style={{
             width: "100%",
             height: "100%",

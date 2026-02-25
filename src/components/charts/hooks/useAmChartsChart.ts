@@ -84,10 +84,11 @@ export const useAmChartsChart = ({
     const chart = root.container.children.push(
       am5xy.XYChart.new(root, {
         panX: true,
-        panY: false,
+        panY: true, // Permet le déplacement vertical (scrollbar Y native)
         wheelX: "panX",
-        wheelY: "zoomX",
+        wheelY: "zoomY", // Molette pour zoomer sur l'axe Y (natif amCharts)
         pinchZoomX: true,
+        pinchZoomY: true,
         layout: root.verticalLayout,
         paddingTop: chartMargins.top,
         paddingRight: chartMargins.right,
@@ -229,7 +230,17 @@ export const useAmChartsChart = ({
       );
     });
 
-    // Créer le curseur
+    // Scrollbar Y native amCharts : zoom/pan sur l'axe Y directement sur l'axe
+    const scrollbarY = am5.Scrollbar.new(root, {
+      orientation: "vertical",
+      marginTop: chartMargins.top,
+      marginBottom: chartMargins.bottom,
+    });
+    chart.set("scrollbarY", scrollbarY);
+    // Positionner la scrollbar à gauche (côté axe Y) au lieu de la droite par défaut
+    chart.leftAxesContainer.children.push(scrollbarY);
+
+    // Créer le curseur (zoom X et Y au drag)
     const cursor = chart.set(
       "cursor",
       am5xy.XYCursor.new(root, {
@@ -466,12 +477,13 @@ export const useAmChartsChart = ({
         const chart = chartRef.current;
         // Mettre à jour les données de toutes les séries
         chart.series.values.forEach((lineSeries) => {
-          (lineSeries as am5xy.LineSeries).data.setAll(amChartsData);
+          const series = lineSeries as am5xy.LineSeries;
+          series.data.setAll(amChartsData);
           // S'assurer que connect est bien configuré selon timeStep
           const isAggregatedTimeStep =
             timeStep && ["quartHeure", "heure", "jour"].includes(timeStep);
           const shouldConnect = !isAggregatedTimeStep;
-          lineSeries.set("connect", shouldConnect);
+          series.set("connect" as keyof am5xy.IXYSeriesSettings, shouldConnect);
         });
       }
     }, 50);
