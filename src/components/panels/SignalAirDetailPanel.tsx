@@ -43,7 +43,7 @@ const SignalAirDetailPanel: React.FC<SignalAirDetailPanelProps> = ({
     if (Number.isNaN(date.getTime())) {
       return value;
     }
-    const locale = i18n.language === "fr" ? "fr-FR" : i18n.language === "en" ? "en-GB" : i18n.language;
+    const locale = i18n.language === "fr" ? "fr-FR" : i18n.language === "en" ? "en-GB" : i18n.language === "ar" ? "ar-SA" : i18n.language;
     return date.toLocaleString(locale, {
       dateStyle: "long",
       timeStyle: "short",

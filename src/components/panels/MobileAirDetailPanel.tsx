@@ -147,7 +147,7 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
   // Fonction pour formater la date
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
-    const locale = i18n.language === "fr" ? "fr-FR" : i18n.language === "en" ? "en-GB" : i18n.language;
+    const locale = i18n.language === "fr" ? "fr-FR" : i18n.language === "en" ? "en-GB" : i18n.language === "ar" ? "ar-SA" : i18n.language;
     return date.toLocaleString(locale, {
       day: "2-digit",
       month: "2-digit",
@@ -263,7 +263,7 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
 
   // Formatage de l'axe X
   const xAxisLabelFormatter = useCallback((date: Date) => {
-    const locale = i18n.language === "fr" ? "fr-FR" : i18n.language === "en" ? "en-GB" : i18n.language;
+    const locale = i18n.language === "fr" ? "fr-FR" : i18n.language === "en" ? "en-GB" : i18n.language === "ar" ? "ar-SA" : i18n.language;
     return date.toLocaleString(locale, {
       hour: "2-digit",
       minute: "2-digit",
@@ -302,7 +302,7 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
         }
       });
 
-      const locale = i18n.language === "fr" ? "fr-FR" : i18n.language === "en" ? "en-GB" : i18n.language;
+      const locale = i18n.language === "fr" ? "fr-FR" : i18n.language === "en" ? "en-GB" : i18n.language === "ar" ? "ar-SA" : i18n.language;
       const formatDateForTooltip = (dateString: string) =>
         new Date(dateString).toLocaleString(locale, {
           day: "2-digit",

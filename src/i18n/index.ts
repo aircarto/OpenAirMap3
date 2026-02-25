@@ -4,12 +4,14 @@ import fr from "../locales/fr.json";
 import en from "../locales/en.json";
 import es from "../locales/es.json";
 import it from "../locales/it.json";
+import ar from "../locales/ar.json";
 
 export const supportedLanguages = [
   { code: "fr", label: "Français", short: "FR", flag: "🇫🇷" },
   { code: "en", label: "English", short: "EN", flag: "🇬🇧" },
   { code: "es", label: "Español", short: "ES", flag: "🇪🇸" },
   { code: "it", label: "Italiano", short: "IT", flag: "🇮🇹" },
+  { code: "ar", label: "العربية", short: "AR", flag: "🇸🇦" },
 ] as const;
 
 export type SupportedLocale = (typeof supportedLanguages)[number]["code"];
@@ -40,6 +42,7 @@ i18n.use(initReactI18next).init({
     en: { translation: en },
     es: { translation: es },
     it: { translation: it },
+    ar: { translation: ar },
   },
   lng: getInitialLanguage(),
   fallbackLng: "fr",
@@ -49,10 +52,11 @@ i18n.use(initReactI18next).init({
   },
 });
 
-// Synchroniser la langue avec l'attribut lang du HTML (accessibilité + SEO)
+// Synchroniser la langue avec l'attribut lang et dir du HTML (accessibilité + SEO, RTL pour l'arabe)
 i18n.on("languageChanged", (lng) => {
   if (typeof document !== "undefined") {
     document.documentElement.lang = lng;
+    document.documentElement.dir = lng === "ar" ? "rtl" : "ltr";
     try {
       localStorage.setItem(STORAGE_KEY, lng);
     } catch {
@@ -61,9 +65,11 @@ i18n.on("languageChanged", (lng) => {
   }
 });
 
-// Appliquer la langue initiale au document
+// Appliquer la langue et la direction initiales au document
 if (typeof document !== "undefined") {
-  document.documentElement.lang = i18n.language || "fr";
+  const lng = i18n.language || "fr";
+  document.documentElement.lang = lng;
+  document.documentElement.dir = lng === "ar" ? "rtl" : "ltr";
 }
 
 export default i18n;

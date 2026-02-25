@@ -968,7 +968,7 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
     const diffInHours = Math.floor(diffInMinutes / 60);
     const diffInDays = Math.floor(diffInHours / 24);
 
-    const locale = i18n.language?.startsWith("fr") ? "fr-FR" : i18n.language?.startsWith("en") ? "en-GB" : i18n.language?.startsWith("es") ? "es-ES" : i18n.language?.startsWith("it") ? "it-IT" : "fr-FR";
+    const locale = i18n.language?.startsWith("fr") ? "fr-FR" : i18n.language?.startsWith("en") ? "en-GB" : i18n.language?.startsWith("es") ? "es-ES" : i18n.language?.startsWith("it") ? "it-IT" : i18n.language?.startsWith("ar") ? "ar-SA" : "fr-FR";
     // Format relatif pour les périodes récentes
     if (diffInMinutes < 1) {
       return t("panels.nebuleAirSidePanel.lastSeenLessThanMinute");
