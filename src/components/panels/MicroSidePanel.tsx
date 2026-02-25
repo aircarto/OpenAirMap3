@@ -1076,15 +1076,15 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                 </div>
               ) : (
                 <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4">
-                  {/* Sélection des polluants et contrôle d'affichage des données brutes sur la même ligne */}
-                  <div className="flex flex-row items-start gap-2 sm:gap-4 mb-1 sm:mb-4">
+                  {/* Polluants et Options avancées sur la même ligne (responsive: empilés sur mobile) */}
+                  <div className="flex flex-col sm:flex-row items-start gap-2 sm:gap-3 md:gap-4 mb-3 sm:mb-4">
                     {/* Sélection des polluants */}
-                    <div className="flex-1 border border-gray-200 rounded-lg">
+                    <div className="flex-1 min-w-0 sm:max-w-[260px] border border-gray-200 rounded-lg flex flex-col">
                       <button
                         onClick={() =>
                           setShowPollutantsList(!showPollutantsList)
                         }
-                        className="w-full flex items-center justify-between p-2 sm:p-3 text-left hover:bg-gray-50 transition-colors rounded-lg"
+                        className="w-full h-11 flex items-center justify-between px-2 sm:px-3 text-left hover:bg-gray-50 transition-colors rounded-lg shrink-0"
                       >
                         <div className="flex items-center space-x-1.5 sm:space-x-2 min-w-0 flex-1">
                           <svg
@@ -1218,11 +1218,9 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                       )}
                     </div>
 
-                  </div>
-
-                  {/* Menu Expert - Options avancées */}
-                  <div className="mb-3 sm:mb-4">
-                    <ExpertMenu
+                    {/* Menu Expert - Options avancées (largeur naturelle, même hauteur que le bouton polluants) */}
+                    <div className="flex-none flex flex-col [&_button]:h-11 [&_button]:shrink-0">
+                      <ExpertMenu
                       showModeling={showModeling}
                       onModelingChange={(checked) => {
                         setShowModeling(checked);
@@ -1259,6 +1257,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                       onRawDataChange={(checked) => setShowRawData(checked)}
                       rawDataAvailable={hasCorrectedData}
                     />
+                    </div>
                   </div>
 
                   {state.infoMessage && (

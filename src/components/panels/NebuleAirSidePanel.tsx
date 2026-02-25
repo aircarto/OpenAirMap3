@@ -1194,15 +1194,45 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                 </div>
               ) : (
                 <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4">
-                  {/* Sélection des polluants - en haut du graphique */}
-                  <div className="border border-gray-200 rounded-lg mb-3 sm:mb-4">
-                    <button
-                      onClick={() => setShowPollutantsList(!showPollutantsList)}
-                      className="w-full flex items-center justify-between p-2.5 sm:p-3 text-left hover:bg-gray-50 transition-colors rounded-lg"
-                    >
-                      <div className="flex items-center space-x-2 min-w-0 flex-1">
+                  {/* Polluants et Options avancées sur la même ligne (responsive: empilés sur mobile) */}
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4 mb-3 sm:mb-4 items-start">
+                    {/* Sélection des polluants */}
+                    <div className="flex-1 min-w-0 sm:max-w-[260px] border border-gray-200 rounded-lg flex flex-col">
+                      <button
+                        onClick={() => setShowPollutantsList(!showPollutantsList)}
+                        className="w-full h-11 flex items-center justify-between px-2.5 sm:px-3 text-left hover:bg-gray-50 transition-colors rounded-lg shrink-0"
+                      >
+                        <div className="flex items-center space-x-2 min-w-0 flex-1">
+                          <svg
+                            className="w-4 h-4 text-gray-600 flex-shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                            />
+                          </svg>
+                          <span className="text-sm font-medium text-gray-700 truncate">
+                            {t("panels.stationSidePanel.pollutantsDisplayed")}
+                          </span>
+                          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full flex-shrink-0">
+                            {t(
+                              "panels.stationSidePanel.selectedCount",
+                              {
+                                count: state.chartControls.selectedPollutants
+                                  .length,
+                              }
+                            )}
+                          </span>
+                        </div>
                         <svg
-                          className="w-4 h-4 text-gray-600 flex-shrink-0"
+                          className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${
+                            showPollutantsList ? "rotate-180" : ""
+                          }`}
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -1211,115 +1241,87 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={2}
-                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                            d="M19 9l-7 7-7-7"
                           />
                         </svg>
-                        <span className="text-sm font-medium text-gray-700 truncate">
-                          {t("panels.stationSidePanel.pollutantsDisplayed")}
-                        </span>
-                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full flex-shrink-0">
-                          {t(
-                            "panels.stationSidePanel.selectedCount",
-                            {
-                              count: state.chartControls.selectedPollutants
-                                .length,
-                            }
-                          )}
-                        </span>
-                      </div>
-                      <svg
-                        className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${
-                          showPollutantsList ? "rotate-180" : ""
-                        }`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    </button>
+                      </button>
 
-                    {showPollutantsList && (
-                      <div className="px-2.5 sm:px-3 pb-2.5 sm:pb-3 space-y-1">
-                        {Object.entries(pollutants).map(
-                          ([pollutantCode, pollutant]) => {
-                            // Vérifier si ce polluant est disponible dans la station
-                            const isEnabled =
-                              isPollutantAvailable(pollutantCode);
-                            const isSelected =
-                              state.chartControls.selectedPollutants.includes(
-                                pollutantCode
-                              );
-                            const isLastSelectedAndDisabled =
-                              isSelected &&
-                              state.chartControls.selectedPollutants.length ===
-                                1;
+                      {showPollutantsList && (
+                        <div className="px-2.5 sm:px-3 pb-2.5 sm:pb-3 space-y-1">
+                          {Object.entries(pollutants).map(
+                            ([pollutantCode, pollutant]) => {
+                              // Vérifier si ce polluant est disponible dans la station
+                              const isEnabled =
+                                isPollutantAvailable(pollutantCode);
+                              const isSelected =
+                                state.chartControls.selectedPollutants.includes(
+                                  pollutantCode
+                                );
+                              const isLastSelectedAndDisabled =
+                                isSelected &&
+                                state.chartControls.selectedPollutants.length ===
+                                  1;
 
-                            return (
-                              <button
-                                key={pollutantCode}
-                                onClick={() =>
-                                  isEnabled &&
-                                  handlePollutantToggle(pollutantCode)
-                                }
-                                disabled={
-                                  !isEnabled || isLastSelectedAndDisabled
-                                }
-                                title={
-                                  isLastSelectedAndDisabled
-                                    ? t(
-                                        "panels.stationSidePanel.atLeastOnePollutant"
-                                      )
-                                    : !isEnabled
-                                    ? t(
-                                        "panels.stationSidePanel.pollutantNotAvailable"
-                                      )
-                                    : undefined
-                                }
-                                className={`w-full flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-md text-sm transition-all duration-200 ${
-                                  !isEnabled
-                                    ? "text-gray-400 cursor-not-allowed"
-                                    : isLastSelectedAndDisabled
-                                    ? "text-[#1f3c6d] bg-[#e7eef8] border border-[#c1d3eb] opacity-70 cursor-not-allowed"
-                                    : isSelected
-                                    ? "text-[#1f3c6d] bg-[#e7eef8] border border-[#c1d3eb]"
-                                    : "text-gray-700 hover:bg-gray-50"
-                                }`}
-                              >
-                                <div
-                                  className={`w-3 h-3 rounded border mr-2 flex items-center justify-center transition-colors flex-shrink-0 ${
+                              return (
+                                <button
+                                  key={pollutantCode}
+                                  onClick={() =>
+                                    isEnabled &&
+                                    handlePollutantToggle(pollutantCode)
+                                  }
+                                  disabled={
+                                    !isEnabled || isLastSelectedAndDisabled
+                                  }
+                                  title={
+                                    isLastSelectedAndDisabled
+                                      ? t(
+                                          "panels.stationSidePanel.atLeastOnePollutant"
+                                        )
+                                      : !isEnabled
+                                      ? t(
+                                          "panels.stationSidePanel.pollutantNotAvailable"
+                                        )
+                                      : undefined
+                                  }
+                                  className={`w-full flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-md text-sm transition-all duration-200 ${
                                     !isEnabled
-                                      ? "border-gray-300 bg-gray-100"
+                                      ? "text-gray-400 cursor-not-allowed"
                                       : isLastSelectedAndDisabled
-                                      ? "bg-[#325a96] border-[#325a96] opacity-60"
+                                      ? "text-[#1f3c6d] bg-[#e7eef8] border border-[#c1d3eb] opacity-70 cursor-not-allowed"
                                       : isSelected
-                                      ? "bg-[#325a96] border-[#325a96]"
-                                      : "border-gray-300"
+                                      ? "text-[#1f3c6d] bg-[#e7eef8] border border-[#c1d3eb]"
+                                      : "text-gray-700 hover:bg-gray-50"
                                   }`}
                                 >
-                                  {isSelected && (
-                                    <svg
-                                      className={`w-2 h-2 ${
-                                        isLastSelectedAndDisabled
-                                          ? "text-white opacity-60"
-                                          : "text-white"
-                                      }`}
-                                      fill="currentColor"
-                                      viewBox="0 0 20 20"
-                                    >
-                                      <path
-                                        fillRule="evenodd"
-                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                        clipRule="evenodd"
-                                      />
-                                    </svg>
-                                  )}
-                                </div>
+                                  <div
+                                    className={`w-3 h-3 rounded border mr-2 flex items-center justify-center transition-colors flex-shrink-0 ${
+                                      !isEnabled
+                                        ? "border-gray-300 bg-gray-100"
+                                        : isLastSelectedAndDisabled
+                                        ? "bg-[#325a96] border-[#325a96] opacity-60"
+                                        : isSelected
+                                        ? "bg-[#325a96] border-[#325a96]"
+                                        : "border-gray-300"
+                                  }`}
+                                  >
+                                    {isSelected && (
+                                      <svg
+                                        className={`w-2 h-2 ${
+                                          isLastSelectedAndDisabled
+                                            ? "text-white opacity-60"
+                                            : "text-white"
+                                        }`}
+                                        fill="currentColor"
+                                        viewBox="0 0 20 20"
+                                      >
+                                        <path
+                                          fillRule="evenodd"
+                                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                          clipRule="evenodd"
+                                        />
+                                      </svg>
+                                    )}
+                                  </div>
 <span className="flex-1 text-left truncate">
                                     {t(`pollutants.${pollutantCode}`)}
                                   </span>
@@ -1338,31 +1340,9 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                     )}
                   </div>
 
-                  {/* Message d'information */}
-                  {state.infoMessage && (
-                    <div className="mb-3 sm:mb-4 p-3 sm:p-4 bg-amber-50 border border-amber-200 rounded-lg text-xs sm:text-sm text-amber-800 flex items-start space-x-2">
-                      <svg
-                        className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 flex-shrink-0 mt-0.5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-                        />
-                      </svg>
-                      <span className="leading-normal">
-                        {state.infoMessage}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Menu Expert - Options avancées */}
-                  <div className="mb-3 sm:mb-4">
-                    <ExpertMenu
+                    {/* Menu Expert - Options avancées (largeur naturelle, même hauteur que le bouton polluants) */}
+                    <div className="flex-none flex flex-col [&_button]:h-11 [&_button]:shrink-0">
+                      <ExpertMenu
                       showModeling={showModeling}
                       onModelingChange={(checked) => {
                         setShowModeling(checked);
@@ -1396,7 +1376,30 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                           : undefined
                       }
                     />
+                    </div>
                   </div>
+
+                  {/* Message d'information */}
+                  {state.infoMessage && (
+                    <div className="mb-3 sm:mb-4 p-3 sm:p-4 bg-amber-50 border border-amber-200 rounded-lg text-xs sm:text-sm text-amber-800 flex items-start space-x-2">
+                      <svg
+                        className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 flex-shrink-0 mt-0.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                        />
+                      </svg>
+                      <span className="leading-normal">
+                        {state.infoMessage}
+                      </span>
+                    </div>
+                  )}
 
                   {/* Graphique */}
                   <div className="h-80 sm:h-96 md:h-[28rem] mb-3 sm:mb-4">

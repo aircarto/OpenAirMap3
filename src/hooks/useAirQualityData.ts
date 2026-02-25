@@ -421,6 +421,9 @@ export const useAirQualityData = ({
     // Récupérer l'intervalle de rafraîchissement selon le pas de temps
     const refreshInterval = getRefreshInterval(selectedTimeStep);
 
+    // Mise à jour immédiate des sources au moment où l'utilisateur active l'auto-refresh
+    fetchData();
+
     // Démarrer l'intervalle d'auto-refresh
     intervalRef.current = setInterval(() => {
       fetchData();
