@@ -46,12 +46,13 @@ export const isSourceCompatibleWithTimeStep = (
 };
 
 /**
- * Obtient le nom d'affichage d'une source
+ * Obtient la clé i18n du nom d'affichage d'une source (à utiliser avec t())
  */
-export const getSourceDisplayName = (sourceCode: string): string => {
-  if (sourceCode === "atmoRef") return "Station de référence AtmoSud";
-  if (sourceCode === "atmoMicro") return "Microcapteurs qualifiés AtmoSud";
-  if (sourceCode === "signalair") return "SignalAir";
+export const getSourceDisplayNameKey = (sourceCode: string): string => {
+  if (sourceCode === "atmoRef") return "controls.sourceAtmoRef";
+  if (sourceCode === "atmoMicro") return "controls.sourceAtmoMicro";
+  if (sourceCode === "communautaire") return "controls.sourceCommunautaire";
+  if (sourceCode === "signalair") return "SignalAir"; // nom de marque
   if (sourceCode.startsWith("communautaire.")) {
     const subSource = sourceCode.split(".")[1];
     if (subSource === "nebuleair") return "NebuleAir";
@@ -60,6 +61,17 @@ export const getSourceDisplayName = (sourceCode: string): string => {
     if (subSource === "mobileair") return "MobileAir";
   }
   return sourceCode;
+};
+
+/**
+ * Obtient le nom d'affichage traduit d'une source
+ */
+export const getSourceDisplayName = (
+  sourceCode: string,
+  t: (key: string) => string
+): string => {
+  const key = getSourceDisplayNameKey(sourceCode);
+  return key.startsWith("controls.") ? t(key) : key;
 };
 
 /**

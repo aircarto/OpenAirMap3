@@ -13,7 +13,7 @@ import { cn } from "../../lib/utils";
 import {
   isSourceCompatibleWithTimeStep,
   getSourceDisplayName,
-  getSupportedTimeStepNames,
+  getSupportedTimeStepsForSource,
 } from "../../utils/sourceCompatibility";
 import { Toast } from "../ui/toast";
 
@@ -113,36 +113,50 @@ const TimeStepDropdown: React.FC<TimeStepDropdownProps> = ({
     // Si des sources sont incompatibles, afficher une notification
     if (incompatibleSources.length > 0 && onToast) {
       const sourceNames = incompatibleSources.map((source) =>
-        getSourceDisplayName(source)
+        getSourceDisplayName(source, t)
       );
-      const timeStepName =
-        pasDeTemps[newTimeStep as keyof typeof pasDeTemps]?.name ||
-        newTimeStep;
+      const timeStepLabel = t(`timeSteps.${newTimeStep}`);
 
-      // Créer le message selon le nombre de sources
       const title =
         incompatibleSources.length === 1
-          ? `${sourceNames[0]} non disponible`
-          : `${incompatibleSources.length} sources non disponibles`;
+          ? t("toast.sourceUnavailable", { name: sourceNames[0] })
+          : t("toast.sourcesUnavailable", {
+              count: incompatibleSources.length,
+            });
 
-      // Construire la description avec la liste des sources incompatibles
       let description = "";
       if (incompatibleSources.length === 1) {
-        description = `${sourceNames[0]} n'est pas disponible au pas de temps "${timeStepName}".`;
-        // Afficher les pas de temps supportés pour cette source
-        const supportedSteps = getSupportedTimeStepNames(incompatibleSources[0]);
-        if (supportedSteps.length > 0) {
-          description += ` Disponible uniquement en : ${supportedSteps.join(", ")}.`;
+        description = t("toast.sourceNotAvailableAtTimeStep", {
+          name: sourceNames[0],
+          timeStep: timeStepLabel,
+        });
+        const supportedCodes = getSupportedTimeStepsForSource(
+          incompatibleSources[0]
+        );
+        if (supportedCodes.length > 0) {
+          const stepsLabel = supportedCodes
+            .map((code) => t(`timeSteps.${code}`))
+            .join(", ");
+          description += " " + t("toast.availableOnlyIn", { steps: stepsLabel });
         }
       } else {
-        // Plusieurs sources incompatibles : lister toutes les sources
-        description = `Les sources suivantes ne sont pas disponibles au pas de temps "${timeStepName}" : ${sourceNames.join(", ")}.`;
-        
-        // Afficher les pas de temps supportés pour la première source (exemple)
-        const firstIncompatible = incompatibleSources[0];
-        const supportedSteps = getSupportedTimeStepNames(firstIncompatible);
-        if (supportedSteps.length > 0) {
-          description += ` ${sourceNames[0]} est disponible uniquement en : ${supportedSteps.join(", ")}.`;
+        description = t("toast.followingSourcesNotAvailable", {
+          timeStep: timeStepLabel,
+          sources: sourceNames.join(", "),
+        });
+        const firstCodes = getSupportedTimeStepsForSource(
+          incompatibleSources[0]
+        );
+        if (firstCodes.length > 0) {
+          const stepsLabel = firstCodes
+            .map((code) => t(`timeSteps.${code}`))
+            .join(", ");
+          description +=
+            " " +
+            t("toast.firstSourceAvailableOnlyIn", {
+              name: sourceNames[0],
+              steps: stepsLabel,
+            });
         }
       }
 
@@ -152,7 +166,7 @@ const TimeStepDropdown: React.FC<TimeStepDropdownProps> = ({
         variant: "warning",
         action: onSourceChange
           ? {
-              label: "Désactiver les sources incompatibles",
+              label: t("toast.disableIncompatibleSources"),
               onClick: () => {
                 // Désactiver les sources incompatibles
                 const compatibleSources = selectedSources.filter(

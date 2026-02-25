@@ -74,6 +74,9 @@
     "sourceSelected": "{{count}} source selected",
     "sourcesSelected": "{{count}} sources selected",
     "mainSources": "Main sources",
+    "sourceAtmoRef": "AtmoSud reference stations",
+    "sourceAtmoMicro": "AtmoSud qualified microsensors",
+    "sourceCommunautaire": "Other community sensors",
     "historicalMode": "Historical mode",
     "historicalModeUnavailable": "Historical mode (unavailable)",
     "historicalModeActivate": "Enable historical mode",
@@ -531,6 +534,14 @@
   "toast": {
     "sourceUnavailable": "{{name}} unavailable",
     "sourceAvailableOnlyFor": "This source is only available for time steps: {{steps}}.",
-    "changeTo": "Switch to \"{{label}}\""
+    "changeTo": "Switch to \"{{label}}\"",
+    "sourcesUnavailable": "{{count}} sources unavailable",
+    "sourceNotAvailableAtTimeStep": "{{name}} is not available for time step \"{{timeStep}}\".",
+    "availableOnlyIn": "Only available in: {{steps}}.",
+    "followingSourcesNotAvailable": "The following sources are not available for time step \"{{timeStep}}\": {{sources}}.",
+    "firstSourceAvailableOnlyIn": "{{name}} is only available in: {{steps}}.",
+    "disableIncompatibleSources": "Disable incompatible sources",
+    "sourceUnavailableShort": "Source unavailable",
+    "changeTimeStep": "Change time step"
   }
 }

@@ -74,6 +74,9 @@
     "sourceSelected": "{{count}} fonte selezionata",
     "sourcesSelected": "{{count}} fonti selezionate",
     "mainSources": "Fonti principali",
+    "sourceAtmoRef": "Stazioni di riferimento AtmoSud",
+    "sourceAtmoMicro": "Microsensori qualificati AtmoSud",
+    "sourceCommunautaire": "Altri sensori comunitari",
     "historicalMode": "Modalità storica",
     "historicalModeUnavailable": "Modalità storica (non disponibile)",
     "historicalModeActivate": "Attiva modalità storica",
@@ -531,6 +534,14 @@
   "toast": {
     "sourceUnavailable": "{{name}} non disponibile",
     "sourceAvailableOnlyFor": "Questa fonte è disponibile solo per i passi: {{steps}}.",
-    "changeTo": "Passa a \"{{label}}\""
+    "changeTo": "Passa a \"{{label}}\"",
+    "sourcesUnavailable": "{{count}} fonti non disponibili",
+    "sourceNotAvailableAtTimeStep": "{{name}} non è disponibile per il passo \"{{timeStep}}\".",
+    "availableOnlyIn": "Disponibile solo in: {{steps}}.",
+    "followingSourcesNotAvailable": "Le seguenti fonti non sono disponibili per il passo \"{{timeStep}}\": {{sources}}.",
+    "firstSourceAvailableOnlyIn": "{{name}} è disponibile solo in: {{steps}}.",
+    "disableIncompatibleSources": "Disattiva fonti incompatibili",
+    "sourceUnavailableShort": "Fonte non disponibile",
+    "changeTimeStep": "Cambia passo temporale"
   }
 }

@@ -11,6 +11,7 @@
  */
 
 import React, { useMemo, useRef, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { sources } from "../../constants/sources";
 import {
   DropdownMenu,
@@ -25,10 +26,9 @@ import { cn } from "../../lib/utils";
 import {
   isSourceCompatibleWithTimeStep,
   getSourceDisplayName,
-  getSupportedTimeStepNames,
+  getSupportedTimeStepsForSource,
   getFirstCompatibleTimeStep,
 } from "../../utils/sourceCompatibility";
-import { pasDeTemps } from "../../constants/timeSteps";
 import { Toast } from "../ui/toast";
 
 interface SourceDropdownWithNotificationsProps {
@@ -48,6 +48,7 @@ const SourceDropdownWithNotifications: React.FC<
   onTimeStepChange,
   onToast,
 }) => {
+  const { t } = useTranslation();
   const [incompatibleSource, setIncompatibleSource] = useState<string | null>(
     null
   );
@@ -93,17 +94,22 @@ const SourceDropdownWithNotifications: React.FC<
 
       // Afficher une notification toast
       if (onToast) {
-        const supportedSteps = getSupportedTimeStepNames(sourceCode);
+        const supportedCodes = getSupportedTimeStepsForSource(sourceCode);
+        const stepsLabel = supportedCodes
+          .map((code) => t(`timeSteps.${code}`))
+          .join(", ");
         const firstCompatibleStep = getFirstCompatibleTimeStep(sourceCode);
-        const sourceName = getSourceDisplayName(sourceCode);
+        const sourceName = getSourceDisplayName(sourceCode, t);
 
         onToast({
-          title: `${sourceName} non disponible`,
-          description: `Cette source n'est disponible qu'aux pas de temps : ${supportedSteps.join(", ")}.`,
+          title: t("toast.sourceUnavailable", { name: sourceName }),
+          description: t("toast.sourceAvailableOnlyFor", { steps: stepsLabel }),
           variant: "warning",
           action: firstCompatibleStep && onTimeStepChange
             ? {
-                label: `Changer vers "${pasDeTemps[firstCompatibleStep]?.name || firstCompatibleStep}"`,
+                label: t("toast.changeTo", {
+                  label: t(`timeSteps.${firstCompatibleStep}`),
+                }),
                 onClick: () => {
                   onTimeStepChange(firstCompatibleStep);
                   setIncompatibleSource(null);
@@ -147,13 +153,13 @@ const SourceDropdownWithNotifications: React.FC<
 
   const getDisplayText = () => {
     if (selectedSources.length === 0) {
-      return "Choisir des sources";
+      return t("controls.chooseSources");
     }
     if (selectedSources.length === 1) {
       const source = selectedSources[0];
-      return getSourceDisplayName(source);
+      return getSourceDisplayName(source, t);
     }
-    return `${selectedSources.length} sources sélectionnées`;
+    return t("controls.sourcesSelected", { count: selectedSources.length });
   };
 
   return (
@@ -214,12 +220,17 @@ const SourceDropdownWithNotifications: React.FC<
                 </svg>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-amber-900">
-                    Source non disponible
+                    {t("toast.sourceUnavailableShort")}
                   </p>
                   <p className="mt-1 text-xs text-amber-800">
-                    {getSourceDisplayName(incompatibleSource)} n'est disponible
-                    qu'aux pas de temps :{" "}
-                    {getSupportedTimeStepNames(incompatibleSource).join(", ")}.
+                    {t("toast.firstSourceAvailableOnlyIn", {
+                      name: getSourceDisplayName(incompatibleSource, t),
+                      steps: getSupportedTimeStepsForSource(
+                        incompatibleSource
+                      )
+                        .map((code) => t(`timeSteps.${code}`))
+                        .join(", "),
+                    })}
                   </p>
                   {getFirstCompatibleTimeStep(incompatibleSource) &&
                     onTimeStepChange && (
@@ -235,7 +246,7 @@ const SourceDropdownWithNotifications: React.FC<
                         }}
                         className="mt-2 text-xs font-medium text-amber-900 underline hover:text-amber-950"
                       >
-                        Changer le pas de temps
+                        {t("toast.changeTimeStep")}
                       </button>
                     )}
                 </div>
@@ -260,13 +271,13 @@ const SourceDropdownWithNotifications: React.FC<
         {/* Sources principales */}
         <div className="p-1">
           <DropdownMenuLabel className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 px-1">
-            Sources principales
+            {t("controls.mainSources")}
           </DropdownMenuLabel>
 
           {/* AtmoRef */}
           <SourceItem
             code="atmoRef"
-            name="Station de référence AtmoSud"
+            name={t("controls.sourceAtmoRef")}
             isSelected={selectedSources.includes("atmoRef")}
             isCompatible={isSourceCompatibleWithTimeStep(
               "atmoRef",
@@ -278,7 +289,7 @@ const SourceDropdownWithNotifications: React.FC<
           {/* AtmoMicro */}
           <SourceItem
             code="atmoMicro"
-            name="Microcapteurs qualifiés AtmoSud"
+            name={t("controls.sourceAtmoMicro")}
             isSelected={selectedSources.includes("atmoMicro")}
             isCompatible={isSourceCompatibleWithTimeStep(
               "atmoMicro",
@@ -296,6 +307,7 @@ const SourceDropdownWithNotifications: React.FC<
             allSelected={allCommunautaireSelected}
             someSelected={someCommunautaireSelected}
             onToggle={() => handleGroupToggle("communautaire")}
+            groupLabel={t("controls.sourceCommunautaire")}
           />
 
           {/* Sous-menu communautaire */}
@@ -317,7 +329,7 @@ const SourceDropdownWithNotifications: React.FC<
                   code,
                   selectedTimeStep
                 )}
-                supportedTimeSteps={getSupportedTimeStepNames(code)}
+                supportedTimeStepCodes={getSupportedTimeStepsForSource(code)}
                 onToggle={() => handleSourceToggle(code)}
               />
             ))}
@@ -335,7 +347,7 @@ interface SourceItemProps {
   name: string;
   isSelected: boolean;
   isCompatible: boolean;
-  supportedTimeSteps?: string[];
+  supportedTimeStepCodes?: string[];
   onToggle: () => void;
 }
 
@@ -343,9 +355,18 @@ const SourceItem: React.FC<SourceItemProps> = ({
   name,
   isSelected,
   isCompatible,
-  supportedTimeSteps,
+  supportedTimeStepCodes,
   onToggle,
 }) => {
+  const { t } = useTranslation();
+  const stepsTitle =
+    supportedTimeStepCodes?.length &&
+    t("toast.availableOnlyIn", {
+      steps: supportedTimeStepCodes
+        .map((c) => t(`timeSteps.${c}`))
+        .join(", "),
+    });
+  const stepsTitleStr = stepsTitle ? String(stepsTitle) : undefined;
   return (
     <div className="relative">
       <DropdownMenuCheckboxItem
@@ -363,7 +384,7 @@ const SourceItem: React.FC<SourceItemProps> = ({
           {!isCompatible && (
             <span
               className="ml-2 flex items-center gap-1 text-amber-600"
-              title={`Disponible uniquement en : ${supportedTimeSteps?.join(", ")}`}
+              title={stepsTitleStr}
             >
               <svg
                 className="h-4 w-4"
@@ -389,7 +410,8 @@ const CommunautaireGroupCheckbox: React.FC<{
   allSelected: boolean;
   someSelected: boolean;
   onToggle: () => void;
-}> = ({ allSelected, someSelected, onToggle }) => {
+  groupLabel: string;
+}> = ({ allSelected, someSelected, onToggle, groupLabel }) => {
   const checkboxRef = useRef<HTMLButtonElement>(null);
   const isIndeterminate = someSelected && !allSelected;
 
@@ -424,7 +446,7 @@ const CommunautaireGroupCheckbox: React.FC<{
             </div>
           )}
         </div>
-        <span className="font-medium">Autres capteurs communautaires</span>
+        <span className="font-medium">{groupLabel}</span>
       </div>
     </button>
   );

@@ -75,7 +75,7 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
             .map((step) => t(`timeSteps.${step}`))
             .join(", ");
           const firstCompatibleStep = getFirstCompatibleTimeStep(sourceCode);
-          const sourceName = getSourceDisplayName(sourceCode);
+          const sourceName = getSourceDisplayName(sourceCode, t);
 
           onToast({
             title: t("toast.sourceUnavailable", { name: sourceName }),
@@ -137,8 +137,8 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
     }
     if (selectedSources.length === 1) {
       const source = selectedSources[0];
-      if (source === "atmoRef") return "Station de référence AtmoSud";
-      if (source === "atmoMicro") return "Microcapteurs qualifiés AtmoSud";
+      if (source === "atmoRef") return t("controls.sourceAtmoRef");
+      if (source === "atmoMicro") return t("controls.sourceAtmoMicro");
       if (source.includes("communautaire.")) {
         const subSource = source.split(".")[1];
         if (subSource === "nebuleair") return "NebuleAir";
@@ -196,7 +196,7 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
                 "bg-[#e7eef8] text-[#1f3c6d]"
             )}
           >
-            Station de référence AtmoSud
+            {t("controls.sourceAtmoRef")}
           </DropdownMenuCheckboxItem>
 
           {/* AtmoMicro */}
@@ -209,7 +209,7 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
                 "bg-[#e7eef8] text-[#1f3c6d]"
             )}
           >
-            Microcapteurs qualifiés AtmoSud
+            {t("controls.sourceAtmoMicro")}
           </DropdownMenuCheckboxItem>
         </div>
 
@@ -221,6 +221,7 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
             allSelected={allCommunautaireSelected}
             someSelected={someCommunautaireSelected}
             onToggle={() => handleGroupToggle("communautaire")}
+            groupLabel={t("controls.sourceCommunautaire")}
           />
 
           {/* Sous-menu communautaire */}
@@ -259,7 +260,8 @@ const CommunautaireGroupCheckbox: React.FC<{
   allSelected: boolean;
   someSelected: boolean;
   onToggle: () => void;
-}> = ({ allSelected, someSelected, onToggle }) => {
+  groupLabel: string;
+}> = ({ allSelected, someSelected, onToggle, groupLabel }) => {
   const checkboxRef = useRef<HTMLButtonElement>(null);
   const isIndeterminate = someSelected && !allSelected;
 
@@ -305,7 +307,7 @@ const CommunautaireGroupCheckbox: React.FC<{
             </div>
           )}
         </div>
-        <span className="font-medium">Autres capteurs communautaires</span>
+        <span className="font-medium">{groupLabel}</span>
       </div>
     </div>
   );
