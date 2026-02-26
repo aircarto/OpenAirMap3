@@ -35,6 +35,8 @@ const PollutionEpisodeCalendar: React.FC<PollutionEpisodeCalendarProps> = ({
     ? "es-ES"
     : i18n.language?.startsWith("it")
     ? "it-IT"
+    : i18n.language?.startsWith("de")
+    ? "de-DE"
     : i18n.language?.startsWith("ar")
     ? "ar-SA"
     : "fr-FR";

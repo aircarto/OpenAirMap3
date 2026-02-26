@@ -41,7 +41,7 @@ export const createSeriesTooltip = (
     const value = data?.[seriesConfig.dataKey];
     
     // Formater la date (locale courante)
-    const locale = i18n.language?.startsWith("fr") ? "fr-FR" : i18n.language?.startsWith("en") ? "en-GB" : i18n.language?.startsWith("es") ? "es-ES" : i18n.language?.startsWith("it") ? "it-IT" : i18n.language?.startsWith("ar") ? "ar-SA" : "fr-FR";
+    const locale = i18n.language?.startsWith("fr") ? "fr-FR" : i18n.language?.startsWith("en") ? "en-GB" : i18n.language?.startsWith("es") ? "es-ES" : i18n.language?.startsWith("it") ? "it-IT" : i18n.language?.startsWith("de") ? "de-DE" : i18n.language?.startsWith("ar") ? "ar-SA" : "fr-FR";
     let dateStr = "";
     if (data?.timestamp) {
       const timestampValue = data.timestamp;

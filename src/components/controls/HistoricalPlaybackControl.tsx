@@ -123,7 +123,7 @@ const HistoricalPlaybackControl: React.FC<HistoricalPlaybackControlProps> = ({
     if (!dateString) return "--";
     const date = new Date(dateString);
     if (Number.isNaN(date.getTime())) return "--";
-    const locale = i18n.language === "fr" ? "fr-FR" : i18n.language === "en" ? "en-GB" : i18n.language === "ar" ? "ar-SA" : i18n.language;
+    const locale = i18n.language === "fr" ? "fr-FR" : i18n.language === "en" ? "en-GB" : i18n.language === "de" ? "de-DE" : i18n.language === "ar" ? "ar-SA" : i18n.language;
     return date.toLocaleDateString(locale, {
       day: "2-digit",
       month: "2-digit",
