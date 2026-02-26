@@ -1431,7 +1431,7 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                     </div>
 
                     {/* Contrôles du pas de temps */}
-                    <div className="flex-1 border border-gray-200 rounded-lg p-2.5 sm:p-3">
+                    <div className="flex-1 border border-gray-200 rounded-lg p-2.5 sm:p-3 rtl-on-ar">
                       <div className="flex items-center space-x-2 mb-2.5 sm:mb-3">
                         <svg
                           className="w-4 h-4 text-gray-600 flex-shrink-0"
@@ -1467,11 +1467,11 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                         className="w-full"
                       >
                         {[
-                          { key: "instantane", label: "Scan" },
-                          { key: "quartHeure", label: "15min" },
-                          { key: "heure", label: "1h" },
-                          { key: "jour", label: "1j" },
-                        ].map(({ key, label }) => {
+                          { key: "instantane", labelKey: "timeStepScan" },
+                          { key: "quartHeure", labelKey: "timeStep15min" },
+                          { key: "heure", labelKey: "timeStep1h" },
+                          { key: "jour", labelKey: "timeStep1j" },
+                        ].map(({ key, labelKey }) => {
                           const isDisabledBySupport =
                             !supportedTimeSteps.includes(key);
                           const isDisabledByRange =
@@ -1479,6 +1479,7 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                           const isDisabled =
                             isDisabledBySupport || isDisabledByRange;
                           const maxDays = getMaxHistoryDays(key);
+                          const label = t(`panels.stationSidePanel.${labelKey}`);
 
                           let tooltip = label;
                           if (isDisabledByRange && maxDays) {
@@ -1512,31 +1513,30 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                       {/* Message explicatif si des boutons sont désactivés à cause de la période */}
                       {(() => {
                         const disabledByRange = [
-                          { key: "instantane", label: "Scan" },
-                          { key: "quartHeure", label: "15min" },
-                          { key: "heure", label: "1h" },
-                          { key: "jour", label: "1j" },
+                          { key: "instantane", labelKey: "timeStepScan" },
+                          { key: "quartHeure", labelKey: "timeStep15min" },
+                          { key: "heure", labelKey: "timeStep1h" },
+                          { key: "jour", labelKey: "timeStep1j" },
                         ].filter(({ key }) => {
                           const isDisabledBySupport =
                             !supportedTimeSteps.includes(key);
                           const isDisabledByRange =
                             !isTimeStepValidForCurrentRange(key);
-                          // On ne compte que ceux désactivés par la période, pas par le support
                           return !isDisabledBySupport && isDisabledByRange;
                         });
 
                         if (disabledByRange.length > 0) {
                           const timeStepLabels = disabledByRange
-                            .map(({ key, label }) => {
+                            .map(({ key, labelKey }) => {
                               const maxDays = getMaxHistoryDays(key);
                               if (!maxDays) return null;
                               const daysText =
                                 maxDays === 60
-                                  ? "2 mois"
+                                  ? t("panels.comparisonSidePanel.twoMonths")
                                   : maxDays === 180
-                                  ? "6 mois"
-                                  : `${maxDays} jours`;
-                              return `${label} (max ${daysText})`;
+                                  ? t("panels.comparisonSidePanel.sixMonths")
+                                  : t("panels.comparisonSidePanel.daysUnit", { count: maxDays });
+                              return `${t(`panels.stationSidePanel.${labelKey}`)} (max ${daysText})`;
                             })
                             .filter(Boolean);
 

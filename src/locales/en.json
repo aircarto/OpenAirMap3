@@ -135,7 +135,26 @@
     "validationEndAfterStart": "End date must be after start date",
     "validationStartNotFuture": "Start date cannot be in the future",
     "validationEndNotFuture": "End date cannot be in the future",
-    "validationMaxPeriod": "Period cannot exceed {{max}} days"
+    "validationMaxPeriod": "Period cannot exceed {{max}} days",
+    "quickSelectLabel": "Quick selection",
+    "preset3h": "3 h",
+    "preset24h": "24 h",
+    "preset7d": "7 d",
+    "preset30d": "30 d",
+    "last3Months": "Last 3 months",
+    "last365Days": "Last 365 days",
+    "limitForTimeStep": "Limited to {{max}} for this time step",
+    "maxForTimeStep": "Maximum {{max}} for this time step",
+    "minDateLabel": "Minimum date",
+    "presetExceedsLimit": "Selected period ({{preset}}) exceeds the limit of {{max}} for time step \"{{timeStep}}\". It has been adjusted automatically.",
+    "customExceedsLimit": "Selected period ({{days}} days) exceeds the limit of {{max}} for time step \"{{timeStep}}\". It has been adjusted automatically.",
+    "periodAdjustedTo": "Period has been adjusted to {{max}} (limit for time step \"{{timeStep}}\").",
+    "periodNotAvailableForTimeStep": "This period is not available for time step \"{{timeStep}}\". Limit: {{limit}}.",
+    "selectStartAndEndDate": "Please select a start date and an end date",
+    "customExceedsLimitLoad": "Selected period ({{days}} days) exceeds the allowed limit of {{max}} for time step \"{{timeStep}}\".",
+    "daysCount": "{{count}} days",
+    "months6": "6 months",
+    "unlimited": "unlimited"
   },
   "errors": {
     "loadData": "Error loading data",
@@ -203,7 +222,12 @@
       "modelingOnlyHourly": "Available only for hourly time step",
       "historicalDataLoadError": "Error loading historical data",
       "timeStepRangeLimit": "Limited to {{maxDays}} days for this time step. Reduce the historical period.",
-      "timeStepsDisabledByRange": "Time steps {{labels}} are disabled because the selected period exceeds their limit. Reduce the historical period to enable them."
+      "timeStepsDisabledByRange": "Time steps {{labels}} are disabled because the selected period exceeds their limit. Reduce the historical period to enable them.",
+      "timeStepScan": "Scan",
+      "timeStepScan15min": "Scan: 15 min",
+      "timeStep15min": "15min",
+      "timeStep1h": "1h",
+      "timeStep1j": "1d"
     },
     "chartExportMenuTitle": "Export menu",
     "exportChart": "Export chart",
@@ -387,6 +411,7 @@
       "period7d": "7d",
       "period30d": "30d",
       "timeStepScan2min": "Scan 2min",
+      "timeStepScan15min": "Scan: 15 min",
       "timeStep15min": "15min",
       "timeStep1h": "1h",
       "timeStep1j": "1d",
@@ -435,7 +460,12 @@
     "alert": "Alert",
     "departmentsConcerned": "Departments concerned:",
     "selectPollutantForEpisodes": "Select a pollutant to display pollution episodes",
-    "today": "Today"
+    "today": "Today",
+    "monthPrevious": "Previous month",
+    "monthNext": "Next month",
+    "episodesCount_one": "{{count}} pollution episode found for this pollutant",
+    "episodesCount_other": "{{count}} pollution episodes found for this pollutant",
+    "loadError": "Unable to load pollution episodes"
   },
   "infoModal": {
     "consolidatedData": "Consolidated data",

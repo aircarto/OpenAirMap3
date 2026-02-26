@@ -1331,7 +1331,7 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
                     </div>
 
                     {/* Contrôles du pas de temps */}
-                    <div className="flex-1 border border-gray-200 rounded-lg p-2 sm:p-2.5 md:p-3">
+                    <div className="flex-1 border border-gray-200 rounded-lg p-2 sm:p-2.5 md:p-3 rtl-on-ar">
                       <div className="flex items-center space-x-2 mb-2.5 sm:mb-3">
                         <svg
                           className="w-4 h-4 text-gray-600 flex-shrink-0"
@@ -1368,34 +1368,36 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
                         {[
                           {
                             key: "instantane",
-                            label: "Scan",
-                            shortLabel: "Scan",
+                            labelKey: "timeStepScan15min",
+                            shortLabelKey: "timeStepScan",
                             alwaysDisabled: true, // Toujours désactivé pour AtmoRef
                           },
                           {
                             key: "quartHeure",
-                            label: "15min",
-                            shortLabel: "15m",
+                            labelKey: "timeStep15min",
+                            shortLabelKey: "timeStep15min",
                             alwaysDisabled: false,
                           },
                           {
                             key: "heure",
-                            label: "1h",
-                            shortLabel: "1h",
+                            labelKey: "timeStep1h",
+                            shortLabelKey: "timeStep1h",
                             alwaysDisabled: false,
                           },
                           {
                             key: "jour",
-                            label: "1j",
-                            shortLabel: "1j",
+                            labelKey: "timeStep1j",
+                            shortLabelKey: "timeStep1j",
                             alwaysDisabled: false,
                           },
-                        ].map(({ key, label, shortLabel, alwaysDisabled }) => {
+                        ].map(({ key, labelKey, shortLabelKey, alwaysDisabled }) => {
                           const isDisabledByRange =
                             !isTimeStepValidForCurrentRange(key);
                           const isDisabled =
                             alwaysDisabled || isDisabledByRange;
                           const maxDays = getMaxHistoryDays(key);
+                          const label = t(`panels.stationSidePanel.${labelKey}`);
+                          const shortLabel = t(`panels.stationSidePanel.${shortLabelKey}`);
 
                           let tooltip = label;
                           if (isDisabledByRange && maxDays) {
@@ -1417,7 +1419,7 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
                               title={tooltip}
                             >
                               <span className="time-step-button-full truncate">
-                                {key === "instantane" ? "scan : 15min" : label}
+                                {label}
                               </span>
                               <span className="time-step-button-short truncate">
                                 {shortLabel}
@@ -1430,10 +1432,10 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
                       {/* Message explicatif si des boutons sont désactivés à cause de la période */}
                       {(() => {
                         const disabledByRange = [
-                          { key: "instantane", label: "Scan" },
-                          { key: "quartHeure", label: "15min" },
-                          { key: "heure", label: "1h" },
-                          { key: "jour", label: "1j" },
+                          { key: "instantane", labelKey: "timeStepScan15min" },
+                          { key: "quartHeure", labelKey: "timeStep15min" },
+                          { key: "heure", labelKey: "timeStep1h" },
+                          { key: "jour", labelKey: "timeStep1j" },
                         ].filter(({ key }) => {
                           const alwaysDisabled = key === "instantane";
                           const isDisabledByRange =
@@ -1443,16 +1445,16 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
 
                         if (disabledByRange.length > 0) {
                           const timeStepLabels = disabledByRange
-                            .map(({ key, label }) => {
+                            .map(({ key, labelKey }) => {
                               const maxDays = getMaxHistoryDays(key);
                               if (!maxDays) return null;
                               const daysText =
                                 maxDays === 60
-                                  ? "2 mois"
+                                  ? t("panels.comparisonSidePanel.twoMonths")
                                   : maxDays === 180
-                                  ? "6 mois"
-                                  : `${maxDays} jours`;
-                              return `${label} (max ${daysText})`;
+                                  ? t("panels.comparisonSidePanel.sixMonths")
+                                  : t("panels.comparisonSidePanel.daysUnit", { count: maxDays });
+                              return `${t(`panels.stationSidePanel.${labelKey}`)} (max ${daysText})`;
                             })
                             .filter(Boolean);
 

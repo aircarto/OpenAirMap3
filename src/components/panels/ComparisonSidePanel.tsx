@@ -815,7 +815,7 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
                   </div>
 
                   {/* Contrôles du pas de temps */}
-                  <div className="flex-1 border border-gray-200 rounded-lg p-2.5 sm:p-3">
+                  <div className="flex-1 border border-gray-200 rounded-lg p-2.5 sm:p-3 rtl-on-ar">
                     <div className="flex items-center space-x-2 mb-2.5 sm:mb-3">
                       <svg
                         className="w-4 h-4 text-gray-600 flex-shrink-0"
