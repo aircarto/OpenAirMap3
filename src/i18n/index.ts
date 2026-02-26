@@ -5,12 +5,14 @@ import en from "../locales/en.json";
 import es from "../locales/es.json";
 import it from "../locales/it.json";
 import ar from "../locales/ar.json";
+import de from "../locales/de.json";
 
 export const supportedLanguages = [
   { code: "fr", label: "Français", short: "FR", flag: "🇫🇷" },
   { code: "en", label: "English", short: "EN", flag: "🇬🇧" },
   { code: "es", label: "Español", short: "ES", flag: "🇪🇸" },
   { code: "it", label: "Italiano", short: "IT", flag: "🇮🇹" },
+  { code: "de", label: "Deutsch", short: "DE", flag: "🇩🇪" },
   { code: "ar", label: "العربية", short: "AR", flag: "🇸🇦" },
 ] as const;
 
@@ -42,6 +44,7 @@ i18n.use(initReactI18next).init({
     en: { translation: en },
     es: { translation: es },
     it: { translation: it },
+    de: { translation: de },
     ar: { translation: ar },
   },
   lng: getInitialLanguage(),

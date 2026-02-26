@@ -42,7 +42,7 @@ export const useHistoricalChartData = ({
 }: UseHistoricalChartDataProps) => {
   const { t, i18n } = useTranslation();
   const locale = i18n.language || "fr";
-  const localeForDate = locale.includes("fr") ? "fr-FR" : locale.includes("en") ? "en-GB" : locale.includes("es") ? "es-ES" : locale.includes("it") ? "it-IT" : locale.includes("ar") ? "ar-SA" : "fr-FR";
+  const localeForDate = locale.includes("fr") ? "fr-FR" : locale.includes("en") ? "en-GB" : locale.includes("es") ? "es-ES" : locale.includes("it") ? "it-IT" : locale.includes("de") ? "de-DE" : locale.includes("ar") ? "ar-SA" : "fr-FR";
 
   // Ref pour mémoriser le dernier résultat de fusion
   const lastMergedDataRef = useRef<{
