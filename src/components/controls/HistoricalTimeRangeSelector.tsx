@@ -36,13 +36,6 @@ export const getMaxHistoryDays = (timeStep?: string): number | null => {
   }
 };
 
-// Fonction pour formater l'affichage de la limite maximale
-const formatMaxDaysDisplay = (maxDays: number): string => {
-  if (maxDays === 180) {
-    return "6 mois";
-  }
-  return `${maxDays} jours`;
-};
 
 // Fonction pour calculer le nombre de jours entre deux dates
 const getDaysDifference = (startDate: string, endDate: string): number => {
@@ -69,8 +62,11 @@ const getPresetDays = (preset: "3h" | "24h" | "7d" | "30d"): number => {
 const HistoricalTimeRangeSelector: React.FC<
   HistoricalTimeRangeSelectorProps
 > = ({ timeRange, onTimeRangeChange, className = "", timeStep }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [isCustomOpen, setIsCustomOpen] = useState(false);
+
+  const formatMaxDaysDisplay = (maxDays: number): string =>
+    maxDays === 180 ? t("historical.months6") : t("historical.daysCount", { count: maxDays });
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -114,7 +110,11 @@ const HistoricalTimeRangeSelector: React.FC<
       const presetDays = getPresetDays(timeRange.preset);
       if (presetDays > maxDays) {
         setValidationError(
-          `La période sélectionnée (${timeRange.preset}) dépasse la limite de ${formatMaxDaysDisplay(maxDays)} pour le pas de temps "${timeStep}". Elle a été ajustée automatiquement.`
+          t("historical.presetExceedsLimit", {
+            preset: timeRange.preset,
+            max: formatMaxDaysDisplay(maxDays),
+            timeStep: timeStep ? t(`timeSteps.${timeStep}`) : timeStep,
+          })
         );
         setTimeout(() => setValidationError(null), 5000);
       } else {
@@ -127,17 +127,23 @@ const HistoricalTimeRangeSelector: React.FC<
       );
       if (daysDiff > maxDays) {
         setValidationError(
-          `La période sélectionnée (${daysDiff} jours) dépasse la limite de ${formatMaxDaysDisplay(maxDays)} pour le pas de temps "${timeStep}". Elle a été ajustée automatiquement.`
+          t("historical.customExceedsLimit", {
+            days: daysDiff,
+            max: formatMaxDaysDisplay(maxDays),
+            timeStep: timeStep ? t(`timeSteps.${timeStep}`) : timeStep,
+          })
         );
         setTimeout(() => setValidationError(null), 5000);
       } else {
-        // Vérifier aussi si la date de début est trop ancienne
         const now = new Date();
         const maxStartDate = new Date(now.getTime() - maxDays * 24 * 60 * 60 * 1000);
         const startDate = new Date(timeRange.custom.startDate);
         if (startDate < maxStartDate) {
           setValidationError(
-            `La période a été ajustée à ${formatMaxDaysDisplay(maxDays)} maximum pour le pas de temps "${timeStep}".`
+            t("historical.periodAdjustedTo", {
+              max: formatMaxDaysDisplay(maxDays),
+              timeStep: timeStep ? t(`timeSteps.${timeStep}`) : timeStep,
+            })
           );
           setTimeout(() => setValidationError(null), 5000);
         } else {
@@ -145,7 +151,7 @@ const HistoricalTimeRangeSelector: React.FC<
         }
       }
     }
-  }, [timeStep, maxDays, timeRange]);
+  }, [timeStep, maxDays, timeRange, t]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -171,7 +177,10 @@ const HistoricalTimeRangeSelector: React.FC<
   const handlePresetChange = (preset: "3h" | "24h" | "7d" | "30d") => {
     if (!isPresetValid(preset)) {
       setValidationError(
-        `Cette période n'est pas disponible pour le pas de temps "${timeStep}". Limite: ${maxDays ? formatMaxDaysDisplay(maxDays) : "illimitée"}.`
+        t("historical.periodNotAvailableForTimeStep", {
+          timeStep: timeStep ? t(`timeSteps.${timeStep}`) : timeStep,
+          limit: maxDays ? formatMaxDaysDisplay(maxDays) : t("historical.unlimited"),
+        })
       );
       return;
     }
@@ -198,16 +207,19 @@ const HistoricalTimeRangeSelector: React.FC<
 
   const handleLoadCustomRange = () => {
     if (!customStartDate || !customEndDate) {
-      setValidationError("Veuillez sélectionner une date de début et une date de fin");
+      setValidationError(t("historical.selectStartAndEndDate"));
       return;
     }
 
-    // Vérifier la limite si elle existe
     if (maxDays) {
       const daysDiff = getDaysDifference(customStartDate, customEndDate);
       if (daysDiff > maxDays) {
         setValidationError(
-          `La période sélectionnée (${daysDiff} jours) dépasse la limite autorisée de ${formatMaxDaysDisplay(maxDays)} pour le pas de temps "${timeStep}".`
+          t("historical.customExceedsLimitLoad", {
+            days: daysDiff,
+            max: formatMaxDaysDisplay(maxDays),
+            timeStep: timeStep ? t(`timeSteps.${timeStep}`) : timeStep,
+          })
         );
         return;
       }
@@ -264,7 +276,10 @@ const HistoricalTimeRangeSelector: React.FC<
         setCustomStartDate(adjustedStartStr);
         setCustomEndDate(endDateStr);
         setValidationError(
-          `La période a été ajustée à ${formatMaxDaysDisplay(maxDays)} (limite pour le pas de temps "${timeStep}").`
+          t("historical.periodAdjustedTo", {
+            max: formatMaxDaysDisplay(maxDays),
+            timeStep: timeStep ? t(`timeSteps.${timeStep}`) : timeStep,
+          })
         );
         setTimeout(() => setValidationError(null), 3000);
         
@@ -296,9 +311,10 @@ const HistoricalTimeRangeSelector: React.FC<
 
   const getDisplayText = () => {
     if (timeRange.type === "custom" && timeRange.custom) {
+      const locale = i18n.language || "fr";
       const formatDate = (dateString: string): string => {
         const date = new Date(dateString);
-        return date.toLocaleDateString("fr-FR", {
+        return date.toLocaleDateString(locale, {
           day: "2-digit",
           month: "2-digit",
           year: "numeric",
@@ -309,20 +325,13 @@ const HistoricalTimeRangeSelector: React.FC<
       )}`;
     }
 
-    const presetLabels: Record<string, string> = {
-      "3h": "3h",
-      "24h": "24h",
-      "7d": "7j",
-      "30d": "30j",
-    };
-
-    return presetLabels[timeRange.preset || "24h"] || "24h";
+    return t(`historical.preset${timeRange.preset || "24h"}`);
   };
 
   const isCustomSelected = timeRange.type === "custom";
 
   return (
-    <div className={`relative ${className}`} ref={dropdownRef}>
+    <div className={`relative rtl-on-ar ${className}`} ref={dropdownRef}>
       <div className="flex items-center space-x-2 mb-2.5 sm:mb-3">
         <svg
           className="w-4 h-4 text-gray-600 flex-shrink-0"
@@ -352,13 +361,12 @@ const HistoricalTimeRangeSelector: React.FC<
         className="w-full mb-2"
       >
         {[
-          { key: "3h", label: "3h" },
-          { key: "24h", label: "24h" },
-          { key: "7d", label: "7j" },
-          { key: "30d", label: "30j" },
-        ].map(({ key, label }) => {
-          const isValid = isPresetValid(key as "3h" | "24h" | "7d" | "30d");
-          
+          { key: "3h" as const },
+          { key: "24h" as const },
+          { key: "7d" as const },
+          { key: "30d" as const },
+        ].map(({ key }) => {
+          const isValid = isPresetValid(key);
           return (
             <ToggleGroupItem
               key={key}
@@ -366,7 +374,7 @@ const HistoricalTimeRangeSelector: React.FC<
               disabled={!isValid}
               title={
                 !isValid && maxDays
-                  ? `Limité à ${formatMaxDaysDisplay(maxDays)} pour ce pas de temps`
+                  ? t("historical.limitForTimeStep", { max: formatMaxDaysDisplay(maxDays) })
                   : undefined
               }
               className={cn(
@@ -374,7 +382,7 @@ const HistoricalTimeRangeSelector: React.FC<
                 !isValid && "opacity-50"
               )}
             >
-              {label}
+              {t(`historical.preset${key}`)}
             </ToggleGroupItem>
           );
         })}
@@ -430,10 +438,9 @@ const HistoricalTimeRangeSelector: React.FC<
       {isCustomOpen && (
         <div className="absolute z-[2000] w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
           <div className="p-3 space-y-3">
-            {/* Sélections rapides */}
             <div>
               <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
-                Sélections rapides
+                {t("historical.quickSelectLabel")}
               </div>
               <div className="grid grid-cols-1 gap-1">
                 <button
@@ -447,11 +454,11 @@ const HistoricalTimeRangeSelector: React.FC<
                   disabled={maxDays !== null && 90 > maxDays}
                   title={
                     maxDays && 90 > maxDays
-                      ? `Limité à ${formatMaxDaysDisplay(maxDays)} pour ce pas de temps`
+                      ? t("historical.limitForTimeStep", { max: formatMaxDaysDisplay(maxDays) })
                       : undefined
                   }
                 >
-                  3 derniers mois
+                  {t("historical.last3Months")}
                 </button>
                 <button
                   type="button"
@@ -464,11 +471,11 @@ const HistoricalTimeRangeSelector: React.FC<
                   disabled={maxDays !== null && 365 > maxDays}
                   title={
                     maxDays && 365 > maxDays
-                      ? `Limité à ${formatMaxDaysDisplay(maxDays)} pour ce pas de temps`
+                      ? t("historical.limitForTimeStep", { max: formatMaxDaysDisplay(maxDays) })
                       : undefined
                   }
                 >
-                  365 derniers jours
+                  {t("historical.last365Days")}
                 </button>
               </div>
             </div>
@@ -476,7 +483,6 @@ const HistoricalTimeRangeSelector: React.FC<
             {/* Séparateur */}
             <div className="border-t border-gray-200"></div>
 
-            {/* Sélection personnalisée */}
             <div>
               <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
                 {t("historical.customPeriod")}
@@ -484,7 +490,7 @@ const HistoricalTimeRangeSelector: React.FC<
               <div className="space-y-2">
                 <div>
                   <label className="block text-xs text-gray-600 mb-1">
-                    Date de début
+                    {t("historical.startDate")}
                   </label>
                   <input
                     type="date"
@@ -500,13 +506,13 @@ const HistoricalTimeRangeSelector: React.FC<
                   />
                   {maxStartDate && (
                     <p className="text-[10px] text-gray-500 mt-1">
-                      Date minimale : {new Date(maxStartDate).toLocaleDateString("fr-FR")}
+                      {t("historical.minDateLabel")}: {new Date(maxStartDate).toLocaleDateString(i18n.language || "fr")}
                     </p>
                   )}
                 </div>
                 <div>
                   <label className="block text-xs text-gray-600 mb-1">
-                    Date de fin
+                    {t("historical.endDate")}
                   </label>
                   <input
                     type="date"
@@ -532,7 +538,7 @@ const HistoricalTimeRangeSelector: React.FC<
                     : "bg-gray-200 text-gray-400 cursor-not-allowed"
                 }`}
               >
-                Charger les données
+                {t("historical.loadData")}
               </button>
             </div>
           </div>
@@ -542,7 +548,7 @@ const HistoricalTimeRangeSelector: React.FC<
       {maxDays && (
         <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-md">
           <p className="text-xs text-amber-700">
-            <span className="font-medium"></span> Maximum {formatMaxDaysDisplay(maxDays)} pour ce pas de temps
+            {t("historical.maxForTimeStep", { max: formatMaxDaysDisplay(maxDays) })}
           </p>
         </div>
       )}

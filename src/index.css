@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* RTL pour l'arabe : boutons pas de temps, présets période, sélecteurs */
+[data-locale="ar"] .rtl-on-ar {
+  direction: rtl;
+}
+
 /* Styles personnalisés pour Leaflet */
 .leaflet-container {
   height: 100%;

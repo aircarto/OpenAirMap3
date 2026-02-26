@@ -135,7 +135,26 @@
     "validationEndAfterStart": "يجب أن يكون تاريخ النهاية بعد تاريخ البداية",
     "validationStartNotFuture": "لا يمكن أن يكون تاريخ البداية في المستقبل",
     "validationEndNotFuture": "لا يمكن أن يكون تاريخ النهاية في المستقبل",
-    "validationMaxPeriod": "لا يمكن أن تتجاوز الفترة {{max}} يوماً"
+    "validationMaxPeriod": "لا يمكن أن تتجاوز الفترة {{max}} يوماً",
+    "quickSelectLabel": "اختيار سريع",
+    "preset3h": "3 س",
+    "preset24h": "24 س",
+    "preset7d": "7 ي",
+    "preset30d": "30 ي",
+    "last3Months": "آخر 3 أشهر",
+    "last365Days": "آخر 365 يوماً",
+    "limitForTimeStep": "محدود إلى {{max}} لهذه الخطوة الزمنية",
+    "maxForTimeStep": "الحد الأقصى {{max}} لهذه الخطوة الزمنية",
+    "minDateLabel": "الحد الأدنى للتاريخ",
+    "presetExceedsLimit": "الفترة المحددة ({{preset}}) تتجاوز الحد {{max}} للخطوة \"{{timeStep}}\". تم التعديل تلقائياً.",
+    "customExceedsLimit": "الفترة المحددة ({{days}} أيام) تتجاوز الحد {{max}} للخطوة \"{{timeStep}}\". تم التعديل تلقائياً.",
+    "periodAdjustedTo": "تم تعديل الفترة إلى {{max}} (الحد للخطوة \"{{timeStep}}\").",
+    "periodNotAvailableForTimeStep": "هذه الفترة غير متاحة للخطوة \"{{timeStep}}\". الحد: {{limit}}.",
+    "selectStartAndEndDate": "يرجى اختيار تاريخ البداية وتاريخ النهاية",
+    "customExceedsLimitLoad": "الفترة المحددة ({{days}} أيام) تتجاوز الحد المسموح {{max}} للخطوة \"{{timeStep}}\".",
+    "daysCount": "{{count}} أيام",
+    "months6": "6 أشهر",
+    "unlimited": "غير محدود"
   },
   "errors": {
     "loadData": "خطأ في تحميل البيانات",
@@ -203,7 +222,12 @@
       "modelingOnlyHourly": "متاح فقط للخطوة الساعية",
       "historicalDataLoadError": "خطأ في تحميل البيانات التاريخية",
       "timeStepRangeLimit": "محدود بـ {{maxDays}} يوماً لهذه الخطوة. قلّل الفترة التاريخية.",
-      "timeStepsDisabledByRange": "خطوات {{labels}} معطلة لأن الفترة المحددة تتجاوز حدها. قلّل الفترة التاريخية لتفعيلها."
+      "timeStepsDisabledByRange": "خطوات {{labels}} معطلة لأن الفترة المحددة تتجاوز حدها. قلّل الفترة التاريخية لتفعيلها.",
+      "timeStepScan": "مسح",
+      "timeStepScan15min": "مسح: 15 د",
+      "timeStep15min": "15د",
+      "timeStep1h": "1س",
+      "timeStep1j": "1ي"
     },
     "chartExportMenuTitle": "قائمة التصدير",
     "exportChart": "تصدير الرسم البياني",
@@ -387,6 +411,7 @@
       "period7d": "7ي",
       "period30d": "30ي",
       "timeStepScan2min": "مسح 2د",
+      "timeStepScan15min": "مسح: 15 د",
       "timeStep15min": "15د",
       "timeStep1h": "1س",
       "timeStep1j": "1ي",
@@ -435,7 +460,12 @@
     "alert": "تنبيه",
     "departmentsConcerned": "الأقسام المعنية:",
     "selectPollutantForEpisodes": "اختر ملوثاً لعرض حلقات التلوث",
-    "today": "اليوم"
+    "today": "اليوم",
+    "monthPrevious": "الشهر السابق",
+    "monthNext": "الشهر التالي",
+    "episodesCount_one": "تم العثور على {{count}} حلقة تلوث لهذا الملوث",
+    "episodesCount_other": "تم العثور على {{count}} حلقات تلوث لهذا الملوث",
+    "loadError": "تعذر تحميل حلقات التلوث"
   },
   "infoModal": {
     "consolidatedData": "البيانات الموحدة",

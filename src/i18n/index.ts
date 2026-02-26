@@ -52,11 +52,13 @@ i18n.use(initReactI18next).init({
   },
 });
 
-// Synchroniser la langue avec l'attribut lang et dir du HTML (accessibilité + SEO, RTL pour l'arabe)
+// Synchroniser la langue avec l'attribut lang du HTML (accessibilité + SEO).
+// On ne met pas dir="rtl" sur le document pour garder la mise en page LTR (panels à gauche, etc.).
+// Pour l'arabe, data-locale="ar" permet d'appliquer dir="rtl" uniquement sur les blocs de texte si besoin.
 i18n.on("languageChanged", (lng) => {
   if (typeof document !== "undefined") {
     document.documentElement.lang = lng;
-    document.documentElement.dir = lng === "ar" ? "rtl" : "ltr";
+    document.documentElement.setAttribute("data-locale", lng);
     try {
       localStorage.setItem(STORAGE_KEY, lng);
     } catch {
@@ -65,11 +67,11 @@ i18n.on("languageChanged", (lng) => {
   }
 });
 
-// Appliquer la langue et la direction initiales au document
+// Appliquer la langue et la direction initiales au document (layout toujours LTR)
 if (typeof document !== "undefined") {
   const lng = i18n.language || "fr";
   document.documentElement.lang = lng;
-  document.documentElement.dir = lng === "ar" ? "rtl" : "ltr";
+  document.documentElement.setAttribute("data-locale", lng);
 }
 
 export default i18n;

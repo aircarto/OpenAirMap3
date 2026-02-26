@@ -26,7 +26,18 @@ const PollutionEpisodeCalendar: React.FC<PollutionEpisodeCalendarProps> = ({
   maxDateRange,
   className = "",
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language?.startsWith("fr")
+    ? "fr-FR"
+    : i18n.language?.startsWith("en")
+    ? "en-GB"
+    : i18n.language?.startsWith("es")
+    ? "es-ES"
+    : i18n.language?.startsWith("it")
+    ? "it-IT"
+    : i18n.language?.startsWith("ar")
+    ? "ar-SA"
+    : "fr-FR";
   const [episodes, setEpisodes] = useState<PollutionEpisode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +72,7 @@ const PollutionEpisodeCalendar: React.FC<PollutionEpisodeCalendarProps> = ({
         setEpisodes(filteredEpisodes);
       } catch (err) {
         console.error("Erreur lors du chargement des épisodes:", err);
-        setError("Impossible de charger les épisodes de pollution");
+        setError("calendar.loadError");
       } finally {
         setLoading(false);
       }
@@ -272,21 +283,16 @@ const PollutionEpisodeCalendar: React.FC<PollutionEpisodeCalendarProps> = ({
   };
 
   const days = getDaysInMonth(currentMonth);
-  const monthNames = [
-    "Janvier",
-    "Février",
-    "Mars",
-    "Avril",
-    "Mai",
-    "Juin",
-    "Juillet",
-    "Août",
-    "Septembre",
-    "Octobre",
-    "Novembre",
-    "Décembre",
-  ];
-  const dayNames = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+  const monthNames = useMemo(() => {
+    return Array.from({ length: 12 }, (_, i) =>
+      new Date(2024, i, 1).toLocaleDateString(locale, { month: "long" })
+    );
+  }, [locale]);
+  const dayNames = useMemo(() => {
+    return Array.from({ length: 7 }, (_, i) =>
+      new Date(2024, 0, i).toLocaleDateString(locale, { weekday: "short" })
+    );
+  }, [locale]);
 
   // Si pas de polluant, on affiche quand même le calendrier mais sans les épisodes
 
@@ -322,20 +328,20 @@ const PollutionEpisodeCalendar: React.FC<PollutionEpisodeCalendarProps> = ({
   if (error) {
     return (
       <div className={`p-4 bg-red-50 border border-red-200 rounded-md ${className}`}>
-        <p className="text-sm text-red-700">{error}</p>
+        <p className="text-sm text-red-700">{t(error)}</p>
       </div>
     );
   }
 
   return (
-    <div className={`bg-white rounded-lg ${className}`}>
+    <div className={`bg-white rounded-lg rtl-on-ar ${className}`}>
       {/* En-tête du calendrier */}
       <div className="flex items-center justify-between p-3 border-b border-gray-200">
         <button
           type="button"
           onClick={goToPreviousMonth}
           className="p-2 hover:bg-gray-100 rounded-md transition-colors"
-          title="Mois précédent"
+          title={t("calendar.monthPrevious")}
         >
           <svg
             className="w-5 h-5 text-gray-600"
@@ -368,7 +374,7 @@ const PollutionEpisodeCalendar: React.FC<PollutionEpisodeCalendarProps> = ({
           type="button"
           onClick={goToNextMonth}
           className="p-2 hover:bg-gray-100 rounded-md transition-colors"
-          title="Mois suivant"
+          title={t("calendar.monthNext")}
         >
           <svg
             className="w-5 h-5 text-gray-600"
@@ -470,7 +476,7 @@ const PollutionEpisodeCalendar: React.FC<PollutionEpisodeCalendarProps> = ({
                       : ""
                   }
                 `}
-                title={day.toLocaleDateString("fr-FR")}
+                title={day.toLocaleDateString(locale)}
               >
                 <span>{day.getDate()}</span>
                 {episodeLevel && (
@@ -503,7 +509,7 @@ const PollutionEpisodeCalendar: React.FC<PollutionEpisodeCalendarProps> = ({
             }}
           >
             <div className="font-semibold mb-1">
-              {new Date(hoveredDate).toLocaleDateString("fr-FR", {
+              {new Date(hoveredDate).toLocaleDateString(locale, {
                 day: "2-digit",
                 month: "long",
                 year: "numeric",
@@ -564,8 +570,7 @@ const PollutionEpisodeCalendar: React.FC<PollutionEpisodeCalendarProps> = ({
         <div className="px-3 py-2 bg-gray-50 border-t border-gray-200">
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-600">
-              {episodes.length} épisode{episodes.length > 1 ? "s" : ""} de pollution
-              trouvé{episodes.length > 1 ? "s" : ""} pour ce polluant
+              {t("calendar.episodesCount", { count: episodes.length })}
             </span>
             {lastEpisode && (
               <button
@@ -588,7 +593,7 @@ const PollutionEpisodeCalendar: React.FC<PollutionEpisodeCalendarProps> = ({
                   }
                 }}
                 className="ml-2 px-2 py-1 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors flex items-center space-x-1"
-                title={`${t("calendar.selectLastEpisode")}: ${new Date(lastEpisode.date).toLocaleDateString("fr-FR")}`}
+                title={`${t("calendar.selectLastEpisode")}: ${new Date(lastEpisode.date).toLocaleDateString(locale)}`}
               >
                 <svg
                   className="w-3 h-3"

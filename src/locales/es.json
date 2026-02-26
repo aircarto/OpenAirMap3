@@ -135,7 +135,26 @@
     "validationEndAfterStart": "La fecha de fin debe ser posterior a la de inicio",
     "validationStartNotFuture": "La fecha de inicio no puede ser futura",
     "validationEndNotFuture": "La fecha de fin no puede ser futura",
-    "validationMaxPeriod": "El período no puede superar {{max}} días"
+    "validationMaxPeriod": "El período no puede superar {{max}} días",
+    "quickSelectLabel": "Selección rápida",
+    "preset3h": "3 h",
+    "preset24h": "24 h",
+    "preset7d": "7 d",
+    "preset30d": "30 d",
+    "last3Months": "Últimos 3 meses",
+    "last365Days": "Últimos 365 días",
+    "limitForTimeStep": "Limitado a {{max}} para este paso temporal",
+    "maxForTimeStep": "Máximo {{max}} para este paso temporal",
+    "minDateLabel": "Fecha mínima",
+    "presetExceedsLimit": "El período seleccionado ({{preset}}) supera el límite de {{max}} para el paso \"{{timeStep}}\". Se ha ajustado automáticamente.",
+    "customExceedsLimit": "El período seleccionado ({{days}} días) supera el límite de {{max}} para el paso \"{{timeStep}}\". Se ha ajustado automáticamente.",
+    "periodAdjustedTo": "El período se ha ajustado a {{max}} (límite para el paso \"{{timeStep}}\").",
+    "periodNotAvailableForTimeStep": "Este período no está disponible para el paso \"{{timeStep}}\". Límite: {{limit}}.",
+    "selectStartAndEndDate": "Seleccione una fecha de inicio y una fecha de fin",
+    "customExceedsLimitLoad": "El período seleccionado ({{days}} días) supera el límite permitido de {{max}} para el paso \"{{timeStep}}\".",
+    "daysCount": "{{count}} días",
+    "months6": "6 meses",
+    "unlimited": "ilimitado"
   },
   "errors": {
     "loadData": "Error al cargar datos",
@@ -203,7 +222,12 @@
       "modelingOnlyHourly": "Disponible solo para el paso temporal horario",
       "historicalDataLoadError": "Error al cargar los datos históricos",
       "timeStepRangeLimit": "Limitado a {{maxDays}} días para este paso temporal. Reduzca el período histórico.",
-      "timeStepsDisabledByRange": "Los pasos temporales {{labels}} están desactivados porque el período seleccionado supera su límite. Reduzca el período histórico para activarlos."
+      "timeStepsDisabledByRange": "Los pasos temporales {{labels}} están desactivados porque el período seleccionado supera su límite. Reduzca el período histórico para activarlos.",
+      "timeStepScan": "Scan",
+      "timeStepScan15min": "Scan: 15 min",
+      "timeStep15min": "15min",
+      "timeStep1h": "1h",
+      "timeStep1j": "1d"
     },
     "chartExportMenuTitle": "Menú de exportación",
     "exportChart": "Exportar gráfico",
@@ -387,6 +411,7 @@
       "period7d": "7d",
       "period30d": "30d",
       "timeStepScan2min": "Scan 2min",
+      "timeStepScan15min": "Scan: 15 min",
       "timeStep15min": "15min",
       "timeStep1h": "1h",
       "timeStep1j": "1d",
@@ -435,7 +460,12 @@
     "alert": "Alerta",
     "departmentsConcerned": "Departamentos concernidos:",
     "selectPollutantForEpisodes": "Seleccione un contaminante para mostrar los episodios de contaminación",
-    "today": "Hoy"
+    "today": "Hoy",
+    "monthPrevious": "Mes anterior",
+    "monthNext": "Mes siguiente",
+    "episodesCount_one": "{{count}} episodio de contaminación encontrado para este contaminante",
+    "episodesCount_other": "{{count}} episodios de contaminación encontrados para este contaminante",
+    "loadError": "No se pueden cargar los episodios de contaminación"
   },
   "infoModal": {
     "consolidatedData": "Datos consolidados",

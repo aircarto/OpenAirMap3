@@ -28,8 +28,8 @@ const ToggleGroupItem = React.forwardRef<
       "transition-all duration-150 ease-in-out",
       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4271B3] focus-visible:ring-offset-2",
       "disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed",
-      // Séparateur vertical à droite (sauf pour le dernier élément)
-      "relative after:content-[''] after:absolute after:right-0 after:top-1/2 after:-translate-y-1/2 after:w-px after:h-4 after:bg-gray-200",
+      // Séparateur vertical en fin de bloc (inline-end pour RTL)
+      "relative after:content-[''] after:absolute after:end-0 after:top-1/2 after:-translate-y-1/2 after:w-px after:h-4 after:bg-gray-200",
       "last:after:hidden",
       // État sélectionné (on) - fond bleu #4271B3 avec texte blanc
       "data-[state=on]:bg-[#4271B3] data-[state=on]:text-white data-[state=on]:font-medium data-[state=on]:shadow-sm",
