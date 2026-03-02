@@ -6,6 +6,7 @@
  */
 
 import React, { useEffect, useRef } from "react";
+import i18n from "i18next";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
@@ -220,8 +221,8 @@ const AmChartsLineChart: React.FC<AmChartsLineChartProps> = ({
         })
       );
 
-      // Ajouter le label si fourni
-      if (axisConfig.label) {
+      // Ajouter le label si fourni (sauf axe gauche : ordre Label → Graduation, label ajouté après la boucle)
+      if (axisConfig.label && axisConfig.id !== "left") {
         yAxis.children.push(
           am5.Label.new(root, {
             rotation: -90,
@@ -234,6 +235,18 @@ const AmChartsLineChart: React.FC<AmChartsLineChartProps> = ({
 
       yAxisMap.set(axisConfig.id, yAxis as am5xy.ValueAxis<am5xy.AxisRendererY>);
     });
+
+    // Ordre axe gauche : Label puis graduation (label en tête du conteneur)
+    const leftAxisConfig = yAxes.find((a) => a.id === "left");
+    if (leftAxisConfig?.label) {
+      const leftAxisLabel = am5.Label.new(root, {
+        rotation: -90,
+        text: leftAxisConfig.label + (leftAxisConfig.unit ? ` (${leftAxisConfig.unit})` : ""),
+        y: am5.p50,
+        centerX: am5.p50,
+      });
+      chart.leftAxesContainer.children.insertIndex(0, leftAxisLabel);
+    }
 
     // Créer la grille si demandée
     if (showGrid) {
@@ -382,6 +395,19 @@ const AmChartsLineChart: React.FC<AmChartsLineChartProps> = ({
       onChartReady(chart, root);
     }
   }, []); // Création initiale uniquement - dépendances vides pour éviter les recréations
+
+  // Mettre à jour le label de l'axe Y gauche au changement de langue ou de yAxes
+  useEffect(() => {
+    if (!chartRef.current) return;
+    const leftAxisConfig = yAxes?.find((a) => a.id === "left");
+    if (!leftAxisConfig?.label) return;
+    const chart = chartRef.current;
+    const leftLabel = chart.leftAxesContainer.children.values[0];
+    if (leftLabel && typeof (leftLabel as any).set === "function") {
+      const text = leftAxisConfig.label + (leftAxisConfig.unit ? ` (${leftAxisConfig.unit})` : "");
+      (leftLabel as any).set("text", text);
+    }
+  }, [i18n.language, yAxes]);
 
   // Nettoyage au démontage
   useEffect(() => {

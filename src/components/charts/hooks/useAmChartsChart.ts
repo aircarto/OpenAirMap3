@@ -51,6 +51,10 @@ export const useAmChartsChart = ({
   const xAxisDateFormatRef = useRef<{ format: (date: Date) => string } | null>(
     null
   );
+  const unitKeysRef = useRef<string[]>(unitKeys);
+  const seriesConfigsRef = useRef<SeriesConfig[]>(seriesConfigs);
+  unitKeysRef.current = unitKeys;
+  seriesConfigsRef.current = seriesConfigs;
 
   // Mettre à jour la ref du formatter quand xAxisDateFormat change
   useEffect(() => {
@@ -177,16 +181,18 @@ export const useAmChartsChart = ({
         })
       );
 
-      // Ajouter le label (traduit)
-      yAxis.children.push(
-        am5.Label.new(root, {
-          rotation: -90,
-          text: i18n.t("chart.concentrationLabel", { unit }),
-          y: am5.p50,
-          centerX: am5.p50,
-          fontSize: isMobile ? 8 : isLandscapeMobile ? 10 : 12,
-        })
-      );
+      // Ajouter le label (traduit) uniquement pour l'axe droit ; l'axe gauche a son label à part (ordre Label → Contrôle → Graduation)
+      if (yAxisId === "right") {
+        yAxis.children.push(
+          am5.Label.new(root, {
+            rotation: -90,
+            text: i18n.t("chart.concentrationLabel", { unit }),
+            y: am5.p50,
+            centerX: am5.p50,
+            fontSize: isMobile ? 8 : isLandscapeMobile ? 10 : 12,
+          })
+        );
+      }
 
       // Configurer la taille de police
       yAxis.get("renderer").labels.template.setAll({
@@ -240,6 +246,19 @@ export const useAmChartsChart = ({
     // Positionner la scrollbar à gauche (côté axe Y) au lieu de la droite par défaut
     chart.leftAxesContainer.children.push(scrollbarY);
 
+    // Ordre axe gauche : Label → Contrôle (scrollbar) → Graduation
+    if (unitKeys.length > 0) {
+      const yAxisLabel = am5.Label.new(root, {
+        rotation: -90,
+        text: i18n.t("chart.concentrationLabel", { unit: unitKeys[0] }),
+        y: am5.p50,
+        centerX: am5.p50,
+        fontSize: isMobile ? 8 : isLandscapeMobile ? 10 : 12,
+      });
+      chart.leftAxesContainer.children.insertIndex(0, yAxisLabel);
+      chart.leftAxesContainer.children.moveValue(scrollbarY, 1);
+    }
+
     // Créer le curseur (zoom X et Y au drag)
     const cursor = chart.set(
       "cursor",
@@ -268,20 +287,87 @@ export const useAmChartsChart = ({
     };
   }, []); // Création initiale uniquement
 
-  // Mettre à jour les labels de l'axe Y quand la langue change
+  // Mettre à jour les labels de l'axe Y et la légende quand la langue change (au re-render)
   useEffect(() => {
     if (!chartRef.current || !unitKeys.length) return;
     const chart = chartRef.current;
+    // Label axe gauche : dans leftAxesContainer à l'index 0
+    if (unitKeys[0]) {
+      const leftLabel = chart.leftAxesContainer.children.values[0];
+      if (leftLabel && typeof (leftLabel as any).set === "function") {
+        (leftLabel as any).set("text", i18n.t("chart.concentrationLabel", { unit: unitKeys[0] }));
+      }
+    }
+    // Labels axes droits : dans yAxis.children
     chart.yAxes.values.forEach((yAxis, index) => {
+      if (index === 0) return; // gauche déjà traité
       const unit = unitKeys[index];
-      if (unit && yAxis.children) {
+      if (unit && yAxis.children && yAxis.children.length > 0) {
         const label = yAxis.children.values[0];
         if (label && typeof (label as any).set === "function") {
           (label as any).set("text", i18n.t("chart.concentrationLabel", { unit }));
         }
       }
     });
-  }, [unitKeys, i18n.language]);
+    // Noms des séries et légende
+    if (seriesConfigs.length > 0) {
+      chart.series.values.forEach((series, i) => {
+        const name = seriesConfigs[i]?.name ?? (series as any).get("name");
+        if (name != null) (series as any).set("name", name);
+      });
+      chart.children.each((child) => {
+        if (child instanceof am5.Legend) {
+          (child as am5.Legend).data.setAll(chart.series.values);
+        }
+      });
+    }
+  }, [unitKeys, i18n.language, seriesConfigs]);
+
+  // Mise à jour des labels et légende au changement de langue (sans dépendre du re-render)
+  useEffect(() => {
+    const updateChartLanguage = () => {
+      const chart = chartRef.current;
+      const units = unitKeysRef.current;
+      const configs = seriesConfigsRef.current;
+      if (!chart || !units.length) return;
+
+      // Label axe gauche
+      if (units[0]) {
+        const leftLabel = chart.leftAxesContainer.children.values[0];
+        if (leftLabel && typeof (leftLabel as any).set === "function") {
+          (leftLabel as any).set("text", i18n.t("chart.concentrationLabel", { unit: units[0] }));
+        }
+      }
+      // Labels axes droits
+      chart.yAxes.values.forEach((yAxis, index) => {
+        if (index === 0) return;
+        const unit = units[index];
+        if (unit && yAxis.children && yAxis.children.length > 0) {
+          const label = yAxis.children.values[0];
+          if (label && typeof (label as any).set === "function") {
+            (label as any).set("text", i18n.t("chart.concentrationLabel", { unit }));
+          }
+        }
+      });
+      // Noms des séries et légende
+      if (configs.length > 0) {
+        chart.series.values.forEach((series, i) => {
+          const name = configs[i]?.name ?? (series as any).get("name");
+          if (name != null) (series as any).set("name", name);
+        });
+        chart.children.each((child) => {
+          if (child instanceof am5.Legend) {
+            (child as am5.Legend).data.setAll(chart.series.values);
+          }
+        });
+      }
+    };
+
+    i18n.on("languageChanged", updateChartLanguage);
+    return () => {
+      i18n.off("languageChanged", updateChartLanguage);
+    };
+  }, []);
 
   // Ref pour mémoriser les dernières données et éviter les mises à jour inutiles
   const lastAmChartsDataRef = useRef<string>("");
