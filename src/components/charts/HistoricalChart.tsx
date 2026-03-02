@@ -28,6 +28,7 @@ interface HistoricalChartProps {
   timeStep?: string; // Pas de temps sélectionné (pour les métadonnées d'export)
   sensorTimeStep?: number | null; // Pas de temps du capteur en secondes (pour le mode instantane)
   modelingData?: Record<string, HistoricalDataPoint[]>; // Données de modélisation
+  hideThresholdBackgroundForColorblind?: boolean; // Masque le fond coloré par seuil (mode daltoniens)
 }
 
 const HistoricalChart: React.FC<HistoricalChartProps> = ({
@@ -41,6 +42,7 @@ const HistoricalChart: React.FC<HistoricalChartProps> = ({
   timeStep,
   sensorTimeStep,
   modelingData,
+  hideThresholdBackgroundForColorblind = false,
 }) => {
   // État pour détecter le mode paysage sur mobile
   const [isLandscapeMobile, setIsLandscapeMobile] = useState(false);
@@ -137,7 +139,9 @@ const HistoricalChart: React.FC<HistoricalChartProps> = ({
     amChartsData,
     seriesConfigs,
     unitKeys,
-    commonThresholds,
+    commonThresholds: hideThresholdBackgroundForColorblind
+      ? null
+      : commonThresholds,
     xAxisDateFormat,
     chartMargins,
     isMobile,

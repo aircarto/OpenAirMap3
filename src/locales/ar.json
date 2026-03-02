@@ -89,7 +89,9 @@
     "modelingAzur": "نموذج AZUR",
     "modelingAzurDescription": "عرض توقعات النمذجة على الرسم البياني",
     "rawData": "البيانات الخام",
-    "rawDataDescription": "عرض البيانات غير المصححة على الرسم البياني"
+    "rawDataDescription": "عرض البيانات غير المصححة على الرسم البياني",
+    "thresholdBackgroundDisabled": "العتبات معطلة",
+    "thresholdBackgroundDisabledDescription": "إخفاء الخلفية الملونة حسب العتبة (موصى به للمصابين بعمى الألوان)"
   },
   "historical": {
     "periodLabel": "تاريخي",

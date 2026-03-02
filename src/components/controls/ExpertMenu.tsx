@@ -22,6 +22,10 @@ interface ExpertMenuProps {
   showRawData?: boolean;
   onRawDataChange?: (checked: boolean) => void;
   rawDataAvailable?: boolean;
+
+  // Option fond coloré par seuil (mode daltoniens)
+  hideThresholdBackgroundForColorblind?: boolean;
+  onHideThresholdBackgroundForColorblindChange?: (checked: boolean) => void;
 }
 
 const ExpertMenu: React.FC<ExpertMenuProps> = ({
@@ -33,11 +37,15 @@ const ExpertMenu: React.FC<ExpertMenuProps> = ({
   showRawData = false,
   onRawDataChange,
   rawDataAvailable = false,
+  hideThresholdBackgroundForColorblind = false,
+  onHideThresholdBackgroundForColorblindChange,
 }) => {
   const { t } = useTranslation();
   // Compter le nombre d'options actives pour l'indicateur
   const activeOptionsCount =
-    (showModeling ? 1 : 0) + (showRawData ? 1 : 0);
+    (showModeling ? 1 : 0) +
+    (showRawData ? 1 : 0) +
+    (hideThresholdBackgroundForColorblind ? 1 : 0);
 
   return (
     <DropdownMenu>
@@ -152,6 +160,29 @@ const ExpertMenu: React.FC<ExpertMenuProps> = ({
                 </span>
                 <span className="text-xs text-gray-500 ml-5">
                   {t("controls.rawDataDescription")}
+                </span>
+              </div>
+            </DropdownMenuCheckboxItem>
+          </>
+        )}
+
+        {/* Option Désactivé seuils (daltoniens) */}
+        {onHideThresholdBackgroundForColorblindChange && (
+          <>
+            {(onModelingChange || (onRawDataChange && rawDataAvailable)) && (
+              <DropdownMenuSeparator />
+            )}
+            <DropdownMenuCheckboxItem
+              checked={hideThresholdBackgroundForColorblind}
+              onCheckedChange={onHideThresholdBackgroundForColorblindChange}
+              className="px-3 py-2.5 cursor-pointer"
+            >
+              <div className="flex flex-col gap-1">
+                <span className="text-sm font-medium text-gray-900">
+                  {t("controls.thresholdBackgroundDisabled")}
+                </span>
+                <span className="text-xs text-gray-500 ml-5">
+                  {t("controls.thresholdBackgroundDisabledDescription")}
                 </span>
               </div>
             </DropdownMenuCheckboxItem>

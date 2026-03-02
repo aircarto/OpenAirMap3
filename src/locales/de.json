@@ -89,7 +89,9 @@
     "modelingAzur": "AZUR-Modellierung",
     "modelingAzurDescription": "Modellierungsprognosen im Diagramm anzeigen",
     "rawData": "Rohdaten",
-    "rawDataDescription": "Unkorrigierte Daten im Diagramm anzeigen"
+    "rawDataDescription": "Unkorrigierte Daten im Diagramm anzeigen",
+    "thresholdBackgroundDisabled": "Schwellen deaktiviert",
+    "thresholdBackgroundDisabledDescription": "Farbigen Schwellen-Hintergrund ausblenden (empfohlen für Farbenblinde)"
   },
   "historical": {
     "periodLabel": "Verlauf",

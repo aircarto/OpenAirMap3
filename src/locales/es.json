@@ -89,7 +89,9 @@
     "modelingAzur": "Modelización AZUR",
     "modelingAzurDescription": "Mostrar las previsiones de modelización en el gráfico",
     "rawData": "Datos brutos",
-    "rawDataDescription": "Mostrar los datos no corregidos en el gráfico"
+    "rawDataDescription": "Mostrar los datos no corregidos en el gráfico",
+    "thresholdBackgroundDisabled": "Umbrales desactivados",
+    "thresholdBackgroundDisabledDescription": "Oculta el fondo coloreado por umbral (recomendado para daltónicos)"
   },
   "historical": {
     "periodLabel": "Histórico",
