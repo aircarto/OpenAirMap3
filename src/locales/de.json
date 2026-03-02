@@ -551,7 +551,15 @@
       "bruit": "Lärm",
       "brulage": "Verbrennung",
       "visuel": "Sicht",
-      "pollen": "Pollen"
+      "pollen": "Pollen",
+      "autre": "Sonstige"
+    },
+    "sourceName": {
+      "nebuleair": "NebuleAir AirCarto",
+      "sensorCommunity": "Sensor.Community",
+      "purpleair": "PurpleAir",
+      "mobileair": "MobileAir",
+      "signalair": "SignalAir"
     }
   },
   "baseLayer": {

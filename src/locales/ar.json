@@ -524,9 +524,17 @@
     "device_other": "{{count}} أجهزة",
     "report_one": "{{count}} تقرير",
     "report_other": "{{count}} تقارير",
+    "devicesVisible_zero": "{{count}} أجهزة ظاهرة",
     "devicesVisible_one": "{{count}} جهاز ظاهر",
+    "devicesVisible_two": "{{count}} جهازان ظاهران",
+    "devicesVisible_few": "{{count}} أجهزة ظاهرة",
+    "devicesVisible_many": "{{count}} أجهزة ظاهرة",
     "devicesVisible_other": "{{count}} أجهزة ظاهرة",
+    "reportsVisible_zero": "{{count}} تقارير ظاهرة",
     "reportsVisible_one": "{{count}} تقرير ظاهر",
+    "reportsVisible_two": "{{count}} تقريران ظاهران",
+    "reportsVisible_few": "{{count}} تقارير ظاهرة",
+    "reportsVisible_many": "{{count}} تقارير ظاهرة",
     "reportsVisible_other": "{{count}} تقارير ظاهرة",
     "ofTotal": "/ {{total}} الإجمالي",
     "zoomHint": "كبّر أو حرّك الخريطة لرؤية الأجهزة",
@@ -551,7 +559,15 @@
       "bruit": "الضجيج",
       "brulage": "الحرق",
       "visuel": "بصري",
-      "pollen": "حبوب اللقاح"
+      "pollen": "حبوب اللقاح",
+      "autre": "أخرى"
+    },
+    "sourceName": {
+      "nebuleair": "NebuleAir AirCarto",
+      "sensorCommunity": "Sensor.Community",
+      "purpleair": "PurpleAir",
+      "mobileair": "MobileAir",
+      "signalair": "SignalAir"
     }
   },
   "baseLayer": {

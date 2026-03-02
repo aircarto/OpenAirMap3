@@ -551,7 +551,15 @@
       "bruit": "Rumori",
       "brulage": "Bruciatura",
       "visuel": "Visivo",
-      "pollen": "Polline"
+      "pollen": "Polline",
+      "autre": "Altro"
+    },
+    "sourceName": {
+      "nebuleair": "NebuleAir AirCarto",
+      "sensorCommunity": "Sensor.Community",
+      "purpleair": "PurpleAir",
+      "mobileair": "MobileAir",
+      "signalair": "SignalAir"
     }
   },
   "baseLayer": {

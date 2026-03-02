@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* RTL pour l'arabe : boutons pas de temps, présets période, sélecteurs */
+/* RTL pour l'arabe : uniquement sur les éléments texte (pas sur les conteneurs flex/grid) */
 [data-locale="ar"] .rtl-on-ar {
   direction: rtl;
 }

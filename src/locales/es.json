@@ -551,7 +551,15 @@
       "bruit": "Ruidos",
       "brulage": "Quema",
       "visuel": "Visual",
-      "pollen": "Polen"
+      "pollen": "Polen",
+      "autre": "Otro"
+    },
+    "sourceName": {
+      "nebuleair": "NebuleAir AirCarto",
+      "sensorCommunity": "Sensor.Community",
+      "purpleair": "PurpleAir",
+      "mobileair": "MobileAir",
+      "signalair": "SignalAir"
     }
   },
   "baseLayer": {

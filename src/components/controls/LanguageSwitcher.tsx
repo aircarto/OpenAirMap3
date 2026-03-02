@@ -26,7 +26,7 @@ const LanguageSwitcher: React.FC = () => {
       const rect = buttonRef.current.getBoundingClientRect();
       setDropdownRect({
         top: rect.bottom + DROPDOWN_OFFSET,
-        left: rect.right - 72, // min-w-[4.5rem] = 72px, aligné à droite du bouton
+        left: rect.right - 112, // min-w-[7rem] = 112px, aligné à droite du bouton
       });
     };
     updatePosition();
@@ -62,7 +62,7 @@ const LanguageSwitcher: React.FC = () => {
             id="language-listbox"
             role="listbox"
             aria-labelledby="language-switcher"
-            className="fixed z-[3000] min-w-[4.5rem] rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
+            className="fixed z-[3000] min-w-[7rem] rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
             style={{ top: dropdownRect.top, left: dropdownRect.left }}
           >
             {supportedLanguages.map((lang) => (
@@ -71,17 +71,14 @@ const LanguageSwitcher: React.FC = () => {
                   type="button"
                   onClick={() => handleSelect(lang.code)}
                   className={cn(
-                    "w-full flex items-center gap-2 px-2.5 py-1.5 text-left text-xs font-medium transition-colors",
+                    "w-full flex items-center px-2.5 py-1.5 text-left text-xs font-medium transition-colors",
                     i18n.language === lang.code
                       ? "bg-[#4271B3]/10 text-[#4271B3]"
                       : "text-gray-700 hover:bg-gray-50"
                   )}
                   title={lang.label}
                 >
-                  <span className="text-sm leading-none shrink-0" aria-hidden>
-                    {lang.flag}
-                  </span>
-                  <span>{lang.short}</span>
+                  <span>{lang.label}</span>
                 </button>
               </li>
             ))}
@@ -97,7 +94,7 @@ const LanguageSwitcher: React.FC = () => {
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "flex items-center gap-1 rounded-lg border border-gray-200/80 px-2 py-1 text-xs font-semibold text-gray-700 uppercase tracking-wide",
+          "flex items-center gap-1 rounded-lg border border-gray-200/80 px-2 py-1 text-xs font-semibold text-gray-700",
           "hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#4271B3]/20 focus:border-[#4271B3] transition-colors"
         )}
         aria-label={t("common.chooseLanguage")}
@@ -107,10 +104,7 @@ const LanguageSwitcher: React.FC = () => {
         id="language-switcher"
         title={currentLang.label}
       >
-        <span className="text-sm leading-none" aria-hidden>
-          {currentLang.flag}
-        </span>
-        <span>{currentLang.short}</span>
+        <span>{currentLang.label}</span>
         <svg
           className={cn("w-3.5 h-3.5 text-gray-500 transition-transform shrink-0", isOpen && "rotate-180")}
           fill="none"

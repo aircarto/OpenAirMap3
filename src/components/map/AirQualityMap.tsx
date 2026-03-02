@@ -136,6 +136,8 @@ interface AirQualityMapProps {
   openSignalAirPanelRequest?: number;
   /** Incrémenter pour demander l'ouverture du panel MobileAir (depuis le header) */
   openMobileAirPanelRequest?: number;
+  /** Date actuellement affichée en mode historique (pour la période dans DeviceStatistics) */
+  historicalCurrentDate?: string;
 }
 
 const defaultClusterConfig = {
@@ -211,6 +213,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
   onMobileAirPanelOpen,
   openSignalAirPanelRequest = 0,
   openMobileAirPanelRequest = 0,
+  historicalCurrentDate,
 }) => {
   const { t } = useTranslation();
   // Configuration des clusters et spiderfier
@@ -1315,6 +1318,8 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
             totalReports={reports.length}
             selectedPollutant={selectedPollutant}
             selectedSources={selectedSources}
+            selectedTimeStep={selectedTimeStep}
+            historicalCurrentDate={historicalCurrentDate}
             statistics={statistics} // OPTIMISATION : Passer les statistiques pré-calculées
             sourceStatistics={sourceStatistics} // OPTIMISATION : Passer les stats par source pré-calculées
             showDetails={false}

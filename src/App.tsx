@@ -19,7 +19,6 @@ import {
 } from "./constants/pollutants";
 import { pasDeTemps, isHistoricalModeAllowedForTimeStep } from "./constants/timeSteps";
 import { getDefaultSources } from "./constants/sources";
-import AutoRefreshControl from "./components/controls/AutoRefreshControl";
 import PollutantDropdown from "./components/controls/PollutantDropdown";
 import SourceDropdown from "./components/controls/SourceDropdown";
 import TimeStepDropdown from "./components/controls/TimeStepDropdown";
@@ -427,7 +426,7 @@ const App: React.FC = () => {
             {/* Barre d’outils — desktop */}
             <div
               className={cn(
-                "hidden xl:flex items-center gap-2 flex-1 min-w-0 justify-end flex-nowrap overflow-hidden",
+                "hidden xl:flex items-center justify-center gap-3 flex-1 min-w-0 flex-nowrap overflow-hidden",
                 headerDisabled && "opacity-50 pointer-events-none"
               )}
             >
@@ -444,6 +443,10 @@ const App: React.FC = () => {
                   onSourceChange={setSelectedSources}
                   onTimeStepChange={setSelectedTimeStep}
                   onToast={addToast}
+                  autoRefreshEnabled={autoRefreshEnabled && !isHistoricalModeActive}
+                  onToggleAutoRefresh={setAutoRefreshEnabled}
+                  loading={loading}
+                  isHistoricalModeActive={isHistoricalModeActive}
                 />
                 <TimeStepDropdown
                   selectedTimeStep={selectedTimeStep}
@@ -454,20 +457,8 @@ const App: React.FC = () => {
                 />
               </div>
 
-              {/* Actualisation + Modélisation */}
+              {/* Modélisation */}
               <div className="flex items-center gap-2 pl-1 border-l border-gray-200/80 min-w-0 shrink">
-                <AutoRefreshControl
-                  enabled={autoRefreshEnabled && !isHistoricalModeActive}
-                  onToggle={setAutoRefreshEnabled}
-                  lastRefresh={lastRefresh}
-                  loading={loading}
-                  selectedTimeStep={selectedTimeStep}
-                  historicalCurrentDate={
-                    isHistoricalModeActive && temporalState.isPlaying
-                      ? temporalState.currentDate
-                      : undefined
-                  }
-                />
                 <ModelingLayerControl
                   currentModelingLayer={currentModelingLayer}
                   onModelingLayerChange={setCurrentModelingLayer}
@@ -476,7 +467,7 @@ const App: React.FC = () => {
                 />
               </div>
 
-              {/* Mode historique + Sources spéciales + Info */}
+              {/* Mode historique + Sources spéciales */}
               <div className="flex items-center gap-2 pl-1 border-l border-gray-200/80 min-w-0 shrink">
                 <HistoricalModeButton
                   isActive={isHistoricalModeActive}
@@ -493,16 +484,25 @@ const App: React.FC = () => {
                   hasSignalAirData={hasSignalAirData}
                   hasMobileAirData={hasMobileAirData}
                 />
-                <LanguageSwitcher />
-                <button
-                  type="button"
-                  onClick={() => setIsInfoModalOpen(true)}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#325A96]/40 text-sm font-semibold text-[#325A96] transition-colors hover:bg-[#325A96]/10 focus:outline-none focus:ring-2 focus:ring-[#4271B3]/20"
-                  aria-label={t("app.infoButton")}
-                >
-                  i
-                </button>
               </div>
+            </div>
+
+            {/* Zone droite — utilitaires (desktop) */}
+            <div
+              className={cn(
+                "hidden xl:flex items-center gap-2 shrink-0",
+                headerDisabled && "opacity-50 pointer-events-none"
+              )}
+            >
+              <LanguageSwitcher />
+              <button
+                type="button"
+                onClick={() => setIsInfoModalOpen(true)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#325A96]/40 text-sm font-semibold text-[#325A96] transition-colors hover:bg-[#325A96]/10 focus:outline-none focus:ring-2 focus:ring-[#4271B3]/20"
+                aria-label={t("app.infoButton")}
+              >
+                i
+              </button>
             </div>
           </div>
         </div>
@@ -592,6 +592,11 @@ const App: React.FC = () => {
           onMobileAirPanelOpen={handleMobileAirPanelOpen}
           openSignalAirPanelRequest={openSignalAirPanelRequest}
           openMobileAirPanelRequest={openMobileAirPanelRequest}
+          historicalCurrentDate={
+            isHistoricalModeActive && temporalState.isPlaying
+              ? temporalState.currentDate
+              : undefined
+          }
         />
 
         {/* Panel de contrôle historique (sélection de date) - Visible si mode historique actif ET panel de date visible */}

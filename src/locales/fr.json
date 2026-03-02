@@ -549,7 +549,15 @@
       "bruit": "Bruits",
       "brulage": "Brûlage",
       "visuel": "Visuel",
-      "pollen": "Pollen"
+      "pollen": "Pollen",
+      "autre": "Autre"
+    },
+    "sourceName": {
+      "nebuleair": "NebuleAir AirCarto",
+      "sensorCommunity": "Sensor.Community",
+      "purpleair": "PurpleAir",
+      "mobileair": "MobileAir",
+      "signalair": "SignalAir"
     }
   },
   "baseLayer": {
