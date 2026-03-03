@@ -153,6 +153,40 @@ const DeviceStatistics: React.FC<DeviceStatisticsProps> = ({
         }}
         aria-label={t("panels.showStats")}
       >
+        {/* Période des données affichées (mise en avant quand le panneau est fermé) */}
+        {displayedPeriod && !isPanelOpen && (
+          <div className="mb-1.5">
+            <div
+              className="inline-flex items-center gap-2 rounded-r-md rounded-l border border-slate-200 border-l-4 border-l-blue-400 bg-white py-1.5 pl-2.5 pr-3 shadow-sm"
+              role="status"
+              aria-label={`${t("controls.period")}: ${displayedPeriod}`}
+            >
+              <svg
+                className="h-3.5 w-3.5 shrink-0 text-slate-400"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                viewBox="0 0 24 24"
+                aria-hidden
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M8 7V5m8 2V5m-9 4h10M7 5h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"
+                />
+              </svg>
+              <span
+                className="text-sm text-slate-600"
+                dir={isRtl ? "rtl" : "ltr"}
+              >
+                <span className="font-medium text-slate-700">{t("controls.period")}</span>
+                <span className="text-slate-400 mx-1" aria-hidden>·</span>
+                <span className="font-medium text-blue-600">{displayedPeriod}</span>
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Affichage principal : nombre d'appareils visibles (RTL uniquement sur le texte) */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-1 min-w-0">
@@ -197,15 +231,6 @@ const DeviceStatistics: React.FC<DeviceStatisticsProps> = ({
                   {t("statistics.ofTotal", { total: totalReports })}
                 </span>
               )}
-            </span>
-          </div>
-        )}
-
-        {/* Période des données affichées */}
-        {displayedPeriod && (
-          <div className="mt-1.5 pt-1.5 border-t border-gray-100">
-            <span className="text-xs text-gray-500" dir={isRtl ? "rtl" : "ltr"}>
-              {t("controls.period")} {displayedPeriod}
             </span>
           </div>
         )}
