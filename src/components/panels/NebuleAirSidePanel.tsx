@@ -136,6 +136,8 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
     longitude: number;
   } | null>(null);
   const [loadingModeling, setLoadingModeling] = useState(false);
+  const [hideThresholdBackgroundForColorblind, setHideThresholdBackgroundForColorblind] =
+    useState(false);
 
   // Utiliser la taille externe si fournie, sinon la taille interne
   const currentPanelSize = externalPanelSize || internalPanelSize;
@@ -1375,6 +1377,12 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                             )
                           : undefined
                       }
+                      hideThresholdBackgroundForColorblind={
+                        hideThresholdBackgroundForColorblind
+                      }
+                      onHideThresholdBackgroundForColorblindChange={
+                        setHideThresholdBackgroundForColorblind
+                      }
                     />
                     </div>
                   </div>
@@ -1415,6 +1423,9 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                         showModeling && Object.keys(modelingData).length > 0
                           ? modelingData
                           : undefined
+                      }
+                      hideThresholdBackgroundForColorblind={
+                        hideThresholdBackgroundForColorblind
                       }
                     />
                   </div>

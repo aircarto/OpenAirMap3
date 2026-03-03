@@ -16,7 +16,8 @@ const Legend: React.FC<LegendProps> = ({
   panelSize = "normal",
   isComparisonPanelVisible = false,
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isRtl = i18n.language === "ar";
   const colors = QUALITY_COLORS;
 
   const pollutant = pollutants[selectedPollutant];
@@ -102,14 +103,14 @@ const Legend: React.FC<LegendProps> = ({
                   : item.label
               }
             >
-              {/* Indicateur de couleur */}
+              {/* Indicateur de couleur - à gauche du texte en RTL */}
               <div
                 className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-sm border border-gray-300/50 flex-shrink-0"
                 style={{ backgroundColor: item.color }}
-              ></div>
+              />
 
-              {/* Texte - version courte sur mobile et petits écrans, complète sur grands écrans */}
-              <span className="text-[10px] lg:text-xs text-gray-700 font-medium whitespace-nowrap">
+              {/* Texte - RTL uniquement sur le texte */}
+              <span className="text-[10px] lg:text-xs text-gray-700 font-medium whitespace-nowrap" dir={isRtl ? "rtl" : "ltr"}>
                 <span className="lg:hidden">{item.shortLabel}</span>
                 <span className="hidden lg:inline">{item.label}</span>
               </span>

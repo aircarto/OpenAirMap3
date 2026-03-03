@@ -52,13 +52,13 @@ export const getSourceDisplayNameKey = (sourceCode: string): string => {
   if (sourceCode === "atmoRef") return "controls.sourceAtmoRef";
   if (sourceCode === "atmoMicro") return "controls.sourceAtmoMicro";
   if (sourceCode === "communautaire") return "controls.sourceCommunautaire";
-  if (sourceCode === "signalair") return "SignalAir"; // nom de marque
+  if (sourceCode === "signalair") return "statistics.sourceName.signalair";
   if (sourceCode.startsWith("communautaire.")) {
     const subSource = sourceCode.split(".")[1];
-    if (subSource === "nebuleair") return "NebuleAir";
-    if (subSource === "sensorCommunity") return "Sensor.Community";
-    if (subSource === "purpleair") return "PurpleAir";
-    if (subSource === "mobileair") return "MobileAir";
+    if (subSource === "nebuleair") return "statistics.sourceName.nebuleair";
+    if (subSource === "sensorCommunity") return "statistics.sourceName.sensorCommunity";
+    if (subSource === "purpleair") return "statistics.sourceName.purpleair";
+    if (subSource === "mobileair") return "statistics.sourceName.mobileair";
   }
   return sourceCode;
 };
@@ -71,7 +71,7 @@ export const getSourceDisplayName = (
   t: (key: string) => string
 ): string => {
   const key = getSourceDisplayNameKey(sourceCode);
-  return key.startsWith("controls.") ? t(key) : key;
+  return key.includes(".") ? t(key) : key;
 };
 
 /**

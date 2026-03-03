@@ -3,8 +3,8 @@ import { useTranslation } from "react-i18next";
 import { MeasurementDevice, SignalAirReport } from "../../types";
 import { cn } from "../../lib/utils";
 import { QUALITY_COLORS } from "../../constants/qualityColors";
-import { sources } from "../../constants/sources";
 import { pollutants } from "../../constants/pollutants";
+import { getSourceDisplayName } from "../../utils/sourceCompatibility";
 import {
   DeviceStatistics as DeviceStatisticsType,
   SourceStatistics,
@@ -36,7 +36,8 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
   statistics, // OPTIMISATION : Statistiques pré-calculées
   sourceStatistics, // OPTIMISATION : Stats par source pré-calculées
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const textDir = i18n.language === "ar" ? "rtl" : "ltr";
   // Vérifier si SignalAir est actif
   const isSignalAirActive = selectedSources.includes("signalair");
   /**
@@ -200,47 +201,6 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
     });
   }, [sourceStatistics, visibleDevices]);
 
-  // Obtenir le nom lisible de la source depuis les constantes
-  const getSourceName = (source: string): string => {
-    // Gérer les sous-sources (ex: "communautaire.nebuleair")
-    if (source.includes(".")) {
-      const [groupKey, subKey] = source.split(".");
-      const group = sources[groupKey as keyof typeof sources];
-      if (group?.isGroup && group.subSources) {
-        const subSource = group.subSources[subKey as keyof typeof group.subSources];
-        if (subSource) {
-          // Cas spécial pour NebuleAir
-          if (subKey === "nebuleair") {
-            return "NebuleAir AirCarto";
-          }
-          return subSource.name;
-        }
-      }
-    }
-    
-    // Vérifier si c'est une sous-source communautaire sans préfixe (ex: "nebuleair")
-    const communautaireGroup = sources.communautaire;
-    if (communautaireGroup?.isGroup && communautaireGroup.subSources) {
-      const subSource = communautaireGroup.subSources[source as keyof typeof communautaireGroup.subSources];
-      if (subSource) {
-        // Cas spécial pour NebuleAir
-        if (source === "nebuleair") {
-          return "NebuleAir AirCarto";
-        }
-        return subSource.name;
-      }
-    }
-    
-    // Source directe
-    const sourceConfig = sources[source as keyof typeof sources];
-    if (sourceConfig && !sourceConfig.isGroup) {
-      return sourceConfig.name;
-    }
-    
-    // Fallback : retourner le code source tel quel
-    return source;
-  };
-
   // Obtenir le nom lisible du niveau de qualité
   const getQualityName = (level: string): string => {
     const key = level === "default" ? "panels.noMeasureRecent" : `quality.${level}`;
@@ -368,11 +328,11 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">
+          <div className="min-w-0">
+            <h3 className="text-lg font-semibold text-gray-900" dir={textDir}>
               {t("statistics.title")}
             </h3>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <p className="text-sm text-gray-500 mt-0.5" dir={textDir}>
               {t("statistics.device", { count: visibleDevices.length })}
               {isSignalAirActive && reportsStats && reportsStats.total > 0 && (
                 <> • {t("statistics.report", { count: reportsStats.total })}</>
@@ -418,8 +378,8 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
                   d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
                 />
               </svg>
-              <p className="text-sm font-medium text-gray-900">{t("panels.noDeviceVisible")}</p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-sm font-medium text-gray-900" dir={textDir}>{t("panels.noDeviceVisible")}</p>
+              <p className="text-xs text-gray-500 mt-1" dir={textDir}>
                 {t("statistics.zoomHint")}
               </p>
             </div>
@@ -427,31 +387,31 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
             <>
               {/* Statistiques globales */}
               <div className="space-y-3">
-            <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
+            <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide" dir={textDir}>
               {t("statistics.globalTitle")}
             </h4>
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                <p className="text-xs text-gray-500 mb-1">{t("statistics.average")}</p>
-                <p className="text-lg font-semibold text-gray-900">
+                <p className="text-xs text-gray-500 mb-1" dir={textDir}>{t("statistics.average")}</p>
+                <p className="text-lg font-semibold text-gray-900" dir="ltr">
                   {formatNumber(globalStats.average)} {globalStats.unit}
                 </p>
               </div>
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                <p className="text-xs text-gray-500 mb-1">{t("statistics.median")}</p>
-                <p className="text-lg font-semibold text-gray-900">
+                <p className="text-xs text-gray-500 mb-1" dir={textDir}>{t("statistics.median")}</p>
+                <p className="text-lg font-semibold text-gray-900" dir="ltr">
                   {formatNumber(globalStats.median)} {globalStats.unit}
                 </p>
               </div>
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                <p className="text-xs text-gray-500 mb-1">{t("statistics.minimum")}</p>
-                <p className="text-lg font-semibold text-gray-900">
+                <p className="text-xs text-gray-500 mb-1" dir={textDir}>{t("statistics.minimum")}</p>
+                <p className="text-lg font-semibold text-gray-900" dir="ltr">
                   {formatNumber(globalStats.min)} {globalStats.unit}
                 </p>
               </div>
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                <p className="text-xs text-gray-500 mb-1">{t("statistics.maximum")}</p>
-                <p className="text-lg font-semibold text-gray-900">
+                <p className="text-xs text-gray-500 mb-1" dir={textDir}>{t("statistics.maximum")}</p>
+                <p className="text-lg font-semibold text-gray-900" dir="ltr">
                   {formatNumber(globalStats.max)} {globalStats.unit}
                 </p>
               </div>
@@ -461,7 +421,7 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
           {/* Distribution par seuil */}
           {qualityDistribution.length > 0 && (
             <div className="space-y-3">
-              <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
+              <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide" dir={textDir}>
                 {t("statistics.distributionByThreshold")}
               </h4>
               <div className="space-y-2">
@@ -482,12 +442,14 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
                         <span
                           className="text-sm font-medium"
                           style={{ color: colors.text }}
+                          dir={textDir}
                         >
                           {getQualityName(level)}
                         </span>
                         <span
                           className="text-sm font-semibold"
                           style={{ color: colors.text }}
+                          dir="ltr"
                         >
                           {count} ({formatNumber(displayPercentage, 0)}%)
                         </span>
@@ -511,7 +473,7 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
           {/* Statistiques par source */}
           {statsBySource.length > 0 && (
             <div className="space-y-3">
-              <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
+              <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide" dir={textDir}>
                 {t("statistics.detailByDeviceType")}
               </h4>
               <div className="space-y-4">
@@ -521,10 +483,10 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
                     className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3"
                   >
                     <div className="flex items-center justify-between">
-                      <h5 className="text-sm font-semibold text-gray-900">
-                        {getSourceName(sourceStats.source)}
+                      <h5 className="text-sm font-semibold text-gray-900" dir={textDir}>
+                        {getSourceDisplayName(sourceStats.source, t)}
                       </h5>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-gray-500" dir={textDir}>
                         {t("statistics.device", { count: sourceStats.count })}
                       </span>
                     </div>
@@ -532,26 +494,26 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
                     {/* Statistiques de la source */}
                     <div className="grid grid-cols-2 gap-2">
                       <div className="rounded border border-gray-200 bg-white p-2">
-                        <p className="text-[10px] text-gray-500 mb-0.5">{t("statistics.average")}</p>
-                        <p className="text-sm font-semibold text-gray-900">
+                        <p className="text-[10px] text-gray-500 mb-0.5" dir={textDir}>{t("statistics.average")}</p>
+                        <p className="text-sm font-semibold text-gray-900" dir="ltr">
                           {formatNumber(sourceStats.average)} {sourceStats.unit}
                         </p>
                       </div>
                       <div className="rounded border border-gray-200 bg-white p-2">
-                        <p className="text-[10px] text-gray-500 mb-0.5">{t("statistics.median")}</p>
-                        <p className="text-sm font-semibold text-gray-900">
+                        <p className="text-[10px] text-gray-500 mb-0.5" dir={textDir}>{t("statistics.median")}</p>
+                        <p className="text-sm font-semibold text-gray-900" dir="ltr">
                           {formatNumber(sourceStats.median)} {sourceStats.unit}
                         </p>
                       </div>
                       <div className="rounded border border-gray-200 bg-white p-2">
-                        <p className="text-[10px] text-gray-500 mb-0.5">{t("statistics.min")}</p>
-                        <p className="text-sm font-semibold text-gray-900">
+                        <p className="text-[10px] text-gray-500 mb-0.5" dir={textDir}>{t("statistics.min")}</p>
+                        <p className="text-sm font-semibold text-gray-900" dir="ltr">
                           {formatNumber(sourceStats.min)} {sourceStats.unit}
                         </p>
                       </div>
                       <div className="rounded border border-gray-200 bg-white p-2">
-                        <p className="text-[10px] text-gray-500 mb-0.5">{t("statistics.max")}</p>
-                        <p className="text-sm font-semibold text-gray-900">
+                        <p className="text-[10px] text-gray-500 mb-0.5" dir={textDir}>{t("statistics.max")}</p>
+                        <p className="text-sm font-semibold text-gray-900" dir="ltr">
                           {formatNumber(sourceStats.max)} {sourceStats.unit}
                         </p>
                       </div>
@@ -560,7 +522,7 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
                     {/* Distribution par seuil pour cette source */}
                     {Object.keys(sourceStats.qualityDistribution).length > 0 && (
                       <div className="space-y-1.5 pt-2 border-t border-gray-200">
-                        <p className="text-xs font-medium text-gray-700 mb-1.5">
+                        <p className="text-xs font-medium text-gray-700 mb-1.5" dir={textDir}>
                           {t("statistics.distributionByThreshold")}
                         </p>
                         <div className="space-y-1">
@@ -602,12 +564,14 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
                                     <span
                                       className="text-xs font-medium"
                                       style={{ color: colors.text }}
+                                      dir={textDir}
                                     >
                                       {getQualityName(level)}
                                     </span>
                                     <span
                                       className="text-xs font-semibold"
                                       style={{ color: colors.text }}
+                                      dir="ltr"
                                     >
                                       {count} ({formatNumber(percentage, 0)}%)
                                     </span>
@@ -637,20 +601,20 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
           {/* Statistiques des signalements */}
           {reportsStats && reportsStats.total > 0 && (
             <div className="space-y-3">
-              <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
+              <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide" dir={textDir}>
                 {t("statistics.reportsTitle")}
               </h4>
 
               {/* Statistiques générales */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                  <p className="text-xs text-gray-500 mb-1">{t("statistics.total")}</p>
-                  <p className="text-lg font-semibold text-gray-900">
+                  <p className="text-xs text-gray-500 mb-1" dir={textDir}>{t("statistics.total")}</p>
+                  <p className="text-lg font-semibold text-gray-900" dir="ltr">
                     {reportsStats.total}
                   </p>
                 </div>
                 <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                  <p className="text-xs text-gray-500 mb-1">{t("statistics.withSymptoms")}</p>
+                  <p className="text-xs text-gray-500 mb-1" dir={textDir}>{t("statistics.withSymptoms")}</p>
                   <p className="text-lg font-semibold text-gray-900">
                     {reportsStats.withSymptoms} (
                     {formatNumber(
@@ -664,17 +628,17 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
 
               {/* Distribution avec/sans symptômes */}
               <div className="space-y-3">
-                <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide" dir={textDir}>
                   {t("statistics.splitWithWithoutSymptoms")}
                 </h5>
                 <div className="space-y-2">
                   {/* Avec symptômes */}
                   <div className="rounded-lg border border-red-200 bg-red-50 p-3">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-900">
+                      <span className="text-sm font-medium text-gray-900" dir={textDir}>
                         {t("statistics.withSymptoms")}
                       </span>
-                      <span className="text-sm font-semibold text-gray-900">
+                      <span className="text-sm font-semibold text-gray-900" dir="ltr">
                         {reportsStats.withSymptoms} (
                         {formatNumber(
                           (reportsStats.withSymptoms / reportsStats.total) * 100,
@@ -696,10 +660,10 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
                   {/* Sans symptômes */}
                   <div className="rounded-lg border border-green-200 bg-green-50 p-3">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-900">
+                      <span className="text-sm font-medium text-gray-900" dir={textDir}>
                         {t("statistics.withoutSymptoms")}
                       </span>
-                      <span className="text-sm font-semibold text-gray-900">
+                      <span className="text-sm font-semibold text-gray-900" dir="ltr">
                         {reportsStats.withoutSymptoms} (
                         {formatNumber(
                           (reportsStats.withoutSymptoms / reportsStats.total) * 100,
@@ -723,7 +687,7 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
               {/* Distribution par type de signalement */}
               {Object.keys(reportsStats.distributionByType).length > 0 && (
                 <div className="space-y-3">
-                  <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                  <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide" dir={textDir}>
                     {t("statistics.distributionByType")}
                   </h5>
                   <div className="space-y-2">
@@ -738,10 +702,10 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
                             className="rounded-lg border border-gray-200 bg-gray-50 p-3"
                           >
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm font-medium text-gray-900">
+                              <span className="text-sm font-medium text-gray-900" dir={textDir}>
                                 {getSignalTypeName(type)}
                               </span>
-                              <span className="text-sm font-semibold text-gray-900">
+                              <span className="text-sm font-semibold text-gray-900" dir="ltr">
                                 {count} ({formatNumber(percentage, 0)}%)
                               </span>
                             </div>
@@ -764,7 +728,7 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
               {Object.keys(reportsStats.distributionByNuisanceLevel).length >
                 0 && (
                 <div className="space-y-3">
-                  <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                  <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide" dir={textDir}>
                     {t("statistics.distributionByNuisanceLevel")}
                   </h5>
                   <div className="space-y-2">
@@ -779,10 +743,10 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
                             className="rounded-lg border border-gray-200 bg-gray-50 p-2"
                           >
                             <div className="flex items-center justify-between mb-1">
-                              <span className="text-xs font-medium text-gray-700">
+                              <span className="text-xs font-medium text-gray-700" dir={textDir}>
                                 {level}
                               </span>
-                              <span className="text-xs font-semibold text-gray-900">
+                              <span className="text-xs font-semibold text-gray-900" dir="ltr">
                                 {count} ({formatNumber(percentage, 0)}%)
                               </span>
                             </div>

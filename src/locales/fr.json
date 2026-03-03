@@ -87,7 +87,9 @@
     "modelingAzur": "Modélisation AZUR",
     "modelingAzurDescription": "Affiche les prévisions de modélisation sur le graphique",
     "rawData": "Données brutes",
-    "rawDataDescription": "Affiche les données non corrigées sur le graphique"
+    "rawDataDescription": "Affiche les données non corrigées sur le graphique",
+    "thresholdBackgroundDisabled": "Désactivé seuils",
+    "thresholdBackgroundDisabledDescription": "Masque le fond coloré par seuil (recommandé pour les daltoniens)"
   },
   "historical": {
     "periodLabel": "Historique",
@@ -549,7 +551,15 @@
       "bruit": "Bruits",
       "brulage": "Brûlage",
       "visuel": "Visuel",
-      "pollen": "Pollen"
+      "pollen": "Pollen",
+      "autre": "Autre"
+    },
+    "sourceName": {
+      "nebuleair": "NebuleAir AirCarto",
+      "sensorCommunity": "Sensor.Community",
+      "purpleair": "PurpleAir",
+      "mobileair": "MobileAir",
+      "signalair": "SignalAir"
     }
   },
   "baseLayer": {

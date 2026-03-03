@@ -8,6 +8,7 @@ import {
   DeviceStatistics as DeviceStatisticsType,
   SourceStatistics,
 } from "../../utils/deviceStatisticsUtils";
+import { getDisplayedPeriod } from "../../utils/dataPeriodUtils";
 
 interface DeviceStatisticsProps {
   visibleDevices: MeasurementDevice[];
@@ -16,6 +17,8 @@ interface DeviceStatisticsProps {
   totalReports: number;
   selectedPollutant: string;
   selectedSources?: string[];
+  selectedTimeStep?: string;
+  historicalCurrentDate?: string;
   statistics?: DeviceStatisticsType; // OPTIMISATION : Statistiques pré-calculées
   sourceStatistics?: SourceStatistics[]; // OPTIMISATION : Stats par source pré-calculées
   showDetails?: boolean;
@@ -31,12 +34,17 @@ const DeviceStatistics: React.FC<DeviceStatisticsProps> = ({
   totalReports,
   selectedPollutant,
   selectedSources = [],
+  selectedTimeStep = "",
+  historicalCurrentDate,
   statistics, // OPTIMISATION : Utiliser les statistiques pré-calculées
   sourceStatistics, // OPTIMISATION : Stats par source pré-calculées
   showDetails = false,
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const displayedPeriod =
+    selectedTimeStep &&
+    getDisplayedPeriod(selectedTimeStep, historicalCurrentDate, i18n.language);
 
   // OPTIMISATION : Utiliser les statistiques pré-calculées si disponibles
   // Sinon, calculer localement (fallback pour compatibilité)
@@ -122,6 +130,8 @@ const DeviceStatistics: React.FC<DeviceStatisticsProps> = ({
     return colors[level] || "text-gray-600";
   };
 
+  const isRtl = i18n.language === "ar";
+
   return (
     <>
       <div
@@ -143,10 +153,10 @@ const DeviceStatistics: React.FC<DeviceStatisticsProps> = ({
         }}
         aria-label={t("panels.showStats")}
       >
-        {/* Affichage principal : nombre d'appareils visibles */}
+        {/* Affichage principal : nombre d'appareils visibles (RTL uniquement sur le texte) */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-1">
-            <span className="font-medium">
+          <div className="flex items-center space-x-1 min-w-0">
+            <span className="font-medium" dir={isRtl ? "rtl" : "ltr"}>
               {t("statistics.devicesVisible", { count: visibleDevices.length })}
               {visibleDevices.length !== totalDevices && totalDevices > 0 && (
                 <span className="text-gray-500 font-normal">
@@ -179,7 +189,7 @@ const DeviceStatistics: React.FC<DeviceStatisticsProps> = ({
         {/* Affichage des signalements si présents */}
         {visibleReports.length > 0 && (
           <div className="mt-1">
-            <span>
+            <span dir={isRtl ? "rtl" : "ltr"}>
               {t("statistics.reportsVisible", { count: visibleReports.length })}
               {visibleReports.length !== totalReports && totalReports > 0 && (
                 <span className="text-gray-500">
@@ -187,6 +197,15 @@ const DeviceStatistics: React.FC<DeviceStatisticsProps> = ({
                   {t("statistics.ofTotal", { total: totalReports })}
                 </span>
               )}
+            </span>
+          </div>
+        )}
+
+        {/* Période des données affichées */}
+        {displayedPeriod && (
+          <div className="mt-1.5 pt-1.5 border-t border-gray-100">
+            <span className="text-xs text-gray-500" dir={isRtl ? "rtl" : "ltr"}>
+              {t("controls.period")} {displayedPeriod}
             </span>
           </div>
         )}

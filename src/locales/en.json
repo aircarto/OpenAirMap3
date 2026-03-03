@@ -89,7 +89,9 @@
     "modelingAzur": "AZUR modeling",
     "modelingAzurDescription": "Show modeling forecasts on the chart",
     "rawData": "Raw data",
-    "rawDataDescription": "Show uncorrected data on the chart"
+    "rawDataDescription": "Show uncorrected data on the chart",
+    "thresholdBackgroundDisabled": "Thresholds disabled",
+    "thresholdBackgroundDisabledDescription": "Hide colored threshold background (recommended for colorblind users)"
   },
   "historical": {
     "periodLabel": "Historical",
@@ -551,7 +553,15 @@
       "bruit": "Noise",
       "brulage": "Burning",
       "visuel": "Visual",
-      "pollen": "Pollen"
+      "pollen": "Pollen",
+      "autre": "Other"
+    },
+    "sourceName": {
+      "nebuleair": "NebuleAir AirCarto",
+      "sensorCommunity": "Sensor.Community",
+      "purpleair": "PurpleAir",
+      "mobileair": "MobileAir",
+      "signalair": "SignalAir"
     }
   },
   "baseLayer": {

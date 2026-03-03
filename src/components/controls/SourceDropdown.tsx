@@ -18,6 +18,7 @@ import {
   getFirstCompatibleTimeStep,
 } from "../../utils/sourceCompatibility";
 import { Toast } from "../ui/toast";
+import AutoRefreshToggle from "./AutoRefreshToggle";
 
 interface SourceDropdownProps {
   selectedSources: string[];
@@ -25,6 +26,11 @@ interface SourceDropdownProps {
   onSourceChange: (sources: string[]) => void;
   onTimeStepChange?: (timeStep: string) => void;
   onToast?: (toast: Omit<Toast, "id">) => void;
+  /** Actualisation auto : affiche le toggle en bas du menu */
+  autoRefreshEnabled?: boolean;
+  onToggleAutoRefresh?: (enabled: boolean) => void;
+  loading?: boolean;
+  isHistoricalModeActive?: boolean;
 }
 
 const SourceDropdown: React.FC<SourceDropdownProps> = ({
@@ -33,6 +39,10 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
   onSourceChange,
   onTimeStepChange,
   onToast,
+  autoRefreshEnabled = false,
+  onToggleAutoRefresh,
+  loading = false,
+  isHistoricalModeActive = false,
 }) => {
   const { t } = useTranslation();
   // Définir les sources communautaires (mobileair retiré car géré séparément)
@@ -250,6 +260,21 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
           </div>
         </div>
 
+        {/* Actualisation auto */}
+        {typeof onToggleAutoRefresh === "function" && (
+          <>
+            <DropdownMenuSeparator />
+            <div className="p-1" onClick={(e) => e.stopPropagation()}>
+              <AutoRefreshToggle
+                enabled={autoRefreshEnabled}
+                onToggle={onToggleAutoRefresh}
+                loading={loading}
+                disabled={isHistoricalModeActive}
+                compact
+              />
+            </div>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

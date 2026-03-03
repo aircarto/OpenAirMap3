@@ -4,7 +4,7 @@ import PollutantDropdown from "./PollutantDropdown";
 import SourceDropdown from "./SourceDropdown";
 import TimeStepDropdown from "./TimeStepDropdown";
 import HistoricalModeButton from "./HistoricalModeButton";
-import AutoRefreshControl from "./AutoRefreshControl";
+import AutoRefreshToggle from "./AutoRefreshToggle";
 import ModelingLayerControl from "./ModelingLayerControl";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { ModelingLayerType } from "../../constants/mapLayers";
@@ -211,12 +211,12 @@ const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
               <label className="text-sm font-medium text-gray-700">
                 {t("controls.refresh")}
               </label>
-              <AutoRefreshControl
+              <AutoRefreshToggle
                 enabled={autoRefreshEnabled && !isHistoricalModeActive}
                 onToggle={onToggleAutoRefresh}
-                lastRefresh={lastRefresh}
                 loading={loading}
-                selectedTimeStep={selectedTimeStep}
+                disabled={isHistoricalModeActive}
+                compact={false}
               />
             </div>
 

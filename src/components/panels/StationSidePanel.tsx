@@ -79,6 +79,8 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
     latitude: number;
     longitude: number;
   } | null>(null);
+  const [hideThresholdBackgroundForColorblind, setHideThresholdBackgroundForColorblind] =
+    useState(false);
 
   // Utiliser la taille externe si fournie, sinon la taille interne
   const currentPanelSize = externalPanelSize || internalPanelSize;
@@ -1275,6 +1277,12 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
                             )
                           : undefined
                       }
+                      hideThresholdBackgroundForColorblind={
+                        hideThresholdBackgroundForColorblind
+                      }
+                      onHideThresholdBackgroundForColorblindChange={
+                        setHideThresholdBackgroundForColorblind
+                      }
                     />
                     </div>
                   </div>
@@ -1315,6 +1323,9 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
                         showModeling && Object.keys(modelingData).length > 0
                           ? modelingData
                           : undefined
+                      }
+                      hideThresholdBackgroundForColorblind={
+                        hideThresholdBackgroundForColorblind
                       }
                     />
                   </div>

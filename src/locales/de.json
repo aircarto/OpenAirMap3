@@ -89,7 +89,9 @@
     "modelingAzur": "AZUR-Modellierung",
     "modelingAzurDescription": "Modellierungsprognosen im Diagramm anzeigen",
     "rawData": "Rohdaten",
-    "rawDataDescription": "Unkorrigierte Daten im Diagramm anzeigen"
+    "rawDataDescription": "Unkorrigierte Daten im Diagramm anzeigen",
+    "thresholdBackgroundDisabled": "Schwellen deaktiviert",
+    "thresholdBackgroundDisabledDescription": "Farbigen Schwellen-Hintergrund ausblenden (empfohlen für Farbenblinde)"
   },
   "historical": {
     "periodLabel": "Verlauf",
@@ -551,7 +553,15 @@
       "bruit": "Lärm",
       "brulage": "Verbrennung",
       "visuel": "Sicht",
-      "pollen": "Pollen"
+      "pollen": "Pollen",
+      "autre": "Sonstige"
+    },
+    "sourceName": {
+      "nebuleair": "NebuleAir AirCarto",
+      "sensorCommunity": "Sensor.Community",
+      "purpleair": "PurpleAir",
+      "mobileair": "MobileAir",
+      "signalair": "SignalAir"
     }
   },
   "baseLayer": {
