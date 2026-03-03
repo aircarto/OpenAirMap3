@@ -190,10 +190,10 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
         alignOffset={0}
         className="w-[var(--radix-dropdown-menu-trigger-width)] max-h-64 overflow-auto"
       >
-        {/* Actualisation auto — en tête pour une meilleure UX (réglage global visible immédiatement) */}
+        {/* Actualisation auto — en tête mais visuellement discrète */}
         {typeof onToggleAutoRefresh === "function" && (
           <div
-            className="px-3 py-2.5 border-b border-gray-100 bg-gray-50/50 rounded-t-[inherit]"
+            className="px-3 pt-2 pb-1.5 border-b border-gray-100"
             onClick={(e) => e.stopPropagation()}
           >
             <AutoRefreshToggle
