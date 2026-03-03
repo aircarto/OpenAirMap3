@@ -9,6 +9,7 @@ import ModelingLayerControl from "./ModelingLayerControl";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { ModelingLayerType } from "../../constants/mapLayers";
 import { Toast } from "../ui/toast";
+import { cn } from "../../lib/utils";
 
 interface MobileMenuBurgerProps {
   selectedPollutant: string;
@@ -29,6 +30,12 @@ interface MobileMenuBurgerProps {
   onToast?: (toast: Omit<Toast, "id">) => void;
   onOpenSignalAirPanel?: () => void;
   onOpenMobileAirPanel?: () => void;
+  isSignalAirVisible?: boolean;
+  isMobileAirVisible?: boolean;
+  onSignalAirToggle?: (visible: boolean) => void;
+  onMobileAirToggle?: (visible: boolean) => void;
+  hasSignalAirData?: boolean;
+  hasMobileAirData?: boolean;
 }
 
 const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
@@ -50,6 +57,12 @@ const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
   onToast,
   onOpenSignalAirPanel,
   onOpenMobileAirPanel,
+  isSignalAirVisible = true,
+  isMobileAirVisible = true,
+  onSignalAirToggle,
+  onMobileAirToggle,
+  hasSignalAirData = false,
+  hasMobileAirData = false,
 }) => {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
@@ -163,34 +176,124 @@ const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
 
             {/* Sources spéciales */}
             {(onOpenSignalAirPanel || onOpenMobileAirPanel) && (
-              <div className="space-y-1 border-t border-gray-200 pt-4">
+              <div className="space-y-2 border-t border-gray-200 pt-4">
                 <label className="text-sm font-medium text-gray-700">
                   {t("controls.specialSources")}
                 </label>
-                <div className="flex flex-wrap gap-2">
+                <div className="space-y-2">
+                  {/* SignalAir */}
                   {onOpenSignalAirPanel && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onOpenSignalAirPanel();
-                        setIsOpen(false);
-                      }}
-                      className="px-3 py-2.5 min-h-[44px] text-sm font-medium rounded-lg border border-[#13A0DB]/40 text-[#13A0DB] bg-[#13A0DB]/5 hover:bg-[#13A0DB]/10 active:bg-[#13A0DB]/15 transition-colors touch-manipulation"
+                    <div
+                      className={cn(
+                        "rounded-lg p-3 transition-colors duration-150",
+                        hasSignalAirData
+                          ? "bg-[#13A0DB]/5 border border-[#13A0DB]/20"
+                          : "bg-gray-50/80 border border-transparent"
+                      )}
                     >
-                      {t("controls.openSignalAir")}
-                    </button>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onOpenSignalAirPanel();
+                            setIsOpen(false);
+                          }}
+                          className="flex-1 min-w-0 flex items-center gap-2 min-h-[44px] rounded-md py-1.5 px-2 text-left text-sm font-medium text-[#13A0DB] hover:bg-[#13A0DB]/10 active:bg-[#13A0DB]/15 transition-colors duration-150 touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#13A0DB]/30 focus:ring-offset-1"
+                          aria-label={t("controls.openSignalAir")}
+                        >
+                          <span className="truncate">{t("controls.openSignalAir")}</span>
+                          {hasSignalAirData && (
+                            <span
+                              className={cn(
+                                "shrink-0 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded",
+                                isSignalAirVisible
+                                  ? "bg-emerald-500/90 text-white"
+                                  : "bg-gray-200 text-gray-500"
+                              )}
+                              title={isSignalAirVisible ? "Visible sur la carte" : "Masqué sur la carte"}
+                            >
+                              {isSignalAirVisible ? "Actif" : "Inactif"}
+                            </span>
+                          )}
+                        </button>
+                        {hasSignalAirData && onSignalAirToggle && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onSignalAirToggle(!isSignalAirVisible);
+                            }}
+                            className={cn(
+                              "shrink-0 min-w-[44px] min-h-[44px] rounded-md text-xs font-medium flex items-center justify-center transition-colors duration-150 touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#13A0DB]/30 focus:ring-offset-1",
+                              isSignalAirVisible
+                                ? "bg-emerald-500 text-white hover:bg-emerald-600"
+                                : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+                            )}
+                            aria-label={isSignalAirVisible ? t("panels.hideSignalAirAria") : t("panels.showSignalAirAria")}
+                            aria-pressed={isSignalAirVisible}
+                          >
+                            {isSignalAirVisible ? "✓" : "✕"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   )}
+                  {/* MobileAir */}
                   {onOpenMobileAirPanel && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onOpenMobileAirPanel();
-                        setIsOpen(false);
-                      }}
-                      className="px-3 py-2.5 min-h-[44px] text-sm font-medium rounded-lg border border-green-500/40 text-green-700 bg-green-500/5 hover:bg-green-500/10 active:bg-green-500/15 transition-colors touch-manipulation"
+                    <div
+                      className={cn(
+                        "rounded-lg p-3 transition-colors duration-150",
+                        hasMobileAirData
+                          ? "bg-green-500/5 border border-green-500/20"
+                          : "bg-gray-50/80 border border-transparent"
+                      )}
                     >
-                      {t("controls.openMobileAir")}
-                    </button>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onOpenMobileAirPanel();
+                            setIsOpen(false);
+                          }}
+                          className="flex-1 min-w-0 flex items-center gap-2 min-h-[44px] rounded-md py-1.5 px-2 text-left text-sm font-medium text-green-700 hover:bg-green-500/10 active:bg-green-500/15 transition-colors duration-150 touch-manipulation focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:ring-offset-1"
+                          aria-label={t("controls.openMobileAir")}
+                        >
+                          <span className="truncate">{t("controls.openMobileAir")}</span>
+                          {hasMobileAirData && (
+                            <span
+                              className={cn(
+                                "shrink-0 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded",
+                                isMobileAirVisible
+                                  ? "bg-emerald-500/90 text-white"
+                                  : "bg-gray-200 text-gray-500"
+                              )}
+                              title={isMobileAirVisible ? "Visible sur la carte" : "Masqué sur la carte"}
+                            >
+                              {isMobileAirVisible ? "Actif" : "Inactif"}
+                            </span>
+                          )}
+                        </button>
+                        {hasMobileAirData && onMobileAirToggle && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onMobileAirToggle(!isMobileAirVisible);
+                            }}
+                            className={cn(
+                              "shrink-0 min-w-[44px] min-h-[44px] rounded-md text-xs font-medium flex items-center justify-center transition-colors duration-150 touch-manipulation focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:ring-offset-1",
+                              isMobileAirVisible
+                                ? "bg-emerald-500 text-white hover:bg-emerald-600"
+                                : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+                            )}
+                            aria-label={isMobileAirVisible ? t("panels.hideMobileAirAria") : t("panels.showMobileAirAria")}
+                            aria-pressed={isMobileAirVisible}
+                          >
+                            {isMobileAirVisible ? "✓" : "✕"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
