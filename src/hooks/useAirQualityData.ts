@@ -81,6 +81,14 @@ export const useAirQualityData = ({
         return source;
       });
 
+      // Déclarer avant toute utilisation (évite "can't access lexical declaration before initialization")
+      const isSignalAirSourceSelected =
+        signalAirOptions?.isSourceSelected ?? mappedSources.includes("signalair");
+      const shouldFetchSignalAir =
+        isSignalAirSourceSelected &&
+        !!signalAirOptions &&
+        signalAirOptions.loadTrigger > signalAirLastTriggerRef.current;
+
       if (filteredSources.length === 0 && !shouldFetchSignalAir && !selectedMobileAirSensor) {
         // Ne pas réinitialiser si on charge SignalAir ou MobileAir séparément
         if (!isSignalAirSourceSelected && !selectedMobileAirSensor) {
@@ -93,13 +101,6 @@ export const useAirQualityData = ({
           return;
         }
       }
-
-      const isSignalAirSourceSelected =
-        signalAirOptions?.isSourceSelected ?? mappedSources.includes("signalair");
-      let shouldFetchSignalAir =
-        isSignalAirSourceSelected &&
-        signalAirOptions &&
-        signalAirOptions.loadTrigger > signalAirLastTriggerRef.current;
 
       if (!isSignalAirSourceSelected) {
         // Si SignalAir n'est plus sélectionné, effacer tous les reports
