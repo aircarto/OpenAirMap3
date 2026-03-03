@@ -175,6 +175,7 @@ export const useAmChartsChart = ({
       const yAxis = chart.yAxes.push(
         am5xy.ValueAxis.new(root, {
           id: yAxisId,
+          min: 0,
           renderer: am5xy.AxisRendererY.new(root, {
             opposite: yAxisId === "right",
           }),

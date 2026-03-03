@@ -26,7 +26,7 @@ interface SourceDropdownProps {
   onSourceChange: (sources: string[]) => void;
   onTimeStepChange?: (timeStep: string) => void;
   onToast?: (toast: Omit<Toast, "id">) => void;
-  /** Actualisation auto : affiche le toggle en bas du menu */
+  /** Actualisation auto : affiche le toggle en tête du menu (au-dessus des sources) */
   autoRefreshEnabled?: boolean;
   onToggleAutoRefresh?: (enabled: boolean) => void;
   loading?: boolean;
@@ -190,6 +190,22 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
         alignOffset={0}
         className="w-[var(--radix-dropdown-menu-trigger-width)] max-h-64 overflow-auto"
       >
+        {/* Actualisation auto — en tête mais visuellement discrète */}
+        {typeof onToggleAutoRefresh === "function" && (
+          <div
+            className="px-3 pt-2 pb-1.5 border-b border-gray-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <AutoRefreshToggle
+              enabled={autoRefreshEnabled}
+              onToggle={onToggleAutoRefresh}
+              loading={loading}
+              disabled={isHistoricalModeActive}
+              compact
+            />
+          </div>
+        )}
+
         {/* Sources principales */}
         <div className="p-1">
           <DropdownMenuLabel className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 px-1">
@@ -259,22 +275,6 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
             ))}
           </div>
         </div>
-
-        {/* Actualisation auto */}
-        {typeof onToggleAutoRefresh === "function" && (
-          <>
-            <DropdownMenuSeparator />
-            <div className="p-1" onClick={(e) => e.stopPropagation()}>
-              <AutoRefreshToggle
-                enabled={autoRefreshEnabled}
-                onToggle={onToggleAutoRefresh}
-                loading={loading}
-                disabled={isHistoricalModeActive}
-                compact
-              />
-            </div>
-          </>
-        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

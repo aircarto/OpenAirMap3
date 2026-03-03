@@ -420,6 +420,12 @@ const App: React.FC = () => {
                   setOpenMobileAirPanelRequest((r) => r + 1);
                   handleMobileAirPanelOpen();
                 }}
+                isSignalAirVisible={isSignalAirVisible}
+                isMobileAirVisible={isMobileAirVisible}
+                onSignalAirToggle={setIsSignalAirVisible}
+                onMobileAirToggle={setIsMobileAirVisible}
+                hasSignalAirData={hasSignalAirData}
+                hasMobileAirData={hasMobileAirData}
               />
             </div>
 

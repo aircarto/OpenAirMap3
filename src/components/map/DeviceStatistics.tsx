@@ -153,6 +153,26 @@ const DeviceStatistics: React.FC<DeviceStatisticsProps> = ({
         }}
         aria-label={t("panels.showStats")}
       >
+        {/* Période des données affichées (mise en avant quand le panneau est fermé) */}
+        {displayedPeriod && !isPanelOpen && (
+          <div className="mb-1.5">
+            <div
+              className="flex w-full items-center rounded-r-md rounded-l border border-slate-200 border-l-4 border-l-blue-400 bg-white py-1.5 pl-2.5 pr-3 shadow-sm"
+              role="status"
+              aria-label={`${t("controls.period")}: ${displayedPeriod}`}
+            >
+              <span
+                className="text-sm text-slate-600"
+                dir={isRtl ? "rtl" : "ltr"}
+              >
+                <span className="font-medium text-slate-700">{t("controls.period")}</span>
+                <span className="text-slate-400 mx-1" aria-hidden>·</span>
+                <span className="font-medium text-blue-600">{displayedPeriod}</span>
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Affichage principal : nombre d'appareils visibles (RTL uniquement sur le texte) */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-1 min-w-0">
@@ -197,15 +217,6 @@ const DeviceStatistics: React.FC<DeviceStatisticsProps> = ({
                   {t("statistics.ofTotal", { total: totalReports })}
                 </span>
               )}
-            </span>
-          </div>
-        )}
-
-        {/* Période des données affichées */}
-        {displayedPeriod && (
-          <div className="mt-1.5 pt-1.5 border-t border-gray-100">
-            <span className="text-xs text-gray-500" dir={isRtl ? "rtl" : "ltr"}>
-              {t("controls.period")} {displayedPeriod}
             </span>
           </div>
         )}
