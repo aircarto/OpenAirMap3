@@ -223,6 +223,11 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
     useState<BaseLayerKey>("Carte standard");
   const [isCommunalLayerEnabled, setIsCommunalLayerEnabled] = useState(false);
 
+  // Position du pinpoint affiché après une recherche de localisation (null = masqué)
+  const [searchPinPosition, setSearchPinPosition] = useState<
+    [number, number] | null
+  >(null);
+
   // État pour les données PurpleAir (stockées par ID de station)
   const [purpleAirDeviceData, setPurpleAirDeviceData] = useState<
     Record<
@@ -982,6 +987,9 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           devices={devices}
           mapRef={mapView.mapRef}
           onSensorSelected={handleSensorSelected}
+          onSearchLocationValidated={(lat, lng) =>
+            setSearchPinPosition([lat, lng])
+          }
         />
 
         <MapContainer
@@ -1002,7 +1010,9 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           maxZoom={18}
         >
           {/* Gestionnaire d'événements pour les clics sur la carte */}
-          <MapClickHandler onMapClick={() => {}} />
+          <MapClickHandler
+            onMapClick={() => setSearchPinPosition(null)}
+          />
           {/* Fond de carte initial */}
           <TileLayer
             attribution='&copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -1022,6 +1032,17 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
             isSidePanelOpen={sidePanels.isSidePanelOpen}
             panelSize={sidePanels.panelSize}
           />
+
+          {/* Pinpoint de recherche (disparaît au clic sur la carte) */}
+          {searchPinPosition && (
+            <Marker
+              position={searchPinPosition}
+              zIndexOffset={2000}
+              eventHandlers={{
+                click: () => setSearchPinPosition(null),
+              }}
+            />
+          )}
 
           {/* Marqueurs pour les appareils de mesure */}
           {clusterConfig.enabled ? (

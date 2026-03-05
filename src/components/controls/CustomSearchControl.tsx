@@ -29,6 +29,8 @@ interface CustomSearchControlProps {
   devices: MeasurementDevice[];
   mapRef: React.RefObject<L.Map | null>;
   onSensorSelected: (device: MeasurementDevice) => void;
+  /** Appelé quand une localisation (adresse ou capteur) est validée, pour afficher un pinpoint sur la carte */
+  onSearchLocationValidated?: (lat: number, lng: number) => void;
 }
 
 // Tableau de correspondance source -> libellé lisible
@@ -51,6 +53,7 @@ const CustomSearchControl: React.FC<CustomSearchControlProps> = ({
   devices,
   mapRef,
   onSensorSelected,
+  onSearchLocationValidated,
 }) => {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
@@ -251,6 +254,8 @@ const CustomSearchControl: React.FC<CustomSearchControlProps> = ({
           }
         );
       }
+      // Afficher le pinpoint à l'emplacement du capteur
+      onSearchLocationValidated?.(result.device.latitude, result.device.longitude);
 
       // Sélectionner le capteur et ouvrir le sidepanel
       onSensorSelected(result.device);
@@ -267,6 +272,8 @@ const CustomSearchControl: React.FC<CustomSearchControlProps> = ({
           }
         );
       }
+      // Afficher le pinpoint à l'adresse sélectionnée
+      onSearchLocationValidated?.(result.address.lat, result.address.lng);
     }
 
     // Fermer la liste et réinitialiser
@@ -310,6 +317,8 @@ const CustomSearchControl: React.FC<CustomSearchControlProps> = ({
             animate: true,
             duration: 1.5,
           });
+          // Afficher le pinpoint à l'adresse trouvée (recherche directe IGN sans résultat dans la liste)
+          onSearchLocationValidated?.(lat, lng);
         }
       }
     } catch (error) {
