@@ -157,7 +157,7 @@ const DeviceStatistics: React.FC<DeviceStatisticsProps> = ({
         {displayedPeriod && !isPanelOpen && (
           <div className="mb-1.5">
             <div
-              className="flex w-full items-center rounded-r-md rounded-l border border-slate-200 border-l-4 border-l-blue-400 bg-white py-1.5 pl-2.5 pr-3 shadow-sm"
+              className="flex w-full items-center justify-center rounded-r-md rounded-l border border-slate-200 border-l-4 border-l-blue-400 bg-white py-1.5 pl-2.5 pr-3 shadow-sm"
               role="status"
               aria-label={`${t("controls.period")}: ${displayedPeriod}`}
             >
