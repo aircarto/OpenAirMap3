@@ -100,17 +100,22 @@ export class ModelingService {
       }
 
       // Parcourir les horaires
-      // L'API renvoie datetime_echeance en UTC.
-      // On conserve ce timestamp tel quel, comme pour les données de mesure,
-      // la conversion en heure locale étant gérée plus tard au niveau de l'affichage.
+      // L'API renvoie datetime_echeance en UTC comme heure de début de la plage
+      // (ex: 9h pour la modélisation 9h-10h). On ajoute 1h pour afficher
+      // l'heure de fin sur le graphique (ex: 10h pour la plage 9h-10h).
+      const ONE_HOUR_MS = 60 * 60 * 1000;
       for (const horaire of variable.horaires) {
         if (
           horaire.datetime_echeance &&
           horaire.concentration !== null &&
           horaire.concentration !== undefined
         ) {
+          const startDate = new Date(horaire.datetime_echeance);
+          const endTimestamp = new Date(
+            startDate.getTime() + ONE_HOUR_MS
+          ).toISOString();
           dataPoints.push({
-            timestamp: horaire.datetime_echeance,
+            timestamp: endTimestamp,
             value: horaire.concentration,
             unit: "µg/m³", // L'API de modélisation utilise toujours µg/m³
           });
