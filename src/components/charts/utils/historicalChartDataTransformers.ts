@@ -491,8 +491,15 @@ export const transformNormalData = (
         );
 
         if (modelingPoint) {
-          const value = ensureNonNegativeValue(modelingPoint.value);
-          point[modelingKey] = value;
+          // Valeurs aberrantes (null, -9999) : afficher un gap, pas 0
+          const rawValue = modelingPoint.value;
+          const isInvalid =
+            rawValue === null ||
+            rawValue === undefined ||
+            rawValue === -9999;
+          point[modelingKey] = isInvalid
+            ? null
+            : ensureNonNegativeValue(rawValue);
         } else {
           // Si pas de point correspondant, mettre null pour créer un gap
           point[modelingKey] = null;

@@ -30,7 +30,6 @@ import {
 import { BaseLayerKey, ModelingLayerType } from "../../constants/mapLayers";
 import { MAX_COMPARISON_STATIONS } from "../../constants/comparison";
 import BaseLayerControl from "../controls/BaseLayerControl";
-import ClusterControl from "../controls/ClusterControl";
 import CustomSearchControl from "../controls/CustomSearchControl";
 import ScaleControl from "../controls/ScaleControl";
 import NorthArrow from "../controls/NorthArrow";
@@ -54,9 +53,6 @@ import { AtmoRefService } from "../../services/AtmoRefService";
 import { AtmoMicroService } from "../../services/AtmoMicroService";
 import { NebuleAirService } from "../../services/NebuleAirService";
 import { DataServiceFactory } from "../../services/DataServiceFactory";
-import MarkerClusterGroup from "react-leaflet-cluster";
-import { featureFlags } from "../../config/featureFlags";
-
 // Hooks personnalisés
 import { useMapView } from "./hooks/useMapView";
 import { useMapLayers } from "./hooks/useMapLayers";
@@ -140,16 +136,6 @@ interface AirQualityMapProps {
   historicalCurrentDate?: string;
 }
 
-const defaultClusterConfig = {
-  enabled: false, // active/desactive le clustering par defaut
-  maxClusterRadius: 60, // rayon de clustering
-  spiderfyOnMaxZoom: true, // éclatement des clusters au zoom maximum
-  showCoverageOnHover: true, // affichage de la zone du cluster au survol
-  zoomToBoundsOnClick: true, // zoom sur la zone du cluster au clic
-  animate: true, // animations lors du clustering
-  animateAddingMarkers: true, // animations lors de l'ajout de marqueurs
-};
-
 const defaultSpiderfyConfig = {
   enabled: true, // active/desactive le spiderfier par defaut
   autoSpiderfy: true, // activation automatique du spiderfier au zoom
@@ -216,8 +202,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
   historicalCurrentDate,
 }) => {
   const { t } = useTranslation();
-  // Configuration des clusters et spiderfier
-  const [clusterConfig, setClusterConfig] = useState(defaultClusterConfig);
+  // Configuration du spiderfier
   const [spiderfyConfig, setSpiderfyConfig] = useState(defaultSpiderfyConfig);
   const [currentBaseLayer, setCurrentBaseLayer] =
     useState<BaseLayerKey>("Carte standard");
@@ -1045,46 +1030,8 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           )}
 
           {/* Marqueurs pour les appareils de mesure */}
-          {clusterConfig.enabled ? (
-            <MarkerClusterGroup
-              maxClusterRadius={clusterConfig.maxClusterRadius}
-              spiderfyOnMaxZoom={
-                mapView.isSpiderfyActive || clusterConfig.spiderfyOnMaxZoom
-              }
-              showCoverageOnHover={clusterConfig.showCoverageOnHover}
-              zoomToBoundsOnClick={clusterConfig.zoomToBoundsOnClick}
-              animate={clusterConfig.animate}
-              animateAddingMarkers={clusterConfig.animateAddingMarkers}
-            >
-              {sortedDevices
-                .filter((device) => {
-                  // Filtrer complètement les devices MobileAir (gérés par MobileAirRoutes)
-                  if (device.source === "mobileair") {
-                    return false;
-                  }
-                  return true;
-                })
-                .map((device) => (
-                  <MarkerWithTooltip
-                    key={getMarkerKeyWrapper(device)}
-                    device={device}
-                    position={[device.latitude, device.longitude]}
-                    icon={createCustomIconWrapper(device)}
-                    interactive={true}
-                    bubblingMouseEvents={true}
-                    minZoom={11}
-                    mapRef={mapView.mapRef as React.RefObject<L.Map>}
-                    zIndexOffset={calculateZIndexOffset(device)}
-                    eventHandlers={{
-                      click: (e: L.LeafletMouseEvent) => {
-                        handleMarkerClick(device);
-                      },
-                    }}
-                  />
-                ))}
-            </MarkerClusterGroup>
-          ) : // Spiderfier automatique personnalisé - éclatement automatique des marqueurs qui se chevauchent
-          spiderfyConfig.enabled ? (
+          {/* Spiderfier automatique personnalisé - éclatement automatique des marqueurs qui se chevauchent */}
+          {spiderfyConfig.enabled ? (
             <CustomSpiderfiedMarkers
               devices={sortedDevices.filter((device) => {
                 // Filtrer complètement les devices MobileAir (gérés par MobileAirRoutes)
@@ -1260,14 +1207,6 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
               : "flex"
           }`}
         >
-          {/* Contrôle du clustering */}
-          {featureFlags.displayClusteringToggle && (
-            <ClusterControl
-              config={clusterConfig}
-              onConfigChange={setClusterConfig}
-            />
-          )}
-
           {/* Contrôle du fond de carte */}
           <BaseLayerControl
             currentBaseLayer={currentBaseLayer}
