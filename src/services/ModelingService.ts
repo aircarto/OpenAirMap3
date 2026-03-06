@@ -8,6 +8,12 @@ export class ModelingService {
   private readonly BASE_URL = "https://api.atmosud.org/prevision/cartes/horaires/point";
 
   /**
+   * Valeur aberrante renvoyée par l'API pour indiquer une donnée invalide ou manquante.
+   * Elle est convertie en null pour afficher un gap sur le graphique.
+   */
+  private readonly ABERRANT_CONCENTRATION = -9999;
+
+  /**
    * Mapping des polluants de l'application vers les codes de l'API de modélisation
    */
   private readonly POLLUTANT_MAPPING: Record<string, string> = {
@@ -105,21 +111,26 @@ export class ModelingService {
       // l'heure de fin sur le graphique (ex: 10h pour la plage 9h-10h).
       const ONE_HOUR_MS = 60 * 60 * 1000;
       for (const horaire of variable.horaires) {
-        if (
-          horaire.datetime_echeance &&
-          horaire.concentration !== null &&
-          horaire.concentration !== undefined
-        ) {
-          const startDate = new Date(horaire.datetime_echeance);
-          const endTimestamp = new Date(
-            startDate.getTime() + ONE_HOUR_MS
-          ).toISOString();
-          dataPoints.push({
-            timestamp: endTimestamp,
-            value: horaire.concentration,
-            unit: "µg/m³", // L'API de modélisation utilise toujours µg/m³
-          });
-        }
+        if (!horaire.datetime_echeance) continue;
+
+        const startDate = new Date(horaire.datetime_echeance);
+        const endTimestamp = new Date(
+          startDate.getTime() + ONE_HOUR_MS
+        ).toISOString();
+
+        // Convertir les valeurs aberrantes (-9999) en null pour créer un gap sur le graphique
+        const concentration = horaire.concentration;
+        const isInvalid =
+          concentration === this.ABERRANT_CONCENTRATION ||
+          concentration === null ||
+          concentration === undefined;
+        const value = isInvalid ? null : concentration;
+
+        dataPoints.push({
+          timestamp: endTimestamp,
+          value,
+          unit: "µg/m³", // L'API de modélisation utilise toujours µg/m³
+        });
       }
     }
 

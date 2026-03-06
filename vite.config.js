@@ -11,6 +11,15 @@ export default defineConfig({
     css: true,
     restoreMocks: true,
     clearMocks: true,
+    coverage: {
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: [
+        "node_modules",
+        "src/tests",
+        "**/*.d.ts",
+        "**/*.config.{js,ts}",
+      ],
+    },
   },
   server: {
     host: "0.0.0.0",

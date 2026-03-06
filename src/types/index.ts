@@ -244,7 +244,7 @@ export const ATMOMICRO_POLLUTANT_MAPPING: Record<string, string> = {
 // Types pour le side panel et les données historiques
 export interface HistoricalDataPoint {
   timestamp: string;
-  value: number;
+  value: number | null; // null pour les valeurs aberrantes (ex: -9999 de l'API modélisation)
   unit: string;
   // Propriétés pour les données corrigées (AtmoMicro)
   corrected_value?: number; // Valeur corrigée si disponible

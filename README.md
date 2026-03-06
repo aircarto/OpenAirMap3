@@ -1,12 +1,12 @@
 # Carte de la Qualité de l'Air - React Open Air Map
 
-Une application React modulaire et responsive pour afficher des appareils de mesure de la qualité de l'air sur une carte interactive Leaflet avec clustering intelligent et statistiques.
+Une application React modulaire et responsive pour afficher des appareils de mesure de la qualité de l'air sur une carte interactive Leaflet avec gestion avancée des marqueurs (spiderfier) et statistiques.
 
 ## Installation et démarrage
 
 ### Démarrage rapide
 
-Pour commencer rapidement, vous aurez besoin de Node.js (version 18.0.0 ou supérieure) et npm. Une fois ces prérequis installés, c'est très simple :
+Pour commencer rapidement, vous aurez besoin de Node.js (version 20.19.0 ou supérieure, 22.x recommandé) et npm. Une fois ces prérequis installés, c'est très simple :
 
 ```bash
 # Cloner le repository
@@ -26,8 +26,8 @@ L'application s'ouvrira automatiquement dans votre navigateur à l'adresse `http
 
 Avant de commencer, assurez-vous d'avoir installé :
 
-- **Node.js** : Version 18.0.0 ou supérieure ([télécharger ici](https://nodejs.org/))
-- **npm** : Version 8.0.0 ou supérieure (inclus avec Node.js)
+- **Node.js** : Version 20.19.0 ou supérieure (22.x recommandé) ([télécharger ici](https://nodejs.org/))
+- **npm** : Version 10.0.0 ou supérieure (inclus avec les versions récentes de Node.js)
 - **Git** : Pour cloner le repository ([télécharger ici](https://git-scm.com/))
 - **Navigateur moderne** : Chrome, Firefox, Safari ou Edge (dernières versions recommandées)
 
@@ -206,7 +206,7 @@ npm config set prefix ~/.npm-global
 **Problèmes de dépendances**
 - Supprimez `node_modules` et `package-lock.json`
 - Réinstallez : `npm install`
-- Si le problème persiste : `npm install --legacy-peer-deps`
+- Si le problème persiste, vérifiez que votre version de Node est compatible (>= 20.19.0 ou 22.x), puis réessayez après avoir vidé le cache npm : `npm cache clean --force && npm install`
 
 ## Fonctionnalités
 
@@ -215,7 +215,7 @@ Cette application vous permet de visualiser et analyser les données de qualité
 ### **Carte Interactive**
 
 - **Carte Leaflet** pour afficher tous les appareils de mesure sur une carte interactive
-- **Clustering intelligent** des marqueurs pour améliorer la lisibilité (vous pouvez le désactiver si besoin)
+- **Gestion avancée des marqueurs** : spiderfier personnalisé pour éclater les marqueurs qui se chevauchent et améliorer la lisibilité
 - **Marqueurs colorés** qui changent selon la valeur des mesures, avec les valeurs affichées directement
 - **Contrôle du fond de carte** : Basculez facilement entre la carte standard et la vue satellite
 - **Légende dynamique** : Les seuils s'adaptent automatiquement au polluant que vous sélectionnez
@@ -489,18 +489,14 @@ L'application dispose d'un système de rafraîchissement automatique qui s'adapt
 - **Carte standard** : Fond CARTO clair avec Stadia maps
 - **Satellite IGN** : Imagerie satellite IGN
 
-## Clustering des marqueurs
+## Gestion avancée des marqueurs (spiderfy)
 
-### Fonctionnalités de clustering
+### Fonctionnalités principales
 
-- **Clustering automatique** : Regroupement intelligent des marqueurs proches
-- **Performance optimisée** : Amélioration des performances avec de nombreux marqueurs
-- **Activation/Désactivation** : Activation/Désactivation du clustering depuis le menu de la carte (desactivé par defaut)
-- **Spiderfy au zoom maximum** : Éclatement des clusters au zoom maximum
-- **Affichage de la zone** : Visualisation de la zone de cluster au survol
-- **Zoom sur la zone** : Zoom automatique sur la zone du cluster au clic
-- **Animations** : Transitions fluides pour le clustering
-- **Animations d'ajout** : Effets visuels lors de l'ajout de marqueurs
+- **Spiderfy automatique** : Éclatement automatique des marqueurs qui se chevauchent pour les rendre tous accessibles
+- **Lisibilité améliorée** : Meilleure lisibilité dans les zones très denses sans recourir à un clustering de type "bubble"
+- **Activation/Désactivation** : Activation/Désactivation du spiderfier selon le niveau de zoom et la configuration
+- **Animations** : Transitions fluides lors de l'éclatement ou du regroupement visuel des marqueurs
 
 ## Side Panels et Graphiques Historiques
 
@@ -575,7 +571,6 @@ L'interface principale dispose d'un en-tête compact contenant tous les contrôl
 
 ### Contrôles de carte
 
-- **Contrôle du clustering** : Icône en bas à gauche pour activer/desactiver le clustering
 - **Contrôle fond de carte** : Icône en bas à gauche pour basculer entre fond de carte standard et fond de carte satellite
 - **Légende** : Affichage des seuils en bas au centre avec tooltips au hover
 - **Informations de la carte** : Compteur de nombre d'appareils et de signalements affichés sur la carte en bas à droite
@@ -598,7 +593,6 @@ L'interface principale dispose d'un en-tête compact contenant tous les contrôl
 - **États visuels clairs** : Sélectionné, partiellement sélectionné, non sélectionné
 - **Responsive design** : Adapté à tous les écrans
 - **Indicateurs de chargement** : Affichage discret des états de chargement
-- **Clustering** : Amélioration de la lisibilité avec de nombreux marqueurs
 
 ## Utilisation des Side Panels
 
@@ -724,13 +718,12 @@ Tous les panneaux latéraux partagent des fonctionnalités communes :
 
 - **React 19.1.0** : Framework principal
 - **TypeScript** : Typage statique
-- **Vite 7.0.0** : Build tool et serveur de développement
+- **Vite 7.x** : Build tool et serveur de développement
 
 ### **Cartographie**
 
 - **Leaflet 1.9.4** : Bibliothèque de cartographie
 - **react-leaflet 5.0.0** : Intégration React pour Leaflet
-- **react-leaflet-cluster 2.1.0** : Clustering des marqueurs
 - **@types/leaflet 1.9.18** : Types TypeScript pour Leaflet
 
 ### **Styling et UI**
@@ -747,4 +740,5 @@ Tous les panneaux latéraux partagent des fonctionnalités communes :
 ### **Développement et Tests**
 
 - **ESLint 9.29.0** : Linter JavaScript/TypeScript
-- **Tests** : (à venir)
+- **Vitest 4.x** : Tests unitaires
+- **Playwright 1.55.0** : Tests end-to-end
