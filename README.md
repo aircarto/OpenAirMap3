@@ -184,6 +184,3 @@ sudo systemctl reload nginx
 - [Intercomparaison](docs/features/DOCUMENTATION_INTERCOMPARAISON.md)
 - [Feature recherche](docs/features/DOCUMENTATION_SEARCH_FEATURE.md)
 - [Hook useAirQualityData](docs/features/DOCUMENTATION_USE_AIR_QUALITY_DATA.md)
-
-
-testgitea
