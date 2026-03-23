@@ -1,6 +1,9 @@
-import React from "react";
+import React, { useRef, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { DomainConfig } from "../../config/domainConfig";
+
+const FOCUSABLE_SELECTOR =
+  'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 import {
   getDefaultLevel,
   getMarkerPath,
@@ -127,6 +130,60 @@ const InformationModal: React.FC<InformationModalProps> = ({
   domainConfig,
 }) => {
   const { t } = useTranslation();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const previousActiveRef = useRef<HTMLElement | null>(null);
+
+  const getFocusables = useCallback(() => {
+    if (!dialogRef.current) return [];
+    return Array.from(
+      dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+    ).filter((el) => !el.hasAttribute("disabled"));
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    previousActiveRef.current = document.activeElement as HTMLElement | null;
+    const t = requestAnimationFrame(() => {
+      closeButtonRef.current?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(t);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab" || !dialogRef.current) return;
+      const focusables = getFocusables();
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      if (previousActiveRef.current?.focus) {
+        previousActiveRef.current.focus({ preventScroll: true });
+      }
+    };
+  }, [isOpen, onClose, getFocusables]);
+
   if (!isOpen) {
     return null;
   }
@@ -152,10 +209,19 @@ const InformationModal: React.FC<InformationModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[4000] flex items-center justify-center overflow-y-auto bg-slate-900/40 backdrop-blur-sm px-3 py-4 sm:py-6">
+    <div
+      className="fixed inset-0 z-[4000] flex items-center justify-center overflow-y-auto bg-slate-900/40 backdrop-blur-sm px-3 py-4 sm:py-6"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="info-modal-title"
+      aria-describedby="info-modal-intro"
+      ref={dialogRef}
+    >
       <div className="relative w-full max-w-5xl max-h-[85vh] md:max-h-[80vh]">
         <div className="relative flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
           <button
+            ref={closeButtonRef}
+            type="button"
             onClick={onClose}
             className="absolute right-4 top-4 rounded-full border border-gray-200 p-1.5 text-gray-600 shadow-sm transition hover:bg-gray-50 hover:text-gray-900"
             aria-label={t("panels.closeInfoModal")}
@@ -180,10 +246,10 @@ const InformationModal: React.FC<InformationModalProps> = ({
             <div className="grid gap-6 bg-gradient-to-br from-[#f4f8ff] via-white to-white px-6 pb-6 pt-8 sm:px-10">
           <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex flex-col gap-2">
-              <h2 className="text-2xl font-semibold text-slate-800">
+              <h2 id="info-modal-title" className="text-2xl font-semibold text-slate-800">
                 {t("infoModal.welcome")}
               </h2>
-              <p className="max-w-2xl text-sm text-slate-600">
+              <p id="info-modal-intro" className="max-w-2xl text-sm text-slate-600">
                 {t("infoModal.intro")}
               </p>
             </div>
@@ -301,7 +367,7 @@ const InformationModal: React.FC<InformationModalProps> = ({
                         <a
                           href={item.provider.href}
                           target="_blank"
-                          rel="noreferrer"
+                          rel="noopener noreferrer"
                           className="inline-flex items-center justify-center rounded-md bg-[#4271B3] px-1.5 py-0.5 text-[0.58rem] font-semibold leading-tight text-white shadow-sm transition hover:bg-[#325a96] whitespace-nowrap"
                         >
                           {item.provider.label}

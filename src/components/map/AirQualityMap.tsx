@@ -966,7 +966,11 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
       />
 
       {/* Conteneur de la carte */}
-      <div className="flex-1 relative">
+      <div
+        className="flex-1 relative"
+        role="region"
+        aria-label={t("app.mapAriaLabel")}
+      >
         {/* Contrôle de recherche personnalisé */}
         <CustomSearchControl
           devices={devices}

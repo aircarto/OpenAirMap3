@@ -15,7 +15,9 @@
   },
   "app": {
     "infoButton": "حول OpenAirMap",
-    "logoAlt": "{{organization}} الشعار الرئيسي"
+    "logoAlt": "{{organization}} الشعار الرئيسي",
+    "skipToContent": "الانتقال إلى المحتوى الرئيسي",
+    "mapAriaLabel": "خريطة جودة الهواء"
   },
   "timeSteps": {
     "instantane": "مسح",

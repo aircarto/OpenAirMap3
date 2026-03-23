@@ -15,10 +15,12 @@
     "test:watch": "vitest --watch",
     "test:ci": "vitest run --coverage --reporter=verbose",
     "test:e2e": "playwright test",
+    "test:e2e:smoke": "playwright test e2e/smoke.spec.ts",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
+    "test:e2e:a11y": "playwright test e2e/a11y.spec.ts",
     "test:all": "npm run test:run && npm run test:e2e"
   },
   "dependencies": {
@@ -45,6 +47,7 @@
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.1",
     "@eslint/js": "^9.29.0",
     "@playwright/test": "^1.55.0",
     "@testing-library/dom": "^10.4.1",
@@ -55,11 +58,14 @@
     "@types/jest": "^30.0.0",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
+    "@typescript-eslint/eslint-plugin": "^8.56.1",
+    "@typescript-eslint/parser": "^8.56.1",
     "@vitejs/plugin-react": "^4.5.2",
     "@vitest/coverage-v8": "^4.0.0",
     "@vitest/ui": "^4.0.0",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.29.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.2.0",

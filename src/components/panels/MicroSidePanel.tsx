@@ -894,7 +894,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
     if (!selectedStation) return null;
 
     return (
-      <div className={getPanelClasses()}>
+      <div className={getPanelClasses()} data-testid="micro-side-panel">
         {/* Header */}
         <div className="flex items-center justify-between p-2 sm:p-3 md:p-4 border-b border-gray-200 bg-gray-50">
           <div className="flex-1 min-w-0">

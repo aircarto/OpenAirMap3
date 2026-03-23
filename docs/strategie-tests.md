@@ -112,6 +112,19 @@ CI (GitHub Actions/GitLab CI) : jobs parallèles `lint`, `unit`, `e2e`. Utilise
 - **Dégradation réseau** : simuler timeout -> bannière erreur affichée -> UI dégradée mais utilisable.
 - **Accessibilité rapide** : vérifier absence de violations axe sur vue principale & modale.
 
+**Fichiers E2E (couverture progressive)** :
+- `e2e/a11y.spec.ts` – accessibilité (page, modale, side panel station, panel mode historique).
+- `e2e/smoke.spec.ts` – smoke et navigation (chargement, lien d’évitement, menu burger, barre desktop, modale).
+- `e2e/controls.spec.ts` – contrôles header (dropdowns polluant/sources/pas de temps, mode historique, modélisation).
+- `e2e/map-and-panels.spec.ts` – carte et side panels (marqueurs, ouverture/fermeture panel station) ; `test.skip()` si aucun marqueur (API vide/lente).
+- `e2e/signalair-mobileair.spec.ts` – flux SignalAir et MobileAir (ouverture panels, bouton Charger) ; timeouts longs, assertions souples.
+- `e2e/search.spec.ts` – recherche (ouverture, saisie, champ restant utilisable).
+- `e2e/errors.spec.ts` – (optionnel) simulation 500 sur une API, vérification bannière erreur.
+
+**Scripts** : `npm run test:e2e` (tout) ; `npm run test:e2e:smoke` (phase smoke uniquement, exécution rapide en CI) ; `npm run test:e2e:a11y` (a11y uniquement).
+
+**Dépendance aux APIs** : Les specs carte/panels, SignalAir/MobileAir et a11y side panel dépendent des données API (marqueurs, stations). En l’absence de mock, utiliser timeouts longs (20–30 s) et `test.skip()` explicite si aucun marqueur n’apparaît.
+
 ## 7. Outils & bonnes pratiques
 
 - **Vitest** : config `setupTests.ts` pour `msw`, `@testing-library/jest-dom`.

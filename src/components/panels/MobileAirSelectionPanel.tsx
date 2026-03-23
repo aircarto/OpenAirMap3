@@ -247,7 +247,7 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
   };
 
   return (
-    <div className={getPanelClasses()}>
+    <div className={getPanelClasses()} data-testid="mobileair-selection-panel">
       {/* Header */}
       <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 bg-gray-50">
         <div className="flex-1 min-w-0">

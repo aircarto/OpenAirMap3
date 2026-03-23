@@ -238,6 +238,8 @@ const SpecialSourceControls: React.FC<SpecialSourceControlsProps> = ({
         )}>
           {/* Zone de drag intégrée dans le header */}
           <div
+            role="button"
+            tabIndex={0}
             className={cn(
               "flex items-center gap-1.5 sm:gap-2 cursor-grab active:cursor-grabbing drag-handle",
               "px-1.5 sm:px-2 py-1 sm:py-1.5 rounded-lg transition-all duration-200",
@@ -246,6 +248,9 @@ const SpecialSourceControls: React.FC<SpecialSourceControlsProps> = ({
             )}
             onMouseDown={handleMouseDown}
             onTouchStart={handleTouchStart}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") e.preventDefault();
+            }}
             title="Glisser pour déplacer le panneau"
             aria-label="Zone de déplacement"
           >

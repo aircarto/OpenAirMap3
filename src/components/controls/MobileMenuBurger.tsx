@@ -123,10 +123,11 @@ const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
           <div className="p-4 space-y-3 sm:space-y-2">
             {/* Polluant */}
             <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">
+              <label id="mobile-menu-pollutant" htmlFor="mobile-menu-pollutant-trigger" className="text-sm font-medium text-gray-700">
                 {t("controls.pollutant")}
               </label>
               <PollutantDropdown
+                triggerId="mobile-menu-pollutant-trigger"
                 selectedPollutant={selectedPollutant}
                 onPollutantChange={onPollutantChange}
                 selectedTimeStep={selectedTimeStep}
@@ -135,10 +136,11 @@ const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
 
             {/* Sources */}
             <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">
+              <label id="mobile-menu-sources" htmlFor="mobile-menu-sources-trigger" className="text-sm font-medium text-gray-700">
                 {t("controls.sources")}
               </label>
               <SourceDropdown
+                triggerId="mobile-menu-sources-trigger"
                 selectedSources={selectedSources}
                 selectedTimeStep={selectedTimeStep}
                 onSourceChange={onSourceChange}
@@ -149,10 +151,11 @@ const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
 
             {/* Pas de temps */}
             <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">
+              <label id="mobile-menu-timestep" htmlFor="mobile-menu-timestep-trigger" className="text-sm font-medium text-gray-700">
                 {t("controls.timeStep")}
               </label>
               <TimeStepDropdown
+                triggerId="mobile-menu-timestep-trigger"
                 selectedTimeStep={selectedTimeStep}
                 selectedSources={selectedSources}
                 onTimeStepChange={onTimeStepChange}
@@ -163,10 +166,11 @@ const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
 
             {/* Carte de modélisation */}
             <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">
+              <label id="mobile-menu-modeling" htmlFor="mobile-menu-modeling-trigger" className="text-sm font-medium text-gray-700">
                 {t("controls.modeling")}
               </label>
               <ModelingLayerControl
+                triggerId="mobile-menu-modeling-trigger"
                 currentModelingLayer={currentModelingLayer}
                 onModelingLayerChange={onModelingLayerChange}
                 selectedPollutant={selectedPollutant}

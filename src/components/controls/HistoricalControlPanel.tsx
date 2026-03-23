@@ -125,6 +125,7 @@ const HistoricalControlPanel: React.FC<
       {isPanelVisible && (
         <div
           ref={panelRef}
+          data-testid="historical-control-panel"
           className={`fixed top-[60px] right-4 z-[2000] bg-white border border-gray-300 rounded-lg shadow-xl max-w-md w-full transition-all duration-300 overflow-hidden ${
             isExpanded ? "max-h-[90vh]" : "h-auto"
           }`}

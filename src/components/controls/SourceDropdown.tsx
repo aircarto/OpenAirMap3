@@ -31,6 +31,8 @@ interface SourceDropdownProps {
   onToggleAutoRefresh?: (enabled: boolean) => void;
   loading?: boolean;
   isHistoricalModeActive?: boolean;
+  /** Id du trigger pour association avec un <label htmlFor> (accessibilité) */
+  triggerId?: string;
 }
 
 const SourceDropdown: React.FC<SourceDropdownProps> = ({
@@ -43,6 +45,7 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
   onToggleAutoRefresh,
   loading = false,
   isHistoricalModeActive = false,
+  triggerId,
 }) => {
   const { t } = useTranslation();
   // Définir les sources communautaires (mobileair retiré car géré séparément)
@@ -165,6 +168,7 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
+          id={triggerId}
           className="relative bg-gradient-to-br from-gray-50 to-white border border-gray-200/60 text-gray-800 hover:from-gray-100 hover:to-gray-50 hover:border-gray-300 shadow-sm backdrop-blur-sm rounded-lg pl-3 pr-7 py-2 text-left text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#4271B3]/20 focus:border-[#4271B3] min-w-[88px] max-w-[200px]"
         >
           <span className="block truncate pr-6">{getDisplayText()}</span>
@@ -192,9 +196,11 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
       >
         {/* Actualisation auto — en tête mais visuellement discrète */}
         {typeof onToggleAutoRefresh === "function" && (
+          /* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/click-events-have-key-events -- zone de capture pour empêcher la fermeture du menu au clic sur le toggle */
           <div
             className="px-3 pt-2 pb-1.5 border-b border-gray-100"
             onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
           >
             <AutoRefreshToggle
               enabled={autoRefreshEnabled}

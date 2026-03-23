@@ -15,7 +15,9 @@
   },
   "app": {
     "infoButton": "Información sobre OpenAirMap",
-    "logoAlt": "Logo principal de {{organization}}"
+    "logoAlt": "Logo principal de {{organization}}",
+    "skipToContent": "Ir al contenido principal",
+    "mapAriaLabel": "Mapa de calidad del aire"
   },
   "timeSteps": {
     "instantane": "Escaneo",

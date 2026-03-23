@@ -115,11 +115,12 @@ const SpiderfyControl: React.FC<SpiderfyControlProps> = ({
             {/* Seuil de zoom pour le spiderfier automatique */}
             {config.enabled && config.autoSpiderfy && (
               <div className="mb-3">
-                <label className="block text-sm text-gray-700 mb-2">
+                <label htmlFor="spiderfy-zoom-threshold" className="block text-sm text-gray-700 mb-2">
                   Seuil de zoom pour le spiderfier
                 </label>
                 <div className="flex items-center space-x-2">
                   <input
+                    id="spiderfy-zoom-threshold"
                     type="range"
                     min="8"
                     max="18"

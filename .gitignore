@@ -25,21 +25,14 @@ dist-ssr
 
 # config
 .env
+.env.*.local
 
-#test
+# Tests - artefacts uniquement
 coverage/
-__mocks__/
-__tests__/
-__playwright__/
 playwright-report/
-tests/
 test-results/
-.github/
-jest.config.js
-vitest.config.ts
-playwright.config.ts
-setupTests.ts
-tsconfig.test.json
+blob-report/
+
 
 
 

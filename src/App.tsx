@@ -377,6 +377,14 @@ const App: React.FC = () => {
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
+      {/* Lien d'évitement : premier élément focusable pour la navigation clavier et lecteurs d'écran */}
+      <a
+        href="#main-content"
+        className="skip-link"
+        data-testid="skip-link"
+      >
+        {t("app.skipToContent")}
+      </a>
       {/* Header : barre unique avec regroupement logique des contrôles */}
       <header className="relative bg-white border-b border-gray-200/80 shadow-sm z-[2500]">
         <div className="px-4 sm:px-5 py-2.5">
@@ -525,7 +533,7 @@ const App: React.FC = () => {
       </header>
 
       {/* Carte en plein écran */}
-      <main className="flex-1 relative">
+      <main id="main-content" className="flex-1 relative" tabIndex={-1}>
         {/* Indicateur de chargement */}
         {loading && (
           <div className="absolute top-4 right-4 z-[1500]">

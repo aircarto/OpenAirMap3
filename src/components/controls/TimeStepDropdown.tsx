@@ -23,6 +23,8 @@ interface TimeStepDropdownProps {
   onTimeStepChange: (timeStep: string) => void;
   onSourceChange?: (sources: string[]) => void;
   onToast?: (toast: Omit<Toast, "id">) => void;
+  /** Id du trigger pour association avec un <label htmlFor> (accessibilité) */
+  triggerId?: string;
 }
 
 const TimeStepDropdown: React.FC<TimeStepDropdownProps> = ({
@@ -31,6 +33,7 @@ const TimeStepDropdown: React.FC<TimeStepDropdownProps> = ({
   onTimeStepChange,
   onSourceChange,
   onToast,
+  triggerId,
 }) => {
   const { t } = useTranslation();
   // Fonction pour obtenir les pas de temps supportés par les sources sélectionnées
@@ -191,6 +194,7 @@ const TimeStepDropdown: React.FC<TimeStepDropdownProps> = ({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
+          id={triggerId}
           className="relative bg-gradient-to-br from-gray-50 to-white border border-gray-200/60 text-gray-800 hover:from-gray-100 hover:to-gray-50 hover:border-gray-300 shadow-sm backdrop-blur-sm rounded-lg pl-3 pr-7 py-2 text-left text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#4271B3]/20 focus:border-[#4271B3] min-w-[72px] max-w-[130px] rtl-on-ar"
         >
           <span className="block truncate pr-6">{getDisplayText()}</span>

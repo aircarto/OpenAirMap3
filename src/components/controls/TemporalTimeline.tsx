@@ -181,6 +181,13 @@ const TemporalTimeline: React.FC<TemporalTimelineProps> = ({
       <div className="relative">
         <div
           ref={timelineRef}
+          role="slider"
+          tabIndex={0}
+          aria-disabled={disabled}
+          aria-valuenow={currentPosition}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={t("historical.timeline")}
           className={`
             relative h-9 rounded-xl cursor-pointer overflow-hidden
             bg-white/40 backdrop-blur-sm border border-gray-200/50
@@ -188,6 +195,17 @@ const TemporalTimeline: React.FC<TemporalTimelineProps> = ({
             transition-colors duration-200
           `}
           onClick={handleTimelineClick}
+          onKeyDown={(e) => {
+            if (disabled) return;
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              if (timelineRef.current) {
+                const rect = timelineRef.current.getBoundingClientRect();
+                const fakeEvt = { clientX: rect.left + (rect.width * currentPosition) / 100 } as React.MouseEvent;
+                handleTimelineClick(fakeEvt);
+              }
+            }
+          }}
           onMouseMove={handleTimelineHover}
           onMouseLeave={handleTimelineLeave}
           onMouseDown={handleMouseDown}

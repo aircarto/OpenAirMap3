@@ -1,744 +1,149 @@
-# Carte de la Qualité de l'Air - React Open Air Map
+# OpenAirMap
 
-Une application React modulaire et responsive pour afficher des appareils de mesure de la qualité de l'air sur une carte interactive Leaflet avec gestion avancée des marqueurs (spiderfier) et statistiques.
+Application web React/TypeScript de visualisation de la qualite de l'air sur carte interactive (Leaflet), avec filtrage par polluant, sources et pas de temps.
 
-## Installation et démarrage
+## Presentation rapide
 
-### Démarrage rapide
+OpenAirMap permet de :
 
-Pour commencer rapidement, vous aurez besoin de Node.js (version 20.19.0 ou supérieure, 22.x recommandé) et npm. Une fois ces prérequis installés, c'est très simple :
+- afficher des appareils de mesure sur une carte avec marqueurs thematiques 
+- croiser plusieurs sources de donnees (AtmoRef, AtmoMicro, NebuleAir, PurpleAir, SensorCommunity, etc.) 
+- consulter les details dans des panneaux lateraux 
+- utiliser un mode historique pour rejouer des periodes passees 
+- basculer de langue et adapter l'application selon le domaine (branding/config)
+
+## Stack technique
+
+- React 19 + TypeScript
+- Vite 7
+- Leaflet / React-Leaflet
+- Tailwind CSS
+
+## Prerequis
+
+- **Node.js** : `>= 20.19.0` (recommande) ou `>= 22.12.0`
+- **npm** : version recente (npm 10+ recommande)
+- **Git**
+
+La contrainte Node est alignee avec Vite 7 (`^20.19.0 || >=22.12.0`).
+
+## Installation locale
 
 ```bash
-# Cloner le repository
-git clone <repository-url>
-cd ReactOpenAirMap
-
-# Installer les dépendances
-npm install
-
-# Lancer l'application
+git clone <url-du-repo>
+cd Openairmap
+npm ci
 npm run dev
 ```
 
-L'application s'ouvrira automatiquement dans votre navigateur à l'adresse `http://localhost:5173`. Vous devriez voir la carte avec les contrôles dans l'en-tête et les marqueurs de qualité de l'air apparaître sur la carte.
+Application disponible sur `http://localhost:5173`.
 
-### Prérequis
+## Configuration
 
-Avant de commencer, assurez-vous d'avoir installé :
+### Variables d'environnement
 
-- **Node.js** : Version 20.19.0 ou supérieure (22.x recommandé) ([télécharger ici](https://nodejs.org/))
-- **npm** : Version 10.0.0 ou supérieure (inclus avec les versions récentes de Node.js)
-- **Git** : Pour cloner le repository ([télécharger ici](https://git-scm.com/))
-- **Navigateur moderne** : Chrome, Firefox, Safari ou Edge (dernières versions recommandées)
-
-### Installation détaillée par système
-
-#### Windows
-
-1. **Installer Node.js**
-- Téléchargez la version LTS depuis [nodejs.org](https://nodejs.org/)
-- Exécutez l'installateur et suivez les instructions
-- Vérifiez l'installation en ouvrant un terminal :
-```cmd
-node --version
-npm --version
-```
-
-2. **Installer Git** (si ce n'est pas déjà fait)
-- Téléchargez depuis [git-scm.com](https://git-scm.com/)
-- Exécutez l'installateur avec les options par défaut
-- Vérifiez : `git --version`
-
-3. **Cloner et installer le projet**
-```cmd
-git clone <repository-url>
-cd ReactOpenAirMap
-npm install
-```
-
-4. **Démarrer l'application**
-```cmd
-npm run dev
-```
-
-#### macOS
-
-1. **Installer Node.js avec Homebrew** (recommandé)
-```bash
-# Installer Homebrew si nécessaire
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-# Installer Node.js
-brew install node
-
-# Vérifier
-node --version
-npm --version
-```
-
-**Alternative** : Téléchargez directement depuis [nodejs.org](https://nodejs.org/) et installez le package .pkg
-
-2. **Installer Git** (si nécessaire)
-```bash
-brew install git
-```
-
-3. **Cloner et installer le projet**
-```bash
-git clone <repository-url>
-cd ReactOpenAirMap
-npm install
-```
-
-4. **Démarrer l'application**
-```bash
-npm run dev
-```
-
-#### Linux (Ubuntu/Debian)
-
-1. **Installer Node.js**
-```bash
-# Mettre à jour le système
-sudo apt update && sudo apt upgrade -y
-
-# Installer Node.js via NodeSource
-curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
-sudo apt-get install -y nodejs
-
-# Vérifier
-node --version
-npm --version
-```
-
-2. **Installer Git**
-```bash
-sudo apt install git
-```
-
-3. **Cloner et installer le projet**
-```bash
-git clone <repository-url>
-cd ReactOpenAirMap
-npm install
-```
-
-4. **Démarrer l'application**
-```bash
-npm run dev
-```
-
-#### Linux (CentOS/RHEL/Fedora)
-
-1. **Installer Node.js**
-```bash
-# Pour CentOS/RHEL
-curl -fsSL https://rpm.nodesource.com/setup_lts.x | sudo bash -
-sudo yum install -y nodejs
-
-# Pour Fedora
-sudo dnf install nodejs npm
-```
-
-2. **Installer Git**
-```bash
-# CentOS/RHEL
-sudo yum install git
-
-# Fedora
-sudo dnf install git
-```
-
-3. **Cloner et installer le projet**
-```bash
-git clone <repository-url>
-cd ReactOpenAirMap
-npm install
-```
-
-4. **Démarrer l'application**
-```bash
-npm run dev
-```
-
-### Scripts disponibles
-
-Une fois le projet installé, vous pouvez utiliser ces commandes :
+Le projet fournit un gabarit `/.env.inc`.
+Copiez-le vers `.env` puis adaptez les valeurs selon votre environnement.
 
 ```bash
-# Développement
-npm run dev # Lance le serveur de développement avec hot-reload
-
-# Production
-npm run build # Compile l'application pour la production
-npm run preview # Prévisualise le build de production
-
-# Qualité de code
-npm run lint # Vérifie le code avec ESLint
-
-# Tests
-npm run test        # Lance Vitest (tests unitaires) en mode watch
-npm run test:run    # Exécute les tests une fois
-npm run test:e2e    # Tests end-to-end (Playwright)
-npm run test:all    # Tests unitaires + E2E
+cp .env.inc .env
 ```
 
-### Résolution de problèmes courants
 
-Si vous rencontrez des problèmes, voici quelques solutions courantes :
+Notes :
+- toutes les variables front doivent etre prefixees par `VITE_` ;
+- `VITE_TOOLTIP_MIN_ZOOM` accepte un nombre (ex: `11`) ou `false` pour desactiver le seuil de zoom.
 
-**Erreur "command not found: node"**
-- Vérifiez que Node.js est bien installé : `node --version`
-- Redémarrez votre terminal après l'installation
-- Sur Windows, un redémarrage complet peut être nécessaire
 
-**Erreur "EACCES" lors de npm install**
-- Sur macOS/Linux, essayez : `sudo npm install`
-- Ou mieux, configurez npm pour utiliser un répertoire local :
+## Commandes utiles
+
 ```bash
-npm config set prefix ~/.npm-global
+npm run dev      # serveur de dev
+npm run build    # build production
+npm run preview  # verification locale du build
+npm run lint     # verification ESLint
 ```
 
-**Port 5173 déjà utilisé**
-- L'application utilisera automatiquement le port suivant disponible
-- Ou spécifiez un port manuellement : `npm run dev -- --port 3000`
+## Structure du projet (simplifiee)
 
-**Problèmes de dépendances**
-- Supprimez `node_modules` et `package-lock.json`
-- Réinstallez : `npm install`
-- Si le problème persiste, vérifiez que votre version de Node est compatible (>= 20.19.0 ou 22.x), puis réessayez après avoir vidé le cache npm : `npm cache clean --force && npm install`
-
-## Fonctionnalités
-
-Cette application vous permet de visualiser et analyser les données de qualité de l'air provenant de multiples sources. Voici ce qu'elle offre :
-
-### **Carte Interactive**
-
-- **Carte Leaflet** pour afficher tous les appareils de mesure sur une carte interactive
-- **Gestion avancée des marqueurs** : spiderfier personnalisé pour éclater les marqueurs qui se chevauchent et améliorer la lisibilité
-- **Marqueurs colorés** qui changent selon la valeur des mesures, avec les valeurs affichées directement
-- **Contrôle du fond de carte** : Basculez facilement entre la carte standard et la vue satellite
-- **Légende dynamique** : Les seuils s'adaptent automatiquement au polluant que vous sélectionnez
-
-### **Contrôles Intégrés**
-
-Tous les contrôles sont accessibles depuis l'en-tête de l'application :
-
-- **Sélection du polluant** : Choisissez quel polluant afficher sur la carte (un seul à la fois)
-- **Sélection des sources** : Activez plusieurs sources de données simultanément, chacune avec ses propres marqueurs
-- **Sélection du pas de temps** : Définissez la granularité des données (instantané, 2 min, 15 min, heure, jour)
-- **Sélecteurs de période** : Pour SignalAir et MobileAir, vous pouvez définir des périodes personnalisées
-- **Auto-refresh intelligent** : Les données se rafraîchissent automatiquement selon le pas de temps sélectionné
-
-### **Side Panels Spécialisés**
-
-Chaque source de données dispose de son propre panneau latéral avec des fonctionnalités adaptées :
-
-- **MobileAir Panels** : Sélectionnez un capteur mobile et visualisez ses différentes sessions de mesure
-- **Périodes personnalisées** : Utilisez les périodes prédéfinies (3h, 24h, 7j, 30j) ou créez vos propres plages de dates
-- **Redimensionnement flexible** : Ajustez la taille des panneaux (normal, plein écran, ou masqué)
-- **Intercomparaison Multi-Sources** : Comparez jusqu'à 10 stations (AtmoRef, AtmoMicro, NebuleAir) sur un même graphique
-- L'application détecte automatiquement les polluants communs à toutes les stations
-- Gère intelligemment les résolutions temporelles différentes (notamment en mode Scan)
-- Pour plus de détails techniques, consultez : `docs/features/DOCUMENTATION_INTERCOMPARAISON.md`
-
-### **Gestion des Données**
-
-- **Architecture modulaire** avec services séparés pour chaque source
-- **Auto-refresh adaptatif** selon le pas de temps sélectionné et les sources actives
-- **Indicateurs de correction** pour les données AtmoMicro
-- **Gestion des statuts de chargement** : Actif, inactif, en cours de chargement
-- **Gestion d'erreurs** robuste avec fallbacks
-
-### **Interface Utilisateur**
-
-- **Design responsive** adapté à tous les écrans
-- **Interface moderne** avec Tailwind CSS
-- **Contrôles intégrés** dans l'en-tête pour maximiser l'espace carte
-- **Barre de progression** et indicateurs de chargement par source
-- **États visuels clairs** : Sélectionné, partiellement sélectionné, non sélectionné
-
-## Architecture du projet
-
-```
+```text
 src/
-├── components/ # Composants React
-│ ├── charts/ # Composants de graphiques amCharts
-│ │ ├── HistoricalChart.tsx # Graphique historique principal
-│ │ ├── ExportMenu.tsx # Menu d'export (PNG/CSV)
-│ │ ├── AmChartsLineChart.tsx # Wrapper générique amCharts
-│ │ ├── hooks/ # Hooks spécifiques aux graphiques
-│ │ │ ├── useAmChartsChart.ts # Gestion création/mise à jour graphique
-│ │ │ └── useHistoricalChartData.ts # Transformation des données
-│ │ └── utils/ # Utilitaires pour les graphiques
-│ │ ├── amChartsHelpers.ts # Fonctions utilitaires amCharts
-│ │ ├── historicalChartConfig.ts # Configuration séries/formatage
-│ │ ├── historicalChartDataTransformers.ts # Transformations données
-│ │ └── historicalChartUtils.ts # Utilitaires généraux
-│ ├── controls/ # Composants de contrôle (menus)
-│ │ ├── PollutantDropdown.tsx
-│ │ ├── SourceDropdown.tsx
-│ │ ├── TimeStepDropdown.tsx
-│ │ ├── SignalAirPeriodSelector.tsx
-│ │ ├── TimePeriodDisplay.tsx
-│ │ ├── BaseLayerControl.tsx
-│ │ ├── ClusterControl.tsx
-│ │ ├── AutoRefreshControl.tsx
-│ │ ├── CustomSearchControl.tsx # Barre de recherche adresses/capteurs
-│ │ ├── HistoricalModeButton.tsx
-│ │ ├── HistoricalControlPanel.tsx
-│ │ ├── HistoricalTimeRangeSelector.tsx
-│ │ ├── PollutionEpisodeCalendar.tsx # Mode épisodes de pollution
-│ │ └── SourceDropdownWithNotifications.tsx # Variante avec notifications
-│ ├── map/ # Composants de carte Leaflet uniquement
-│ │ ├── AirQualityMap.tsx
-│ │ ├── Legend.tsx
-│ │ ├── MobileAirRoutes.tsx # Routes MobileAir
-│ │ ├── CustomSpiderfiedMarkers.tsx # Marqueurs spiderfiés
-│ │ ├── SpiderfiedMarkers.tsx # Marqueurs spiderfiés (legacy)
-│ │ ├── CustomSearchControl.tsx # Contrôle de recherche (intégré à la carte)
-│ │ ├── hooks/ # Hooks spécifiques à la carte
-│ │ │ ├── useMapView.ts # Gestion de la vue (zoom, centre, spiderfy)
-│ │ │ ├── useMapLayers.ts # Gestion des couches (base, modélisation, vent)
-│ │ │ ├── useWildfireLayer.ts # Gestion de la couche feux de forêt
-│ │ │ ├── useMapAttribution.ts # Gestion de l'attribution Leaflet
-│ │ │ ├── useSidePanels.ts # Gestion des panneaux latéraux
-│ │ │ ├── useSignalAir.ts # Gestion de SignalAir
-│ │ │ └── useMobileAir.ts # Gestion de MobileAir
-│ │ ├── utils/ # Utilitaires pour la carte
-│ │ │ ├── mapIconUtils.ts # Création d'icônes de marqueurs
-│ │ │ └── mapMarkerUtils.ts # Utilitaires pour les marqueurs
-│ │ └── handlers/ # Handlers pour la carte
-│ │ └── comparisonHandlers.ts # Handlers pour le mode comparaison
-│ ├── panels/ # Panneaux latéraux (SidePanels)
-│ │ ├── StationSidePanel.tsx # AtmoRef
-│ │ ├── MicroSidePanel.tsx # AtmoMicro
-│ │ ├── ComparisonSidePanel.tsx # Panneau de comparaison
-│ │ ├── NebuleAirSidePanel.tsx # NebuleAir
-│ │ ├── PurpleAirSidePanel.tsx # PurpleAir
-│ │ ├── SensorCommunitySidePanel.tsx # SensorCommunity
-│ │ ├── MobileAirSidePanel.tsx # MobileAir sélection
-│ │ ├── MobileAirSelectionPanel.tsx # MobileAir visualisation
-│ │ ├── MobileAirDetailPanel.tsx # MobileAir détails
-│ │ ├── SignalAirDetailPanel.tsx # SignalAir détails
-│ │ ├── SignalAirSelectionPanel.tsx # SignalAir sélection
-│ │ └── index.ts # Exports des panels
-│ ├── modals/ # Modales
-│ └── ui/ # Composants UI réutilisables
-├── services/ # Services de données
-│ ├── BaseDataService.ts
-│ ├── DataServiceFactory.ts
-│ ├── AtmoRefService.ts
-│ ├── AtmoMicroService.ts
-│ ├── NebuleAirService.ts
-│ ├── SignalAirService.ts
-│ ├── MobileAirService.ts
-│ ├── PurpleAirService.ts
-│ ├── SensorCommunityService.ts
-│ ├── FeuxDeForetService.ts
-│ ├── ModelingLayerService.ts
-│ ├── ModelingService.ts
-│ ├── CommunalLayerService.ts
-│ └── PollutionEpisodeService.ts
-├── hooks/ # Hooks personnalisés globaux
-│ ├── useAirQualityData.ts
-│ ├── useTemporalVisualization.ts
-│ ├── useDomainConfig.ts
-│ ├── useToast.ts
-│ ├── useCustomSpiderfier.ts
-│ ├── useSpiderfier.ts
-│ ├── useFavicon.ts
-│ ├── useDocumentTitle.ts
-│ └── useIsMobile.ts
-├── config/ # Configuration
-│ ├── domainConfig.ts # Configuration par domaine
-│ └── featureFlags.ts
-├── constants/ # Constantes
-│ ├── pollutants.ts
-│ ├── sources.ts
-│ ├── timeSteps.ts
-│ ├── mapLayers.ts
-│ ├── markers.ts
-│ ├── comparison.ts # Limite intercomparaison (MAX_COMPARISON_STATIONS)
-│ ├── qualityColors.ts
-│ └── sensorModels.ts
-├── types/ # Types TypeScript
-│ └── index.ts
-└── utils/ # Utilitaires
-    ├── index.ts
-    ├── dateUtils.ts
-    ├── sensorMetadataUtils.ts
-    ├── sourceCompatibility.ts
-    └── exportUtils.ts
+  components/
+    controls/      # menus et controles UI
+    map/           # carte, marqueurs, couches
+    panels/        # side panels par source
+    charts/        # visualisations historiques
+  services/        # acces et normalisation des donnees
+  hooks/           # logique metier partagee
+  constants/       # polluants, sources, pas de temps
+  config/          # config domaine / feature flags
+  locales/         # traductions i18n
 ```
-_(Arborescence simplifiée ; d'autres fichiers existent.)_
 
-## Sources de données supportées
+## Deploiement production (Nginx)
 
-L'application intègre plusieurs sources de données pour vous offrir une vue complète de la qualité de l'air. Voici les sources actuellement disponibles :
+Ce projet se deploie comme une SPA statique :
+1) build Vite, 
+2) publication des fichiers `dist/`, 
+3) service par Nginx avec fallback SPA.
 
-### **Sources implémentées et fonctionnelles :**
+### 1. Build reproductible
 
-- **AtmoRef** : Stations de référence AtmoSud
+```bash
+npm ci
+npm run build
+```
 
-- Marqueurs colorés selon les seuils de qualité de l'air pour le polluant sélectionné
-- Panneau latéral avec graphiques historiques détaillés
-- Support de tous les polluants disponibles dans les stations AtmoSud
-- Gestion intelligente des variables par station
-- Rafraîchissement automatique adaptatif
+Le build genere `dist/`.
 
-- **AtmoMicro** : Microcapteurs qualifiés AtmoSud
+### 2. Copier le build sur le serveur
 
-- Marqueurs colorés avec distinction visuelle entre données corrigées et non corrigées
-- Panneau latéral avec graphiques historiques
-- Support des polluants PM₁, PM₂.₅, PM₁₀, NO₂ (selon ce que mesurent les microcapteurs)
-- Affichage clair des sites actifs et inactifs
+Exemple :
 
-- **NebuleAir** : Capteurs communautaires NebuleAir Air Carto
+```bash
+rsync -avz --delete dist/ user@server:/var/www/openairmap/
+```
 
-- Marqueurs colorés selon les seuils de qualité de l'air
-- Panneau latéral avec graphiques historiques
-- Support des polluants PM₁, PM₂.₅, PM₁₀, NO₂
-- Indication du statut des capteurs (actifs/inactifs)
+### 3. Configuration Nginx (SPA)
 
-- **MobileAir** : Capteurs communautaires mobileAir Air Carto
+Exemple de serveur Nginx (`/etc/nginx/sites-available/openairmap.conf`) :
 
-- Sélection d'un capteur mobile à la fois
-- Panneau de sélection des capteurs disponibles
-- Panneau de visualisation des parcours et données
-- Support des polluants PM₁, PM₂.₅, PM₁₀
-- Limitation à un capteur à la fois pour protéger l'API
-- Périodes personnalisées pour vos analyses
+```nginx
+server {
+  listen 80;
+  server_name openairmap.example.org;
 
-- **PurpleAir** : Capteurs communautaires PurpleAir
+  root /var/www/openairmap;
+  index index.html;
 
-- Marqueurs colorés selon les seuils de qualité de l'air
-- Popup avec les mesures instantanées et lien vers le site PurpleAir pour les données historiques
-- Support des polluants PM₁, PM₂.₅, PM₁₀
-- Support des pas de temps scan et <= 2min
+  # Fallback SPA
+  location / {
+    try_files $uri $uri/ /index.html;
+  }
 
-- **SensorCommunity** : Capteurs communautaires SensorCommunity
+  # Cache long pour assets versionnes
+  location ~* \.(js|mjs|css|png|jpg|jpeg|gif|svg|ico|webp|woff2?)$ {
+    expires 30d;
+    add_header Cache-Control "public, max-age=2592000, immutable";
+    try_files $uri =404;
+  }
+}
+```
 
-- Marqueurs colorés selon les seuils de qualité de l'air
-- Popup avec intégration Grafana pour visualiser les dernières mesures
-- Support des polluants PM₁, PM₂.₅, PM₁₀
-- Support des pas de temps instantané et <= 2min
+Activation (Debian/Ubuntu) :
 
-- **SignalAir** : Signalements citoyens SignalAir
-- Affichage des signalements sur la carte (odeurs, bruits, brûlages, visuels)
-- Sélecteur de période personnalisé pour filtrer les signalements
-- Marqueurs spécifiques et reconnaissables par type de signalement
+```bash
+sudo ln -s /etc/nginx/sites-available/openairmap.conf /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
 
-## Polluants supportés par l'application
+## Documentation complementaire
 
-- **PM₁** : Particules fines ≤ 1 µm
-- **PM₂.₅** : Particules fines ≤ 2.5 µm (activé par défaut)
-- **PM₁₀** : Particules fines ≤ 10 µm
-- **NO₂** : Dioxyde d'azote
-- **O₃** : Ozone (Disponible uniquement pour les stations de référence atmoSud)
-- **SO₂** : Dioxyde de soufre (Disponible uniquement pour les stations de référence atmoSud)
+- [Documentation technique](docs/features/DOCUMENTATION_TECHNIQUE.md)
+- [Mode historique](docs/features/DOCUMENTATION_MODE_HISTORIQUE.md)
+- [Intercomparaison](docs/features/DOCUMENTATION_INTERCOMPARAISON.md)
+- [Feature recherche](docs/features/DOCUMENTATION_SEARCH_FEATURE.md)
+- [Hook useAirQualityData](docs/features/DOCUMENTATION_USE_AIR_QUALITY_DATA.md)
 
-### Seuils de qualité de l'air
 
-Chaque polluant dispose de 6 niveaux de qualité avec des seuils spécifiques :
-
-- **Bon**
-- **Moyen**
-- **Dégradé**
-- **Mauvais**
-- **Très mauvais**
-- **Extrêmement mauvais**
-
-## Gestion du Temps et Auto-Refresh
-
-### Pas de temps disponibles
-
-- **instantane** : Pas de temps le plus fin de l'appareil
-- **<=2min** : Moyenne sur 2 minutes et moins
-- **quartHeure** : Moyenne sur 15 minutes
-- **heure** : Moyenne horaire (activé par défaut)
-- **jour** : Moyenne journalière
-
-### Auto-Refresh Intelligent
-
-L'application dispose d'un système de rafraîchissement automatique qui s'adapte intelligemment à vos besoins :
-
-#### **Fonctionnalités de l'Auto-Refresh**
-
-- **Activation/Désactivation** : Activez ou désactivez le rafraîchissement automatique selon vos préférences
-- **Adaptation automatique** : La fréquence de rafraîchissement s'ajuste selon le pas de temps sélectionné et les sources actives
-- **Indicateur de période** : Vous voyez toujours quelle période de données est actuellement affichée
-
-#### **Périodes de Données Affichées**
-
-- **Données instantanées** : Dernière donnée non aggrégé renvoyé par l'appareil
-- **Données par 2 minutes** : Dernière période de 2 minutes terminée
-- **Données par quart d'heure** : Dernier quart d'heure plein
-- **Données horaires** : Dernière heure pleine (heure précédente)
-- **Données journalières** : Dernier jour plein (veille)
-
-#### **Contrôles de Période pour la consultation des données historiques d'un appareil de mesure**
-
-- **Périodes prédéfinies** : 3h, 24h, 7j, 30j
-- **Périodes personnalisées** : Sélecteur de dates pour analyses sur mesure
-- **Validation des dates** : Contrôles de cohérence des périodes sélectionnées
-- **Limitation** : Limitation de la plage historique selon le pas de temps selectionné (scan : 2 mois max, 15 min : 6 mois max)
-
-## Fonds de carte
-
-- **Carte standard** : Fond CARTO clair avec Stadia maps
-- **Satellite IGN** : Imagerie satellite IGN
-
-## Gestion avancée des marqueurs (spiderfy)
-
-### Fonctionnalités principales
-
-- **Spiderfy automatique** : Éclatement automatique des marqueurs qui se chevauchent pour les rendre tous accessibles
-- **Lisibilité améliorée** : Meilleure lisibilité dans les zones très denses sans recourir à un clustering de type "bubble"
-- **Activation/Désactivation** : Activation/Désactivation du spiderfier selon le niveau de zoom et la configuration
-- **Animations** : Transitions fluides lors de l'éclatement ou du regroupement visuel des marqueurs
-
-## Side Panels et Graphiques Historiques
-
-### Side Panels par Source de Données
-
-#### **AtmoRef Side Panel**
-
-- **Affichage des informations de station** : Détails complets de la station sélectionnée (à venir)
-- **Graphiques historiques** : Visualisation des données sur différentes périodes
-- **Sélection de polluants** : Choix des polluants à afficher dans les graphiques
-- **Contrôles de période** : Sélection de la période d'analyse (3h, 24h, 7j, 30j)
-- **Gestion des tailles** : Panel normal, plein écran ou masqué
-- **Support complet** : Intégration complète avec les données historiques AtmoRef
-
-#### **AtmoMicro Side Panel**
-
-- **Graphiques historiques** : Visualisation des données des microcapteurs
-- **Sélection de polluants** : Choix des polluants disponibles dans la station
-- **Contrôles de période** : Sélection de la période d'analyse
-- **Gestion des variables** : Affichage des variables en service par station
-- **Support des données corrigées** : Indicateurs visuels pour les données corrigées
-
-#### **NebuleAir Side Panel**
-
-- **Graphiques historiques** : Visualisation des données des capteurs communautaires
-- **Sélection de polluants** : Choix des polluants disponibles
-- **Contrôles de période** : Sélection de la période d'analyse
-- **Gestion des capteurs** : Affichage des informations des capteurs communautaires (à venir)
-
-#### **MobileAir Side Panels**
-
-- **Gestion des statuts** : Affichage du statut de connexion des capteurs
-- **Panel de sélection** : Choix des capteurs mobiles disponibles
-- **Limitation** : Un seul capteur à la fois pour protéger l'API
-- **Sélection de période** : Périodes prédéfinies et personnalisées
-- **Panel de visualisation** : Affichage des parcours et données des capteurs sélectionnés
-
-### Contrôles Communs des Side Panels
-
-- **Sélection de polluants** : Checkboxes pour choisir les polluants à afficher
-- **Périodes personnalisées** : Sélecteur de dates pour les analyses sur mesure
-- **Redimensionnement** : Boutons pour changer la taille du panel (normal, plein écran, masqué)
-- **Réouverture** : Boutons flottants pour rouvrir les panels masqués
-
-## Interface utilisateur
-
-### En-tête avec contrôles intégrés
-
-L'interface principale dispose d'un en-tête compact contenant tous les contrôles :
-
-- **Logo OpenAirMap** : Titre de l'application à gauche
-- **Contrôles de sélection** : Alignés horizontalement à droite
-- **Polluant** : Menu déroulant avec label et bouton côte à côte
-- **Sources** : Menu déroulant avec sélection multiple et hiérarchie
-- **Pas de temps** : Menu déroulant pour la période de mesure
-- **Indicateurs d'information** : Affichage de la période affiché sur la carte actuellement + indicateur auto-refresh activé/ desactivé
-- **Modélisation**: Menu déroulant pour le choix de la carte de modélisation à afficher sur la carte
-- **Mode historique**: Bouton pour basculer entre mode historique et mode actuel
-- **Barre de recherche**: Permet de rechercher directement dans la Banque d'Adresse National ou bien un appareil de mesure
-
-### Contrôles du mode historique
-
-- **Sélecteur de dates** : Sélecteur de dates pour les analyses sur mesure
-- **Bouton de chargement** : Bouton pour charger les données historiques
-- **Bouton de désactivation** : Bouton pour désactiver le mode historique
-- **Bouton de réduction** : Bouton pour réduire le panel de contrôle
-- **Bouton de fermeture** : Bouton pour fermer le panel de contrôle
-- **Panel de contrôle** : Panel de contrôle pour paramétrer le mode historique
-- **Timeline** : Timeline pour visualiser les données historiques
-- **Bouton de contrôle** : Bouton pour contrôler la lecture de la timeline
-- **Bouton de réouverture** : Bouton pour réouvrir le panel masqué
-
-### Contrôles de carte
-
-- **Contrôle fond de carte** : Icône en bas à gauche pour basculer entre fond de carte standard et fond de carte satellite
-- **Légende** : Affichage des seuils en bas au centre avec tooltips au hover
-- **Informations de la carte** : Compteur de nombre d'appareils et de signalements affichés sur la carte en bas à droite
-- **Indicateur de chargement** : Affichage discret des sources en cours de chargement en haut à droite
-
-### Marqueurs et affichage
-
-- **Marqueurs colorés** : Couleurs selon les seuils de qualité de l'air
-- **Formes des marqueurs** : Différentes formes selon la source de donnée
-- **Affichage des valeurs** : Valeurs numériques directement sur les marqueurs
-- **Indicateurs de correction** : Badge bleu pour les données des microcapteurs qualifiés AtmoSud corrigées
-- **Marqueurs SignalAir** : Icônes spécifiques par type de signalement
-- **Animations de chargement** : Effets visuels de transparance pendant le chargement des données
-
-### Design et UX
-
-- **Interface compacte** : Contrôles intégrés dans l'en-tête pour maximiser l'espace de la carte
-- **Menus déroulants horizontaux** : Labels et boutons alignés côte à côte
-- **Sélection multiple intelligente** : Groupes de sources avec états partiels
-- **États visuels clairs** : Sélectionné, partiellement sélectionné, non sélectionné
-- **Responsive design** : Adapté à tous les écrans
-- **Indicateurs de chargement** : Affichage discret des états de chargement
-
-## Utilisation des Side Panels
-
-Les panneaux latéraux vous permettent d'explorer en détail les données de chaque source. Voici comment les utiliser :
-
-### Side Panel station de référence AtmoSud
-
-1. Cliquez sur un marqueur AtmoRef sur la carte
-2. Le panneau latéral s'ouvre automatiquement (les informations détaillées de la station arriveront bientôt)
-3. Les graphiques historiques se chargent par défaut au pas de temps horaire sur une période de 24h
-4. Sélectionnez les polluants que vous souhaitez visualiser parmi ceux disponibles pour la station
-5. Ajustez le pas de temps et la période selon vos besoins
-
-### Side Panel microcapteur qualifié AtmoSud
-
-1. Cliquez sur un marqueur AtmoMicro sur la carte
-2. Les graphiques historiques se chargent par défaut au pas de temps horaire sur une période de 24h
-3. Choisissez les polluants que vous voulez analyser parmi ceux mesurés par le microcapteur
-4. Personnalisez le pas de temps et la période d'analyses
-
-### Side Panel NebuleAir AirCarto
-
-1. Cliquez sur un marqueur NebuleAir sur la carte
-2. Les graphiques historiques se chargent par défaut au pas de temps quart-horaire sur une période de 24h
-3. Sélectionnez les polluants à afficher parmi ceux disponibles
-4. Adaptez le pas de temps et la période à votre analyse
-
-### Mode Intercomparaison (AtmoRef / AtmoMicro / NebuleAir)
-
-Le mode intercomparaison permet de **comparer jusqu'à 10 stations** (Station de référence AtmoSud, Microcapteur qualifié AtmoSud et/ou capteurs NebuleAir) sur un même graphique.
-
-#### **Activation du mode comparaison**
-
-1. Cliquez sur une station ou un microcapteur sur la carte (AtmoRef, AtmoMicro ou NebuleAir)
-2. Dans le panneau latéral, cliquez sur **Activer comparaison** (en haut à droite)
-3. Le mode comparaison s'active : ajoutez d'autres appareils en cliquant sur la carte ou via la barre de recherche
-
-#### **Ajout de stations à la comparaison**
-
-1. En mode comparaison, **cliquez sur d'autres marqueurs** AtmoRef, AtmoMicro ou NebuleAir sur la carte
-2. Chaque clic ajoute la station à la comparaison (maximum 10 stations). Un clic sur une station déjà ajoutée la retire (toggle)
-3. Les stations sélectionnées apparaissent dans la liste "Stations sélectionnées"
-4. Vous pouvez retirer une station en cliquant sur le bouton **×** à côté de son nom
-
-#### **Utilisation du graphique de comparaison**
-
-1. **Sélection du polluant** : Le menu déroulant affiche uniquement les polluants disponibles dans **toutes** les stations sélectionnées
-
-- Par exemple : Si vous comparez 3 stations qui mesurent PM2.5 et PM10, seuls ces 2 polluants seront disponibles dans le menu
-- Sélectionnez un polluant à comparer (un seul à la fois)
-
-2. **Graphique** : Chaque station est représentée par une courbe de couleur différente
-
-- Couleurs distinctes par station (jusqu'à 10)
-- La légende affiche : "Nom de la station - Polluant"
-- Le type de station est indiqué : "Station de référence" (AtmoRef), "Microcapteur" (AtmoMicro) ou "Capteur communautaire" (NebuleAir)
-
-3. **Contrôles temporels** :
-- **Période** : Choisissez parmi 3h, 24h, 7j, 30j, ou créez une période personnalisée
-- **Pas de temps** : Scan, 15min, 1h, 1j
-
-#### **Mode Scan - Résolutions variables**
-
-**Point important** : En mode Scan, les résolutions temporelles peuvent différer selon le type de station :
-
-- **AtmoRef** : Mesure toutes les **15 minutes** (résolution fixe)
-- **AtmoMicro** : Mesure toutes les **1 à 15 minutes** selon le modèle de capteur
-
-#### **Limitations**
-
-- **Maximum 10 stations** peuvent être comparées simultanément
-- **Un seul polluant** est affiché à la fois
-- **Sources supportées** : AtmoRef, AtmoMicro et NebuleAir
-
-#### **Désactivation du mode comparaison**
-
-1. Cliquez sur **"Désactiver comparaison"** dans le panneau
-2. Vous revenez automatiquement au mode normal
-
-**Documentation technique complète** : `docs/features/DOCUMENTATION_INTERCOMPARAISON.md`
-
-### Side Panels MobileAir
-
-Les capteurs mobiles fonctionnent un peu différemment. Voici comment les utiliser :
-
-#### **Sélection des capteurs**
-
-1. Activez "MobileAir" dans les sources de données
-2. Le panneau de sélection s'ouvre automatiquement
-3. Choisissez un capteur dans la liste (un seul à la fois pour protéger l'API)
-4. Sélectionnez la période d'analyse qui vous intéresse
-5. Cliquez sur "Charger le parcours" pour visualiser les données du capteur
-
-#### **Visualisation des parcours**
-
-1. Après avoir sélectionné un capteur, le panneau de visualisation s'ouvre
-2. Vous pouvez voir le parcours du capteur directement sur la carte
-3. Analysez les données en temps réel du capteur mobile
-4. N'hésitez pas à changer de capteur si vous voulez explorer d'autres données
-
-### Contrôles Communs des Side Panels
-
-Tous les panneaux latéraux partagent des fonctionnalités communes :
-
-- **Sélection de polluants** : Cochez ou décochez les polluants que vous souhaitez afficher
-- **Périodes prédéfinies** : Utilisez les boutons rapides 3h, 24h, 7j, 30j pour changer rapidement la période
-- **Périodes personnalisées** : Utilisez le sélecteur de dates pour créer vos propres plages d'analyse
-- **Pas de temps** : Choisissez la granularité des données selon vos besoins
-- **Redimensionnement** : Ajustez la taille du panneau (normal, plein écran, ou masqué)
-- **Réouverture** : Si vous avez masqué un panneau, des boutons flottants vous permettent de le rouvrir facilement
-
-### Fonctionnalités Avancées
-
-- **Données historiques** : Visualisation des tendances sur différentes périodes
-- **Multi-polluants** : Affichage simultané de plusieurs polluants
-- **Mode comparaison** : Affichage simultané de plusieurs stations
-- **Zoom et navigation** : Interactions avec les graphiques pour explorer les données
-- **Export** : Possibilité d'exporter les données en csv/png
-
-## Dépendances principales
-
-### **Frontend Core**
-
-- **React 19.1.0** : Framework principal
-- **TypeScript** : Typage statique
-- **Vite 7.x** : Build tool et serveur de développement
-
-### **Cartographie**
-
-- **Leaflet 1.9.4** : Bibliothèque de cartographie
-- **react-leaflet 5.0.0** : Intégration React pour Leaflet
-- **@types/leaflet 1.9.18** : Types TypeScript pour Leaflet
-
-### **Styling et UI**
-
-- **Tailwind CSS 3.4.17** : Framework CSS utilitaire
-- **PostCSS 8.5.6** : Processeur CSS
-- **Autoprefixer 10.4.21** : Préfixes CSS automatiques
-
-### **Graphiques et Visualisation**
-
-- **@amcharts/amcharts5** : Bibliothèque de graphiques amCharts 5
-- **amcharts5/themes/Animated** : Thème animé pour amCharts
-
-### **Développement et Tests**
-
-- **ESLint 9.29.0** : Linter JavaScript/TypeScript
-- **Vitest 4.x** : Tests unitaires
-- **Playwright 1.55.0** : Tests end-to-end

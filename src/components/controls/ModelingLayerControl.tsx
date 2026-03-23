@@ -17,6 +17,8 @@ interface ModelingLayerControlProps {
   onModelingLayerChange: (layerType: ModelingLayerType | null) => void;
   selectedPollutant?: string;
   selectedTimeStep?: string;
+  /** Id du trigger pour association avec un <label htmlFor> (accessibilité) */
+  triggerId?: string;
 }
 
 const ModelingLayerControl: React.FC<ModelingLayerControlProps> = ({
@@ -24,6 +26,7 @@ const ModelingLayerControl: React.FC<ModelingLayerControlProps> = ({
   onModelingLayerChange,
   selectedPollutant,
   selectedTimeStep = "heure",
+  triggerId,
 }) => {
   const { t } = useTranslation();
   const handleLayerSelect = (layerType: ModelingLayerType) => {
@@ -81,6 +84,7 @@ const ModelingLayerControl: React.FC<ModelingLayerControlProps> = ({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
+          id={triggerId}
           disabled={isDisabled}
           className={cn(
             "relative border rounded-lg pl-3 pr-7 py-2 text-left text-sm font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-[#4271B3]/20 focus:border-[#4271B3] transition-all duration-200 min-w-[96px] max-w-[180px]",

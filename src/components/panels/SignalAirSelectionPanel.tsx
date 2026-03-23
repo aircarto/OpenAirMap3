@@ -115,7 +115,7 @@ const SignalAirSelectionPanel: React.FC<SignalAirSelectionPanelProps> = ({
   const isLoadDisabled = selectedTypes.length === 0 || isLoading;
 
   return (
-    <div className={getPanelClasses()}>
+    <div className={getPanelClasses()} data-testid="signalair-selection-panel">
       {/* Header */}
       <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 bg-gray-50">
         <div className="flex-1 min-w-0">
@@ -287,6 +287,8 @@ const SignalAirSelectionPanel: React.FC<SignalAirSelectionPanelProps> = ({
           {/* Load button */}
           <div className="border border-gray-200 rounded-lg p-3 sm:p-4 space-y-2">
             <button
+              type="button"
+              data-testid="signalair-load-reports"
               onClick={onLoadReports}
               disabled={isLoadDisabled}
               className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${

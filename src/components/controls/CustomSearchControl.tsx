@@ -622,7 +622,15 @@ const CustomSearchControl: React.FC<CustomSearchControlProps> = ({
             {results.map((result, index) => (
               <div
                 key={index}
+                role="button"
+                tabIndex={0}
                 onClick={() => handleResultSelect(result)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleResultSelect(result);
+                  }
+                }}
                 onMouseEnter={() => setSelectedIndex(index)}
                 className={`px-4 py-3 cursor-pointer transition-colors ${
                   selectedIndex === index

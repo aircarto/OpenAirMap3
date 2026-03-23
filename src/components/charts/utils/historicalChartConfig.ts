@@ -421,9 +421,10 @@ export const generateSeriesConfigs = (
         } else {
           // Log détaillé pour déboguer
           const samplePoints = chartData.slice(0, 5);
-          const sampleKeys = samplePoints.map((p: any) => Object.keys(p));
+          samplePoints.map((p: any) => Object.keys(p));
         }
       } else {
+        // Cas sans données à tracer
       }
     });
   });
