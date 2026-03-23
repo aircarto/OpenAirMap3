@@ -31,7 +31,7 @@ La contrainte Node est alignee avec Vite 7 (`^20.19.0 || >=22.12.0`).
 
 ```bash
 git clone <url-du-repo>
-cd Openairmap
+cd OpenAirMap3
 npm ci
 npm run dev
 ```
@@ -53,6 +53,45 @@ cp .env.inc .env
 Notes :
 - toutes les variables front doivent etre prefixees par `VITE_` ;
 - `VITE_TOOLTIP_MIN_ZOOM` accepte un nombre (ex: `11`) ou `false` pour desactiver le seuil de zoom.
+
+### Configuration domaine (`src/config/domainConfig.ts`)
+
+Le branding et certains liens institutionnels sont portes par `src/config/domainConfig.ts`.
+
+Structure principale :
+- `DOMAIN_CONFIG.default` contient la configuration par defaut (logo, favicon, centre/zoom de carte, titre, liens, organisation) 
+- `getConfigForDomain(domain)` applique la config associee au domaine courant 
+- si le domaine n'est pas defini dans `DOMAIN_CONFIG`, fallback automatique vers `DOMAIN_CONFIG.default`.
+
+Pour ajouter un nouveau domaine :
+1. Ajouter une entree dans `DOMAIN_CONFIG` avec la cle du domaine (ex: `web-prod-no2.xpr`) 
+2. Renseigner `logo`, `logo2`, `favicon`, `mapCenter`, `mapZoom`, `title`, `links`, `organization` 
+3. Verifier le rendu du header, du favicon et du centrage de carte.
+
+### Fond de carte StadiaMaps
+
+Le fond de carte par defaut (`Carte standard`) utilise StadiaMaps.
+
+Pre-requis operationnel :
+- creer un compte StadiaMaps 
+- declarer dans StadiaMaps la liste des domaines autorises (whitelist), incluant le domaine de production.
+
+Symptomes en cas de mauvaise configuration StadiaMaps :
+- erreurs reseau sur les tuiles dans la console navigateur
+- statut `401 Unauthorized` si le domaine courant n'est pas autorise
+- fond de carte absent.
+
+### Alternative de tuiles et procedure de bascule
+
+Une alternative est deja integree : `Carte OSM` (OpenStreetMap), en plus de `Carte standard` (StadiaMaps) et `Satellite IGN`.
+
+Procedure de bascule (sans redeploiement) :
+1. Ouvrir le menu des couches de fond dans l'interface carte ;
+2. Selectionner `Carte OSM` ;
+3. Verifier que les tuiles OSM s'affichent correctement.
+
+Cas d'usage recommande :
+- utiliser `Carte OSM` comme solution de continuite si StadiaMaps renvoie des `401` (ou indisponibilite temporaire).
 
 
 ## Commandes utiles
@@ -113,7 +152,7 @@ server {
   listen 80;
   server_name openairmap.example.org;
 
-  root /var/www/openairmap;
+  root chemin-vers-dossier-build;
   index index.html;
 
   # Fallback SPA
