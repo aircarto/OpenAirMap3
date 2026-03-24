@@ -6,6 +6,7 @@ import {
   Marker,
   Popup,
   useMapEvents,
+  useMap,
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -91,6 +92,9 @@ interface AirQualityMapProps {
   reports: SignalAirReport[];
   center: [number, number];
   zoom: number;
+  minZoom?: number;
+  maxZoom?: number;
+  maxBounds?: [[number, number], [number, number]];
   selectedPollutant: string;
   selectedSources: string[];
   selectedTimeStep: string;
@@ -160,11 +164,82 @@ const MapClickHandler: React.FC<{ onMapClick: () => void }> = ({
   return null;
 };
 
+// Verrouille activement la navigation dans les bornes autorisées
+const MapBoundsLock: React.FC<{
+  maxBounds?: [[number, number], [number, number]];
+}> = ({ maxBounds }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!maxBounds) {
+      map.setMaxBounds(undefined);
+      return;
+    }
+
+    const bounds = L.latLngBounds(maxBounds);
+    map.setMaxBounds(bounds);
+    map.panInsideBounds(bounds, { animate: false });
+
+    const keepInsideBounds = () => {
+      map.panInsideBounds(bounds, { animate: false });
+    };
+
+    map.on("moveend", keepInsideBounds);
+    map.on("zoomend", keepInsideBounds);
+
+    return () => {
+      map.off("moveend", keepInsideBounds);
+      map.off("zoomend", keepInsideBounds);
+    };
+  }, [map, maxBounds]);
+
+  return null;
+};
+
+// Empêche les variations de zoom hors plage autorisée (notamment le dézoom)
+const MapZoomLock: React.FC<{
+  minZoom: number;
+  maxZoom: number;
+}> = ({ minZoom, maxZoom }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    map.setMinZoom(minZoom);
+    map.setMaxZoom(maxZoom);
+
+    if (map.getZoom() < minZoom) {
+      map.setZoom(minZoom, { animate: false });
+    } else if (map.getZoom() > maxZoom) {
+      map.setZoom(maxZoom, { animate: false });
+    }
+
+    const keepZoomInRange = () => {
+      const currentZoom = map.getZoom();
+      if (currentZoom < minZoom) {
+        map.setZoom(minZoom, { animate: false });
+      } else if (currentZoom > maxZoom) {
+        map.setZoom(maxZoom, { animate: false });
+      }
+    };
+
+    map.on("zoomend", keepZoomInRange);
+
+    return () => {
+      map.off("zoomend", keepZoomInRange);
+    };
+  }, [map, minZoom, maxZoom]);
+
+  return null;
+};
+
 const AirQualityMap: React.FC<AirQualityMapProps> = ({
   devices,
   reports,
   center,
   zoom,
+  minZoom = 1,
+  maxZoom = 18,
+  maxBounds,
   selectedPollutant,
   selectedSources,
   selectedTimeStep,
@@ -864,9 +939,13 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           doubleClickZoom={true}
           dragging={true}
           touchZoom={true}
-          minZoom={1}
-          maxZoom={18}
+          minZoom={minZoom}
+          maxZoom={maxZoom}
+          maxBounds={maxBounds}
+          maxBoundsViscosity={maxBounds ? 1 : undefined}
         >
+          <MapBoundsLock maxBounds={maxBounds} />
+          <MapZoomLock minZoom={minZoom} maxZoom={maxZoom} />
           {/* Gestionnaire d'événements pour les clics sur la carte */}
           <MapClickHandler
             onMapClick={() => setSearchPinPosition(null)}

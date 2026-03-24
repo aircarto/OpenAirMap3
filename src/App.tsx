@@ -362,6 +362,9 @@ const App: React.FC = () => {
   // Configuration de la carte basée sur le domaine
   const mapCenter = domainConfig.mapCenter;
   const mapZoom = domainConfig.mapZoom;
+  const mapMinZoom = domainConfig.mapMinZoom;
+  const mapMaxZoom = domainConfig.mapMaxZoom;
+  const mapMaxBounds = domainConfig.mapMaxBounds;
 
   const handleSignalAirHeaderClick = useCallback(() => {
     setOpenSignalAirPanelRequest((r) => r + 1);
@@ -574,6 +577,9 @@ const App: React.FC = () => {
           reports={reportsForMap}
           center={mapCenter}
           zoom={mapZoom}
+          minZoom={mapMinZoom}
+          maxZoom={mapMaxZoom}
+          maxBounds={mapMaxBounds}
           selectedPollutant={selectedPollutant}
           selectedSources={selectedSources}
           selectedTimeStep={selectedTimeStep}

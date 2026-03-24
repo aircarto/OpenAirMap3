@@ -53,6 +53,7 @@ cp .env.inc .env
 Notes :
 - toutes les variables front doivent etre prefixees par `VITE_` ;
 - `VITE_TOOLTIP_MIN_ZOOM` accepte un nombre (ex: `11`) ou `false` pour desactiver le seuil de zoom.
+- `VITE_FORCE_DOMAIN_CONFIG` permet de simuler un domaine en local (ex: `aircrowd.atmosud.org`) sans changer l'URL locale.
 
 ### Configuration domaine (`src/config/domainConfig.ts`)
 
@@ -66,7 +67,8 @@ Structure principale :
 Pour ajouter un nouveau domaine :
 1. Ajouter une entree dans `DOMAIN_CONFIG` avec la cle du domaine (ex: `web-prod-no2.xpr`) 
 2. Renseigner `logo`, `logo2`, `favicon`, `mapCenter`, `mapZoom`, `title`, `links`, `organization` 
-3. Verifier le rendu du header, du favicon et du centrage de carte.
+3. Optionnel: ajouter des contraintes geographiques avec `mapMinZoom`, `mapMaxZoom`, `mapMaxBounds` pour verrouiller la navigation d'une instance
+4. Verifier le rendu du header, du favicon et du centrage de carte.
 
 ### Fond de carte StadiaMaps
 

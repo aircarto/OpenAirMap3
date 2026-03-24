@@ -9,7 +9,8 @@ export const useDomainConfig = (): DomainConfig => {
   const [config, setConfig] = useState<DomainConfig>(DOMAIN_CONFIG.default);
 
   useEffect(() => {
-    const domain = window.location.hostname;
+    const forcedDomain = import.meta.env.VITE_FORCE_DOMAIN_CONFIG?.trim();
+    const domain = forcedDomain || window.location.hostname;
     const domainConfig = getConfigForDomain(domain);
     setConfig(domainConfig);
   }, []);

@@ -7,3 +7,6 @@ VITE_DISPLAY_CONTEXT_COMMENT_FEATURE=boolean
 # Niveau de zoom minimum pour afficher le tooltip des marqueurs (ex: 11).
 # false ou vide = tooltip affiché à tous les niveaux de zoom.
 VITE_TOOLTIP_MIN_ZOOM=number|false
+# Force une configuration domaine spécifique en local (ex: aircrowd.atmosud.org).
+# Vide ou non défini = utilise window.location.hostname.
+VITE_FORCE_DOMAIN_CONFIG=domain|empty
