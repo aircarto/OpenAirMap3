@@ -18,7 +18,7 @@ const buildStation = (overrides = {}) => ({
   date_debut_mesure: "2020-01-01T00:00:00Z",
   date_fin_mesure: null,
   variables: {
-    pm25: {
+    "39": {
       label: "Particules en suspension <2.5 µm (masses) (PM2.5)",
       code_iso: "PM2.5",
       en_service: true,
@@ -43,6 +43,10 @@ describe("AtmoRefService", () => {
   let service: AtmoRefService;
 
   beforeEach(() => {
+    // Reinitialiser le cache statique pour isoler les tests.
+    (AtmoRefService as any).stationsCache = null;
+    (AtmoRefService as any).lastStationsFetch = 0;
+    (AtmoRefService as any).stationsFetchPromise = null;
     service = new AtmoRefService();
   });
 

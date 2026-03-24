@@ -119,6 +119,9 @@ export class MobileAirService extends BaseDataService {
     mobileAirPeriod?: { startDate: string; endDate: string };
   }): Promise<MeasurementDevice[]> {
     const devices: MeasurementDevice[] = [];
+    // Nettoyer une seule fois avant de reconstruire les routes demandées.
+    // Evite de perdre les routes précédemment ajoutées lorsqu'il y a plusieurs capteurs.
+    this.clearRoutes();
 
     for (const sensorId of params.selectedSensors) {
       try {
@@ -140,9 +143,6 @@ export class MobileAirService extends BaseDataService {
             sensorId,
             params.pollutant
           );
-          // Toujours nettoyer les routes existantes AVANT d'ajouter les nouvelles
-          // pour éviter l'accumulation lors d'un rechargement
-          this.clearRoutes();
           this.routes.push(...routes);
 
           // Créer des devices pour chaque route

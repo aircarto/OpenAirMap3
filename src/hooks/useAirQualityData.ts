@@ -36,6 +36,18 @@ const getRefreshInterval = (timeStep: string): number => {
   }
 };
 
+const isMeasurementDevice = (
+  item: MeasurementDevice | SignalAirReport
+): item is MeasurementDevice => {
+  return "pollutant" in item && "value" in item && "unit" in item;
+};
+
+const isSignalAirReport = (
+  item: MeasurementDevice | SignalAirReport
+): item is SignalAirReport => {
+  return "signalType" in item;
+};
+
 export const useAirQualityData = ({
   selectedPollutant,
   selectedSources,
@@ -258,12 +270,10 @@ export const useAirQualityData = ({
             const signalReports: SignalAirReport[] = [];
 
             data.forEach((item) => {
-              if ("pollutant" in item && "value" in item && "unit" in item) {
-                // C'est un appareil de mesure
-                measurementDevices.push(item as MeasurementDevice);
-              } else if ("signalType" in item) {
-                // C'est un signalement
-                signalReports.push(item as SignalAirReport);
+              if (isMeasurementDevice(item)) {
+                measurementDevices.push(item);
+              } else if (isSignalAirReport(item)) {
+                signalReports.push(item);
               }
             });
 
@@ -330,9 +340,7 @@ export const useAirQualityData = ({
             });
 
             if (Array.isArray(data)) {
-              const signalReports: SignalAirReport[] = data.filter(
-                (item) => "signalType" in item
-              ) as SignalAirReport[];
+              const signalReports: SignalAirReport[] = data.filter(isSignalAirReport);
 
               setReports((prevReports) => {
                 const filteredReports = prevReports.filter(
@@ -364,9 +372,7 @@ export const useAirQualityData = ({
             });
 
             if (Array.isArray(data)) {
-              const measurementDevices: MeasurementDevice[] = data.filter(
-                (item) => "pollutant" in item && "value" in item && "unit" in item
-              ) as MeasurementDevice[];
+              const measurementDevices: MeasurementDevice[] = data.filter(isMeasurementDevice);
 
               setDevices((prevDevices) => {
                 const filteredDevices = prevDevices.filter(

@@ -76,6 +76,7 @@ export const useTemporalVisualization = ({
 
   // Fonction pour activer/désactiver le mode historique
   const toggleHistoricalMode = useCallback(() => {
+    const wasActive = state.isActive;
     setState((prev) => ({
       ...prev,
       isActive: !prev.isActive,
@@ -88,8 +89,15 @@ export const useTemporalVisualization = ({
     }));
 
     // Arrêter la lecture si on désactive le mode
-    if (state.isActive) {
-      stopPlayback();
+    if (wasActive) {
+      if (playbackIntervalRef.current) {
+        clearInterval(playbackIntervalRef.current);
+        playbackIntervalRef.current = null;
+      }
+      setState((prev) => ({
+        ...prev,
+        isPlaying: false,
+      }));
     }
   }, [state.isActive]);
 
@@ -158,26 +166,28 @@ export const useTemporalVisualization = ({
         );
       }
 
-      // Charger les signalements SignalAir automatiquement pour la période sélectionnée (traitement à part)
-      const signalAirTypes =
-        signalAirSelectedTypes.length > 0
-          ? signalAirSelectedTypes
-          : ["odeur", "bruit", "brulage", "visuel"];
       let signalAirReports: SignalAirReport[] = [];
-      try {
-        const rawResult = await signalAirService.current.fetchData({
-          pollutant: selectedPollutant,
-          timeStep: state.timeStep,
-          sources: ["signalair"],
-          signalAirPeriod: {
-            startDate: state.startDate,
-            endDate: state.endDate,
-          },
-          signalAirSelectedTypes: signalAirTypes,
-        });
-        signalAirReports = Array.isArray(rawResult) ? rawResult : [];
-      } catch (err) {
-        console.warn("SignalAir: erreur lors du chargement historique:", err);
+      // Charger SignalAir uniquement si la source est activée.
+      if (signalAirEnabled) {
+        const signalAirTypes =
+          signalAirSelectedTypes.length > 0
+            ? signalAirSelectedTypes
+            : ["odeur", "bruit", "brulage", "visuel"];
+        try {
+          const rawResult = await signalAirService.current.fetchData({
+            pollutant: selectedPollutant,
+            timeStep: state.timeStep,
+            sources: ["signalair"],
+            signalAirPeriod: {
+              startDate: state.startDate,
+              endDate: state.endDate,
+            },
+            signalAirSelectedTypes: signalAirTypes,
+          });
+          signalAirReports = Array.isArray(rawResult) ? rawResult : [];
+        } catch (err) {
+          console.warn("SignalAir: erreur lors du chargement historique:", err);
+        }
       }
 
       const results = await Promise.all(promises);
@@ -332,6 +342,7 @@ export const useTemporalVisualization = ({
     state.endDate,
     state.loading,
     selectedPollutant,
+    signalAirEnabled,
     state.timeStep,
     selectedSources,
     signalAirSelectedTypes,

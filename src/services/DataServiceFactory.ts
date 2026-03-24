@@ -9,38 +9,26 @@ import { SensorCommunityService } from "./SensorCommunityService";
 
 export class DataServiceFactory {
   private static services: Map<string, DataService> = new Map();
+  private static readonly serviceConstructors: Record<
+    string,
+    new () => DataService
+  > = {
+    atmoRef: AtmoRefService,
+    atmoMicro: AtmoMicroService,
+    nebuleair: NebuleAirService,
+    signalair: SignalAirService,
+    mobileair: MobileAirService,
+    purpleair: PurpleAirService,
+    sensorCommunity: SensorCommunityService,
+  };
 
   static getService(sourceCode: string): DataService {
     if (!this.services.has(sourceCode)) {
-      let service: DataService;
-
-      switch (sourceCode) {
-        case "atmoRef":
-          service = new AtmoRefService();
-          break;
-        case "atmoMicro":
-          service = new AtmoMicroService();
-          break;
-        case "nebuleair":
-          service = new NebuleAirService();
-          break;
-        case "signalair":
-          service = new SignalAirService();
-          break;
-        case "mobileair":
-          service = new MobileAirService();
-          break;
-        case "purpleair":
-          service = new PurpleAirService();
-          break;
-        case "sensorCommunity":
-          service = new SensorCommunityService();
-          break;
-        default:
-          throw new Error(`Service non supporté pour la source: ${sourceCode}`);
+      const ServiceConstructor = this.serviceConstructors[sourceCode];
+      if (!ServiceConstructor) {
+        throw new Error(`Service non supporté pour la source: ${sourceCode}`);
       }
-
-      this.services.set(sourceCode, service);
+      this.services.set(sourceCode, new ServiceConstructor());
     }
 
     return this.services.get(sourceCode)!;

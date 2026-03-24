@@ -1,4 +1,9 @@
-import { DataService, MeasurementDevice, SignalAirReport } from "../types";
+import {
+  DataFetchParams,
+  DataService,
+  MeasurementDevice,
+  SignalAirReport,
+} from "../types";
 
 export abstract class BaseDataService implements DataService {
   protected sourceCode: string;
@@ -7,15 +12,9 @@ export abstract class BaseDataService implements DataService {
     this.sourceCode = sourceCode;
   }
 
-  abstract fetchData(params: {
-    pollutant: string;
-    timeStep: string;
-    sources: string[];
-    signalAirPeriod?: { startDate: string; endDate: string };
-    mobileAirPeriod?: { startDate: string; endDate: string };
-    selectedSensors?: string[];
-    signalAirSelectedTypes?: string[];
-  }): Promise<MeasurementDevice[] | SignalAirReport[]>;
+  abstract fetchData(params: DataFetchParams): Promise<
+    MeasurementDevice[] | SignalAirReport[]
+  >;
 
   protected createDevice(
     id: string,

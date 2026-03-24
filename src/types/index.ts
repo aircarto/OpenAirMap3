@@ -156,14 +156,22 @@ export interface WildfireReport {
 
 // Types pour les services de données
 export interface DataService {
-  fetchData(params: {
-    pollutant: string;
-    timeStep: string;
-    sources: string[];
-    signalAirPeriod?: { startDate: string; endDate: string };
-    mobileAirPeriod?: { startDate: string; endDate: string };
-    selectedSensors?: string[];
-  }): Promise<MeasurementDevice[] | SignalAirReport[]>;
+  fetchData(params: DataFetchParams): Promise<MeasurementDevice[] | SignalAirReport[]>;
+}
+
+export interface DateRange {
+  startDate: string;
+  endDate: string;
+}
+
+export interface DataFetchParams {
+  pollutant: string;
+  timeStep: string;
+  sources: string[];
+  signalAirPeriod?: DateRange;
+  mobileAirPeriod?: DateRange;
+  selectedSensors?: string[];
+  signalAirSelectedTypes?: string[];
 }
 
 // Types pour les marqueurs

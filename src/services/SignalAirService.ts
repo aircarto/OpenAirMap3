@@ -141,8 +141,6 @@ export class SignalAirService extends BaseDataService {
               extractedSignalType
             );
             allReports.push(...reports);
-          } else if (response === null) {
-          } else {
           }
         } catch (error) {
           // Erreur silencieuse pour ce type, continuer avec les autres
@@ -174,6 +172,20 @@ export class SignalAirService extends BaseDataService {
     };
   }
 
+  private buildReportId(
+    signalType: string,
+    latitude: number,
+    longitude: number,
+    createdAt?: string,
+    declarationId?: string,
+    fallbackId?: string
+  ): string {
+    if (declarationId) return declarationId;
+    if (fallbackId) return fallbackId;
+    const timestamp = createdAt || "unknown-date";
+    return `signalair-${signalType}-${latitude}-${longitude}-${timestamp}`;
+  }
+
   private transformSignalAirData(
     geoJson: SignalAirGeoJSON,
     signalType: string
@@ -199,10 +211,14 @@ export class SignalAirService extends BaseDataService {
       const [longitude, latitude] = geometry.coordinates;
 
       reports.push({
-        id:
-          properties.id_declaration ||
-          properties.id ||
-          `signalair-${signalType}-${Date.now()}-${Math.random()}`,
+        id: this.buildReportId(
+          signalType,
+          latitude,
+          longitude,
+          properties.created_at,
+          properties.id_declaration,
+          properties.id
+        ),
         name: buildName(properties),
         latitude,
         longitude,

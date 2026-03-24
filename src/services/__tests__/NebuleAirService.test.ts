@@ -36,6 +36,10 @@ describe("NebuleAirService", () => {
   let service: NebuleAirService;
 
   beforeEach(() => {
+    // Reinitialiser le cache statique pour isoler les tests.
+    (NebuleAirService as any).sensorsMetadataCache = null;
+    (NebuleAirService as any).lastMetadataFetch = 0;
+    (NebuleAirService as any).metadataFetchPromise = null;
     service = new NebuleAirService();
   });
 
@@ -48,7 +52,7 @@ describe("NebuleAirService", () => {
 
     const result = await service.fetchData({
       ...baseParams,
-      pollutant: "no2",
+      pollutant: "so2",
     });
 
     expect(result).toEqual([]);
@@ -96,7 +100,7 @@ describe("NebuleAirService", () => {
       buildSensor({
         sensorId: "neb-old",
         time: "2020-01-01T00:00:00Z",
-        PM25_qh: null,
+        PM25_qh: "12.4",
       }),
     ]);
 
