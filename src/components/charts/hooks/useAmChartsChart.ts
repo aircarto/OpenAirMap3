@@ -90,7 +90,7 @@ export const useAmChartsChart = ({
         panX: true,
         panY: true, // Permet le déplacement vertical (scrollbar Y native)
         wheelX: "panX",
-        wheelY: "zoomY", // Molette pour zoomer sur l'axe Y (natif amCharts)
+        wheelY: "zoomX", // Molette inversée : zoom sur l'axe X
         pinchZoomX: true,
         pinchZoomY: true,
         layout: root.verticalLayout,
