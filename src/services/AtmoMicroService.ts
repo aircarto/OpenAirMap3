@@ -22,6 +22,64 @@ export class AtmoMicroService extends BaseDataService {
   // Verrou pour éviter les appels API parallèles simultanés
   private static sitesFetchPromise: Promise<AtmoMicroSite[]> | null = null;
 
+
+  // fonction pour logguer les sites exclus de l'affichage et la raison d'exclusion
+  private logExcludedSites(
+    excludedSites: Array<{ id_site: number; nom_site: string; reason: string }>,
+    context: { pollutant: string; atmoMicroVariable: string }
+  ): void {
+    if (excludedSites.length === 0) return;
+
+    // DEBUG ETAPE 1:
+    // Ces logs listent uniquement les capteurs presents dans capteurs/sites
+    // mais exclus au moment du filtrage par variable (polluant demande).
+    // Exemple: un site existe, mais ne mesure pas PM2.5 => il est exclu ici.
+    console.groupCollapsed(
+      `[AtmoMicro][DEBUG] ${excludedSites.length} capteur(s) exclus de l'affichage (source capteurs/sites) - polluant=${context.pollutant}, variable=${context.atmoMicroVariable}`
+    );
+    excludedSites.forEach((site) => {
+      // Format volontairement compact pour faciliter le tri/copier-coller en investigation.
+      console.log(
+        `[AtmoMicro][EXCLUDED] id_site=${site.id_site} | nom_site="${site.nom_site}" | raison=${site.reason}`
+      );
+    });
+    console.groupEnd();
+  }
+
+  private isValidCoordinate(lat: number, lon: number): boolean {
+    return (
+      typeof lat === "number" &&
+      typeof lon === "number" &&
+      !isNaN(lat) &&
+      !isNaN(lon) &&
+      lat >= -90 &&
+      lat <= 90 &&
+      lon >= -180 &&
+      lon <= 180
+    );
+  }
+
+  private logPostFilterExcludedSites(
+    excludedSites: Array<{ id_site: number; nom_site: string; reason: string }>,
+    context: { pollutant: string; atmoMicroVariable: string }
+  ): void {
+    if (excludedSites.length === 0) return;
+
+    // DEBUG ETAPE 2:
+    // Ces logs listent les capteurs qui ont passe le filtre capteurs/sites,
+    // mais qui restent non affichables ensuite (ex: coordonnees invalides, incoherence site/mesure).
+    console.groupCollapsed(
+      `[AtmoMicro][DEBUG] ${excludedSites.length} capteur(s) exclus apres filtrage sites (non affiches sur carte) - polluant=${context.pollutant}, variable=${context.atmoMicroVariable}`
+    );
+    excludedSites.forEach((site) => {
+      // Chaque ligne explique le "pourquoi" exact de l'ecartement pour ce capteur.
+      console.log(
+        `[AtmoMicro][POST_FILTER_EXCLUDED] id_site=${site.id_site} | nom_site="${site.nom_site}" | raison=${site.reason}`
+      );
+    });
+    console.groupEnd();
+  }
+
   constructor() {
     super("atmoMicro");
   }
@@ -53,7 +111,7 @@ export class AtmoMicroService extends BaseDataService {
       }
 
       // Faire les deux appels API en parallèle
-      const [sitesResponse, measuresResponse] = await Promise.all([
+      const [sitesResult, measuresResponse] = await Promise.all([
         this.fetchSites(atmoMicroVariable),
         this.fetchMeasures(
           atmoMicroVariable,
@@ -61,6 +119,12 @@ export class AtmoMicroService extends BaseDataService {
           timeStepConfig.delais
         ),
       ]);
+      const { filteredSites: sitesResponse, excludedSites } = sitesResult;
+
+      // this.logExcludedSites(excludedSites, {
+      //   pollutant: params.pollutant,
+      //   atmoMicroVariable,
+      // });
 
       // Vérifier si les réponses sont valides
       if (!sitesResponse || !measuresResponse) {
@@ -82,6 +146,11 @@ export class AtmoMicroService extends BaseDataService {
 
       // Transformer les données en MeasurementDevice
       const devices: MeasurementDevice[] = [];
+      const postFilterExcludedSites: Array<{
+        id_site: number;
+        nom_site: string;
+        reason: string;
+      }> = [];
 
       // 1. Traiter d'abord les sites avec des mesures récentes (coordonnées à jour)
       for (const measure of measuresResponse) {
@@ -136,6 +205,18 @@ export class AtmoMicroService extends BaseDataService {
             pollutant.thresholds
           );
 
+          // IMPORTANT DEBUG:
+          // On ne log que les capteurs non affichables apres capteurs/sites.
+          // Ici, un capteur est ecarte si ses coordonnees sont invalides, car Leaflet ne pourra pas l'afficher correctement.
+          if (!this.isValidCoordinate(measure.lat, measure.lon)) {
+            postFilterExcludedSites.push({
+              id_site: measure.id_site,
+              nom_site: site.nom_site,
+              reason: `coordonnees invalides dans mesures/dernieres (lat=${measure.lat}, lon=${measure.lon})`,
+            });
+            continue;
+          }
+
           devices.push({
             id: measure.id_site.toString(),
             name: site.nom_site,
@@ -163,6 +244,13 @@ export class AtmoMicroService extends BaseDataService {
             raw_value?: number;
             has_correction?: boolean;
           });
+        } else {
+          postFilterExcludedSites.push({
+            id_site: measure.id_site,
+            nom_site: `site_${measure.id_site}`,
+            reason:
+              "mesure recue mais site absent du sous-ensemble filtre de capteurs/sites",
+          });
         }
       }
 
@@ -170,6 +258,15 @@ export class AtmoMicroService extends BaseDataService {
       for (const site of sitesResponse) {
         // Vérifier si ce site n'a pas déjà été traité (pas de mesure récente)
         if (!measuresMap.has(site.id_site)) {
+          if (!this.isValidCoordinate(site.lat, site.lon)) {
+            postFilterExcludedSites.push({
+              id_site: site.id_site,
+              nom_site: site.nom_site,
+              reason: `coordonnees invalides dans capteurs/sites (lat=${site.lat}, lon=${site.lon})`,
+            });
+            continue;
+          }
+
           devices.push({
             id: site.id_site.toString(),
             name: site.nom_site,
@@ -193,6 +290,11 @@ export class AtmoMicroService extends BaseDataService {
         }
       }
 
+      // this.logPostFilterExcludedSites(postFilterExcludedSites, {
+      //   pollutant: params.pollutant,
+      //   atmoMicroVariable,
+      // });
+
       return devices;
     } catch (error) {
       console.error(
@@ -203,24 +305,52 @@ export class AtmoMicroService extends BaseDataService {
     }
   }
 
-  private async fetchSites(variable: string): Promise<AtmoMicroSite[]> {
+  private async fetchSites(
+    variable: string
+  ): Promise<{
+    filteredSites: AtmoMicroSite[];
+    excludedSites: Array<{ id_site: number; nom_site: string; reason: string }>;
+  }> {
     // OPTIMISATION: Utiliser le cache au lieu de faire un appel API direct
     // Le cache contient déjà tous les sites avec métadonnées
     const allSites = await this.getCachedAllSites();
     
     // Filtrer les sites pour ne garder que ceux qui mesurent cette variable
-    const filteredSites = allSites.filter((site) => {
+    const filteredSites: AtmoMicroSite[] = [];
+    const excludedSites: Array<{
+      id_site: number;
+      nom_site: string;
+      reason: string;
+    }> = [];
+
+    allSites.forEach((site) => {
       if (!site.variables) {
-        return false;
+        excludedSites.push({
+          id_site: site.id_site,
+          nom_site: site.nom_site,
+          reason: "variables absentes ou vides dans capteurs/sites",
+        });
+        return;
       }
       
       // Vérifier si la variable est présente dans la liste des variables du site
       // Les variables sont stockées comme une chaîne séparée par des virgules (ex: "PM10, PM2.5, PM1")
       const variablesList = site.variables.split(",").map((v) => v.trim());
-      return variablesList.includes(variable.toUpperCase());
+      const hasRequestedVariable = variablesList.includes(variable.toUpperCase());
+
+      if (!hasRequestedVariable) {
+        excludedSites.push({
+          id_site: site.id_site,
+          nom_site: site.nom_site,
+          reason: `variable demandee absente (${variable.toUpperCase()}) ; variables site=[${variablesList.join(", ")}]`,
+        });
+        return;
+      }
+
+      filteredSites.push(site);
     });
     
-    return filteredSites;
+    return { filteredSites, excludedSites };
   }
 
   private async fetchMeasures(
