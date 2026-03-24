@@ -260,11 +260,12 @@ export const useAmChartsChart = ({
       chart.leftAxesContainer.children.moveValue(scrollbarY, 1);
     }
 
-    // Créer le curseur (zoom X et Y au drag)
+    // Créer le curseur : par défaut pas de zoom au drag (le drag sert au déplacement)
+    // Le zoom au drag est activé uniquement quand Ctrl est maintenu.
     const cursor = chart.set(
       "cursor",
       am5xy.XYCursor.new(root, {
-        behavior: "zoomXY",
+        behavior: "none",
         xAxis: xAxis,
       })
     );
@@ -275,11 +276,44 @@ export const useAmChartsChart = ({
     cursor.lineY.set("visible", false);
     cursor.lineX.set("visible", true);
 
+    // Basculer le mode du curseur selon Ctrl :
+    // - Ctrl enfoncé => zoom au drag
+    // - Ctrl relâché => drag = pan (déplacement)
+    const setCursorBehaviorFromCtrl = (ctrlPressed: boolean) => {
+      cursor.set("behavior", ctrlPressed ? "zoomXY" : "none");
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey) {
+        setCursorBehaviorFromCtrl(true);
+      }
+    };
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      // Quand Ctrl est relâché, revenir en mode déplacement
+      if (!event.ctrlKey) {
+        setCursorBehaviorFromCtrl(false);
+      }
+    };
+
+    const handleWindowBlur = () => {
+      // Sécurité : si la fenêtre perd le focus avec Ctrl appuyé,
+      // on force le retour au mode déplacement.
+      setCursorBehaviorFromCtrl(false);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("blur", handleWindowBlur);
+
     // Créer la légende
     setupLegend(root, chart, seriesConfigs, isMobile);
 
     // Nettoyage au démontage
     return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("blur", handleWindowBlur);
       if (rootRef.current) {
         rootRef.current.dispose();
         rootRef.current = null;
