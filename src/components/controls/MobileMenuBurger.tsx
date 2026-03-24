@@ -68,20 +68,28 @@ const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Fermer le menu si on clique en dehors
+  // Fermer le menu si on clique en dehors (en ignorant les portails Radix des dropdowns)
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+    const handleClickOutside = (event: PointerEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+
+      const isInsideBurgerMenu = !!menuRef.current?.contains(target);
+      const isInsideRadixPortal = !!target.closest(
+        "[data-radix-popper-content-wrapper]"
+      );
+
+      if (!isInsideBurgerMenu && !isInsideRadixPortal) {
         setIsOpen(false);
       }
     };
 
     if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("pointerdown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("pointerdown", handleClickOutside);
     };
   }, [isOpen]);
 
