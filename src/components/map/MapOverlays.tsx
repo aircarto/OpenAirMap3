@@ -2,6 +2,7 @@ import React from "react";
 import BaseLayerControl from "../controls/BaseLayerControl";
 import Legend from "./Legend";
 import DeviceStatistics from "./DeviceStatistics";
+import { getModelingDisplayedPeriod } from "../../utils/modelingPeriodUtils";
 
 interface MapOverlaysProps {
   signalAir: any;
@@ -23,6 +24,9 @@ interface MapOverlaysProps {
   selectedSources: string[];
   selectedTimeStep: string;
   historicalCurrentDate?: string;
+  isPollutantForecastMode?: boolean;
+  modelingHourIndex?: number | null;
+  locale?: string;
   statistics: any;
   sourceStatistics: any;
 }
@@ -47,9 +51,17 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
   selectedSources,
   selectedTimeStep,
   historicalCurrentDate,
+  isPollutantForecastMode = false,
+  modelingHourIndex = null,
+  locale = "fr",
   statistics,
   sourceStatistics,
 }) => {
+  const displayedPeriodOverride =
+    isPollutantForecastMode && typeof modelingHourIndex === "number"
+      ? getModelingDisplayedPeriod(modelingHourIndex, locale)
+      : undefined;
+
   return (
     <>
       {signalAir.signalAirFeedback && (
@@ -162,6 +174,7 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
           selectedSources={selectedSources}
           selectedTimeStep={selectedTimeStep}
           historicalCurrentDate={historicalCurrentDate}
+          displayedPeriodOverride={displayedPeriodOverride}
           statistics={statistics}
           sourceStatistics={sourceStatistics}
           showDetails={false}

@@ -6,10 +6,12 @@ import TimeStepDropdown from "./TimeStepDropdown";
 import HistoricalModeButton from "./HistoricalModeButton";
 import AutoRefreshToggle from "./AutoRefreshToggle";
 import ModelingLayerControl from "./ModelingLayerControl";
+import ModelingTimeControl from "./ModelingTimeControl";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { ModelingLayerType } from "../../constants/mapLayers";
 import { Toast } from "../ui/toast";
 import { cn } from "../../lib/utils";
+import { getModelingLayerHour, isModelingAvailable } from "../../services/ModelingLayerService";
 
 interface MobileMenuBurgerProps {
   selectedPollutant: string;
@@ -27,6 +29,9 @@ interface MobileMenuBurgerProps {
   loading: boolean;
   currentModelingLayer: ModelingLayerType | null;
   onModelingLayerChange: (layerType: ModelingLayerType | null) => void;
+  modelingHourIndex?: number | null;
+  onModelingHourIndexChange?: (hour: number) => void;
+  onModelingHourUserAdjusted?: () => void;
   onToast?: (toast: Omit<Toast, "id">) => void;
   onOpenSignalAirPanel?: () => void;
   onOpenMobileAirPanel?: () => void;
@@ -54,6 +59,9 @@ const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
   loading,
   currentModelingLayer,
   onModelingLayerChange,
+  modelingHourIndex,
+  onModelingHourIndexChange,
+  onModelingHourUserAdjusted,
   onToast,
   onOpenSignalAirPanel,
   onOpenMobileAirPanel,
@@ -180,10 +188,33 @@ const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
               <ModelingLayerControl
                 triggerId="mobile-menu-modeling-trigger"
                 currentModelingLayer={currentModelingLayer}
-                onModelingLayerChange={onModelingLayerChange}
+                onModelingLayerChange={(next) => {
+                  onModelingLayerChange(next);
+                  if (next === "pollutant" && isModelingAvailable(selectedTimeStep)) {
+                    const defaultHour = getModelingLayerHour(selectedTimeStep);
+                    if (defaultHour >= 0) {
+                      onModelingHourIndexChange?.(defaultHour);
+                    }
+                  }
+                }}
                 selectedPollutant={selectedPollutant}
                 selectedTimeStep={selectedTimeStep}
               />
+              {currentModelingLayer === "pollutant" &&
+                isModelingAvailable(selectedTimeStep) &&
+                typeof modelingHourIndex === "number" &&
+                onModelingHourIndexChange && (
+                  <div className="pt-2">
+                    <ModelingTimeControl
+                      value={modelingHourIndex}
+                      locale={i18n.language}
+                      onChange={(nextHour) => {
+                        onModelingHourUserAdjusted?.();
+                        onModelingHourIndexChange(nextHour);
+                      }}
+                    />
+                  </div>
+                )}
             </div>
 
             {/* Sources spéciales */}

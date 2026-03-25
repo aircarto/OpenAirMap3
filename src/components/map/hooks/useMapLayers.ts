@@ -19,6 +19,7 @@ interface UseMapLayersProps {
   selectedTimeStep: string;
   selectedPollutant: string;
   currentModelingLayer: ModelingLayerType | null;
+  modelingHourIndex?: number | null;
   isCommunalLayerEnabled: boolean;
 }
 
@@ -28,6 +29,7 @@ export const useMapLayers = ({
   selectedTimeStep,
   selectedPollutant,
   currentModelingLayer,
+  modelingHourIndex,
   isCommunalLayerEnabled,
 }: UseMapLayersProps) => {
   const [currentTileLayer, setCurrentTileLayer] = useState<L.TileLayer | null>(
@@ -170,16 +172,21 @@ export const useMapLayers = ({
     // Si un layer de modélisation WMTS est sélectionné (pollutant)
     if (currentModelingLayer === "pollutant") {
       try {
-        // Calculer l'heure à afficher
-        const hour = getModelingLayerHour(selectedTimeStep);
+        // Calculer l'heure à afficher (0..47, h24 = heure en cours).
+        // Si un index est fourni (slider), il surchage la logique par défaut.
+        const fallbackHour = getModelingLayerHour(selectedTimeStep);
+        const hour =
+          typeof modelingHourIndex === "number" ? modelingHourIndex : fallbackHour;
 
         // Si l'heure est invalide (scan), ne pas charger
         if (hour < 0) {
           return;
         }
+        // Bornage de sécurité
+        const clampedHour = Math.max(0, Math.min(47, hour));
 
         // Formater l'heure (h00, h01, ..., h47)
-        const hourFormatted = formatHourLayerName(hour);
+        const hourFormatted = formatHourLayerName(clampedHour);
         let layerName: string;
 
         // Déterminer le nom du layer selon le type
@@ -226,6 +233,7 @@ export const useMapLayers = ({
     currentModelingLayer,
     selectedTimeStep,
     selectedPollutant,
+    modelingHourIndex,
     loadWindModeling,
     mapRef,
   ]);

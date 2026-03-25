@@ -27,9 +27,11 @@ import HistoricalControlPanel from "./components/controls/HistoricalControlPanel
 import HistoricalPlaybackControl from "./components/controls/HistoricalPlaybackControl";
 import MobileMenuBurger from "./components/controls/MobileMenuBurger";
 import ModelingLayerControl from "./components/controls/ModelingLayerControl";
+import ModelingTimeControl from "./components/controls/ModelingTimeControl";
 import SpecialSourceHeaderDropdown from "./components/controls/SpecialSourceHeaderDropdown";
 import InformationModal from "./components/modals/InformationModal";
 import { ModelingLayerType } from "./constants/mapLayers";
+import { getModelingLayerHour, isModelingAvailable } from "./services/ModelingLayerService";
 import { useToast } from "./hooks/useToast";
 import { ToastContainer } from "./components/ui/toast";
 import { cn } from "./lib/utils";
@@ -37,7 +39,7 @@ import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "./components/controls/LanguageSwitcher";
 
 const App: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   // Configuration basée sur le domaine
   const domainConfig = useDomainConfig();
 
@@ -94,6 +96,8 @@ const App: React.FC = () => {
   const [signalAirLoadTrigger, setSignalAirLoadTrigger] = useState(0);
   const [currentModelingLayer, setCurrentModelingLayer] =
     useState<ModelingLayerType | null>(null);
+  const [modelingHourIndex, setModelingHourIndex] = useState<number | null>(null);
+  const [hasUserAdjustedModelingHour, setHasUserAdjustedModelingHour] = useState(false);
 
   const resetSignalAirSettings = useCallback(() => {
     const resetPeriod = {
@@ -297,6 +301,7 @@ const App: React.FC = () => {
     selectedPollutant,
     selectedSources,
     selectedTimeStep,
+    atmoMicroAllowedSiteIds: domainConfig.atmoMicroAllowedSiteIds,
     signalAirPeriod,
     mobileAirPeriod,
     selectedMobileAirSensor,
@@ -366,6 +371,42 @@ const App: React.FC = () => {
   const mapMaxZoom = domainConfig.mapMaxZoom;
   const mapMaxBounds = domainConfig.mapMaxBounds;
 
+  const isPollutantForecastMode = currentModelingLayer === "pollutant";
+  const defaultModelingHourIndexForMeasurements = useMemo(() => {
+    if (!isPollutantForecastMode) return null;
+    if (!isModelingAvailable(selectedTimeStep)) return null;
+    const hour = getModelingLayerHour(selectedTimeStep);
+    return hour >= 0 ? hour : null;
+  }, [isPollutantForecastMode, selectedTimeStep]);
+
+  const shouldHideMeasurementsInPollutantModeling =
+    isPollutantForecastMode &&
+    typeof modelingHourIndex === "number" &&
+    typeof defaultModelingHourIndexForMeasurements === "number" &&
+    modelingHourIndex !== defaultModelingHourIndexForMeasurements;
+
+  // Initialiser la valeur par défaut du slider au moment où la modélisation "polluant" est activée,
+  // en gardant exactement le comportement actuel (h23/h24 selon pas de temps).
+  useEffect(() => {
+    if (!isPollutantForecastMode) {
+      setModelingHourIndex(null);
+      setHasUserAdjustedModelingHour(false);
+      return;
+    }
+
+    if (!isModelingAvailable(selectedTimeStep)) {
+      setModelingHourIndex(null);
+      setHasUserAdjustedModelingHour(false);
+      return;
+    }
+
+    // Si l'utilisateur n'a pas encore touché le slider, on recolle à la logique existante.
+    if (!hasUserAdjustedModelingHour) {
+      const defaultHour = getModelingLayerHour(selectedTimeStep);
+      setModelingHourIndex(defaultHour >= 0 ? defaultHour : null);
+    }
+  }, [isPollutantForecastMode, selectedTimeStep, hasUserAdjustedModelingHour]);
+
   const handleSignalAirHeaderClick = useCallback(() => {
     setOpenSignalAirPanelRequest((r) => r + 1);
     handleSignalAirPanelOpen();
@@ -422,6 +463,9 @@ const App: React.FC = () => {
                 loading={loading}
                 currentModelingLayer={currentModelingLayer}
                 onModelingLayerChange={setCurrentModelingLayer}
+                modelingHourIndex={modelingHourIndex}
+                onModelingHourIndexChange={(hour) => setModelingHourIndex(hour)}
+                onModelingHourUserAdjusted={() => setHasUserAdjustedModelingHour(true)}
                 onToast={addToast}
                 onOpenSignalAirPanel={() => {
                   setOpenSignalAirPanelRequest((r) => r + 1);
@@ -478,10 +522,36 @@ const App: React.FC = () => {
               <div className="flex items-center gap-2 pl-1 border-l border-gray-200/80 min-w-0 shrink">
                 <ModelingLayerControl
                   currentModelingLayer={currentModelingLayer}
-                  onModelingLayerChange={setCurrentModelingLayer}
+                  onModelingLayerChange={(next) => {
+                    setCurrentModelingLayer(next);
+                    if (next !== "pollutant") {
+                      setHasUserAdjustedModelingHour(false);
+                      setModelingHourIndex(null);
+                      return;
+                    }
+                    setHasUserAdjustedModelingHour(false);
+                    if (!isModelingAvailable(selectedTimeStep)) {
+                      setModelingHourIndex(null);
+                      return;
+                    }
+                    const defaultHour = getModelingLayerHour(selectedTimeStep);
+                    setModelingHourIndex(defaultHour >= 0 ? defaultHour : null);
+                  }}
                   selectedPollutant={selectedPollutant}
                   selectedTimeStep={selectedTimeStep}
                 />
+                {isPollutantForecastMode &&
+                  isModelingAvailable(selectedTimeStep) &&
+                  typeof modelingHourIndex === "number" && (
+                    <ModelingTimeControl
+                      value={modelingHourIndex}
+                      locale={i18n.language}
+                      onChange={(nextHour) => {
+                        setHasUserAdjustedModelingHour(true);
+                        setModelingHourIndex(nextHour);
+                      }}
+                    />
+                  )}
               </div>
 
               {/* Mode historique + Sources spéciales */}
@@ -573,7 +643,7 @@ const App: React.FC = () => {
         )}
         {/* Carte */}
         <AirQualityMap
-          devices={devices}
+          devices={shouldHideMeasurementsInPollutantModeling ? [] : devices}
           reports={reportsForMap}
           center={mapCenter}
           zoom={mapZoom}
@@ -584,6 +654,8 @@ const App: React.FC = () => {
           selectedSources={selectedSources}
           selectedTimeStep={selectedTimeStep}
           currentModelingLayer={currentModelingLayer}
+          modelingHourIndex={modelingHourIndex}
+          shouldOverrideDisplayedPeriod={shouldHideMeasurementsInPollutantModeling}
           loading={loading || temporalState.loading}
           signalAirPeriod={signalAirDraftPeriod}
           signalAirSelectedTypes={signalAirSelectedTypes}

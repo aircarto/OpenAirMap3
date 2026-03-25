@@ -29,7 +29,7 @@ export const sources: Sources = {
       nebuleair: {
         name: "NebuleAir",
         code: "nebuleair",
-        activated: true,
+        activated: false,
         supportedTimeSteps: [
           "instantane",
           "deuxMin",

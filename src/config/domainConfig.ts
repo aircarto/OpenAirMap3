@@ -7,6 +7,7 @@ export interface DomainConfig {
   mapMinZoom?: number;
   mapMaxZoom?: number;
   mapMaxBounds?: [[number, number], [number, number]];
+  atmoMicroAllowedSiteIds?: number[];
   title: string;
   links: {
     website: string;
@@ -44,6 +45,10 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
     mapMaxBounds: [
       [43.4, 5.38],
       [43.58, 5.62],
+    ],
+    atmoMicroAllowedSiteIds: [
+      1358, 1377, 1378, 1379, 1380, 1381, 1382, 1383, 1384, 1385, 1398, 1399,
+      1400, 1401, 1402,
     ],
     title: "AirCrowd",
     links: {

@@ -99,6 +99,8 @@ interface AirQualityMapProps {
   selectedSources: string[];
   selectedTimeStep: string;
   currentModelingLayer: ModelingLayerType | null;
+  modelingHourIndex?: number | null;
+  shouldOverrideDisplayedPeriod?: boolean;
   loading?: boolean;
   signalAirPeriod: { startDate: string; endDate: string };
   signalAirSelectedTypes: string[];
@@ -244,6 +246,8 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
   selectedSources,
   selectedTimeStep,
   currentModelingLayer,
+  modelingHourIndex,
+  shouldOverrideDisplayedPeriod = false,
   loading,
   signalAirPeriod,
   signalAirSelectedTypes,
@@ -270,7 +274,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
   openMobileAirPanelRequest = 0,
   historicalCurrentDate,
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   // Configuration du spiderfier
   const [spiderfyConfig, setSpiderfyConfig] = useState(defaultSpiderfyConfig);
   const [currentBaseLayer, setCurrentBaseLayer] =
@@ -312,6 +316,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
     selectedTimeStep,
     selectedPollutant,
     currentModelingLayer,
+    modelingHourIndex,
     isCommunalLayerEnabled,
   });
 
@@ -1072,6 +1077,11 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           selectedSources={selectedSources}
           selectedTimeStep={selectedTimeStep}
           historicalCurrentDate={historicalCurrentDate}
+          isPollutantForecastMode={
+            shouldOverrideDisplayedPeriod && currentModelingLayer === "pollutant"
+          }
+          modelingHourIndex={modelingHourIndex ?? null}
+          locale={i18n.language}
           statistics={statistics}
           sourceStatistics={sourceStatistics}
         />
