@@ -440,9 +440,17 @@ const App: React.FC = () => {
                 alt={t("app.logoAlt", { organization: domainConfig.organization })}
                 className="h-8 md:h-9 object-contain"
               />
-              <h1 className="text-base md:text-lg font-semibold text-[#4271B3] leading-tight truncate">
-                {domainConfig.title}
-              </h1>
+              {domainConfig.title === "AirCrowd" ? (
+                <img
+                  src="./branding/logo-aircrowd.png"
+                  alt="AirCrowd"
+                  className="h-7 md:h-8 object-contain"
+                />
+              ) : (
+                <h1 className="text-base md:text-lg font-semibold text-[#4271B3] leading-tight truncate">
+                  {domainConfig.title}
+                </h1>
+              )}
             </div>
 
             {/* Menu burger (langue intégrée dans le menu) — affiché sous xl pour éviter débordement toolbar */}

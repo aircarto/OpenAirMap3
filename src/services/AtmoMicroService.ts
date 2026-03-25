@@ -290,10 +290,10 @@ export class AtmoMicroService extends BaseDataService {
         }
       }
 
-      // this.logPostFilterExcludedSites(postFilterExcludedSites, {
-      //   pollutant: params.pollutant,
-      //   atmoMicroVariable,
-      // });
+      this.logPostFilterExcludedSites(postFilterExcludedSites, {
+        pollutant: params.pollutant,
+        atmoMicroVariable,
+      });
 
       return devices;
     } catch (error) {
