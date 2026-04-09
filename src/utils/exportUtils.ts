@@ -14,6 +14,51 @@ import {
 } from "../components/charts/utils/amChartsHelpers";
 
 /**
+ * Nettoie les états transitoires de survol (tooltip/cursor) avant capture.
+ */
+const clearTransientHoverState = async (element: HTMLElement): Promise<void> => {
+  // Retirer le focus actif limite certains overlays persistants.
+  if (document.activeElement instanceof HTMLElement) {
+    document.activeElement.blur();
+  }
+
+  // Simuler la sortie de la souris pour fermer les tooltips liés au hover.
+  element.dispatchEvent(
+    new MouseEvent("mouseleave", { bubbles: true, cancelable: true, view: window })
+  );
+  element.dispatchEvent(
+    new MouseEvent("mouseout", { bubbles: true, cancelable: true, view: window })
+  );
+
+  // Laisser un frame de rendu pour que l'UI réagisse.
+  await new Promise((resolve) => setTimeout(resolve, 80));
+};
+
+/**
+ * Résout la racine amCharts même si le conteneur fourni est un wrapper parent.
+ */
+const resolveAmChartsRootFromContainer = (container: HTMLElement): any | null => {
+  if (container.id) {
+    const root = getRootById(container.id);
+    if (root) return root;
+  }
+
+  // MobileAir exporte un wrapper: chercher un conteneur enfant amCharts.
+  const candidateNodes = Array.from(
+    container.querySelectorAll<HTMLElement>("[id]")
+  );
+
+  for (const node of candidateNodes) {
+    const root = getRootById(node.id);
+    if (root) {
+      return root;
+    }
+  }
+
+  return null;
+};
+
+/**
  * Formate le pas de temps pour l'affichage
  * @param timeStep - Code du pas de temps (instantane, quartHeure, heure, jour)
  * @param sensorTimeStep - Pas de temps du capteur en secondes (optionnel, pour le mode instantane)
@@ -70,7 +115,8 @@ export const exportAmChartsAsPNG = async (
   source: string = "",
   stations: any[] = [],
   timeStep?: string,
-  sensorTimeStep?: number | null
+  sensorTimeStep?: number | null,
+  customMetadataLines: string[] = []
 ): Promise<void> => {
   const container = containerRef && typeof containerRef === 'object' && 'current' in containerRef 
     ? (containerRef.current as HTMLElement | null)
@@ -83,18 +129,56 @@ export const exportAmChartsAsPNG = async (
   try {
     // Attendre un peu pour s'assurer que le graphique est complètement rendu
     await new Promise((resolve) => setTimeout(resolve, 300));
+    await clearTransientHoverState(container);
 
     const isComparisonMode = source === "comparison" && stations.length > 0;
 
     // Préparer la légende pour l'export : pas de scroll, grille multi-colonnes pour tout afficher
     let legendExportState: LegendExportState | null = null;
-    const root = container.id ? getRootById(container.id) : null;
+    const root = resolveAmChartsRootFromContainer(container);
+    let previousTooltipContainerVisible: boolean | undefined;
+    let previousCursorVisible: boolean | undefined;
+    const tooltipForceHiddenState: Array<{
+      tooltip: { get: (key: string) => any; set: (key: string, value: any) => void };
+      previousForceHidden: any;
+    }> = [];
     if (root) {
       legendExportState = prepareLegendForExport(root);
       if (legendExportState) {
         root.resize?.();
         await new Promise((resolve) => setTimeout(resolve, 150));
       }
+
+      // Masquer les artefacts dynamiques amCharts (tooltips + curseur) pendant la capture.
+      const rootAny = root as any;
+      const tooltipContainer = rootAny?.tooltipContainer;
+      if (tooltipContainer?.get && tooltipContainer?.set) {
+        previousTooltipContainerVisible = tooltipContainer.get("visible");
+        tooltipContainer.set("visible", false);
+      }
+
+      const chart = root.container.children.getIndex(0) as any;
+      const cursor = chart?.get?.("cursor");
+      if (cursor?.get && cursor?.set) {
+        previousCursorVisible = cursor.get("visible");
+        cursor.set("visible", false);
+      }
+
+      if (chart?.series?.each) {
+        chart.series.each((seriesItem: any) => {
+          const tooltip = seriesItem?.get?.("tooltip");
+          if (tooltip?.get && tooltip?.set) {
+            tooltipForceHiddenState.push({
+              tooltip,
+              previousForceHidden: tooltip.get("forceHidden"),
+            });
+            tooltip.set("forceHidden", true);
+          }
+        });
+      }
+
+      root.resize?.();
+      await new Promise((resolve) => setTimeout(resolve, 80));
     }
 
     // En mode comparaison, augmenter temporairement la hauteur du conteneur pour l'export
@@ -175,18 +259,21 @@ export const exportAmChartsAsPNG = async (
 
     // Utiliser html2canvas sur le conteneur avec des options optimisées
     const canvas = await html2canvas(container, {
-      backgroundColor: "#ffffff",
+      background: "#ffffff",
       scale: 2, // Haute résolution
       useCORS: true,
       allowTaint: true,
       logging: false,
+      ignoreElements: (element) =>
+        element instanceof HTMLElement &&
+        element.dataset.exportIgnore === "true",
       width: container.offsetWidth,
       height: container.offsetHeight,
       scrollX: 0,
       scrollY: 0,
       windowWidth: container.offsetWidth,
       windowHeight: container.offsetHeight,
-    });
+    } as any);
 
     // Restaurer les styles des tooltips et curseurs après la capture
     originalStyles.forEach(({ element, display, visibility, opacity }) => {
@@ -210,13 +297,40 @@ export const exportAmChartsAsPNG = async (
       root.resize?.();
     }
 
+    // Restaurer l'état dynamique amCharts après capture.
+    if (root) {
+      const rootAny = root as any;
+      const tooltipContainer = rootAny?.tooltipContainer;
+      if (
+        tooltipContainer?.set &&
+        typeof previousTooltipContainerVisible !== "undefined"
+      ) {
+        tooltipContainer.set("visible", previousTooltipContainerVisible);
+      }
+
+      const chart = root.container.children.getIndex(0) as any;
+      const cursor = chart?.get?.("cursor");
+      if (cursor?.set && typeof previousCursorVisible !== "undefined") {
+        cursor.set("visible", previousCursorVisible);
+      }
+
+      tooltipForceHiddenState.forEach(({ tooltip, previousForceHidden }) => {
+        tooltip.set("forceHidden", previousForceHidden);
+      });
+
+      root.resize?.();
+    }
+
     // Calculer la hauteur nécessaire pour le titre et les métadonnées
     const paddingBottom = 20;
     const paddingLeft = 20;
     const paddingRight = 20;
 
     let paddingTop = 20;
-    if (stationInfo) {
+    if (customMetadataLines.length > 0) {
+      const estimatedLines = customMetadataLines.length;
+      paddingTop = estimatedLines * 28 + 20;
+    } else if (stationInfo) {
       // Estimer la hauteur nécessaire (approximatif)
       // Nom appareil: 1 ligne (30px) + modèle et pas de temps sur 1 ligne (25px)
       let estimatedLines = 1; // Nom de l'appareil
@@ -276,7 +390,15 @@ export const exportAmChartsAsPNG = async (
     };
 
     // Ajouter les métadonnées centrées au-dessus du graphique
-    if (stationInfo) {
+    if (customMetadataLines.length > 0) {
+      ctx.fillStyle = "#000000";
+      let yOffset = 20;
+      customMetadataLines.forEach((line, index) => {
+        yOffset = drawCenteredText(line, yOffset, index === 0 ? "18px" : "14px", index === 0);
+      });
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+    } else if (stationInfo) {
       ctx.fillStyle = "#000000";
       
       let yOffset = 20;
@@ -400,7 +522,8 @@ export const exportChartAsPNG = async (
   source: string = "",
   stations: any[] = [],
   timeStep?: string,
-  sensorTimeStep?: number | null
+  sensorTimeStep?: number | null,
+  customMetadataLines: string[] = []
 ): Promise<void> => {
   if (!chartRef.current) {
     throw new Error("Référence du graphique non disponible");
@@ -409,6 +532,7 @@ export const exportChartAsPNG = async (
   try {
     // Attendre un peu pour s'assurer que le graphique est complètement rendu
     await new Promise((resolve) => setTimeout(resolve, 300));
+    await clearTransientHoverState(chartRef.current);
 
     // Masquer tous les tooltips de Recharts avant la capture
     // Recharts utilise plusieurs classes possibles pour le tooltip
@@ -443,18 +567,21 @@ export const exportChartAsPNG = async (
 
     // Utiliser html2canvas sur le conteneur parent avec des options optimisées
     const canvas = await html2canvas(chartRef.current, {
-      backgroundColor: "#ffffff",
+      background: "#ffffff",
       scale: 2, // Haute résolution
       useCORS: true,
       allowTaint: true,
       logging: false,
+      ignoreElements: (element) =>
+        element instanceof HTMLElement &&
+        element.dataset.exportIgnore === "true",
       width: chartRef.current.offsetWidth,
       height: chartRef.current.offsetHeight,
       scrollX: 0,
       scrollY: 0,
       windowWidth: chartRef.current.offsetWidth,
       windowHeight: chartRef.current.offsetHeight,
-    });
+    } as any);
 
     // Restaurer les styles des tooltips après la capture
     originalStyles.forEach(({ element, display, visibility }) => {
@@ -470,7 +597,10 @@ export const exportChartAsPNG = async (
     const isComparisonMode = source === "comparison" && stations.length > 0;
     
     let paddingTop = 20;
-    if (stationInfo) {
+    if (customMetadataLines.length > 0) {
+      const estimatedLines = customMetadataLines.length;
+      paddingTop = estimatedLines * 28 + 20;
+    } else if (stationInfo) {
       // Estimer la hauteur nécessaire (approximatif)
       // Nom appareil: 1 ligne (30px) + modèle et pas de temps sur 1 ligne (25px)
       let estimatedLines = 1; // Nom de l'appareil
@@ -530,7 +660,15 @@ export const exportChartAsPNG = async (
     };
 
     // Ajouter les métadonnées centrées au-dessus du graphique
-    if (stationInfo) {
+    if (customMetadataLines.length > 0) {
+      ctx.fillStyle = "#000000";
+      let yOffset = 20;
+      customMetadataLines.forEach((line, index) => {
+        yOffset = drawCenteredText(line, yOffset, index === 0 ? "18px" : "14px", index === 0);
+      });
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+    } else if (stationInfo) {
       ctx.fillStyle = "#000000";
       
       let yOffset = 20;
@@ -655,7 +793,8 @@ export const exportDataAsCSV = (
   selectedPollutants: string[] = [],
   stationInfo: StationInfo | null = null,
   timeStep?: string,
-  sensorTimeStep?: number | null
+  sensorTimeStep?: number | null,
+  customMetadataLines: string[] = []
 ): void => {
   if (!data || data.length === 0) {
     throw new Error("Aucune donnée à exporter");
@@ -666,7 +805,10 @@ export const exportDataAsCSV = (
     const metadataLines: string[] = [];
     const isComparisonMode = source === "comparison" && stations.length > 0;
     
-    if (stationInfo) {
+    if (customMetadataLines.length > 0) {
+      metadataLines.push(...customMetadataLines);
+      metadataLines.push("");
+    } else if (stationInfo) {
       // Nom de l'appareil
       metadataLines.push(`Appareil: ${stationInfo.name}`);
       
@@ -737,7 +879,7 @@ export const exportDataAsCSV = (
       stations.forEach((station) => {
         headers.push(station.name);
       });
-    } else if (source === "atmoRef") {
+    } else if (source === "atmoRef" || source === "mobileair") {
       // AtmoRef : une seule colonne par polluant (pas de distinction brut/corrigé)
       selectedPollutants.forEach((pollutant) => {
         const pollutantName = pollutants[pollutant]?.name || pollutant;
@@ -770,8 +912,8 @@ export const exportDataAsCSV = (
             // Si la valeur n'existe pas, mettre une chaîne vide
             values.push(value !== undefined && value !== null ? value : "");
           });
-        } else if (source === "atmoRef") {
-          // AtmoRef : lire directement depuis la clé du polluant (pas de _corrected ou _raw)
+        } else if (source === "atmoRef" || source === "mobileair") {
+          // AtmoRef/MobileAir : lire directement depuis la clé du polluant (pas de _corrected ou _raw)
           selectedPollutants.forEach((pollutant) => {
             values.push(row[pollutant] || "");
           });

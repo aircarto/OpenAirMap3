@@ -436,21 +436,6 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
             </div>
           )}
 
-          {/* Sélection de la période */}
-          <div
-            className={`border border-gray-200 rounded-lg p-3 sm:p-4 ${
-              !isPollutantSupported ? "opacity-50 pointer-events-none" : ""
-            }`}
-          >
-            <h3 className="text-sm font-medium text-gray-700 mb-3">
-              {t("panels.mobileAirSelection.periodTitle")}
-            </h3>
-            <HistoricalTimeRangeSelector
-              timeRange={timeRange}
-              onTimeRangeChange={handleTimeRangeChange}
-            />
-          </div>
-
           {/* Liste des capteurs */}
           <div
             className={`border border-gray-200 rounded-lg p-3 sm:p-4 ${
@@ -558,6 +543,21 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
                 })}
               </div>
             )}
+          </div>
+
+          {/* Sélection de la période */}
+          <div
+            className={`border border-gray-200 rounded-lg p-3 sm:p-4 ${
+              !isPollutantSupported ? "opacity-50 pointer-events-none" : ""
+            }`}
+          >
+            <h3 className="text-sm font-medium text-gray-700 mb-3">
+              {t("panels.mobileAirSelection.periodTitle")}
+            </h3>
+            <HistoricalTimeRangeSelector
+              timeRange={timeRange}
+              onTimeRangeChange={handleTimeRangeChange}
+            />
           </div>
 
           {/* Bouton de chargement des parcours */}

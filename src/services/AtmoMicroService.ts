@@ -121,10 +121,12 @@ export class AtmoMicroService extends BaseDataService {
       ]);
       const { filteredSites: sitesResponse, excludedSites } = sitesResult;
 
-      // this.logExcludedSites(excludedSites, {
-      //   pollutant: params.pollutant,
-      //   atmoMicroVariable,
-      // });
+
+      // Log des sites exclus de l'affichage et la raison d'exclusion
+      this.logExcludedSites(excludedSites, {
+        pollutant: params.pollutant,
+        atmoMicroVariable,
+      });
 
       // Vérifier si les réponses sont valides
       if (!sitesResponse || !measuresResponse) {
@@ -290,6 +292,10 @@ export class AtmoMicroService extends BaseDataService {
         }
       }
 
+<<<<<<< HEAD
+=======
+      // Log des sites exclus apres filtrage sites (non affiches sur carte)
+>>>>>>> main
       this.logPostFilterExcludedSites(postFilterExcludedSites, {
         pollutant: params.pollutant,
         atmoMicroVariable,
@@ -358,7 +364,9 @@ export class AtmoMicroService extends BaseDataService {
     aggregation: string,
     delais: number
   ): Promise<AtmoMicroMeasure[]> {
-    const url = `${this.BASE_URL}/mesures/dernieres?format=json&download=false&valeur_brute=true&type_capteur=true&variable=${variable}&aggregation=${aggregation}&delais=${delais}`;
+    // Important: demander au moins 1 décimale pour éviter une troncature entière côté API.
+    // Le rendu carte arrondit ensuite à l'entier le plus proche dans createCustomIcon.
+    const url = `${this.BASE_URL}/mesures/dernieres?format=json&download=false&nb_dec=1&valeur_brute=true&type_capteur=true&variable=${variable}&aggregation=${aggregation}&delais=${delais}`;
     const response = await this.makeRequest(url);
     return response || [];
   }

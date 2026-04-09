@@ -11,8 +11,14 @@ import {
   getQualityLevel,
 } from "../../constants/qualityColors";
 import { AmChartsLineChart, AmChartsLineChartData, AmChartsLineSeries } from "../charts";
+import ExportMenu from "../charts/ExportMenu";
 import { getCommonThresholds } from "../charts/utils/historicalChartConfig";
 import { addThresholdZones } from "../charts/utils/amChartsHelpers";
+import {
+  exportAmChartsAsPNG,
+  exportDataAsCSV,
+  generateExportFilename,
+} from "../../utils/exportUtils";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 
@@ -60,6 +66,7 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
   const rootRef = useRef<am5.Root | null>(null);
   const seriesRefs = useRef<Map<string, am5xy.LineSeries>>(new Map());
   const routeIdRef = useRef<string | null>(null);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
 
   // Utiliser la taille externe si fournie, sinon la taille interne
   const currentPanelSize = externalPanelSize || internalPanelSize;
@@ -516,6 +523,78 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
 
   // Plus besoin de gérer highlightedPoint, on utilise uniquement hoveredPoint
 
+  const mobileAirExportMetadata = useMemo(() => {
+    if (!routeToUse) return [];
+    const pollutantLabels = localSelectedPollutants
+      .map((pollutantCode) =>
+        t(`pollutants.${pollutantCode}`, { defaultValue: pollutantCode })
+      )
+      .join(", ");
+
+    return [
+      `MobileAir - Session ${routeToUse.sessionId}`,
+      `Capteur: ${routeToUse.sensorId}`,
+      `Début: ${formatDate(routeToUse.startTime)}`,
+      `Fin: ${formatDate(routeToUse.endTime)}`,
+      `Polluants: ${pollutantLabels}`,
+      `Points: ${routeToUse.points.length}`,
+    ];
+  }, [routeToUse, localSelectedPollutants, t, i18n.language]);
+
+  const handleExportPNG = useCallback(async () => {
+    if (!routeToUse || !amChartsData.length) return;
+
+    try {
+      const filename = generateExportFilename("mobileair", localSelectedPollutants);
+      await exportAmChartsAsPNG(
+        chartContainerRef,
+        filename,
+        null,
+        localSelectedPollutants,
+        "mobileair",
+        [],
+        undefined,
+        undefined,
+        mobileAirExportMetadata
+      );
+    } catch (error) {
+      console.error("Erreur lors de l'export PNG MobileAir:", error);
+      alert("Erreur lors de l'exportation en PNG");
+    }
+  }, [
+    routeToUse,
+    amChartsData.length,
+    localSelectedPollutants,
+    mobileAirExportMetadata,
+  ]);
+
+  const handleExportCSV = useCallback(() => {
+    if (!routeToUse || !amChartsData.length) return;
+
+    try {
+      const filename = generateExportFilename("mobileair", localSelectedPollutants);
+      exportDataAsCSV(
+        amChartsData,
+        filename,
+        "mobileair",
+        [],
+        localSelectedPollutants,
+        null,
+        undefined,
+        undefined,
+        mobileAirExportMetadata
+      );
+    } catch (error) {
+      console.error("Erreur lors de l'export CSV MobileAir:", error);
+      alert("Erreur lors de l'exportation en CSV");
+    }
+  }, [
+    routeToUse,
+    amChartsData,
+    localSelectedPollutants,
+    mobileAirExportMetadata,
+  ]);
+
   // Return conditionnel APRÈS tous les hooks
   if (!isOpen || !routeToUse) {
     return null;
@@ -801,7 +880,12 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
                 </div>
               </div>
             ) : (
-              <div className="h-64">
+              <div className="h-64 relative" ref={chartContainerRef}>
+                <ExportMenu
+                  hasData={amChartsData.length > 0}
+                  onExportPNG={handleExportPNG}
+                  onExportCSV={handleExportCSV}
+                />
                 <AmChartsLineChart
                   key={`mobileair-chart-${localSelectedPollutants.join("-")}`}
                   data={amChartsData}

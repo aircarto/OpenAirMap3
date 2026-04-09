@@ -33,7 +33,11 @@ const ExportMenu: React.FC<ExportMenuProps> = React.memo(
     }, [isOpen]);
 
     return (
-      <div className="absolute top-2 right-2 z-10" ref={menuRef}>
+      <div
+        className="absolute top-2 right-2 z-10"
+        ref={menuRef}
+        data-export-ignore="true"
+      >
         <button
           onClick={() => setIsOpen((open) => !open)}
           className="p-2 bg-white rounded-lg shadow-md hover:bg-gray-100 transition-colors border border-gray-200"
