@@ -192,7 +192,7 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
       <DropdownMenuContent
         align="start"
         alignOffset={0}
-        className="w-[var(--radix-dropdown-menu-trigger-width)] max-h-64 overflow-auto"
+        className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-[260px] sm:min-w-[300px] max-h-64 overflow-auto"
       >
         {/* Actualisation auto — en tête mais visuellement discrète */}
         {typeof onToggleAutoRefresh === "function" && (
