@@ -52,7 +52,25 @@ cp .env.inc .env
 
 Notes :
 - toutes les variables front doivent etre prefixees par `VITE_` ;
+- `VITE_MAINTENANCE_MODE=true` affiche une page de maintenance et empeche le chargement de la carte ;
 - `VITE_TOOLTIP_MIN_ZOOM` accepte un nombre (ex: `11`) ou `false` pour desactiver le seuil de zoom.
+
+### Mode maintenance
+
+Le mode maintenance se pilote avec le feature flag `VITE_MAINTENANCE_MODE`.
+
+Valeurs acceptees :
+- actif : `true`, `1`, `on`, `yes`, `enabled` ;
+- inactif : `false`, `0`, `off`, `no`, `disabled`.
+
+Exemple :
+
+```bash
+VITE_MAINTENANCE_MODE=true
+```
+
+En developpement, redemarrez `npm run dev` apres modification du `.env`.
+En production, relancez un build puis redeployez les fichiers `dist/`.
 
 ### Configuration domaine (`src/config/domainConfig.ts`)
 
