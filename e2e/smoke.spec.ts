@@ -1,6 +1,11 @@
 import { test, expect } from "@playwright/test";
 
+const isMaintenanceMode =
+  process.env.VITE_MAINTENANCE_MODE?.trim().toLowerCase() === "true";
+
 test.describe("Smoke et navigation", () => {
+  test.skip(isMaintenanceMode, "La page maintenance remplace l'application principale.");
+
   test("chargement : titre h1 et région carte visibles", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible({
@@ -74,5 +79,21 @@ test.describe("Smoke et navigation", () => {
       .first();
     await closeButton.click();
     await expect(dialog).not.toBeVisible();
+  });
+});
+
+test.describe("Mode maintenance", () => {
+  test.skip(!isMaintenanceMode, "Le flag VITE_MAINTENANCE_MODE n'est pas actif.");
+
+  test("affiche la page de maintenance", async ({ page }) => {
+    await page.goto("/");
+
+    await expect(
+      page.getByRole("heading", { name: /maintenance en cours/i })
+    ).toBeVisible({ timeout: 15000 });
+    await expect(
+      page.getByText(/temporairement indisponible/i)
+    ).toBeVisible();
+    await expect(page.locator(".leaflet-container")).toHaveCount(0);
   });
 });
