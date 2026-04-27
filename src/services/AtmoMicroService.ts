@@ -11,6 +11,13 @@ import {
 import { getAirQualityLevel } from "../utils";
 import { pollutants } from "../constants/pollutants";
 
+export class AtmoMicroMeasuresUnavailableError extends Error {
+  constructor(message: string = "ATMOMICRO_MEASURES_UNAVAILABLE") {
+    super(message);
+    this.name = "AtmoMicroMeasuresUnavailableError";
+  }
+}
+
 export class AtmoMicroService extends BaseDataService {
   private readonly BASE_URL = "https://api.atmosud.org/observations/capteurs";
   
@@ -365,7 +372,21 @@ export class AtmoMicroService extends BaseDataService {
     // Le rendu carte arrondit ensuite à l'entier le plus proche dans createCustomIcon.
     const url = `${this.BASE_URL}/mesures/dernieres?format=json&download=false&nb_dec=1&valeur_brute=true&type_capteur=true&variable=${variable}&aggregation=${aggregation}&delais=${delais}`;
     const response = await this.makeRequest(url);
-    return response || [];
+
+    // Incident métier connu: API disponible mais sans données mesures/dernieres.
+    if (response === null) {
+      throw new AtmoMicroMeasuresUnavailableError();
+    }
+
+    if (!Array.isArray(response)) {
+      throw new Error("Format de réponse inattendu pour mesures/dernieres");
+    }
+
+    if (response.length === 0) {
+      throw new AtmoMicroMeasuresUnavailableError();
+    }
+
+    return response;
   }
 
   private getAtmoMicroVariable(pollutant: string): string | null {

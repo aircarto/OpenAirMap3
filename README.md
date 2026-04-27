@@ -83,7 +83,11 @@ Ce fichier permet au mainteneur de changer le contenu sans modifier le code Reac
   "title": "Maintenance en cours",
   "message": "La plateforme est temporairement indisponible pendant une opération de maintenance.",
   "details": "Merci de réessayer un peu plus tard.",
-  "contactLabel": "Contacter l'équipe"
+  "contactLabel": "Contacter l'équipe",
+  "atmoMicroQualifiedSensors": {
+    "enabled": true,
+    "message": "Suite a un probleme technique, les donnees des capteurs qualifies ne sont plus accessibles. AtmoSud met tout en oeuvre pour le resoudre."
+  }
 }
 ```
 
@@ -91,7 +95,29 @@ Champs disponibles :
 - `title` : titre principal de la page ;
 - `message` : message explicatif principal ;
 - `details` : texte court complementaire affiche sous le message ;
-- `contactLabel` : libelle du bouton de contact.
+- `contactLabel` : libelle du bouton de contact ;
+- `atmoMicroQualifiedSensors.enabled` : active/desactive le bandeau incident AtmoMicro ;
+- `atmoMicroQualifiedSensors.message` : texte du bandeau incident AtmoMicro.
+
+#### Bandeau incident AtmoMicro (mesures/dernieres)
+
+OpenAirMap gere un mode degradé specifique pour AtmoMicro quand l'endpoint `mesures/dernieres` renvoie :
+- un `204 No Content` ;
+- une reponse vide (`null` ou tableau vide).
+
+Comportement applique :
+- un etat d'incident `atmoMicroOutage` est active dans le hook `useAirQualityData` ;
+- les marqueurs AtmoMicro ne sont plus affiches pendant l'incident ;
+- un bandeau d'information est affiche en haut de la carte si AtmoMicro est selectionnee ;
+- le texte du bandeau provient de `public/maintenance.json` (`atmoMicroQualifiedSensors.message`) ;
+- l'utilisateur peut fermer le bandeau via une croix (fermeture locale de session UI).
+
+Fichiers concernes :
+- `src/services/AtmoMicroService.ts` (detection du cas 204/vide) ;
+- `src/hooks/useAirQualityData.ts` (propagation de `atmoMicroOutage`) ;
+- `src/App.tsx` (rendu du bandeau, texte centre, bouton de fermeture) ;
+- `public/maintenance.json` (configuration du message).
+
 
 Ce fichier est servi comme un fichier statique. En production, le mainteneur peut donc modifier `maintenance.json` dans les fichiers deployes sans modifier le code React. Les champs absents ou vides utilisent automatiquement le message par defaut.
 
