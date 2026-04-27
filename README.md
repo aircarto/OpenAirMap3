@@ -58,6 +58,7 @@ Notes :
 ### Mode maintenance
 
 Le mode maintenance se pilote avec le feature flag `VITE_MAINTENANCE_MODE`.
+Quand il est actif, OpenAirMap affiche uniquement une page de maintenance et ne monte pas la carte Leaflet ni les appels de donnees.
 
 Valeurs acceptees :
 - actif : `true`, `1`, `on`, `yes`, `enabled` ;
@@ -71,6 +72,36 @@ VITE_MAINTENANCE_MODE=true
 
 En developpement, redemarrez `npm run dev` apres modification du `.env`.
 En production, relancez un build puis redeployez les fichiers `dist/`.
+
+#### Personnaliser le message
+
+Le texte affiche sur la page se configure dans `public/maintenance.json`.
+Ce fichier permet au mainteneur de changer le contenu sans modifier le code React :
+
+```json
+{
+  "title": "Maintenance en cours",
+  "message": "La plateforme est temporairement indisponible pendant une opération de maintenance.",
+  "details": "Merci de réessayer un peu plus tard.",
+  "contactLabel": "Contacter l'équipe"
+}
+```
+
+Champs disponibles :
+- `title` : titre principal de la page ;
+- `message` : message explicatif principal ;
+- `details` : texte court complementaire affiche sous le message ;
+- `contactLabel` : libelle du bouton de contact.
+
+Ce fichier est servi comme un fichier statique. En production, le mainteneur peut donc modifier `maintenance.json` dans les fichiers deployes sans modifier le code React. Les champs absents ou vides utilisent automatiquement le message par defaut.
+
+Procedure type :
+1. Activer `VITE_MAINTENANCE_MODE=true` dans l'environnement de build ;
+2. Builder et deployer l'application ;
+3. Modifier si besoin le fichier deploye `maintenance.json` pour adapter le message ;
+4. Desactiver la maintenance en repassant `VITE_MAINTENANCE_MODE=false`, puis rebuilder et redeployer.
+
+Note cache : `maintenance.json` est charge avec une strategie `no-store` cote navigateur pour faciliter les changements de message. Si un proxy, CDN ou Nginx applique un cache supplementaire, purgez ce cache ou configurez une duree courte pour ce fichier.
 
 ### Configuration domaine (`src/config/domainConfig.ts`)
 

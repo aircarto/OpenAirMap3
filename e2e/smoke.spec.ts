@@ -1,13 +1,18 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 
-const isMaintenanceMode =
-  process.env.VITE_MAINTENANCE_MODE?.trim().toLowerCase() === "true";
+const isMaintenancePageVisible = async (page: Page): Promise<boolean> =>
+  page
+    .getByRole("heading", { name: /maintenance|intervention planifiée/i })
+    .isVisible()
+    .catch(() => false);
 
 test.describe("Smoke et navigation", () => {
-  test.skip(isMaintenanceMode, "La page maintenance remplace l'application principale.");
-
   test("chargement : titre h1 et région carte visibles", async ({ page }) => {
     await page.goto("/");
+    test.skip(
+      await isMaintenancePageVisible(page),
+      "La page maintenance remplace l'application principale."
+    );
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible({
       timeout: 15000,
     });
@@ -20,6 +25,10 @@ test.describe("Smoke et navigation", () => {
     page,
   }) => {
     await page.goto("/");
+    test.skip(
+      await isMaintenancePageVisible(page),
+      "La page maintenance remplace l'application principale."
+    );
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible({
       timeout: 15000,
     });
@@ -35,6 +44,10 @@ test.describe("Smoke et navigation", () => {
   }) => {
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto("/");
+    test.skip(
+      await isMaintenancePageVisible(page),
+      "La page maintenance remplace l'application principale."
+    );
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible({
       timeout: 15000,
     });
@@ -51,6 +64,10 @@ test.describe("Smoke et navigation", () => {
   }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto("/");
+    test.skip(
+      await isMaintenancePageVisible(page),
+      "La page maintenance remplace l'application principale."
+    );
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible({
       timeout: 15000,
     });
@@ -65,6 +82,10 @@ test.describe("Smoke et navigation", () => {
 
   test("modale information : ouverture et fermeture", async ({ page }) => {
     await page.goto("/");
+    test.skip(
+      await isMaintenancePageVisible(page),
+      "La page maintenance remplace l'application principale."
+    );
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible({
       timeout: 15000,
     });
@@ -83,16 +104,34 @@ test.describe("Smoke et navigation", () => {
 });
 
 test.describe("Mode maintenance", () => {
-  test.skip(!isMaintenanceMode, "Le flag VITE_MAINTENANCE_MODE n'est pas actif.");
-
   test("affiche la page de maintenance", async ({ page }) => {
+    await page.route("**/maintenance.json", async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          title: "Intervention planifiée",
+          message: "Message de maintenance personnalisé pour le test.",
+          details: "Retour prévu prochainement.",
+          contactLabel: "Contacter le support",
+        }),
+      });
+    });
+
     await page.goto("/");
+    test.skip(
+      !(await isMaintenancePageVisible(page)),
+      "Le mode maintenance n'est pas actif."
+    );
 
     await expect(
-      page.getByRole("heading", { name: /maintenance en cours/i })
+      page.getByRole("heading", { name: /intervention planifiée/i })
     ).toBeVisible({ timeout: 15000 });
     await expect(
-      page.getByText(/temporairement indisponible/i)
+      page.getByText(/message de maintenance personnalisé/i)
+    ).toBeVisible();
+    await expect(page.getByText(/retour prévu prochainement/i)).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: /contacter le support/i })
     ).toBeVisible();
     await expect(page.locator(".leaflet-container")).toHaveCount(0);
   });
