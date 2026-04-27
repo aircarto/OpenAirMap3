@@ -168,6 +168,29 @@ src/
   locales/         # traductions i18n
 ```
 
+## Compatibilite des pas de temps (regle generale)
+
+### Source de verite
+
+- La disponibilite des pas de temps dans l'UI est pilotee par `src/constants/sources.ts` via `supportedTimeSteps`.
+- Chaque service de donnees doit supporter effectivement les pas annonces (mapping, requetage API, transformation).
+- La configuration UI et l'implementation service doivent rester alignees pour eviter les etats incoherents (bouton actif mais donnees vides, ou inversement).
+
+### Comportement des ecrans
+
+- Les panneaux source-specifiques activent/desactivent les boutons selon la compatibilite de la source.
+- Le panneau de comparaison applique une regle d'intersection : un pas de temps n'est activable que s'il est supporte par toutes les sources comparees.
+- Un fallback automatique vers un pas valide prioritaire (`heure`, puis `quartHeure`, puis `instantane`) est applique si un pas courant devient invalide.
+
+### Evolution d'un pas de temps pour une source
+
+Pour ajouter (ou retirer) un pas de temps sur une source donnee :
+1. Mettre a jour `supportedTimeSteps` dans `src/constants/sources.ts`.
+2. Mettre a jour le service associe pour qu'il supporte reellement ce pas (mapping/config/requetes).
+3. Verifier les panneaux de source et de comparaison pour confirmer l'etat des boutons et le chargement des graphes.
+
+Exemple concret : AtmoMicro n'expose pas encore `jour` cote API, donc ce pas est desactive tant que le service ne le supporte pas.
+
 ## Deploiement production (Nginx)
 
 Ce projet se deploie comme une SPA statique :
