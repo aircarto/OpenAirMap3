@@ -299,10 +299,7 @@ export class AtmoMicroService extends BaseDataService {
         }
       }
 
-<<<<<<< HEAD
-=======
       // Log des sites exclus apres filtrage sites (non affiches sur carte)
->>>>>>> main
       this.logPostFilterExcludedSites(postFilterExcludedSites, {
         pollutant: params.pollutant,
         atmoMicroVariable,
