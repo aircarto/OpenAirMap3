@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { StationInfo, ComparisonState } from "../../../types";
+import { trackEvent, trackFeatureUsage } from "../../../services/analyticsService";
 
 interface UseSidePanelsProps {
   initialSelectedPollutant: string;
@@ -53,12 +54,21 @@ export const useSidePanels = ({ initialSelectedPollutant }: UseSidePanelsProps) 
   // Fonction pour basculer le mode comparaison
   const handleComparisonModeToggle = (pollutantToPreserve?: string) => {
     const isActivatingComparison = !comparisonState.isComparisonMode;
+    trackFeatureUsage("comparison_mode_toggle", {
+      enabled: isActivatingComparison,
+      stationCount: isActivatingComparison
+        ? selectedStation
+          ? 1
+          : comparisonState.comparedStations.length
+        : comparisonState.comparedStations.length,
+    });
 
     if (isActivatingComparison) {
       setLastSelectedStationBeforeComparison(selectedStation);
 
       // Préserver le polluant actuel du panel ou utiliser celui passé en paramètre
       const pollutantToUse = pollutantToPreserve || comparisonState.selectedPollutant;
+      const initialStationSource = selectedStation?.source;
 
       setComparisonState((prev) => ({
         ...prev,
@@ -73,6 +83,16 @@ export const useSidePanels = ({ initialSelectedPollutant }: UseSidePanelsProps) 
       // Nettoyer selectedStation quand on active le mode comparaison pour éviter les conflits
       setSelectedStation(null);
       setIsSidePanelOpen(false);
+
+      // Tracer explicitement l'appareil initial auto-ajouté au mode comparaison
+      if (initialStationSource) {
+        trackEvent("comparison", "add_station", initialStationSource);
+        trackFeatureUsage("comparison_station_added", {
+          source: initialStationSource,
+          stationCount: 1,
+          initialSelection: true,
+        });
+      }
     } else {
       const remainingStations = comparisonState.comparedStations;
       const lastStationStillPresent =

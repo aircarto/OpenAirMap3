@@ -74,6 +74,7 @@ import {
   createLoadComparisonDataHandler,
   createRemoveStationFromComparisonHandler,
 } from "./handlers/comparisonHandlers";
+import { trackEvent, trackFeatureUsage } from "../../services/analyticsService";
 
 // Correction pour les icônes Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -453,13 +454,33 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
   const handleLoadComparisonData = createLoadComparisonDataHandler(
     sidePanels.setComparisonState
   );
-  const handleRemoveStationFromComparison =
-    createRemoveStationFromComparisonHandler(
-      sidePanels.comparisonState,
-      sidePanels.setComparisonState,
-      sidePanels.setIsSidePanelOpen,
-      sidePanels.setSelectedStation
-    );
+  const removeStationFromComparisonBase = createRemoveStationFromComparisonHandler(
+    sidePanels.comparisonState,
+    sidePanels.setComparisonState,
+    sidePanels.setIsSidePanelOpen,
+    sidePanels.setSelectedStation
+  );
+  const handleRemoveStationFromComparison = useCallback(
+    (stationId: string) => {
+      const removedStation = sidePanels.comparisonState.comparedStations.find(
+        (station) => station.id === stationId
+      );
+      removeStationFromComparisonBase(stationId);
+      trackEvent(
+        "comparison",
+        "remove_station",
+        removedStation?.source ?? "unknown"
+      );
+      trackFeatureUsage("comparison_station_removed", {
+        source: removedStation?.source ?? "unknown",
+        remainingStations: Math.max(
+          sidePanels.comparisonState.comparedStations.length - 1,
+          0
+        ),
+      });
+    },
+    [sidePanels.comparisonState.comparedStations, removeStationFromComparisonBase]
+  );
 
   // Handler pour ajouter une station à la comparaison
   // useCallback rend la fonction stable entre renders.
@@ -522,6 +543,11 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
         ...prev,
         comparedStations: [...prev.comparedStations, stationInfo],
       }));
+      trackEvent("comparison", "add_station", device.source);
+      trackFeatureUsage("comparison_station_added", {
+        source: device.source,
+        stationCount: sidePanels.comparisonState.comparedStations.length + 1,
+      });
     } catch (error) {
       console.error(
         "Erreur lors de l'ajout de la station à la comparaison:",

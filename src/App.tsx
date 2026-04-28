@@ -35,6 +35,12 @@ import { ToastContainer } from "./components/ui/toast";
 import { cn } from "./lib/utils";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "./components/controls/LanguageSwitcher";
+import {
+  initAnalytics,
+  trackEvent,
+  trackFeatureUsage,
+  trackPageView,
+} from "./services/analyticsService";
 
 interface AtmoMicroMaintenanceBannerConfig {
   enabled: boolean;
@@ -138,6 +144,56 @@ const App: React.FC = () => {
   const [isSignalAirVisible, setIsSignalAirVisible] = useState(true);
   const [isMobileAirVisible, setIsMobileAirVisible] = useState(true);
 
+  useEffect(() => {
+    initAnalytics();
+    trackPageView(domainConfig.title);
+  }, [domainConfig.title]);
+
+  const handlePollutantChange = useCallback((pollutant: string) => {
+    setSelectedPollutant(pollutant);
+    trackEvent("pollutant", "select", pollutant);
+  }, []);
+
+  const handleSourceChange = useCallback((sources: string[]) => {
+    setSelectedSources((previousSources) => {
+      const addedSources = sources.filter((source) => !previousSources.includes(source));
+      const removedSources = previousSources.filter((source) => !sources.includes(source));
+
+      trackFeatureUsage("sources_change", {
+        selectedCount: sources.length,
+        added: addedSources.join(",") || null,
+        removed: removedSources.join(",") || null,
+      });
+
+      return sources;
+    });
+  }, []);
+
+  const handleTimeStepChange = useCallback((timeStep: string) => {
+    setSelectedTimeStep(timeStep);
+    trackFeatureUsage("time_step_change", { timeStep });
+  }, []);
+
+  const handleModelingLayerChange = useCallback((layer: ModelingLayerType | null) => {
+    setCurrentModelingLayer(layer);
+    trackFeatureUsage("modeling_layer_change", { layer: layer ?? "none" });
+  }, []);
+
+  const handleAutoRefreshToggle = useCallback((enabled: boolean) => {
+    setAutoRefreshEnabled(enabled);
+    trackFeatureUsage("auto_refresh_toggle", { enabled });
+  }, []);
+
+  const handleSignalAirVisibilityToggle = useCallback((visible: boolean) => {
+    setIsSignalAirVisible(visible);
+    trackFeatureUsage("signalair_visibility_toggle", { visible });
+  }, []);
+
+  const handleMobileAirVisibilityToggle = useCallback((visible: boolean) => {
+    setIsMobileAirVisible(visible);
+    trackFeatureUsage("mobileair_visibility_toggle", { visible });
+  }, []);
+
   // Fonction wrapper pour gérer le changement de période SignalAir
   const handleSignalAirDraftPeriodChange = (
     startDate: string,
@@ -159,6 +215,11 @@ const App: React.FC = () => {
       endDate: signalAirDraftPeriod.endDate,
     });
     setSignalAirLoadTrigger((prev) => prev + 1);
+    trackFeatureUsage("signalair_load_request", {
+      selectedTypes: signalAirSelectedTypes.join(","),
+      startDate: signalAirDraftPeriod.startDate,
+      endDate: signalAirDraftPeriod.endDate,
+    });
   };
 
   // Fonction pour gérer la sélection d'un capteur MobileAir
@@ -193,10 +254,12 @@ const App: React.FC = () => {
   // Gérer l'ouverture des panels
   const handleSignalAirPanelOpen = () => {
     setIsSignalAirEnabled(true);
+    trackFeatureUsage("signalair_panel_open");
   };
 
   const handleMobileAirPanelOpen = () => {
     setIsMobileAirEnabled(true);
+    trackFeatureUsage("mobileair_panel_open");
   };
 
   // Gérer le chargement des données SignalAir quand activé
@@ -261,6 +324,11 @@ const App: React.FC = () => {
 
   // Mode historique autorisé uniquement pour les pas 15 min, heure et jour
   const isHistoricalModeAllowed = isHistoricalModeAllowedForTimeStep(selectedTimeStep);
+
+  const handleHistoricalModeToggle = useCallback(() => {
+    toggleHistoricalMode();
+    trackFeatureUsage("historical_mode_toggle", { from: isHistoricalModeActive });
+  }, [toggleHistoricalMode, isHistoricalModeActive]);
 
   // Désactiver le mode historique si l'utilisateur passe sur Scan ou ≤2 min
   useEffect(() => {
@@ -476,20 +544,20 @@ const App: React.FC = () => {
             <div className="xl:hidden flex items-center shrink-0">
               <MobileMenuBurger
                 selectedPollutant={selectedPollutant}
-                onPollutantChange={setSelectedPollutant}
+                onPollutantChange={handlePollutantChange}
                 selectedSources={selectedSources}
-                onSourceChange={setSelectedSources}
+                onSourceChange={handleSourceChange}
                 selectedTimeStep={selectedTimeStep}
-                onTimeStepChange={setSelectedTimeStep}
+                onTimeStepChange={handleTimeStepChange}
                 isHistoricalModeActive={isHistoricalModeActive}
-                onToggleHistoricalMode={toggleHistoricalMode}
+                onToggleHistoricalMode={handleHistoricalModeToggle}
                 isHistoricalModeAllowed={isHistoricalModeAllowed}
                 autoRefreshEnabled={autoRefreshEnabled}
-                onToggleAutoRefresh={setAutoRefreshEnabled}
+                onToggleAutoRefresh={handleAutoRefreshToggle}
                 lastRefresh={lastRefresh}
                 loading={loading}
                 currentModelingLayer={currentModelingLayer}
-                onModelingLayerChange={setCurrentModelingLayer}
+                onModelingLayerChange={handleModelingLayerChange}
                 onToast={addToast}
                 onOpenSignalAirPanel={() => {
                   setOpenSignalAirPanelRequest((r) => r + 1);
@@ -501,8 +569,8 @@ const App: React.FC = () => {
                 }}
                 isSignalAirVisible={isSignalAirVisible}
                 isMobileAirVisible={isMobileAirVisible}
-                onSignalAirToggle={setIsSignalAirVisible}
-                onMobileAirToggle={setIsMobileAirVisible}
+                onSignalAirToggle={handleSignalAirVisibilityToggle}
+                onMobileAirToggle={handleMobileAirVisibilityToggle}
                 hasSignalAirData={hasSignalAirData}
                 hasMobileAirData={hasMobileAirData}
               />
@@ -519,25 +587,25 @@ const App: React.FC = () => {
               <div className="flex items-center gap-2 rounded-lg bg-gray-50/80 px-2 py-1.5 border border-gray-200/60 min-w-0 shrink">
                 <PollutantDropdown
                   selectedPollutant={selectedPollutant}
-                  onPollutantChange={setSelectedPollutant}
+                  onPollutantChange={handlePollutantChange}
                   selectedTimeStep={selectedTimeStep}
                 />
                 <SourceDropdown
                   selectedSources={selectedSources}
                   selectedTimeStep={selectedTimeStep}
-                  onSourceChange={setSelectedSources}
-                  onTimeStepChange={setSelectedTimeStep}
+                  onSourceChange={handleSourceChange}
+                  onTimeStepChange={handleTimeStepChange}
                   onToast={addToast}
                   autoRefreshEnabled={autoRefreshEnabled && !isHistoricalModeActive}
-                  onToggleAutoRefresh={setAutoRefreshEnabled}
+                  onToggleAutoRefresh={handleAutoRefreshToggle}
                   loading={loading}
                   isHistoricalModeActive={isHistoricalModeActive}
                 />
                 <TimeStepDropdown
                   selectedTimeStep={selectedTimeStep}
                   selectedSources={selectedSources}
-                  onTimeStepChange={setSelectedTimeStep}
-                  onSourceChange={setSelectedSources}
+                  onTimeStepChange={handleTimeStepChange}
+                  onSourceChange={handleSourceChange}
                   onToast={addToast}
                 />
               </div>
@@ -546,7 +614,7 @@ const App: React.FC = () => {
               <div className="flex items-center gap-2 pl-1 border-l border-gray-200/80 min-w-0 shrink">
                 <ModelingLayerControl
                   currentModelingLayer={currentModelingLayer}
-                  onModelingLayerChange={setCurrentModelingLayer}
+                  onModelingLayerChange={handleModelingLayerChange}
                   selectedPollutant={selectedPollutant}
                   selectedTimeStep={selectedTimeStep}
                 />
@@ -556,7 +624,7 @@ const App: React.FC = () => {
               <div className="flex items-center gap-2 pl-1 border-l border-gray-200/80 min-w-0 shrink">
                 <HistoricalModeButton
                   isActive={isHistoricalModeActive}
-                  onToggle={toggleHistoricalMode}
+                  onToggle={handleHistoricalModeToggle}
                   disabled={!isHistoricalModeAllowed}
                 />
                 <SpecialSourceHeaderDropdown
@@ -564,8 +632,8 @@ const App: React.FC = () => {
                   onMobileAirClick={handleMobileAirHeaderClick}
                   isSignalAirVisible={isSignalAirVisible}
                   isMobileAirVisible={isMobileAirVisible}
-                  onSignalAirToggle={setIsSignalAirVisible}
-                  onMobileAirToggle={setIsMobileAirVisible}
+                  onSignalAirToggle={handleSignalAirVisibilityToggle}
+                  onMobileAirToggle={handleMobileAirVisibilityToggle}
                   hasSignalAirData={hasSignalAirData}
                   hasMobileAirData={hasMobileAirData}
                 />
@@ -689,8 +757,8 @@ const App: React.FC = () => {
           isMobileAirEnabled={isMobileAirEnabled}
           isSignalAirVisible={isSignalAirVisible}
           isMobileAirVisible={isMobileAirVisible}
-          onSignalAirToggle={setIsSignalAirVisible}
-          onMobileAirToggle={setIsMobileAirVisible}
+          onSignalAirToggle={handleSignalAirVisibilityToggle}
+          onMobileAirToggle={handleMobileAirVisibilityToggle}
           onSignalAirPanelOpen={handleSignalAirPanelOpen}
           onMobileAirPanelOpen={handleMobileAirPanelOpen}
           openSignalAirPanelRequest={openSignalAirPanelRequest}

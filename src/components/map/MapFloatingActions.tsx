@@ -1,6 +1,6 @@
 import React from "react";
 
-type PanelSize = "normal" | "compact" | "hidden";
+type PanelSize = "normal" | "compact" | "fullscreen" | "hidden";
 
 interface SidePanelsProps {
   isSidePanelOpen: boolean;

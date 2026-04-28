@@ -15,6 +15,7 @@ import MobileAirSelectionPanel from "../panels/MobileAirSelectionPanel";
 import MobileAirDetailPanel from "../panels/MobileAirDetailPanel";
 import SignalAirSelectionPanel from "../panels/SignalAirSelectionPanel";
 import SignalAirDetailPanel from "../panels/SignalAirDetailPanel";
+import { TimeRange } from "../controls/HistoricalTimeRangeSelector";
 
 interface MapPanelsContainerProps {
   sidePanels: any;
@@ -30,7 +31,12 @@ interface MapPanelsContainerProps {
   signalAirReportsCount: number;
   isComparisonPanelVisible: boolean;
   handleRemoveStationFromComparison: (stationId: string) => void;
-  handleLoadComparisonData: () => Promise<void>;
+  handleLoadComparisonData: (
+    stations: StationInfo[],
+    pollutant: string,
+    timeRange: TimeRange,
+    timeStep: string
+  ) => Promise<void>;
   purpleAirDeviceData: Record<
     string,
     {
