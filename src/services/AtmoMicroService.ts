@@ -20,6 +20,7 @@ export class AtmoMicroMeasuresUnavailableError extends Error {
 
 export class AtmoMicroService extends BaseDataService {
   private readonly BASE_URL = "https://api.atmosud.org/observations/capteurs";
+  private lastMeasuresUnavailable = false;
   
   // Cache STATIQUE partagé entre toutes les instances pour éviter les requêtes multiples
   // Les métadonnées (sites) changent rarement, donc cache long (30 minutes)
@@ -91,6 +92,12 @@ export class AtmoMicroService extends BaseDataService {
     super("atmoMicro");
   }
 
+  // Expose l'état incident pour permettre à l'UI d'afficher un bandeau,
+  // tout en conservant les marqueurs inactifs issus de capteurs/sites.
+  isMeasuresUnavailableIncident(): boolean {
+    return this.lastMeasuresUnavailable;
+  }
+
   async fetchData(params: {
     pollutant: string;
     timeStep: string;
@@ -117,14 +124,23 @@ export class AtmoMicroService extends BaseDataService {
         return [];
       }
 
-      // Faire les deux appels API en parallèle
+      this.lastMeasuresUnavailable = false;
+      // Faire les deux appels API en parallèle.
+      // En cas d'incident mesures/dernieres (204/vide), on continue avec [] pour
+      // garder les capteurs grisés (inactifs) issus de capteurs/sites.
       const [sitesResult, measuresResponse] = await Promise.all([
         this.fetchSites(atmoMicroVariable),
         this.fetchMeasures(
           atmoMicroVariable,
           timeStepConfig.aggregation,
           timeStepConfig.delais
-        ),
+        ).catch((error) => {
+          if (error instanceof AtmoMicroMeasuresUnavailableError) {
+            this.lastMeasuresUnavailable = true;
+            return [];
+          }
+          throw error;
+        }),
       ]);
       const { filteredSites: sitesResponse, excludedSites } = sitesResult;
 

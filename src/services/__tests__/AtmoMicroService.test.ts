@@ -1,8 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import {
-  AtmoMicroMeasuresUnavailableError,
-  AtmoMicroService,
-} from "../AtmoMicroService";
+import { AtmoMicroService } from "../AtmoMicroService";
 
 const baseParams = {
   pollutant: "pm25",
@@ -105,6 +102,7 @@ describe("AtmoMicroService", () => {
       raw_value: 14.2,
     });
     expect(device).toHaveProperty("qualityLevel", "moyen");
+    expect(service.isMeasuresUnavailableIncident()).toBe(false);
   });
 
   it("ajoute un device inactif lorsque le site n'a pas de mesure", async () => {
@@ -128,24 +126,36 @@ describe("AtmoMicroService", () => {
     });
   });
 
-  it("lève une erreur métier quand mesures/dernieres renvoie 204 (null)", async () => {
+  it("garde les sites en inactif et active l'incident quand mesures/dernieres renvoie 204 (null)", async () => {
     vi.spyOn(service as any, "makeRequest")
       .mockResolvedValueOnce([buildSite()])
       .mockResolvedValueOnce(null);
 
-    await expect(service.fetchData(baseParams)).rejects.toBeInstanceOf(
-      AtmoMicroMeasuresUnavailableError
-    );
+    const result = await service.fetchData(baseParams);
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      id: "101",
+      status: "inactive",
+      value: 0,
+      qualityLevel: "default",
+    });
+    expect(service.isMeasuresUnavailableIncident()).toBe(true);
   });
 
-  it("lève une erreur métier quand mesures/dernieres renvoie un tableau vide", async () => {
+  it("garde les sites en inactif et active l'incident quand mesures/dernieres renvoie un tableau vide", async () => {
     vi.spyOn(service as any, "makeRequest")
       .mockResolvedValueOnce([buildSite()])
       .mockResolvedValueOnce([]);
 
-    await expect(service.fetchData(baseParams)).rejects.toBeInstanceOf(
-      AtmoMicroMeasuresUnavailableError
-    );
+    const result = await service.fetchData(baseParams);
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      id: "101",
+      status: "inactive",
+      value: 0,
+      qualityLevel: "default",
+    });
+    expect(service.isMeasuresUnavailableIncident()).toBe(true);
   });
 });
 

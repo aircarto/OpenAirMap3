@@ -312,6 +312,15 @@ export const useAirQualityData = ({
               });
             }
           }
+
+          if (
+            mappedSourceCode === "atmoMicro" &&
+            typeof (service as any).isMeasuresUnavailableIncident === "function"
+          ) {
+            setAtmoMicroOutage(
+              (service as any).isMeasuresUnavailableIncident() === true
+            );
+          }
         } catch (err) {
           console.error(
             `❌ Erreur lors de la récupération des données pour ${sourceCode}:`,
@@ -323,10 +332,6 @@ export const useAirQualityData = ({
             err instanceof AtmoMicroMeasuresUnavailableError
           ) {
             setAtmoMicroOutage(true);
-            // En incident mesures/dernieres, retirer les points AtmoMicro affichés.
-            setDevices((prevDevices) =>
-              prevDevices.filter((device) => device.source !== "atmoMicro")
-            );
           }
 
           // En cas d'erreur, on garde les données existantes mais on retire la source du loading
