@@ -1,0 +1,10 @@
+{
+  "title": "Maintenance en cours",
+  "message": "La plateforme est temporairement indisponible pendant une opération de maintenance. Nous faisons le nécessaire pour rétablir le service dans les meilleurs délais.",
+  "details": "Merci de réessayer un peu plus tard.",
+  "contactLabel": "Contacter l'équipe",
+  "atmoMicroQualifiedSensors": {
+    "enabled": true,
+    "message": "Suite à un problème technique, les données des microcapteurs qualifiés ne sont plus accessibles. AtmoSud met tout en œuvre pour le résoudre."
+  }
+}

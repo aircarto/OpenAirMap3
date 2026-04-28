@@ -20,6 +20,10 @@ const parseBooleanFlag = (
 };
 
 export const featureFlags = {
+  maintenanceMode: parseBooleanFlag(
+    import.meta.env.VITE_MAINTENANCE_MODE as string | undefined,
+    false
+  ),
   wildfireLayer: parseBooleanFlag(
     import.meta.env.VITE_ENABLE_WILDFIRE_LAYER as string | undefined,
     true

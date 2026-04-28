@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { createPortal } from "react-dom";
 import {
@@ -16,6 +16,7 @@ import HistoricalTimeRangeSelector, {
   TimeRange,
   getMaxHistoryDays,
 } from "../controls/HistoricalTimeRangeSelector";
+import { sources } from "../../constants/sources";
 
 interface ComparisonSidePanelProps {
   isOpen: boolean;
@@ -35,6 +36,13 @@ interface ComparisonSidePanelProps {
 }
 
 type PanelSize = "normal" | "fullscreen" | "hidden";
+const COMPARISON_TIME_STEP_PRIORITY = ["heure", "quartHeure", "instantane", "jour"] as const;
+const COMPARISON_TIME_STEP_OPTIONS = [
+  { key: "instantane", labelKey: "timeStepScan" },
+  { key: "quartHeure", labelKey: "timeStep15min" },
+  { key: "heure", labelKey: "timeStep1h" },
+  { key: "jour", labelKey: "timeStep1j" },
+] as const;
 
 const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
   isOpen,
@@ -113,6 +121,46 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
   const canShowRawDataButton = (): boolean => {
     return hasAtmoMicroStation() && comparisonState.timeStep === "heure";
   };
+
+  const getSupportedTimeStepsBySource = (sourceCode: string): string[] => {
+    if (sourceCode === "atmoRef" || sourceCode === "atmoMicro") {
+      return sources[sourceCode].supportedTimeSteps || [];
+    }
+    if (sourceCode === "nebuleair") {
+      return (
+        sources.communautaire.subSources?.nebuleair?.supportedTimeSteps || []
+      );
+    }
+    // Comportement inchangé pour les sources inattendues en comparaison.
+    return COMPARISON_TIME_STEP_OPTIONS.map(({ key }) => key);
+  };
+
+  const availableComparisonTimeSteps = useMemo(
+    () =>
+      comparisonState.comparedStations.reduce<string[]>(
+        (commonSteps, station, index) => {
+          const stationSupportedSteps = getSupportedTimeStepsBySource(station.source);
+          if (index === 0) return stationSupportedSteps;
+          return commonSteps.filter((timeStep) =>
+            stationSupportedSteps.includes(timeStep)
+          );
+        },
+        []
+      ),
+    [comparisonState.comparedStations]
+  );
+
+  const isTimeStepSupportedByComparedStations = useCallback(
+    (timeStep: string): boolean => availableComparisonTimeSteps.includes(timeStep),
+    [availableComparisonTimeSteps]
+  );
+  const getComparisonFallbackTimeStep = useCallback(
+    (): string =>
+      COMPARISON_TIME_STEP_PRIORITY.find((timeStep) =>
+        isTimeStepSupportedByComparedStations(timeStep)
+      ) || "heure",
+    [isTimeStepSupportedByComparedStations]
+  );
 
   // Handler pour mettre à jour l'état des données corrigées
   const handleHasCorrectedDataChange = (hasCorrected: boolean) => {
@@ -301,6 +349,10 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
   };
 
   const handleTimeStepChange = (timeStep: string) => {
+    if (!isTimeStepSupportedByComparedStations(timeStep)) {
+      return;
+    }
+
     // Ajuster la période si nécessaire
     const { adjustedRange: adjustedTimeRange } = adjustTimeRangeIfNeeded(
       comparisonState.timeRange,
@@ -321,6 +373,35 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
       timeStep
     );
   };
+
+  useEffect(() => {
+    if (comparisonState.comparedStations.length === 0) return;
+
+    const currentTimeStep = comparisonState.timeStep;
+    if (!isTimeStepSupportedByComparedStations(currentTimeStep)) {
+      const fallbackTimeStep = getComparisonFallbackTimeStep();
+      if (fallbackTimeStep !== currentTimeStep) {
+        const { adjustedRange: adjustedTimeRange } = adjustTimeRangeIfNeeded(
+          comparisonState.timeRange,
+          fallbackTimeStep
+        );
+        onLoadComparisonData(
+          comparisonState.comparedStations,
+          comparisonState.selectedPollutant,
+          adjustedTimeRange,
+          fallbackTimeStep
+        );
+      }
+    }
+  }, [
+    comparisonState.comparedStations,
+    comparisonState.selectedPollutant,
+    comparisonState.timeRange,
+    comparisonState.timeStep,
+    getComparisonFallbackTimeStep,
+    isTimeStepSupportedByComparedStations,
+    onLoadComparisonData,
+  ]);
 
   const handlePanelSizeChange = (newSize: PanelSize) => {
     // Si on passe à "hidden", déclencher l'animation de sortie
@@ -835,13 +916,11 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
                       </span>
                     </div>
                     <div className="grid grid-cols-4 gap-1">
-                      {[
-                        { key: "instantane", labelKey: "timeStepScan" },
-                        { key: "quartHeure", labelKey: "timeStep15min" },
-                        { key: "heure", labelKey: "timeStep1h" },
-                        { key: "jour", labelKey: "timeStep1j" },
-                      ].map(({ key, labelKey }) => {
+                      {COMPARISON_TIME_STEP_OPTIONS.map(({ key, labelKey }) => {
                         const isDisabledByRange = !isTimeStepValidForCurrentRange(key);
+                        const isDisabledBySupport =
+                          !isTimeStepSupportedByComparedStations(key);
+                        const isDisabled = isDisabledByRange || isDisabledBySupport;
                         const isSelected = comparisonState.timeStep === key;
                         const maxDays = getMaxHistoryDays(key);
                         const label = t(`panels.comparisonSidePanel.${labelKey}`);
@@ -851,16 +930,18 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
                           tooltip = t("panels.stationSidePanel.timeStepRangeLimit", {
                             maxDays,
                           });
+                        } else if (isDisabledBySupport) {
+                          tooltip = t("panels.stationSidePanel.timeStepNotSupported");
                         }
 
                         return (
                           <button
                             key={key}
-                            onClick={() => !isDisabledByRange && handleTimeStepChange(key)}
-                            disabled={isDisabledByRange}
+                            onClick={() => !isDisabled && handleTimeStepChange(key)}
+                            disabled={isDisabled}
                             title={tooltip}
                             className={`px-1.5 py-1 text-xs rounded-md transition-all duration-200 ${
-                              isDisabledByRange
+                              isDisabled
                                 ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-60"
                                 : isSelected
                                 ? "bg-blue-600 text-white shadow-sm"
@@ -875,12 +956,9 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
                     
                     {/* Message explicatif si des boutons sont désactivés à cause de la période */}
                     {(() => {
-                      const disabledByRange = [
-                        { key: "instantane", labelKey: "timeStepScan" },
-                        { key: "quartHeure", labelKey: "timeStep15min" },
-                        { key: "heure", labelKey: "timeStep1h" },
-                        { key: "jour", labelKey: "timeStep1j" },
-                      ].filter(({ key }) => !isTimeStepValidForCurrentRange(key));
+                      const disabledByRange = COMPARISON_TIME_STEP_OPTIONS.filter(
+                        ({ key }) => !isTimeStepValidForCurrentRange(key)
+                      );
 
                       if (disabledByRange.length > 0) {
                         const timeStepLabels = disabledByRange

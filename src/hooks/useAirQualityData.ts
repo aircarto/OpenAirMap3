@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { MeasurementDevice, SignalAirReport } from "../types";
 import { DataServiceFactory } from "../services/DataServiceFactory";
+import { AtmoMicroMeasuresUnavailableError } from "../services/AtmoMicroService";
 import { pasDeTemps } from "../constants/timeSteps";
 
 interface UseAirQualityDataProps {
@@ -64,6 +65,7 @@ export const useAirQualityData = ({
   const [reports, setReports] = useState<SignalAirReport[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [atmoMicroOutage, setAtmoMicroOutage] = useState(false);
   const [loadingSources, setLoadingSources] = useState<string[]>([]);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
 
@@ -208,6 +210,7 @@ export const useAirQualityData = ({
 
       setLoading(true);
       setError(null);
+      setAtmoMicroOutage(false);
       setLoadingSources(allSourcesToLoad);
 
       // console.log("🔍 [HOOK] Mapping des sources:", {
@@ -329,6 +332,17 @@ export const useAirQualityData = ({
             `❌ Erreur lors de la récupération des données pour ${sourceCode}:`,
             err
           );
+
+          if (
+            mappedSourceCode === "atmoMicro" &&
+            err instanceof AtmoMicroMeasuresUnavailableError
+          ) {
+            setAtmoMicroOutage(true);
+            // En incident mesures/dernieres, retirer les points AtmoMicro affichés.
+            setDevices((prevDevices) =>
+              prevDevices.filter((device) => device.source !== "atmoMicro")
+            );
+          }
 
           // En cas d'erreur, on garde les données existantes mais on retire la source du loading
         } finally {
@@ -509,6 +523,7 @@ export const useAirQualityData = ({
     reports,
     loading,
     error,
+    atmoMicroOutage,
     loadingSources,
     lastRefresh,
   };

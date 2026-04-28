@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { AtmoMicroService } from "../AtmoMicroService";
+import {
+  AtmoMicroMeasuresUnavailableError,
+  AtmoMicroService,
+} from "../AtmoMicroService";
 
 const baseParams = {
   pollutant: "pm25",
@@ -40,6 +43,9 @@ describe("AtmoMicroService", () => {
   let service: AtmoMicroService;
 
   beforeEach(() => {
+    (AtmoMicroService as any).sitesCache = null;
+    (AtmoMicroService as any).lastSitesFetch = 0;
+    (AtmoMicroService as any).sitesFetchPromise = null;
     service = new AtmoMicroService();
   });
 
@@ -120,6 +126,26 @@ describe("AtmoMicroService", () => {
       value: 0,
       qualityLevel: "default",
     });
+  });
+
+  it("lève une erreur métier quand mesures/dernieres renvoie 204 (null)", async () => {
+    vi.spyOn(service as any, "makeRequest")
+      .mockResolvedValueOnce([buildSite()])
+      .mockResolvedValueOnce(null);
+
+    await expect(service.fetchData(baseParams)).rejects.toBeInstanceOf(
+      AtmoMicroMeasuresUnavailableError
+    );
+  });
+
+  it("lève une erreur métier quand mesures/dernieres renvoie un tableau vide", async () => {
+    vi.spyOn(service as any, "makeRequest")
+      .mockResolvedValueOnce([buildSite()])
+      .mockResolvedValueOnce([]);
+
+    await expect(service.fetchData(baseParams)).rejects.toBeInstanceOf(
+      AtmoMicroMeasuresUnavailableError
+    );
   });
 });
 

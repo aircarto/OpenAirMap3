@@ -21,6 +21,7 @@ import HistoricalTimeRangeSelector, {
 import { ToggleGroup, ToggleGroupItem } from "../ui/button-group";
 import ExpertMenu from "../controls/ExpertMenu";
 import { cn } from "../../lib/utils";
+import { sources } from "../../constants/sources";
 
 interface MicroSidePanelProps {
   isOpen: boolean;
@@ -35,6 +36,13 @@ interface MicroSidePanelProps {
 }
 
 type PanelSize = "normal" | "fullscreen" | "hidden";
+const MICRO_TIME_STEP_PRIORITY = ["heure", "quartHeure", "instantane"] as const;
+const MICRO_TIME_STEP_OPTIONS = [
+  { key: "instantane", labelKey: "timeStepScan", shortLabelKey: "timeStepScan" },
+  { key: "quartHeure", labelKey: "timeStep15min", shortLabelKey: "timeStep15min" },
+  { key: "heure", labelKey: "timeStep1h", shortLabelKey: "timeStep1h" },
+  { key: "jour", labelKey: "timeStep1j", shortLabelKey: "timeStep1j" },
+] as const;
 
 const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
   isOpen,
@@ -90,6 +98,13 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
 
   // Utiliser la taille externe si fournie, sinon la taille interne
   const currentPanelSize = externalPanelSize || internalPanelSize;
+  const microSupportedTimeSteps = sources.atmoMicro.supportedTimeSteps || [];
+  const isTimeStepSupportedByAtmoMicro = (timeStep: string): boolean =>
+    microSupportedTimeSteps.includes(timeStep);
+  const getMicroFallbackTimeStep = (): string =>
+    MICRO_TIME_STEP_PRIORITY.find((timeStep) =>
+      isTimeStepSupportedByAtmoMicro(timeStep)
+    ) || "heure";
 
   // Utiliser DataServiceFactory pour obtenir une instance singleton partagée
   const atmoMicroService = useRef(DataServiceFactory.getService('atmoMicro') as AtmoMicroService).current;
@@ -718,6 +733,18 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
   };
 
   const handleTimeStepChange = (timeStep: string) => {
+    if (!isTimeStepSupportedByAtmoMicro(timeStep)) {
+      const fallbackTimeStep = getMicroFallbackTimeStep();
+      setState((prev) => ({
+        ...prev,
+        infoMessage: t("panels.stationSidePanel.timeStepNotSupported"),
+      }));
+      if (fallbackTimeStep !== timeStep) {
+        handleTimeStepChange(fallbackTimeStep);
+      }
+      return;
+    }
+
     setState((prev) => {
       // Ajuster la période si nécessaire
       const { adjustedRange: adjustedTimeRange, wasAdjusted } =
@@ -773,6 +800,14 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
       };
     });
   };
+
+  useEffect(() => {
+    const currentTimeStep = state.chartControls.timeStep;
+    if (!isTimeStepSupportedByAtmoMicro(currentTimeStep)) {
+      handleTimeStepChange(getMicroFallbackTimeStep());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.chartControls.timeStep]);
 
   const handlePanelSizeChange = (newSize: PanelSize) => {
     // Si on passe à "hidden", déclencher l'animation de sortie
@@ -1357,22 +1392,12 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                         }}
                         className="w-full"
                       >
-                        {[
-                          {
-                            key: "instantane",
-                            labelKey: "timeStepScan",
-                            shortLabelKey: "timeStepScan",
-                          },
-                          {
-                            key: "quartHeure",
-                            labelKey: "timeStep15min",
-                            shortLabelKey: "timeStep15min",
-                          },
-                          { key: "heure", labelKey: "timeStep1h", shortLabelKey: "timeStep1h" },
-                          { key: "jour", labelKey: "timeStep1j", shortLabelKey: "timeStep1j" },
-                        ].map(({ key, labelKey, shortLabelKey }) => {
+                        {MICRO_TIME_STEP_OPTIONS.map(({ key, labelKey, shortLabelKey }) => {
                           const isDisabledByRange =
                             !isTimeStepValidForCurrentRange(key);
+                          const isDisabledBySupport =
+                            !isTimeStepSupportedByAtmoMicro(key);
+                          const isDisabled = isDisabledByRange || isDisabledBySupport;
                           const maxDays = getMaxHistoryDays(key);
                           const label = t(`panels.stationSidePanel.${labelKey}`);
                           const shortLabel = t(`panels.stationSidePanel.${shortLabelKey}`);
@@ -1391,16 +1416,18 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                               "panels.stationSidePanel.timeStepRangeLimit",
                               { maxDays }
                             );
+                          } else if (isDisabledBySupport) {
+                            tooltip = t("panels.stationSidePanel.timeStepNotSupported");
                           }
 
                           return (
                             <ToggleGroupItem
                               key={key}
                               value={key}
-                              disabled={isDisabledByRange}
+                              disabled={isDisabled}
                               className={cn(
                                 "text-xs min-w-0",
-                                isDisabledByRange && "opacity-50"
+                                isDisabled && "opacity-50"
                               )}
                               title={tooltip}
                             >
@@ -1417,12 +1444,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
 
                       {/* Message explicatif si des boutons sont désactivés à cause de la période */}
                       {(() => {
-                        const disabledByRange = [
-                          { key: "instantane", labelKey: "timeStepScan" },
-                          { key: "quartHeure", labelKey: "timeStep15min" },
-                          { key: "heure", labelKey: "timeStep1h" },
-                          { key: "jour", labelKey: "timeStep1j" },
-                        ].filter(
+                        const disabledByRange = MICRO_TIME_STEP_OPTIONS.filter(
                           ({ key }) => !isTimeStepValidForCurrentRange(key)
                         );
 

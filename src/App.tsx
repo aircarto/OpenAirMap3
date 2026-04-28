@@ -38,6 +38,21 @@ import { cn } from "./lib/utils";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "./components/controls/LanguageSwitcher";
 
+interface AtmoMicroMaintenanceBannerConfig {
+  enabled: boolean;
+  message: string;
+}
+
+interface MaintenanceConfig {
+  atmoMicroQualifiedSensors?: Partial<AtmoMicroMaintenanceBannerConfig>;
+}
+
+const DEFAULT_ATMOMICRO_MAINTENANCE_BANNER: AtmoMicroMaintenanceBannerConfig = {
+  enabled: true,
+  message:
+    "Suite a un probleme technique, les donnees des capteurs qualifies ne sont plus accessibles. AtmoSud met tout en oeuvre pour le resoudre.",
+};
+
 const App: React.FC = () => {
   const { t, i18n } = useTranslation();
   // Configuration basée sur le domaine
@@ -295,6 +310,7 @@ const App: React.FC = () => {
     reports,
     loading,
     error,
+    atmoMicroOutage,
     loadingSources,
     lastRefresh,
   } = useAirQualityData({
@@ -308,6 +324,56 @@ const App: React.FC = () => {
     signalAirOptions,
     autoRefreshEnabled: autoRefreshEnabled && !isHistoricalModeActive, // Désactiver l'auto-refresh en mode historique
   });
+  const [atmoMicroMaintenanceBanner, setAtmoMicroMaintenanceBanner] =
+    useState<AtmoMicroMaintenanceBannerConfig>(
+      DEFAULT_ATMOMICRO_MAINTENANCE_BANNER
+    );
+  const [isAtmoMicroBannerDismissed, setIsAtmoMicroBannerDismissed] =
+    useState(false);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    fetch("/maintenance.json", {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Configuration maintenance indisponible");
+        }
+        return response.json() as Promise<MaintenanceConfig>;
+      })
+      .then((maintenanceConfig) => {
+        const bannerConfig = maintenanceConfig.atmoMicroQualifiedSensors;
+        setAtmoMicroMaintenanceBanner({
+          enabled:
+            typeof bannerConfig?.enabled === "boolean"
+              ? bannerConfig.enabled
+              : DEFAULT_ATMOMICRO_MAINTENANCE_BANNER.enabled,
+          message:
+            bannerConfig?.message?.trim() ||
+            DEFAULT_ATMOMICRO_MAINTENANCE_BANNER.message,
+        });
+      })
+      .catch((fetchError: unknown) => {
+        if (
+          fetchError instanceof DOMException &&
+          fetchError.name === "AbortError"
+        ) {
+          return;
+        }
+        setAtmoMicroMaintenanceBanner(DEFAULT_ATMOMICRO_MAINTENANCE_BANNER);
+      });
+
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    if (!atmoMicroOutage) {
+      setIsAtmoMicroBannerDismissed(false);
+    }
+  }, [atmoMicroOutage]);
 
   // Déterminer quelles données utiliser selon le mode
   const devices = isHistoricalModeActive ? getCurrentDevices() : normalDevices;
@@ -418,6 +484,11 @@ const App: React.FC = () => {
   }, []);
 
   const headerDisabled = isHistoricalModeActive && temporalState.isPlaying;
+  const shouldShowAtmoMicroOutageBanner =
+    selectedSources.includes("atmoMicro") &&
+    atmoMicroOutage &&
+    atmoMicroMaintenanceBanner.enabled &&
+    !isAtmoMicroBannerDismissed;
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
@@ -615,6 +686,24 @@ const App: React.FC = () => {
 
       {/* Carte en plein écran */}
       <main id="main-content" className="flex-1 relative" tabIndex={-1}>
+        {shouldShowAtmoMicroOutageBanner && (
+          <div className="absolute top-4 left-4 right-4 z-[1500]">
+            <div className="relative mx-auto max-w-5xl rounded-lg border border-amber-300 bg-amber-50 px-10 py-3 shadow">
+              <p className="text-center text-sm font-medium text-amber-900">
+                {atmoMicroMaintenanceBanner.message}
+              </p>
+              <button
+                type="button"
+                onClick={() => setIsAtmoMicroBannerDismissed(true)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-amber-700 transition-colors hover:bg-amber-100 hover:text-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                aria-label="Fermer le bandeau d'information"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Indicateur de chargement */}
         {loading && (
           <div className="absolute top-4 right-4 z-[1500]">
