@@ -505,17 +505,21 @@ const App: React.FC = () => {
         <div className="px-4 sm:px-5 py-2.5">
           <div className="flex items-center justify-between gap-3 flex-nowrap">
             {/* Marque : logo + titre */}
-            <div className="flex items-center gap-3 min-w-0 shrink-0">
+            <div className="flex items-center gap-2.5 min-w-0 shrink-0">
               <img
                 src={domainConfig.logo}
                 alt={t("app.logoAlt", { organization: domainConfig.organization })}
-                className="h-8 md:h-9 object-contain"
+                className={
+                  domainConfig.title === "AirCrowd"
+                    ? "h-7 md:h-8 object-contain opacity-90"
+                    : "h-8 md:h-9 object-contain"
+                }
               />
               {domainConfig.title === "AirCrowd" ? (
                 <img
-                  src="./branding/logo-aircrowd.png"
+                  src="./branding/aircrowdLogo.svg"
                   alt="AirCrowd"
-                  className="h-7 md:h-8 object-contain"
+                  className="w-[110px] md:w-[128px] h-auto object-contain"
                 />
               ) : (
                 <h1 className="text-base md:text-lg font-semibold text-[#4271B3] leading-tight truncate">
