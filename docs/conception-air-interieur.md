@@ -6,6 +6,19 @@ Ce document est un **document de conception** (non un plan d'exécution figé). 
 
 Il décrit l'extension d'OpenAirMap avec un mode "Air intérieur" basé sur les capteurs **ModuleAir** d'AirCarto. Le concept central est un **appartement témoin** interactif (et non une carte géographique), accompagné de deux espaces authentifiés : propriétaires de capteurs et gestionnaires d'établissements (ERP).
 
+## Résumé exécutif (10 lignes)
+
+- Le projet indoor repose sur une métaphore **appartement témoin**.
+- Le MVP cible d'abord un usage concret : **espace propriétaire ModuleAir** + **écran public pédagogique**.
+- Les données PoC publiques s'appuient sur **OQEI/OQAI (CNL2/CNL1)**, pas sur des capteurs particuliers.
+- La logique scientifique suit 3 couches : **normes santé** / **profils d'exposition** / **mesures réelles**.
+- Le document distingue désormais ce qui est **figé** vs **exploratoire**.
+- Le scénario "agrégats ModuleAir publics" est une **bifurcation optionnelle**, non un engagement de roadmap.
+- Les seuils CO2/COV sont présentés comme **seuils d'interprétation UX** (non réglementaires stricts).
+- Côté RGPD, la minimisation inclut aussi le **frontend** (cache, logs, analytics).
+- Côté UX, chaque mode garde un axe principal pour limiter la surcharge cognitive.
+- Décisions immédiates à trancher : modèle de connexion, style visuel MVP, gouvernance des seuils.
+
 ## Sommaire
 
 1. [Contexte et décisions cadrées](#1-contexte-et-décisions-cadrées)
@@ -21,29 +34,37 @@ Il décrit l'extension d'OpenAirMap avec un mode "Air intérieur" basé sur les 
 11. [Règles de diffusion (sans carte)](#11-règles-de-diffusion-sans-carte)
 12. [Plan de phases (priorité espace propriétaire)](#12-plan-de-phases-priorité-espace-propriétaire)
 13. [Risques et points ouverts](#13-risques-et-points-ouverts)
+14. [Décisions à trancher maintenant](#14-décisions-à-trancher-maintenant)
 
 ---
 
 ## 1. Contexte et décisions cadrées
 
-OpenAirMap est aujourd'hui une application React (Vite + TypeScript) dédiée à la **qualité de l'air extérieur** : carte Leaflet, sources multiples (AtmoRef, AtmoMicro, capteurs communautaires, SignalAir), polluants multiples, pas de temps multiples. Voir [src/constants/sources.ts](../src/constants/sources.ts), [src/constants/pollutants.ts](../src/constants/pollutants.ts) et [src/hooks/useAirQualityData.ts](../src/hooks/useAirQualityData.ts).
+OpenAirMap est aujourd'hui une application React (Vite + TypeScript) dédiée à la **qualité de l'air extérieur** : carte Leaflet, sources multiples, polluants multiples, pas de temps multiples.
 
 L'objectif du module "Air intérieur" est d'**étendre cette application** pour valoriser les capteurs **ModuleAir** d'AirCarto, qui mesurent la qualité de l'air **dans les logements et établissements**.
 
-### Décisions structurantes déjà prises
+### Décisions structurantes
 
 - **Architecture** : module "air intérieur" intégré dans l'app OpenAirMap actuelle (pas de nouveau dépôt). Un toggle outdoor/indoor au plus haut niveau de l'interface bascule entre les deux modes.
 - **Données** : API AirCarto déjà disponible — endpoints `/capteurs/metadata` et `/capteurs/dataModuleAir` (cf. section 3).
 - **Authentification** : déjà résolue côté AirCarto (`capteurID` + `token` au dos de l'appareil). Réutilisation au démarrage.
-- **Périmètre** : domiciles particuliers (priorité MVP) + ERP (extension), avec stratégies de diffusion distinctes.
-- **Audience publique** : **pas de carte géographique**. Métaphore d'**appartement témoin** : visuel interactif d'un logement type avec plusieurs pièces (cuisine, séjour, chambre, salle de bain, entrée…). Chaque pièce restitue des moyennes statistiques agrégées.
+- **Périmètre** : domiciles particuliers (priorité MVP) + ERP (extension), avec stratégies de diffusion distinctes + local entreprise.
+- **Audience publique** : **pas de carte géographique**. Métaphore d'**appartement témoin** : visuel interactif d'un logement type avec plusieurs pièces (cuisine, séjour, chambre, salle de bain, entrée…). Chaque pièce restitue un **profil d'exposition typique** (et non une "valeur officielle de pièce").
 - **MVP** : un seul lieu témoin (l'appartement). Autres lieux (école, bureau, crèche, EHPAD…) en phases ultérieures.
 - **Style visuel** : à trancher plus tard (plan 2D, isométrique, coupe latérale, 3D). Le présent document décrit les options sans en imposer une.
 - **Stratégie d'alimentation : hybride** :
-  - Phase 1 : appartement témoin = **références OQAI / ANSES / HCSP** (littérature scientifique). Pédagogique, livrable rapidement, indépendant d'AirCarto.
+  - Phase 1 : appartement témoin = **références OQAI / ANSES / HCSP** (littérature scientifique). Pédagogique, livrable rapidement, indépendant des données d'AirCarto pour le moment.
   - Phase ultérieure : migration vers vraies **données ModuleAir agrégées**, dès qu'une voie technique est ouverte (négociation API agrégation AirCarto OU collector AtmoSud opt-in).
   - Avantage majeur : l'UX et le visuel restent identiques, seule la source des chiffres évolue.
 - **Modèle de connexion** : non tranché. Le document décrit 3 options et leurs implications (cf. section 4).
+
+### Ce qui est figé vs exploratoire
+
+| Statut | Éléments |
+|---|---|
+| **Figé (cadre de conception)** | Métaphore appartement témoin public, séparation indoor/outdoor dans la même app, usage des endpoints AirCarto existants pour l'espace propriétaire |
+| **Exploratoire (à arbitrer)** | Style visuel final, modèle de connexion final A/B/C, futur espace ERP étendu, scénario d'agrégats ModuleAir publics |
 
 ### Pourquoi le pivot "appartement témoin" plutôt qu'une carte
 
@@ -79,17 +100,15 @@ Une 4ᵉ persona transverse : **agent AtmoSud** (admin / modération), à clarif
 #### Parcours anonyme (citoyen curieux)
 1. Arrive sur OpenAirMap (mode outdoor par défaut).
 2. Clique sur le toggle **Air intérieur** dans le header.
-3. Atterrit sur l'**appartement témoin** avec une vue par défaut (PM₂.₅, journée moyenne).
-4. Clique sur la **cuisine** → panneau latéral : valeurs moyennes, sources de pollution typiques (cuisson au gaz, friture), conseils.
-5. Change de polluant (CO₂) → couleurs des pièces se mettent à jour. La **chambre** apparaît dégradée la nuit.
-6. Découvre dans le panneau l'**indicateur de provenance** : "Source : campagne OQAI 2014-2017" (ou en phase ultérieure : "N=42 ModuleAir, période X").
+3. Atterrit sur l'**appartement témoin**.
+4. Clique sur la **cuisine** → panneau latéral : ordre de grandeur typique observé(phase 1 (PoC) Référentiel scientifique, phase 2 Profil enrichi, phase 3 Distribution réelle ModuleAir), sources de pollution typiques (cuisson au gaz, friture), conseils.
 
 #### Parcours propriétaire authentifié
 1. Toggle **Air intérieur** → bouton **Se connecter** dans le header.
 2. Saisit `capteurID` + `token` (aide visuelle "où trouver mon token" avec photo du dos du capteur).
 3. Voit la liste de ses capteurs (s'il en a plusieurs, il peut en ajouter un par un).
 4. Détail d'un capteur : séries temporelles (réutilise les charts OpenAirMap), seuils, dernières alertes.
-5. Bouton **"Comparer à l'appartement témoin"** : superpose la valeur moyenne de la pièce témoin équivalente (ex. "votre cuisine vs cuisine moyenne OQAI").
+5. Bouton **"Comparer à l'appartement témoin"** : compare la mesure du capteur à un **ordre de grandeur typique** du micro-environnement équivalent (ex. "votre cuisine vs profil cuisine observé en campagne").
 6. Préférences : "contribuer aux statistiques publiques anonymes oui/non" (utile en phase 4).
 
 #### Parcours gestionnaire ERP
@@ -207,7 +226,7 @@ Backend AtmoSud avec authentification email + mot de passe. Les tokens des capte
 
 ### Recommandation à inscrire en phase 0
 
-**Démarrer Option B** (localStorage), avec une trajectoire vers **Option C** si la phase 4 (alimentation par données réelles) requiert un collector AtmoSud. L'Option A peut être proposée en parallèle pour les utilisateurs qui ne souhaitent aucune persistance.
+**Démarrer Option B** (localStorage), avec une trajectoire vers **Option C** uniquement si le scénario d'agrégats publics ModuleAir est activé plus tard. L'Option A peut être proposée en parallèle pour les utilisateurs qui ne souhaitent aucune persistance.
 
 ```mermaid
 flowchart LR
@@ -220,6 +239,21 @@ flowchart LR
 ---
 
 ## 5. Cadre RGPD et politique d'anonymisation
+
+### Clarification scientifique : 3 couches à ne pas mélanger
+
+Le module indoor doit séparer explicitement trois couches :
+
+1. **Normes santé (OMS / ANSES / HCSP)**  
+   Références sanitaires générales, indépendantes des pièces.
+2. **Profils d'exposition par micro-environnement (cuisine, chambre, séjour...)**  
+   Ordres de grandeur observés en campagnes, variables selon usages/ventilation/saison.  
+   Ce ne sont pas des normes.
+3. **Mesures réelles (ModuleAir)**  
+   Données dynamiques liées à un capteur, un logement et un contexte précis.
+
+Conséquence UX/texte : éviter les formulations de type **"valeur moyenne officielle de la cuisine"**.  
+Préférer : **"niveau typique observé dans ce micro-environnement"**.
 
 ### Qualification des données
 
@@ -234,7 +268,7 @@ Elle relève donc du RGPD au même titre que les données de domotique. **Une ca
 
 ### Anonymisation par construction
 
-L'appartement témoin = **anonymisation maximale par design**. La donnée publique est uniquement statistique, par typologie de pièce, sans aucune restitution géographique. Au lancement (phase 1, valeurs OQAI), aucune donnée personnelle n'est même traitée par OpenAirMap pour l'écran public — c'est un référentiel statique issu de la littérature.
+L'appartement témoin = **anonymisation maximale par design**. La donnée publique est uniquement statistique, par typologie de pièce, sans aucune restitution géographique. Au lancement (phase 1, profils OQEI/OQAI), aucune donnée personnelle n'est même traitée par OpenAirMap pour l'écran public — c'est un référentiel statique issu de la littérature.
 
 ### Espaces authentifiés : politique selon l'option de connexion retenue
 
@@ -246,7 +280,7 @@ L'appartement témoin = **anonymisation maximale par design**. La donnée publiq
 | Droits RGPD à implémenter | Minimum | Minimum + reset LS | Accès / rectification / suppression / portabilité |
 | Mention CNIL requise | Non | Non | Oui |
 
-### Lors de la migration vers données ModuleAir réelles dans l'appartement témoin (phase 4)
+### Si activation du scénario d'agrégats ModuleAir publics (bifurcation optionnelle)
 
 Quel que soit le canal (API agrégation AirCarto ou collector AtmoSud), les règles minimales à appliquer :
 
@@ -264,6 +298,16 @@ Une **validation par le DPO d'AtmoSud** est nécessaire :
 - Avant la mise en production de l'espace propriétaire (phase 2), même en Option A/B.
 - Une nouvelle revue avant la phase 4 (collecte agrégée).
 - Une revue spécifique pour l'espace gestionnaire ERP (phase 5), qui peut publier en nominatif certains établissements.
+
+### Minimisation fonctionnelle côté frontend (point de vigilance)
+
+Même en Option A/B, documenter explicitement les données traitées côté OpenAirMap :
+
+- **Transit uniquement** : mesures récupérées depuis AirCarto pour affichage, sans persistance serveur AtmoSud.
+- **Stockage local** : seulement les tokens/capteurs nécessaires à la session utilisateur (Option B), avec suppression utilisateur.
+- **Cache applicatif** : durée courte, purge au logout, pas d'historisation silencieuse.
+- **Logs frontend** : éviter toute donnée brute capteur/token dans les logs navigateur ou outils d'erreur.
+- **Analytics** : exclure les valeurs de mesure et identifiants capteurs des événements analytiques.
 
 ---
 
@@ -284,14 +328,73 @@ flowchart TD
     AptLive --> AptUI[Le visuel et l'UX ne changent pas, seules les valeurs evoluent]
 ```
 
-### Phase 1 — Référentiel OQAI/ANSES/HCSP (statique)
+### Phase 1 — Référentiel OQEI/OQAI/ANSES/HCSP (statique)
 
-- **Source** : campagnes OQAI Logements (2003-2005, 2014-2017), VG ANSES (Valeurs Guides), seuils HCSP.
+- **Source** : jeux de données OQEI/OQAI publiés en open data (CNL1 2003-2005, CNL2 2020-2023), VG ANSES (Valeurs Guides), seuils HCSP.
 - **Format** : un JSON statique versionné dans `src/data/indoor-reference.json`, chargé par un service `IndoorReferenceService`.
 - **Avantages** : indépendance totale d'AirCarto, livrable immédiatement, données scientifiquement validées.
-- **Limite** : valeurs nationales moyennes, pas de finesse temporelle ni régionale.
+- **Limite** : profils nationaux agrégés, pas de finesse temporelle locale ni régionale.
 
-### Phase 4 (ultérieure) — Données ModuleAir agrégées
+### Données réellement disponibles pour alimenter un PoC (constat avril 2026)
+
+Ce qui est **directement exploitable** pour un PoC public "appartement témoin" :
+
+| Source | Disponibilité | Niveau de détail | Intérêt PoC |
+|---|---|---|---|
+| **OQEI CNL2 (2020-2023)** | Open data (CSV + dictionnaires + doc) | Mesures en logement sur 7 jours, avec variables logement/pièce/occupants | **Source principale recommandée** |
+| **OQEI CNL1 (2003-2005)** | Open data | Campagne plus ancienne, utile en backup/comparaison historique | Complément |
+| **ANSES / HCSP** | Publications et valeurs guides | Seuils sanitaires et valeurs de référence | Calibration des classes (bon/moyen/dégradé...) |
+| **ModuleAir AirCarto** | API par capteur avec token | Données individuelles, pas d'endpoint d'agrégation publique | Hors PoC public (utile espace propriétaire) |
+
+Contraintes à prendre en compte pour le visuel de l'appartement :
+
+- Les campagnes logements CNL mesurent prioritairement le **séjour** et la **chambre principale**.
+- Les pièces **cuisine / salle de bain / entrée** ne disposent pas toujours d'un niveau de mesure homogène pour tous les polluants.
+- Donc, pour un PoC robuste :
+  - afficher des valeurs chiffrées "fortes" sur **séjour** et **chambre** ;
+  - garder les autres pièces en mode **pédagogique** (sources typiques + conseils), avec mention explicite "profil typique / estimation, non mesuré directement dans la campagne".
+
+Recommandation de livraison PoC :
+
+1. **Version A (la plus solide)** : appartement témoin centré sur 2 pièces instrumentées (séjour + chambre), autres pièces en cartes pédagogiques non chiffrées.
+2. **Version B (plus visuelle)** : 5 pièces, mais valeurs chiffrées uniquement si une source documentée existe ; sinon badge "donnée indicative".
+
+### Niveaux de maturité des données (N1 -> N3)
+
+Pour éviter les ambiguïtés, l'appartement témoin peut évoluer selon trois niveaux explicites :
+
+#### Niveau 1 — Référentiel scientifique (MVP actuel)
+
+- **Source** : OQEI/OQAI + ANSES/HCSP.
+- **Échelle** :
+  - fiable : séjour / chambre ;
+  - indicatif : autres pièces.
+- **Nature** : agrégée, statique.
+- **Rôle** : pédagogie + socle de crédibilité.
+
+#### Niveau 2 — Profil enrichi (hybride)
+
+- **Source** : profils OQEI/OQAI + règles métier explicites (ex. cuisine = pics courts, chambre = accumulation nocturne).
+- **Ajout** : dynamique journalière simulée (mode journée type / mode événement), sans utiliser de capteurs individuels réels.
+- **Rôle** : rendre l'appartement témoin plus vivant et plus compréhensible.
+
+#### Niveau 3 — Distribution réelle ModuleAir (scénario avancé)
+
+- **Source** : capteurs ModuleAir réels agrégés.
+- **Échelle** : par pièce déclarée (`pieceType`) et par polluant.
+- **Format** : distributions observées (ex. p50, p75, p90, taille d'échantillon, période).
+- **Conditions minimales** : k-anonymat (>=5, idéalement >=10 selon validation DPO), volume de données suffisant et consentement opt-in.
+
+Point clé de communication produit :
+
+- N1/N2 = **profil typique** ;
+- N3 = **distribution observée**.
+
+Ce changement doit être visible dans le wording UI et dans l'indicateur de provenance.
+
+### Scénario alternatif (non engagé) — Agrégats ModuleAir publics
+
+Ce scénario n'est **pas requis** pour valider le MVP produit. Il constitue une bifurcation possible si les conditions techniques/juridiques sont réunies.
 
 Deux voies possibles, non exclusives :
 
@@ -304,15 +407,16 @@ Deux voies possibles, non exclusives :
 
 ### Continuité visuelle
 
-**Les seuils utilisés pour la coloration des pièces restent les seuils sanitaires** (OQAI/HCSP/ANSES) dans tous les cas. Seules les **valeurs affichées** évoluent (références littérature → moyennes ModuleAir réelles).
+Les seuils sanitaires (OMS/ANSES/HCSP) restent stables pour qualifier les niveaux.  
+Ce qui évolue est la couche "données" : profils agrégés de campagne en phase PoC, puis agrégats ModuleAir en phase ultérieure.
 
 Un **indicateur de provenance** est affiché en permanence sur l'écran public :
 
-> "Source : campagne OQAI 2014-2017"
+> "Source : OQEI CNL2 (2020-2023), données agrégées"
 
 ou plus tard :
 
-> "Moyenne calculée sur N=42 capteurs ModuleAir, période janvier 2026"
+> "Profil observé sur N=42 capteurs ModuleAir, période janvier 2026"
 
 ---
 
@@ -329,7 +433,7 @@ flowchart TD
     Indoor --> Auth[Saisie capteurID + token]
     Anon --> Apt[Appartement temoin pedagogique]
     Apt --> Piece[Clic sur une piece]
-    Piece --> PieceDetail[Panneau lateral polluants moyens, seuils, sources, conseils]
+    Piece --> PieceDetail[Panneau lateral profils observes, seuils, sources, conseils]
     Auth --> AirCartoAPI[API AirCarto metadata + dataModuleAir]
     AirCartoAPI --> Owner[Espace proprietaire dashboard capteurs]
     Owner --> Compare["Comparer a l'appartement temoin"]
@@ -362,7 +466,7 @@ src/
 │   └── ...
 ├── services/
 │   ├── ModuleAirService.ts        [NOUVEAU] # Consomme l'API AirCarto
-│   └── IndoorReferenceService.ts  [NOUVEAU] # Sert les valeurs OQAI au démarrage
+│   └── IndoorReferenceService.ts  [NOUVEAU] # Sert les profils OQEI/OQAI au démarrage
 ├── data/
 │   └── indoor-reference.json      [NOUVEAU] # Valeurs OQAI/ANSES en dur
 ├── constants/
@@ -376,7 +480,7 @@ src/
 
 - **Contexte global** `appMode: 'outdoor' | 'indoor'` (Context React, ou store léger Zustand selon préférence). Persisté en URL via `?mode=indoor` ou route dédiée `/interieur`.
 - **Service `ModuleAirService`** étendant `BaseDataService` : méthodes `getMetadata(capteurID, token)` et `getHistory(capteurID, token, start, end, freq)`. Suit le pattern existant des autres services.
-- **Service `IndoorReferenceService`** : sert les valeurs OQAI depuis un JSON statique (constantes ou fichier `src/data/indoor-reference.json`).
+- **Service `IndoorReferenceService`** : sert les profils OQEI/OQAI depuis un JSON statique (constantes ou fichier `src/data/indoor-reference.json`).
 - **Rendu conditionnel** au niveau de [src/App.tsx](../src/App.tsx) : si `appMode === 'indoor'`, on rend `ApartmentScene` (et l'espace authentifié si connecté), sinon le `AirQualityMap` actuel.
 
 ### Variables d'environnement
@@ -400,6 +504,8 @@ Recommandation : **route distincte `/interieur`** (en plus du toggle visuel) pou
 ### Polluants à ajouter dans `src/constants/pollutants.ts`
 
 À ajouter aux côtés des polluants extérieurs déjà présents (cf. [src/constants/pollutants.ts](../src/constants/pollutants.ts)). Les seuils ci-dessous sont des **valeurs guides indicatives**, à valider avec un référent santé/environnement avant publication.
+
+> **Note méthodologique importante** : les seuils CO2/COV ci-dessous sont des **seuils d'interprétation UX** (pédagogie et lisibilité produit). Ils ne doivent pas être présentés comme des seuils réglementaires harmonisés sans validation scientifique/juridique explicite.
 
 #### CO₂ (dioxyde de carbone) — `co2`
 Indicateur de confinement (présence humaine, ventilation insuffisante).
@@ -526,39 +632,49 @@ interface RoomReference {
 │                                          │   (au clic sur une pièce)     │
 │   ┌──────────┬───────────┐               │                               │
 │   │          │           │               │   ▌ Cuisine                   │
-│   │ CHAMBRE  │  CUISINE  │ ←(cliquable)  │   PM₂.₅ : 18 µg/m³ [DÉGRADÉ]  │
-│   │  (vert)  │ (orange)  │               │                               │
+│   │ CHAMBRE  │  CUISINE  │ ←(cliquable)  │   PM₂.₅ : 18 µg/m³            │
+│   │(référence)│(profil)   │               │   (ordre de grandeur typique) │
 │   ├──────────┴───────────┤               │   Profil 24h :                │
 │   │                       │              │   [graphique mini-line]       │
 │   │       SÉJOUR          │              │                               │
-│   │       (jaune)         │              │   Sources typiques :          │
+│   │     (référence)       │              │   Sources typiques :          │
 │   ├──────┬────────────────┤              │   • Cuisson au gaz            │
 │   │      │                │              │   • Friture                   │
 │   │ SDB  │   ENTRÉE       │              │   • Bougies                   │
-│   │ (bon)│   (orange)     │              │                               │
+│   │(profil)│ (profil)     │              │                               │
 │   └──────┴────────────────┘              │   Conseils :                  │
 │                                          │   • Aérer 10 min après        │
-│   [Légende couleurs : bon / moyen /      │     chaque cuisson            │
-│    dégradé / mauvais / très mauvais]     │   • Préférer hotte aspirante  │
+│   [Légende : référence campagne /         │     chaque cuisson            │
+│    profil typique pédagogique]            │   • Préférer hotte aspirante  │
 │                                          │                               │
-│   Source : OQAI 2014-2017                │   [Comparer à mon capteur]    │
+│   Source : OQEI CNL2 (2020-2023)         │   [Comparer à mon capteur]    │
 │                                          │   (si connecté)               │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Composants
 
-- **Header** : toggle outdoor/indoor + sélecteur de polluant (réutilise `PollutantDropdown` existant) + sélecteur de période (jour / mois / année) + sélecteur de tranche horaire (matin / midi / soir / nuit) qui révèle la dynamique journalière (à activer en phase données réelles).
-- **Centre** : visuel de l'appartement (style à arbitrer). Chaque pièce est colorée selon la valeur moyenne du polluant sélectionné, palette `qualityColors` existante (cf. [src/constants/qualityColors.ts](../src/constants/qualityColors.ts)). Hotspots cliquables.
+- **Header** : toggle outdoor/indoor + sélecteur de polluant (réutilise `PollutantDropdown` existant) + sélecteur de période (jour / mois / année) + sélecteur de tranche horaire (matin / midi / soir / nuit) qui révèle la dynamique journalière.
+- **Centre** : visuel de l'appartement (style à arbitrer). En PoC, privilégier un marquage binaire **référence campagne** vs **profil typique pédagogique** ; n'utiliser la coloration sanitaire `qualityColors` que pour les pièces réellement couvertes par les données (au minimum séjour/chambre).
 - **Panneau latéral droit** (au clic sur une pièce) :
   - Nom de la pièce, photo/icône.
-  - Valeur moyenne du polluant + indicateur seuil (bon / moyen / dégradé / mauvais / très mauvais / extrêmement mauvais).
+  - Valeur/intervalle affiché comme **ordre de grandeur typique observé** + qualification sanitaire.
   - Mini-graphique : profil journalier moyen (24h).
   - Top 3 sources de pollution typiques de cette pièce.
   - Conseils contextualisés (issus d'un référentiel ADEME/OQAI).
-  - **Indicateur de provenance** : "Source : campagne OQAI 2014-2017" ou "N=42 ModuleAir, période X".
+  - **Indicateur de provenance** : "Source : OQEI CNL2 (2020-2023), données agrégées" ou "N=42 ModuleAir, période X".
   - Si l'utilisateur est connecté : bouton **"Comparer à mon capteur de cuisine"**.
 - **Légende** : réutilise `Legend` ([src/components/map/Legend.tsx](../src/components/map/Legend.tsx)) avec adaptation indoor.
+
+### Règle anti-surcharge cognitive (MVP)
+
+Pour éviter un produit "usine à gaz", chaque mode expose un axe principal :
+
+- **Indoor public** : compréhension par **pièces/micro-environnements**.
+- **Propriétaire** : suivi de **mes capteurs**.
+- **ERP** : pilotage par **bâtiments/espaces**.
+
+Les contrôles secondaires restent masqués derrière un panneau "avancé" tant que le MVP n'est pas validé.
 
 ### Tableau d'association pièces × polluants pertinents
 
@@ -582,6 +698,30 @@ interface RoomReference {
 
 Recommandation pour MVP : **vue isométrique 2D en SVG** (meilleur compromis pédagogie/coût).
 
+### Dimension temporelle : pilier UX du module indoor
+
+L'appartement témoin doit valoriser la dynamique temporelle des expositions, pas seulement des niveaux moyens.
+
+Trois modes de lecture complémentaires :
+
+1. **Mode instantané**  
+   Montre l'état courant du capteur (prioritairement pour espace propriétaire/gestionnaire).
+2. **Mode journée type**  
+   Affiche les profils moyens par pièce/micro-environnement issus des campagnes agrégées.
+3. **Mode événement**  
+   Met en scène des séquences pédagogiques (cuisson, ménage, nuit) pour expliquer les pics courts et accumulations lentes.
+
+Exemples attendus :
+
+- **Cuisine** : pics brefs et élevés (cuisson, friture, combustion).
+- **Chambre** : accumulation lente (CO2 nocturne, confinement).
+- **Séjour** : exposition de fond plus continue (occupation prolongée).
+
+Formulation recommandée en UI :
+
+- éviter "PM2.5 = X, cuisine moyenne officielle" ;
+- préférer "ordre de grandeur typique observé en cuisine, variable selon usage et ventilation".
+
 ---
 
 ## 10. UX des espaces authentifiés
@@ -604,7 +744,7 @@ Recommandation pour MVP : **vue isométrique 2D en SVG** (meilleur compromis pé
 - Graphique séries temporelles (réutilise les charts AmCharts d'OpenAirMap).
 - Indicateurs de seuil (réutilise `qualityColors`).
 - Liste des dépassements de seuil sur la période.
-- Bouton **"Comparer à l'appartement témoin"** : ouvre une vue side-by-side avec la valeur moyenne de la pièce témoin équivalente.
+- Bouton **"Comparer à l'appartement témoin"** : ouvre une vue side-by-side entre mesure réelle et profil typique équivalent.
 
 #### Préférences
 - "Contribuer aux statistiques publiques anonymes : oui / non" (utile en phase 4, sans effet en phase 1-3).
@@ -626,8 +766,8 @@ Recommandation pour MVP : **vue isométrique 2D en SVG** (meilleur compromis pé
 
 | Persona | Phase 1-3 (ref. OQAI) | Phase 4+ (données ModuleAir agrégées) |
 |---|---|---|
-| **Visiteur anonyme** | Appartement témoin avec valeurs OQAI/ANSES (référentiel statique) | Agrégats anonymes par pièce, k≥5 capteurs minimum, granularité minimum horaire |
-| **Propriétaire authentifié** | Ses propres capteurs en instantané + accès à l'appartement témoin (réf. OQAI) | Idem + comparatifs contre les vraies moyennes ModuleAir |
+| **Visiteur anonyme** | Appartement témoin avec profils OQEI/OQAI (référentiel statique) | Agrégats anonymes par pièce, k≥5 capteurs minimum, granularité minimum horaire |
+| **Propriétaire authentifié** | Ses propres capteurs en instantané + accès à l'appartement témoin (réf. OQEI/OQAI) | Idem + comparatifs contre des profils observés ModuleAir |
 | **Gestionnaire ERP** | Ses propres capteurs en instantané + accès appartement témoin | Idem + accès "annuaire ERP" si activé par d'autres établissements |
 | **Admin AtmoSud** | Tout (audit) | Tout (audit, modération du consentement) |
 
@@ -695,13 +835,13 @@ gantt
 ### Phase 3 — Appartement témoin référence OQAI
 - Asset visuel de l'appartement (style arbitré en phase 0 ou début phase 3).
 - `ApartmentScene` avec ~5 pièces, hotspots cliquables.
-- `RoomDetailPanel` : valeurs OQAI/ANSES en dur, conseils, mini-graphes.
+- `RoomDetailPanel` : profils OQEI/OQAI + repères sanitaires, conseils, mini-graphes.
 - `IndoorReferenceService` chargé depuis `src/data/indoor-reference.json`.
 - Bouton "Comparer mon logement à la pièce témoin équivalente" branché côté propriétaire.
 - Légende et indicateur de provenance visibles en permanence.
 
-### Phase 4 — Migration vers données ModuleAir agrégées (conditionnelle)
-- Selon décision phase 0 : voie A (endpoint AirCarto) ou voie B (collector AtmoSud).
+### Phase 4 — Scénario alternatif : agrégats ModuleAir publics (conditionnelle)
+- Selon décision dédiée : voie A (endpoint AirCarto) ou voie B (collector AtmoSud).
 - Nouvelle revue DPO obligatoire.
 - Si voie B : montée Option C de connexion (compte AtmoSud).
 - Le visuel de l'appartement témoin reste identique, seules les valeurs et la mention de source évoluent.
@@ -734,13 +874,14 @@ gantt
 
 ### Risques produit
 
-- **Représentativité OQAI** : les campagnes OQAI datent (2003-2005, 2014-2017). Préciser dans le doc et l'interface la date de référence. Prévoir mises à jour si OQAI publie de nouvelles campagnes.
+- **Représentativité OQEI/OQAI** : CNL1 est ancienne (2003-2005), CNL2 est plus récente (2020-2023) mais reste une photographie sur période. Préciser systématiquement la campagne, la période et la nature agrégée des données.
 - **Choix du style visuel** (plan / isométrique / 3D) à arbitrer avant la phase 3 — impacte le coût d'asset et de maintenance.
 - **Modèle de connexion** non tranché : le choix entre Option A/B/C détermine la complexité, le coût et la trajectoire phase 4. À trancher en phase 0.
 - **Cohabitation outdoor/indoor** dans la même app : risque de complexité UX. Recommandations :
   - Toggle très visible au niveau header.
   - URL distincte `/interieur` pour faciliter le partage et la séparation cognitive.
   - Onboarding court à la première visite indoor (modale d'explication "Vous découvrez le mode air intérieur").
+- **Surcharge cognitive** : risque de "trop de contrôles trop tôt". Règle de conception : un axe principal par mode (public indoor = pièces, propriétaire = capteurs, ERP = bâtiments).
 
 ### Risques juridiques / RGPD
 
@@ -762,12 +903,24 @@ gantt
 
 ---
 
+## 14. Décisions à trancher maintenant
+
+Pour éviter l'effet "design figé", les arbitrages court terme à prendre sont regroupés ici :
+
+1. **Modèle de connexion MVP** : Option A vs B (C reportée sauf décision explicite).
+2. **Style visuel MVP de l'appartement témoin** : plan 2D ou isométrique 2D.
+3. **Politique de seuils UX** : validation d'un wording "interprétation UX non réglementaire".
+4. **Périmètre PoC public** : 2 pièces instrumentées (séjour/chambre) vs 5 pièces avec profils indicatifs.
+5. **Scénario agrégats ModuleAir publics** : hors roadmap MVP ou jalon exploratoire séparé.
+
+---
+
 ## Annexe — Inspirations et références
 
 ### Sites de référence pour l'air intérieur
-- **OQAI (Observatoire de la Qualité de l'Air Intérieur)** — campagnes Logements 2003-2005 et 2014-2017.
+- **OQEI/OQAI** — campagnes Logements CNL1 (2003-2005) et CNL2 (2020-2023), jeux de données ouverts.
 - **ADEME — "La maison économe"** — vue isométrique d'une maison avec hotspots.
-- **Santé publique France — "Maison Cassandre"** — parcours pédagogique pièce par pièce.
+- **Santé publique France — Air et environnements intérieurs** — référentiel santé publique et publications.
 - **CSTB — "Maison témoin RT"** — modèle isométrique cliquable.
 - **US EPA IAQ House Tour** — tour interactif d'une maison.
 - **Captothèque (Airparif)** — capteurs citoyens avec opt-in et flou géographique.
