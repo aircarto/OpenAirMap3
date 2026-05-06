@@ -12,10 +12,8 @@ import { MAX_COMPARISON_STATIONS } from "../../constants/comparison";
 import { AtmoRefService } from "../../services/AtmoRefService";
 import { AtmoMicroService } from "../../services/AtmoMicroService";
 import HistoricalChart from "../charts/HistoricalChart";
-import HistoricalTimeRangeSelector, {
-  TimeRange,
-  getMaxHistoryDays,
-} from "../controls/HistoricalTimeRangeSelector";
+import HistoricalTimeRangeSelector from "../controls/HistoricalTimeRangeSelector";
+import { getMaxHistoryDays, type TimeRange } from "../../utils/historicalTimeRange";
 import { sources } from "../../constants/sources";
 
 interface ComparisonSidePanelProps {
@@ -230,6 +228,8 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
         hasInitializedPollutant.current = false;
       }
     }
+    // Dépendances limitées : éviter de relancer onLoadComparisonData à chaque mise à jour des données.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     isOpen,
     comparisonState.comparedStations,

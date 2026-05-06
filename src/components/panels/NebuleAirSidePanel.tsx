@@ -19,10 +19,8 @@ import { NebuleAirService } from "../../services/NebuleAirService";
 import { ModelingService } from "../../services/ModelingService";
 import { DataServiceFactory } from "../../services/DataServiceFactory";
 import HistoricalChart from "../charts/HistoricalChart";
-import HistoricalTimeRangeSelector, {
-  TimeRange,
-  getMaxHistoryDays,
-} from "../controls/HistoricalTimeRangeSelector";
+import HistoricalTimeRangeSelector from "../controls/HistoricalTimeRangeSelector";
+import { getMaxHistoryDays, type TimeRange } from "../../utils/historicalTimeRange";
 import { ToggleGroup, ToggleGroupItem } from "../ui/button-group";
 import { cn } from "../../lib/utils";
 import ExpertMenu from "../controls/ExpertMenu";
@@ -453,6 +451,7 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
         selectedStation,
       }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- éviter rechargements lors des seuls changements de timeStep/timeRange
   }, [isOpen, selectedStation, initialPollutant, loadHistoricalData]);
 
   // Récupérer les coordonnées du capteur

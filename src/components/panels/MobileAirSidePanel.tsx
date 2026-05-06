@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import {
   MobileAirSensor,
@@ -7,9 +7,8 @@ import {
 } from "../../types";
 import { pollutants } from "../../constants/pollutants";
 import { MobileAirService } from "../../services/MobileAirService";
-import HistoricalTimeRangeSelector, {
-  TimeRange,
-} from "../controls/HistoricalTimeRangeSelector";
+import HistoricalTimeRangeSelector from "../controls/HistoricalTimeRangeSelector";
+import type { TimeRange } from "../../utils/historicalTimeRange";
 
 interface MobileAirSidePanelProps {
   isOpen: boolean;
@@ -51,14 +50,7 @@ const MobileAirSidePanel: React.FC<MobileAirSidePanelProps> = ({
   // Utiliser la taille externe si fournie, sinon la taille interne
   const currentPanelSize = externalPanelSize || internalPanelSize;
 
-  const mobileAirService = new MobileAirService();
-
-  // Charger la liste des capteurs au montage du composant
-  useEffect(() => {
-    if (isOpen) {
-      loadSensors();
-    }
-  }, [isOpen]);
+  const mobileAirService = useMemo(() => new MobileAirService(), []);
 
   const loadSensors = useCallback(async () => {
     setLoading(true);
@@ -84,6 +76,13 @@ const MobileAirSidePanel: React.FC<MobileAirSidePanelProps> = ({
       setLoading(false);
     }
   }, [selectedPollutant, mobileAirService]);
+
+  // Charger la liste des capteurs au montage du composant
+  useEffect(() => {
+    if (isOpen) {
+      loadSensors();
+    }
+  }, [isOpen, loadSensors]);
 
   const handleSensorToggle = (sensorId: string) => {
     setSelectedSensor(selectedSensor === sensorId ? null : sensorId);
@@ -234,7 +233,11 @@ const MobileAirSidePanel: React.FC<MobileAirSidePanelProps> = ({
     }
   };
 
-  return (
+  if (!isOpen) {
+    return null;
+  }
+
+  const renderPanelContent = () => (
     <div className={getPanelClasses()}>
       {/* Header */}
       <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 bg-gray-50">
@@ -545,13 +548,8 @@ const MobileAirSidePanel: React.FC<MobileAirSidePanelProps> = ({
         </div>
       )}
     </div>
-    );
-  };
+  );
 
-  if (!isOpen) {
-    return null;
-  }
-  
   // Si on anime la sortie ET que panelSize est "hidden", rendre via portal
   // Cela permet de sortir le panel du conteneur flex pour que la carte se redimensionne immédiatement
   if (isAnimatingOut && currentPanelSize === "hidden") {

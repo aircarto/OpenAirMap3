@@ -14,10 +14,8 @@ import { AtmoRefService } from "../../services/AtmoRefService";
 import { ModelingService } from "../../services/ModelingService";
 import { DataServiceFactory } from "../../services/DataServiceFactory";
 import HistoricalChart from "../charts/HistoricalChart";
-import HistoricalTimeRangeSelector, {
-  TimeRange,
-  getMaxHistoryDays,
-} from "../controls/HistoricalTimeRangeSelector";
+import HistoricalTimeRangeSelector from "../controls/HistoricalTimeRangeSelector";
+import { getMaxHistoryDays, type TimeRange } from "../../utils/historicalTimeRange";
 import ExpertMenu from "../controls/ExpertMenu";
 import { ToggleGroup, ToggleGroupItem } from "../ui/button-group";
 import { cn } from "../../lib/utils";
@@ -490,7 +488,7 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
         isLoadingRef.current = false;
       }
     },
-    [t]
+    [t, atmoRefService, modelingService, showModeling, stationCoordinates]
   );
 
   const getDateRange = (

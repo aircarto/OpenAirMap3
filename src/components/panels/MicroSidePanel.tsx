@@ -14,10 +14,8 @@ import { ModelingService } from "../../services/ModelingService";
 import { DataServiceFactory } from "../../services/DataServiceFactory";
 import { getSensorModelImage } from "../../constants/sensorModels";
 import HistoricalChart from "../charts/HistoricalChart";
-import HistoricalTimeRangeSelector, {
-  TimeRange,
-  getMaxHistoryDays,
-} from "../controls/HistoricalTimeRangeSelector";
+import HistoricalTimeRangeSelector from "../controls/HistoricalTimeRangeSelector";
+import { getMaxHistoryDays, type TimeRange } from "../../utils/historicalTimeRange";
 import { ToggleGroup, ToggleGroupItem } from "../ui/button-group";
 import ExpertMenu from "../controls/ExpertMenu";
 import { cn } from "../../lib/utils";
@@ -402,6 +400,8 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
         selectedStation,
       }));
     }
+    // Ouverture / changement de station uniquement (timeRange/timeStep via setState précédent).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, selectedStation, initialPollutant]);
 
   // Récupérer les coordonnées du site

@@ -20,6 +20,12 @@ import {
 import { Toast } from "../ui/toast";
 import AutoRefreshToggle from "./AutoRefreshToggle";
 
+const COMMUNAUTAIRE_SOURCE_CODES = [
+  "communautaire.nebuleair",
+  "communautaire.sensorCommunity",
+  "communautaire.purpleair",
+] as const;
+
 interface SourceDropdownProps {
   selectedSources: string[];
   selectedTimeStep?: string;
@@ -48,24 +54,20 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
   triggerId,
 }) => {
   const { t } = useTranslation();
-  // Définir les sources communautaires (mobileair retiré car géré séparément)
-  const communautaireSources = [
-    "communautaire.nebuleair",
-    "communautaire.sensorCommunity",
-    "communautaire.purpleair",
-  ];
 
   // Vérifier l'état des groupes
   const allCommunautaireSelected = useMemo(
     () =>
-      communautaireSources.every((source) =>
+      COMMUNAUTAIRE_SOURCE_CODES.every((source) =>
         selectedSources.includes(source)
       ),
     [selectedSources]
   );
   const someCommunautaireSelected = useMemo(
     () =>
-      communautaireSources.some((source) => selectedSources.includes(source)),
+      COMMUNAUTAIRE_SOURCE_CODES.some((source) =>
+        selectedSources.includes(source)
+      ),
     [selectedSources]
   );
 
@@ -128,13 +130,13 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
       if (allCommunautaireSelected) {
         // Désélectionner toutes les sources communautaires
         const newSources = selectedSources.filter(
-          (source) => !communautaireSources.includes(source)
+          (source) => !COMMUNAUTAIRE_SOURCE_CODES.includes(source)
         );
         onSourceChange(newSources);
       } else {
         // Sélectionner toutes les sources communautaires
         const newSources = [...selectedSources];
-        communautaireSources.forEach((source) => {
+        COMMUNAUTAIRE_SOURCE_CODES.forEach((source) => {
           if (!newSources.includes(source)) {
             newSources.push(source);
           }
@@ -196,11 +198,12 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
       >
         {/* Actualisation auto — en tête mais visuellement discrète */}
         {typeof onToggleAutoRefresh === "function" && (
-          /* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/click-events-have-key-events -- zone de capture pour empêcher la fermeture du menu au clic sur le toggle */
           <div
             className="px-3 pt-2 pb-1.5 border-b border-gray-100"
-            onClick={(e) => e.stopPropagation()}
-            onKeyDown={(e) => e.stopPropagation()}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
           >
             <AutoRefreshToggle
               enabled={autoRefreshEnabled}

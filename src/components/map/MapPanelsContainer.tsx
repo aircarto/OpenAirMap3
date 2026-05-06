@@ -15,7 +15,7 @@ import MobileAirSelectionPanel from "../panels/MobileAirSelectionPanel";
 import MobileAirDetailPanel from "../panels/MobileAirDetailPanel";
 import SignalAirSelectionPanel from "../panels/SignalAirSelectionPanel";
 import SignalAirDetailPanel from "../panels/SignalAirDetailPanel";
-import { TimeRange } from "../controls/HistoricalTimeRangeSelector";
+import type { TimeRange } from "../../utils/historicalTimeRange";
 
 interface MapPanelsContainerProps {
   sidePanels: any;

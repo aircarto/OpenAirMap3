@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "../../lib/utils";
 
@@ -24,6 +24,13 @@ const ToastComponent: React.FC<ToastProps> = ({ toast, onClose }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
 
+  const handleClose = useCallback(() => {
+    setIsLeaving(true);
+    setTimeout(() => {
+      onClose(toast.id);
+    }, 200); // Durée de l'animation de sortie
+  }, [onClose, toast.id]);
+
   useEffect(() => {
     // Animation d'entrée
     setTimeout(() => setIsVisible(true), 10);
@@ -36,14 +43,7 @@ const ToastComponent: React.FC<ToastProps> = ({ toast, onClose }) => {
 
       return () => clearTimeout(timer);
     }
-  }, []);
-
-  const handleClose = () => {
-    setIsLeaving(true);
-    setTimeout(() => {
-      onClose(toast.id);
-    }, 200); // Durée de l'animation de sortie
-  };
+  }, [toast.duration, handleClose]);
 
   const variantStyles = {
     default: "bg-white border-gray-200 text-gray-900",

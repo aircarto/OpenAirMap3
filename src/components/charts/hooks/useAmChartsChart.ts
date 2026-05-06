@@ -320,7 +320,7 @@ export const useAmChartsChart = ({
         chartRef.current = null;
       }
     };
-  }, []); // Création initiale uniquement
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- création unique du graphique (mises à jour via autres effets et i18n.on)
 
   // Mettre à jour les labels de l'axe Y et la légende quand la langue change (au re-render)
   useEffect(() => {
@@ -356,7 +356,7 @@ export const useAmChartsChart = ({
         }
       });
     }
-  }, [unitKeys, i18n.language, seriesConfigs]);
+  }, [unitKeys, seriesConfigs]);
 
   // Mise à jour des labels et légende au changement de langue (sans dépendre du re-render)
   useEffect(() => {
@@ -712,7 +712,7 @@ export const useAmChartsChart = ({
     xAxis.get("renderer").labels.template.setAll({
       fontSize: isMobile ? 7 : isLandscapeMobile ? 9 : 12,
     });
-  }, [chartMargins, isMobile, isLandscapeMobile]);
+  }, [chartMargins, isMobile, isLandscapeMobile, timeStep]);
 
   return {
     chartRef: chartRef as React.RefObject<am5xy.XYChart | null>,

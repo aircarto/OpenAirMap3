@@ -137,10 +137,11 @@ export const useMapLayers = ({
   // Effet pour gérer les layers de modélisation WMTS
   useEffect(() => {
     if (!mapRef.current) return;
+    const map = mapRef.current;
 
     // Cleanup: retirer l'ancien layer de modélisation s'il existe
-    if (modelingLayerRef.current && mapRef.current) {
-      mapRef.current.removeLayer(modelingLayerRef.current);
+    if (modelingLayerRef.current && map) {
+      map.removeLayer(modelingLayerRef.current);
       modelingLayerRef.current = null;
       setCurrentModelingWMTSLayer(null);
     }
@@ -150,8 +151,8 @@ export const useMapLayers = ({
     setCurrentModelingLegendTitle(null);
 
     // Cleanup: retirer l'ancien layer de vent s'il existe
-    if (windLayerGroupRef.current && mapRef.current) {
-      mapRef.current.removeLayer(windLayerGroupRef.current);
+    if (windLayerGroupRef.current && map) {
+      map.removeLayer(windLayerGroupRef.current);
       windLayerGroupRef.current = null;
       windLayerRef.current = null;
     }
@@ -190,8 +191,8 @@ export const useMapLayers = ({
 
         // Créer et ajouter le layer WMTS
         const wmtsLayer = createModelingWMTSLayer(layerName);
-        if (mapRef.current) {
-          wmtsLayer.addTo(mapRef.current);
+        if (map) {
+          wmtsLayer.addTo(map);
           modelingLayerRef.current = wmtsLayer;
           setCurrentModelingWMTSLayer(wmtsLayer);
           setCurrentModelingLegendUrl(getModelingLegendUrl(layerName));
@@ -207,13 +208,13 @@ export const useMapLayers = ({
 
     // Cleanup function pour retirer les layers lors du démontage ou changement
     return () => {
-      if (mapRef.current) {
+      if (map) {
         if (modelingLayerRef.current) {
-          mapRef.current.removeLayer(modelingLayerRef.current);
+          map.removeLayer(modelingLayerRef.current);
           modelingLayerRef.current = null;
         }
         if (windLayerGroupRef.current) {
-          mapRef.current.removeLayer(windLayerGroupRef.current);
+          map.removeLayer(windLayerGroupRef.current);
           windLayerGroupRef.current = null;
           windLayerRef.current = null;
         }
@@ -233,21 +234,22 @@ export const useMapLayers = ({
   // Effet pour gérer la couche communale (utilise GeoJSON pour un contrôle total du style)
   useEffect(() => {
     if (!mapRef.current) return;
+    const map = mapRef.current;
 
     let isCancelled = false;
 
     // Supprimer l'ancienne couche si elle existe
-    if (communalLayerRef.current && mapRef.current) {
-      mapRef.current.removeLayer(communalLayerRef.current);
+    if (communalLayerRef.current && map) {
+      map.removeLayer(communalLayerRef.current);
       communalLayerRef.current = null;
     }
 
     // Charger et ajouter la couche si elle est activée
-    if (isCommunalLayerEnabled && mapRef.current) {
-      createCommunalGeoJSONLayer(mapRef.current)
+    if (isCommunalLayerEnabled && map) {
+      createCommunalGeoJSONLayer(map)
         .then((layerGroup) => {
-          if (!isCancelled && mapRef.current) {
-            layerGroup.addTo(mapRef.current);
+          if (!isCancelled && map) {
+            layerGroup.addTo(map);
             communalLayerRef.current = layerGroup;
           }
         })
@@ -259,8 +261,8 @@ export const useMapLayers = ({
     // Cleanup
     return () => {
       isCancelled = true;
-      if (mapRef.current && communalLayerRef.current) {
-        mapRef.current.removeLayer(communalLayerRef.current);
+      if (map && communalLayerRef.current) {
+        map.removeLayer(communalLayerRef.current);
         communalLayerRef.current = null;
       }
     };

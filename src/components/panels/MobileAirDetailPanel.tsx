@@ -152,7 +152,7 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
   };
 
   // Fonction pour formater la date
-  const formatDate = (dateString: string): string => {
+  const formatDate = useCallback((dateString: string): string => {
     const date = new Date(dateString);
     const locale = i18n.language === "fr" ? "fr-FR" : i18n.language === "en" ? "en-GB" : i18n.language === "de" ? "de-DE" : i18n.language === "ar" ? "ar-SA" : i18n.language;
     return date.toLocaleString(locale, {
@@ -162,7 +162,7 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
+  }, [i18n.language]);
 
   // Fonction pour générer un identifiant unique pour un point
   const getPointId = (point: MobileAirDataPoint): string => {
@@ -237,7 +237,7 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
         return hasValidValue ? dataPoint : null;
       })
       .filter((item): item is NonNullable<typeof item> => item !== null);
-  }, [selectedRoute, activeRoute, localSelectedPollutants]);
+  }, [routeToUse, localSelectedPollutants]);
 
   // Préparer les données pour amCharts (même structure, mais avec tous les polluants)
   const amChartsData: AmChartsLineChartData[] = useMemo(() => {
@@ -539,7 +539,7 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
       `Polluants: ${pollutantLabels}`,
       `Points: ${routeToUse.points.length}`,
     ];
-  }, [routeToUse, localSelectedPollutants, t, i18n.language]);
+  }, [routeToUse, localSelectedPollutants, t, formatDate]);
 
   const handleExportPNG = useCallback(async () => {
     if (!routeToUse || !amChartsData.length) return;

@@ -44,8 +44,9 @@ export const useMapView = ({
   // Effet pour gérer l'activation automatique du spiderfier basée sur le zoom
   useEffect(() => {
     if (mapRef.current && spiderfyConfig.enabled) {
+      const map = mapRef.current;
       const handleZoomEnd = () => {
-        const currentZoomLevel = mapRef.current?.getZoom() || 0;
+        const currentZoomLevel = map.getZoom() || 0;
         setCurrentZoom(currentZoomLevel);
 
         // Activer le spiderfier si le zoom dépasse le seuil OU si autoSpiderfy est activé
@@ -61,13 +62,11 @@ export const useMapView = ({
       };
 
       // Ajouter l'écouteur d'événement zoom
-      mapRef.current.on("zoomend", handleZoomEnd);
+      map.on("zoomend", handleZoomEnd);
 
       // Nettoyer l'écouteur
       return () => {
-        if (mapRef.current) {
-          mapRef.current.off("zoomend", handleZoomEnd);
-        }
+        map.off("zoomend", handleZoomEnd);
       };
     }
   }, [

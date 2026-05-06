@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { MobileAirSensor, MOBILEAIR_POLLUTANT_MAPPING } from "../../types";
 import { MobileAirService } from "../../services/MobileAirService";
-import HistoricalTimeRangeSelector, {
-  TimeRange,
-} from "../controls/HistoricalTimeRangeSelector";
+import HistoricalTimeRangeSelector from "../controls/HistoricalTimeRangeSelector";
+import type { TimeRange } from "../../utils/historicalTimeRange";
 
 interface MobileAirSelectionPanelProps {
   isOpen: boolean;
@@ -47,25 +46,7 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
   // Utiliser la taille externe si fournie, sinon la taille interne
   const currentPanelSize = externalPanelSize || internalPanelSize;
 
-  const mobileAirService = new MobileAirService();
-
-  // Mettre à jour la référence du polluant initial si le panel vient de s'ouvrir
-  useEffect(() => {
-    if (isOpen && !hasLoadedRef.current) {
-      initialPollutantRef.current = initialPollutant;
-    }
-  }, [isOpen, initialPollutant]);
-
-  // Charger la liste des capteurs uniquement lors de l'ouverture du panel
-  useEffect(() => {
-    if (isOpen && !hasLoadedRef.current) {
-      loadSensors();
-      hasLoadedRef.current = true;
-    } else if (!isOpen) {
-      // Réinitialiser le flag quand le panel est fermé
-      hasLoadedRef.current = false;
-    }
-  }, [isOpen]);
+  const mobileAirService = useMemo(() => new MobileAirService(), []);
 
   const loadSensors = useCallback(async () => {
     setLoading(true);
@@ -91,6 +72,24 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
       setLoading(false);
     }
   }, [mobileAirService]);
+
+  // Mettre à jour la référence du polluant initial si le panel vient de s'ouvrir
+  useEffect(() => {
+    if (isOpen && !hasLoadedRef.current) {
+      initialPollutantRef.current = initialPollutant;
+    }
+  }, [isOpen, initialPollutant]);
+
+  // Charger la liste des capteurs uniquement lors de l'ouverture du panel
+  useEffect(() => {
+    if (isOpen && !hasLoadedRef.current) {
+      loadSensors();
+      hasLoadedRef.current = true;
+    } else if (!isOpen) {
+      // Réinitialiser le flag quand le panel est fermé
+      hasLoadedRef.current = false;
+    }
+  }, [isOpen, loadSensors]);
 
   const handleSensorToggle = (sensorId: string) => {
     setSelectedSensor(selectedSensor === sensorId ? null : sensorId);

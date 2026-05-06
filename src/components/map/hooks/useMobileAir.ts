@@ -129,7 +129,13 @@ export const useMobileAir = ({
         }
       }
     }
-  }, [devices, isEnabled, forceNewChoice]);
+  }, [
+    devices,
+    isEnabled,
+    forceNewChoice,
+    activeMobileAirRoute,
+    selectedMobileAirRoute,
+  ]);
 
   // Effet pour ouvrir automatiquement le side panel de sélection MobileAir
   useEffect(() => {

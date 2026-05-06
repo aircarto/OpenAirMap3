@@ -1,16 +1,9 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { ToggleGroup, ToggleGroupItem } from "../ui/button-group";
 import { cn } from "../../lib/utils";
-
-export interface TimeRange {
-  type: "preset" | "custom";
-  preset?: "3h" | "24h" | "7d" | "30d";
-  custom?: {
-    startDate: string;
-    endDate: string;
-  };
-}
+import type { TimeRange } from "../../utils/historicalTimeRange";
+import { getMaxHistoryDays } from "../../utils/historicalTimeRange";
 
 interface HistoricalTimeRangeSelectorProps {
   timeRange: TimeRange;
@@ -18,24 +11,6 @@ interface HistoricalTimeRangeSelectorProps {
   className?: string;
   timeStep?: string; // Pas de temps actuel pour valider les limites
 }
-
-// Fonction utilitaire pour calculer la limite maximale en jours selon le pas de temps
-export const getMaxHistoryDays = (timeStep?: string): number | null => {
-  if (!timeStep) return null;
-  
-  switch (timeStep) {
-    case "instantane":
-      return 60; // 2 mois = ~60 jours
-    case "quartHeure":
-      return 180; // 6 mois = ~180 jours
-    case "heure":
-    case "jour":
-      return null; // Pas de limite
-    default:
-      return null;
-  }
-};
-
 
 // Fonction pour calculer le nombre de jours entre deux dates
 const getDaysDifference = (startDate: string, endDate: string): number => {
@@ -65,8 +40,13 @@ const HistoricalTimeRangeSelector: React.FC<
   const { t, i18n } = useTranslation();
   const [isCustomOpen, setIsCustomOpen] = useState(false);
 
-  const formatMaxDaysDisplay = (maxDays: number): string =>
-    maxDays === 180 ? t("historical.months6") : t("historical.daysCount", { count: maxDays });
+  const formatMaxDaysDisplay = useCallback(
+    (maxDays: number): string =>
+      maxDays === 180
+        ? t("historical.months6")
+        : t("historical.daysCount", { count: maxDays }),
+    [t]
+  );
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -151,7 +131,7 @@ const HistoricalTimeRangeSelector: React.FC<
         }
       }
     }
-  }, [timeStep, maxDays, timeRange, t]);
+  }, [timeStep, maxDays, timeRange, t, formatMaxDaysDisplay]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

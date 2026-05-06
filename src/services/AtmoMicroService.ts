@@ -736,30 +736,26 @@ export class AtmoMicroService extends BaseDataService {
     endDate: string;
     sites?: string[]; // Sites spécifiques si nécessaire
   }): Promise<TemporalDataPoint[]> {
-    try {
-      // Mapping du polluant vers le format AtmoMicro
-      const atmoMicroVariable = this.getAtmoMicroVariable(params.pollutant);
-      if (!atmoMicroVariable) return [];
+    // Mapping du polluant vers le format AtmoMicro
+    const atmoMicroVariable = this.getAtmoMicroVariable(params.pollutant);
+    if (!atmoMicroVariable) return [];
 
-      // Configuration du pas de temps
-      const timeStepConfig = this.getAtmoMicroTimeStepConfig(params.timeStep);
-      if (!timeStepConfig) return [];
+    // Configuration du pas de temps
+    const timeStepConfig = this.getAtmoMicroTimeStepConfig(params.timeStep);
+    if (!timeStepConfig) return [];
 
-      // OPTIMISATION : Récupérer directement toutes les mesures historiques
-      // sans passer par la récupération des sites
-      const temporalDataPoints = await this.fetchTemporalDataOptimized({
-        variable: atmoMicroVariable,
-        aggregation: timeStepConfig.aggregation,
-        startDate: params.startDate,
-        endDate: params.endDate,
-        pollutant: params.pollutant,
-        sites: params.sites,
-      });
+    // OPTIMISATION : Récupérer directement toutes les mesures historiques
+    // sans passer par la récupération des sites
+    const temporalDataPoints = await this.fetchTemporalDataOptimized({
+      variable: atmoMicroVariable,
+      aggregation: timeStepConfig.aggregation,
+      startDate: params.startDate,
+      endDate: params.endDate,
+      pollutant: params.pollutant,
+      sites: params.sites,
+    });
 
-      return temporalDataPoints;
-    } catch (error) {
-      throw error;
-    }
+    return temporalDataPoints;
   }
 
   // Fonction pour formater les dates selon les besoins du mode historique

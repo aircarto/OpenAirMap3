@@ -285,6 +285,7 @@ export const useHistoricalChartData = ({
     timeStep,
     chartData,
     t,
+    localeForDate,
   ]);
 
   // Détecter si des données corrigées sont disponibles (pour AtmoMicro ou en mode comparaison avec stations atmoMicro)

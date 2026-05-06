@@ -205,7 +205,7 @@ export function markerExists(source: string, level: string): boolean {
   if (!config) return false;
 
   if (markerSource === "signalair") {
-    return SIGNAL_AIR_MAPPING.hasOwnProperty(level);
+    return Object.prototype.hasOwnProperty.call(SIGNAL_AIR_MAPPING, level);
   }
 
   return config.levels.includes(level);

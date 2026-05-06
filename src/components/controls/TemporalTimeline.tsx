@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { TemporalDataPoint } from "../../types";
 
@@ -63,15 +63,18 @@ const TemporalTimeline: React.FC<TemporalTimelineProps> = ({
   };
 
   // Convertir une position en pourcentage en timestamp
-  const positionToTimestamp = (position: number): string => {
-    if (!effectiveStartDate || !effectiveEndDate) return currentDate;
+  const positionToTimestamp = useCallback(
+    (position: number): string => {
+      if (!effectiveStartDate || !effectiveEndDate) return currentDate;
 
-    const start = new Date(effectiveStartDate).getTime();
-    const end = new Date(effectiveEndDate).getTime();
-    const time = start + (position / 100) * (end - start);
+      const start = new Date(effectiveStartDate).getTime();
+      const end = new Date(effectiveEndDate).getTime();
+      const time = start + (position / 100) * (end - start);
 
-    return new Date(time).toISOString();
-  };
+      return new Date(time).toISOString();
+    },
+    [effectiveStartDate, effectiveEndDate, currentDate]
+  );
 
   // Gérer le clic sur la timeline
   const handleTimelineClick = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -139,7 +142,7 @@ const TemporalTimeline: React.FC<TemporalTimelineProps> = ({
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isDragging, onSeek, effectiveStartDate, effectiveEndDate]);
+  }, [isDragging, onSeek, effectiveStartDate, effectiveEndDate, positionToTimestamp]);
 
   // Formater la date pour l'affichage
   const formatDate = (dateString: string): string => {

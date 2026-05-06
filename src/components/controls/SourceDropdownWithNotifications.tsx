@@ -31,6 +31,12 @@ import {
 } from "../../utils/sourceCompatibility";
 import { Toast } from "../ui/toast";
 
+const COMMUNAUTAIRE_SOURCE_CODES = [
+  "communautaire.nebuleair",
+  "communautaire.sensorCommunity",
+  "communautaire.purpleair",
+] as const;
+
 interface SourceDropdownWithNotificationsProps {
   selectedSources: string[];
   selectedTimeStep: string;
@@ -53,24 +59,19 @@ const SourceDropdownWithNotifications: React.FC<
     null
   );
 
-  // Définir les sources communautaires (mobileair retiré car géré séparément)
-  const communautaireSources = [
-    "communautaire.nebuleair",
-    "communautaire.sensorCommunity",
-    "communautaire.purpleair",
-  ];
-
   // Vérifier l'état des groupes
   const allCommunautaireSelected = useMemo(
     () =>
-      communautaireSources.every((source) =>
+      COMMUNAUTAIRE_SOURCE_CODES.every((source) =>
         selectedSources.includes(source)
       ),
     [selectedSources]
   );
   const someCommunautaireSelected = useMemo(
     () =>
-      communautaireSources.some((source) => selectedSources.includes(source)),
+      COMMUNAUTAIRE_SOURCE_CODES.some((source) =>
+        selectedSources.includes(source)
+      ),
     [selectedSources]
   );
 
@@ -136,12 +137,12 @@ const SourceDropdownWithNotifications: React.FC<
     if (groupCode === "communautaire") {
       if (allCommunautaireSelected) {
         const newSources = selectedSources.filter(
-          (source) => !communautaireSources.includes(source)
+          (source) => !COMMUNAUTAIRE_SOURCE_CODES.includes(source)
         );
         onSourceChange(newSources);
       } else {
         const newSources = [...selectedSources];
-        communautaireSources.forEach((source) => {
+        COMMUNAUTAIRE_SOURCE_CODES.forEach((source) => {
           if (!newSources.includes(source)) {
             newSources.push(source);
           }
