@@ -12,8 +12,25 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Job de deploiement preprod
+  # Job CI: verifie qualite avant deploiement
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Installer les dependances
+        run: npm ci
+
+      - name: Verifier le lint
+        run: npm run lint
+
+      - name: Executer les tests unitaires services/hooks
+        run: npx vitest run src/services/__tests__ src/hooks/__tests__
+
+  # Job de deploiement preprod (seulement si CI vert)
   deploy-preprod:
+    needs: ci
     # Doit matcher un label disponible sur ton runner
     runs-on: ubuntu-latest
 
