@@ -101,19 +101,20 @@ Champs disponibles :
 
 #### Bandeau incident AtmoMicro (mesures/dernieres)
 
-OpenAirMap gere un mode degradé specifique pour AtmoMicro quand l'endpoint `mesures/dernieres` renvoie :
-- un `204 No Content` ;
-- une reponse vide (`null` ou tableau vide).
+OpenAirMap gere un mode degradé pour AtmoMicro lorsque l'endpoint `mesures/dernieres` ne fournit pas de mesures exploitables, par exemple :
+- `204 No Content` ou corps vide (`null`) ;
+- reponse JSON vide (`[]`) ;
+- erreur reseau ou HTTP sur cet endpoint uniquement.
 
 Comportement applique :
-- un etat d'incident `atmoMicroOutage` est active dans le hook `useAirQualityData` ;
-- les marqueurs AtmoMicro ne sont plus affiches pendant l'incident ;
+- un etat d'incident `atmoMicroOutage` est active dans le hook `useAirQualityData` (pour le bandeau) ;
+- les capteurs listes dans `capteurs/sites` pour le polluant demande restent affiches en **marqueurs inactifs** (gris, pas de valeur recente), positions issues des metadonnees sites ;
 - un bandeau d'information est affiche en haut de la carte si AtmoMicro est selectionnee ;
 - le texte du bandeau provient de `public/maintenance.json` (`atmoMicroQualifiedSensors.message`) ;
 - l'utilisateur peut fermer le bandeau via une croix (fermeture locale de session UI).
 
 Fichiers concernes :
-- `src/services/AtmoMicroService.ts` (detection du cas 204/vide) ;
+- `src/services/AtmoMicroService.ts` (fallback mesures -> sites, signal `isMeasuresUnavailableIncident`) ;
 - `src/hooks/useAirQualityData.ts` (propagation de `atmoMicroOutage`) ;
 - `src/App.tsx` (rendu du bandeau, texte centre, bouton de fermeture) ;
 - `public/maintenance.json` (configuration du message).
