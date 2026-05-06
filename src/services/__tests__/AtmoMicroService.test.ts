@@ -157,6 +157,22 @@ describe("AtmoMicroService", () => {
     });
     expect(service.isMeasuresUnavailableIncident()).toBe(true);
   });
+
+  it("garde les sites en inactif si mesures/dernieres echoue (ex: erreur HTTP)", async () => {
+    vi.spyOn(service as any, "makeRequest")
+      .mockResolvedValueOnce([buildSite()])
+      .mockRejectedValueOnce(new Error("HTTP error! status: 503"));
+
+    const result = await service.fetchData(baseParams);
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      id: "101",
+      status: "inactive",
+      value: 0,
+      qualityLevel: "default",
+    });
+    expect(service.isMeasuresUnavailableIncident()).toBe(true);
+  });
 });
 
 

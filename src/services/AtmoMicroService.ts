@@ -134,12 +134,17 @@ export class AtmoMicroService extends BaseDataService {
           atmoMicroVariable,
           timeStepConfig.aggregation,
           timeStepConfig.delais
-        ).catch((error) => {
-          if (error instanceof AtmoMicroMeasuresUnavailableError) {
-            this.lastMeasuresUnavailable = true;
-            return [];
+        ).catch((error: unknown) => {
+          // Toute erreur sur mesures/dernieres : fallback sur capteurs/sites (marqueurs inactifs).
+          // (204, corps vide, reseau, HTTP, JSON invalide, etc.)
+          this.lastMeasuresUnavailable = true;
+          if (!(error instanceof AtmoMicroMeasuresUnavailableError)) {
+            console.warn(
+              "[AtmoMicro] mesures/dernieres indisponible, fallback sites uniquement:",
+              error
+            );
           }
-          throw error;
+          return [];
         }),
       ]);
       const { filteredSites: sitesResponse, excludedSites } = sitesResult;
@@ -151,15 +156,24 @@ export class AtmoMicroService extends BaseDataService {
         atmoMicroVariable,
       });
 
-      // Vérifier si les réponses sont valides
-      if (!sitesResponse || !measuresResponse) {
-        console.warn("Aucune donnée reçue d'AtmoMicro");
+      if (!Array.isArray(sitesResponse)) {
+        console.warn("Réponse sites AtmoMicro invalide");
         return [];
+      }
+
+      const measuresList: AtmoMicroMeasure[] = Array.isArray(measuresResponse)
+        ? measuresResponse
+        : [];
+      if (!Array.isArray(measuresResponse)) {
+        this.lastMeasuresUnavailable = true;
+        console.warn(
+          "[AtmoMicro] Format mesures/dernieres inattendu, fallback sites uniquement"
+        );
       }
 
       // Créer un map des mesures par ID de site pour un accès rapide
       const measuresMap = new Map<number, AtmoMicroMeasure>();
-      measuresResponse.forEach((measure) => {
+      measuresList.forEach((measure) => {
         measuresMap.set(measure.id_site, measure);
       });
 
@@ -178,7 +192,7 @@ export class AtmoMicroService extends BaseDataService {
       }> = [];
 
       // 1. Traiter d'abord les sites avec des mesures récentes (coordonnées à jour)
-      for (const measure of measuresResponse) {
+      for (const measure of measuresList) {
         const site = sitesMap.get(measure.id_site);
 
         if (site) {
