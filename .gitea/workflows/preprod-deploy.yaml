@@ -1,0 +1,56 @@
+# Nom du workflow visible dans Gitea
+name: preprod-deploy
+
+# Declencheurs
+on:
+  # Lance le workflow sur chaque push de la branche preprod
+  push:
+    branches:
+      - preprod
+
+  # Permet un lancement manuel depuis l'UI Gitea
+  workflow_dispatch:
+
+jobs:
+  # Job de deploiement preprod
+  deploy-preprod:
+    # Doit matcher un label disponible sur ton runner
+    runs-on: ubuntu-latest
+
+    steps:
+      # Recupere le code du repo
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Affiche le contexte utile pour les logs
+      - name: Contexte run
+        run: |
+          echo "ref=${{ gitea.ref }}"
+          echo "sha=${{ gitea.sha }}"
+
+      # Prepare la configuration SSH
+      - name: Setup SSH
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.PREPROD_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "${{ secrets.PREPROD_PORT }}" "${{ secrets.PREPROD_HOST }}" >> ~/.ssh/known_hosts
+
+      # Execute le deploiement sur la machine preprod via SSH
+      - name: Deploy preprod
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh -p "${{ secrets.PREPROD_PORT }}" "${{ secrets.PREPROD_USER }}@${{ secrets.PREPROD_HOST }}" "
+            set -euo pipefail
+            cd '${{ secrets.PREPROD_APP_PATH }}'
+            git fetch --all --prune
+            git checkout preprod
+            git pull --ff-only origin preprod
+            npm ci
+            npm run build
+            echo 'SHA deploye:' \$(git rev-parse --short HEAD)
+          "
