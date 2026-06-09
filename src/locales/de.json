@@ -585,5 +585,37 @@
     "disableIncompatibleSources": "Inkompatible Quellen deaktivieren",
     "sourceUnavailableShort": "Quelle nicht verfügbar",
     "changeTimeStep": "Zeitschritt ändern"
+  },
+  "tour": {
+    "common": {
+      "skip": "Tutorial überspringen",
+      "next": "Weiter",
+      "previous": "Zurück",
+      "done": "Fertig",
+      "replay": "Tutorial wiederholen",
+      "progress": "{{current}} von {{total}}"
+    },
+    "historical": {
+      "step1": {
+        "title": "Historischen Modus entdecken",
+        "description": "Dieser Modus ermöglicht die Wiedergabe der Luftqualität für einen vergangenen Zeitraum. Er ist nur für 15-Min-, Stunden- und Tageswerte verfügbar."
+      },
+      "step2": {
+        "title": "Historischen Modus aktivieren",
+        "description": "Klicken Sie auf diese Schaltfläche, um den Modus zu aktivieren. Aktuelle Marker werden durch Daten des gewählten Zeitraums ersetzt."
+      },
+      "step3": {
+        "title": "Zeitraum wählen",
+        "description": "Wählen Sie Start- und Enddatum. AtmoRef-, AtmoMicro- und NebuleAir-Quellen werden unterstützt. Die maximale Dauer hängt vom Zeitschritt ab (7 Tage bei 15 Min, 30 Tage stündlich)."
+      },
+      "step4": {
+        "title": "Daten laden",
+        "description": "Nach Auswahl des Zeitraums klicken Sie hier, um historische Messungen auf der Karte zu laden."
+      },
+      "step5": {
+        "title": "Wiedergabesteuerung",
+        "description": "Nutzen Sie Wiedergabe/Pause, die Zeitleiste und die Geschwindigkeit zur Navigation. Dieses Panel ist verschiebbar; öffnen Sie den Kalender über das Symbol oben rechts."
+      }
+    }
   }
 }

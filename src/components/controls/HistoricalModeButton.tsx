@@ -18,6 +18,7 @@ const HistoricalModeButton: React.FC<HistoricalModeButtonProps> = ({
 
   return (
     <Toggle
+      data-tour="historical-toggle"
       pressed={isActive}
       onPressedChange={disabled ? () => {} : onToggle}
       disabled={disabled}

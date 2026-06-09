@@ -585,5 +585,37 @@
     "disableIncompatibleSources": "Disable incompatible sources",
     "sourceUnavailableShort": "Source unavailable",
     "changeTimeStep": "Change time step"
+  },
+  "tour": {
+    "common": {
+      "skip": "Skip tutorial",
+      "next": "Next",
+      "previous": "Previous",
+      "done": "Finish",
+      "replay": "Replay tutorial",
+      "progress": "{{current}} of {{total}}"
+    },
+    "historical": {
+      "step1": {
+        "title": "Discover historical mode",
+        "description": "This mode lets you replay air quality over a past period. It is only available for 15-minute, hourly and daily time steps."
+      },
+      "step2": {
+        "title": "Enable historical mode",
+        "description": "Click this button to enable the mode. Current markers will be replaced by data for the selected period."
+      },
+      "step3": {
+        "title": "Choose a period",
+        "description": "Select a start and end date. AtmoRef, AtmoMicro and NebuleAir sources are supported. Maximum period length depends on the time step (7 days at 15 min, 30 days hourly)."
+      },
+      "step4": {
+        "title": "Load data",
+        "description": "Once the period is selected, click here to load historical measurements on the map."
+      },
+      "step5": {
+        "title": "Playback controls",
+        "description": "Use play/pause, the timeline and speed to navigate through time. This panel is draggable; reopen the calendar via the icon at the top right."
+      }
+    }
   }
 }

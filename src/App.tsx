@@ -41,6 +41,8 @@ import {
   trackFeatureUsage,
   trackPageView,
 } from "./services/analyticsService";
+import { FeatureTourProvider } from "./components/tour/FeatureTourProvider";
+import HistoricalModeTourController from "./components/tour/HistoricalModeTourController";
 
 interface AtmoMicroMaintenanceBannerConfig {
   enabled: boolean;
@@ -57,7 +59,7 @@ const DEFAULT_ATMOMICRO_MAINTENANCE_BANNER: AtmoMicroMaintenanceBannerConfig = {
     "Suite a un probleme technique, les donnees des capteurs qualifies ne sont plus accessibles. AtmoSud met tout en oeuvre pour le resoudre.",
 };
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
   const { t } = useTranslation();
   // Configuration basée sur le domaine
   const domainConfig = useDomainConfig();
@@ -827,8 +829,21 @@ const App: React.FC = () => {
 
       {/* Conteneur de notifications toast */}
       <ToastContainer toasts={toasts} onClose={removeToast} />
+
+      <HistoricalModeTourController
+        isHistoricalModeAllowed={isHistoricalModeAllowed}
+        isHistoricalModeActive={isHistoricalModeActive}
+        hasHistoricalData={hasHistoricalData}
+        isDatePanelVisible={isDatePanelVisible}
+      />
     </div>
   );
 };
+
+const App: React.FC = () => (
+  <FeatureTourProvider>
+    <AppContent />
+  </FeatureTourProvider>
+);
 
 export default App;

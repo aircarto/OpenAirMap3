@@ -95,4 +95,39 @@ test.describe("Accessibilité (a11y)", () => {
       `Violations critiques axe (panel mode historique) : ${JSON.stringify(critical, null, 2)}`
     ).toEqual([]);
   });
+
+  test("tutoriel mode historique actif : pas de violations axe critiques", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible({
+      timeout: 15000,
+    });
+
+    await page.evaluate(() => {
+      localStorage.removeItem("openairmap-tours-completed");
+    });
+    await page.reload();
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible({
+      timeout: 15000,
+    });
+
+    const tourPopover = page.locator(".driver-popover.openairmap-tour-popover");
+    try {
+      await expect(tourPopover).toBeVisible({ timeout: 8000 });
+    } catch {
+      test.skip(true, "Tutoriel non affiché (pas de temps incompatible ou UI masquée)");
+    }
+
+    const results = await new AxeBuilder({ page })
+      .include(".driver-popover.openairmap-tour-popover")
+      .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+      .analyze();
+
+    const critical = results.violations.filter((v) => v.impact === "critical");
+    expect(
+      critical,
+      `Violations critiques axe (tutoriel) : ${JSON.stringify(critical, null, 2)}`
+    ).toEqual([]);
+  });
 });

@@ -1,3 +1,5 @@
+@import "driver.js/dist/driver.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -424,4 +426,66 @@
   .time-step-button-short {
     display: inline !important;
   }
+}
+
+/* Tutoriels guidés (driver.js) — aligné sur la charte OpenAirMap */
+.driver-popover.openairmap-tour-popover {
+  z-index: 3500 !important;
+  max-width: min(360px, calc(100vw - 2rem));
+  border-radius: 0.75rem;
+  border: 1px solid rgba(50, 90, 150, 0.25);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
+  font-family: inherit;
+}
+
+.driver-popover.openairmap-tour-popover .driver-popover-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e3a5f;
+}
+
+.driver-popover.openairmap-tour-popover .driver-popover-description {
+  font-size: 0.875rem;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.driver-popover.openairmap-tour-popover .driver-popover-progress-text {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.driver-popover.openairmap-tour-popover .driver-popover-next-btn,
+.driver-popover.openairmap-tour-popover .driver-popover-prev-btn,
+.driver-popover.openairmap-tour-popover .driver-popover-close-btn {
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-shadow: none;
+}
+
+.driver-popover.openairmap-tour-popover .driver-popover-next-btn,
+.driver-popover.openairmap-tour-popover .driver-popover-done-btn {
+  background-color: #4271b3;
+  color: #fff;
+  border: none;
+}
+
+.driver-popover.openairmap-tour-popover .driver-popover-next-btn:hover,
+.driver-popover.openairmap-tour-popover .driver-popover-done-btn:hover {
+  background-color: #325a96;
+}
+
+.driver-popover.openairmap-tour-popover .driver-popover-close-btn {
+  color: #6b7280;
+}
+
+.driver-popover.openairmap-tour-popover .driver-popover-skip-btn {
+  color: #6b7280;
+  font-size: 0.8125rem;
+}
+
+.driver-active-element,
+.driver-overlay {
+  z-index: 3400 !important;
 }

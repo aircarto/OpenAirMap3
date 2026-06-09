@@ -585,5 +585,37 @@
     "disableIncompatibleSources": "Disattiva fonti incompatibili",
     "sourceUnavailableShort": "Fonte non disponibile",
     "changeTimeStep": "Cambia passo temporale"
+  },
+  "tour": {
+    "common": {
+      "skip": "Salta tutorial",
+      "next": "Avanti",
+      "previous": "Indietro",
+      "done": "Fine",
+      "replay": "Ripeti tutorial",
+      "progress": "{{current}} di {{total}}"
+    },
+    "historical": {
+      "step1": {
+        "title": "Scopri la modalità storica",
+        "description": "Questa modalità consente di riprodurre la qualità dell'aria su un periodo passato. È disponibile solo per i passi 15 min, ora e giorno."
+      },
+      "step2": {
+        "title": "Attiva la modalità storica",
+        "description": "Fai clic su questo pulsante per attivare la modalità. I marcatori attuali saranno sostituiti dai dati del periodo selezionato."
+      },
+      "step3": {
+        "title": "Scegli un periodo",
+        "description": "Seleziona una data di inizio e fine. Sono supportate le fonti AtmoRef, AtmoMicro e NebuleAir. La durata massima dipende dal passo temporale (7 giorni a 15 min, 30 giorni orari)."
+      },
+      "step4": {
+        "title": "Carica i dati",
+        "description": "Una volta scelto il periodo, fai clic qui per caricare le misure storiche sulla mappa."
+      },
+      "step5": {
+        "title": "Controlli di riproduzione",
+        "description": "Usa play/pausa, la timeline e la velocità per navigare nel tempo. Questo pannello è trascinabile; riapri il calendario con l'icona in alto a destra."
+      }
+    }
   }
 }

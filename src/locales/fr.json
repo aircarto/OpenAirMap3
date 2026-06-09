@@ -583,5 +583,37 @@
     "disableIncompatibleSources": "Désactiver les sources incompatibles",
     "sourceUnavailableShort": "Source non disponible",
     "changeTimeStep": "Changer le pas de temps"
+  },
+  "tour": {
+    "common": {
+      "skip": "Passer le tutoriel",
+      "next": "Suivant",
+      "previous": "Précédent",
+      "done": "Terminer",
+      "replay": "Revoir le tutoriel",
+      "progress": "{{current}} sur {{total}}"
+    },
+    "historical": {
+      "step1": {
+        "title": "Découvrir le mode historique",
+        "description": "Ce mode permet de rejouer la qualité de l'air sur une période passée. Il est disponible uniquement aux pas 15 min, heure et jour."
+      },
+      "step2": {
+        "title": "Activer le mode historique",
+        "description": "Cliquez sur ce bouton pour activer le mode. Les marqueurs actuels seront remplacés par les données de la période sélectionnée."
+      },
+      "step3": {
+        "title": "Choisir une période",
+        "description": "Sélectionnez une date de début et de fin. Les sources AtmoRef, AtmoMicro et NebuleAir sont prises en charge. La durée maximale dépend du pas de temps (7 jours en 15 min, 30 jours à l'heure)."
+      },
+      "step4": {
+        "title": "Charger les données",
+        "description": "Une fois la période choisie, cliquez ici pour charger les mesures historiques sur la carte."
+      },
+      "step5": {
+        "title": "Contrôles de lecture",
+        "description": "Utilisez lecture/pause, la timeline et la vitesse pour naviguer dans le temps. Ce panneau est déplaçable ; rouvrez le calendrier via l'icône en haut à droite."
+      }
+    }
   }
 }

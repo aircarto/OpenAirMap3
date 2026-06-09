@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { TemporalVisualizationState, TemporalControls } from "../../types";
 import TemporalTimeline from "./TemporalTimeline";
 import { cn } from "../../lib/utils";
+import TourReplayButton from "../tour/TourReplayButton";
 
 interface HistoricalPlaybackControlProps {
   state: TemporalVisualizationState;
@@ -154,6 +155,7 @@ const HistoricalPlaybackControl: React.FC<HistoricalPlaybackControlProps> = ({
   return (
     <div
       ref={containerRef}
+      data-tour="historical-playback"
       className={cn(
         "fixed z-[2000] flex flex-col min-w-[280px] max-w-[320px]",
         isDragging ? "select-none opacity-95" : "transition-all duration-300",
@@ -202,6 +204,7 @@ const HistoricalPlaybackControl: React.FC<HistoricalPlaybackControlProps> = ({
             </h4>
           </div>
           <div className="flex items-center gap-1">
+            <TourReplayButton tourId="historical_mode" />
             <button
               type="button"
               onClick={onOpenDatePanel}
