@@ -245,7 +245,8 @@
       "sensorFallback": "مقياس مصغر AtmoSud",
       "sensorAlt": "مقياس {{model}}",
       "infoCardTitle": "معلومات",
-      "infoCardComingSoon": "معلومات إضافية قريباً"
+      "infoCardComingSoon": "قم بتجهيز نفسك بجهاز قياس مصغر وانضم إلى شبكة المراقبة التشاركية.",
+      "buttonDiscover": "اكتشف"
     },
     "nebuleAirSidePanel": {
       "sourceLabel": "NebuleAir AirCarto",

@@ -245,7 +245,8 @@
       "sensorFallback": "Microsensore AtmoSud",
       "sensorAlt": "Sensore {{model}}",
       "infoCardTitle": "Informazioni",
-      "infoCardComingSoon": "Ulteriori informazioni in arrivo"
+      "infoCardComingSoon": "Equipaggiati con un microsensore e unisciti alla rete di monitoraggio partecipativo.",
+      "buttonDiscover": "Scopri"
     },
     "nebuleAirSidePanel": {
       "sourceLabel": "NebuleAir AirCarto",

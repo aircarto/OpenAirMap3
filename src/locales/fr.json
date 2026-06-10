@@ -243,7 +243,8 @@
       "sensorFallback": "Microcapteur AtmoSud",
       "sensorAlt": "Capteur {{model}}",
       "infoCardTitle": "Informations",
-      "infoCardComingSoon": "Informations supplémentaires à venir"
+      "infoCardComingSoon": "Equipez-vous d’un microcapteur et rejoignez le réseau de surveillance participative.",
+      "buttonDiscover": "Découvrir"
     },
     "nebuleAirSidePanel": {
       "sourceLabel": "NebuleAir AirCarto",
@@ -596,7 +597,7 @@
     "historical": {
       "step1": {
         "title": "Découvrir le mode historique",
-        "description": "Ce mode permet de rejouer la qualité de l'air sur une période passée. Il est disponible uniquement aux pas 15 min, heure et jour."
+        "description": "Ce mode permet de connaître la qualité de l'air sur une période passée. Il est disponible uniquement aux pas de temps 15 min, heure et jour."
       },
       "step2": {
         "title": "Activer le mode historique",
@@ -604,7 +605,7 @@
       },
       "step3": {
         "title": "Choisir une période",
-        "description": "Sélectionnez une date de début et de fin. Les sources AtmoRef, AtmoMicro et NebuleAir sont prises en charge. La durée maximale dépend du pas de temps (7 jours en 15 min, 30 jours à l'heure)."
+        "description": "Sélectionnez une date de début et de fin. Les stations de référence AtmoSud, les microcapteurs qualifiés AtmoSud et les microcapteurs NebuleAir sont pris en charge. La durée maximale dépend du pas de temps (7 jours au pas de temps 15 min, 30 jours au pas de temps horaire)."
       },
       "step4": {
         "title": "Charger les données",

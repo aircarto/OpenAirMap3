@@ -41,6 +41,8 @@ const MICRO_TIME_STEP_OPTIONS = [
   { key: "heure", labelKey: "timeStep1h", shortLabelKey: "timeStep1h" },
   { key: "jour", labelKey: "timeStep1j", shortLabelKey: "timeStep1j" },
 ] as const;
+const ATMOMICRO_DISCOVER_URL =
+  "https://www.atmosud.org/article/utiliser-mon-microcapteur-citoyen";
 
 const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
   isOpen,
@@ -1536,7 +1538,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                   )}
                 </div>
 
-                {/* Encart Informations (vide pour l'instant) */}
+                {/* Encart Informations */}
                 <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4">
                   <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
                     <svg
@@ -1564,6 +1566,14 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                       </div>
                     </div>
                   </div>
+                  <a
+                    href={ATMOMICRO_DISCOVER_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 w-full bg-[#4271B3] hover:bg-[#325a96] text-white font-medium py-2 px-3 rounded-md transition-colors flex items-center justify-center text-xs sm:text-sm"
+                  >
+                    {t("panels.microSidePanel.buttonDiscover")}
+                  </a>
                 </div>
               </div>
             )}

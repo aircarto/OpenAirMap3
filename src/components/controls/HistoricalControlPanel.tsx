@@ -279,20 +279,7 @@ const HistoricalControlPanel: React.FC<
                   <div>
                     <p className="font-medium text-blue-800">
                       {t("historical.instructionTitle")}
-                    </p>
-                    <p className="text-blue-700 mt-1">
-                      {t("historical.instructionMarkers")}
-                    </p>
-                    {(state.timeStep === "qh" || state.timeStep === "quartHeure") && (
-                      <p className="text-blue-700 mt-1 italic">
-                        {t("historical.limit7days")}
-                      </p>
-                    )}
-                    {(state.timeStep === "h" || state.timeStep === "heure") && (
-                      <p className="text-blue-700 mt-1 italic">
-                        {t("historical.limit30days")}
-                      </p>
-                    )}
+                    </p>                   
                   </div>
                 </div>
               </div>
