@@ -592,7 +592,19 @@
       "aisClass": "AIS class",
       "aisClassValue": "Class",
       "dimensions": "Dimensions (L × W)",
-      "draught": "Draught"
+      "draught": "Draught",
+      "operator": "Operator",
+      "propulsion": "Propulsion",
+      "shorePower": "Shore power",
+      "shorePowerValues": {
+        "oui": "Yes",
+        "non": "No",
+        "inconnu": "Unknown"
+      },
+      "yearBuilt": "Year built",
+      "passengers": "Passenger capacity",
+      "vehicles": "Vehicle capacity",
+      "news": "News"
     },
     "navStatus": {
       "0": "Under way (engine)",

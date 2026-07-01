@@ -590,7 +590,19 @@
       "aisClass": "Classe AIS",
       "aisClassValue": "Classe",
       "dimensions": "Dimensions (L × l)",
-      "draught": "Tirant d'eau"
+      "draught": "Tirant d'eau",
+      "operator": "Compagnie",
+      "propulsion": "Propulsion",
+      "shorePower": "Branchement à quai",
+      "shorePowerValues": {
+        "oui": "Oui",
+        "non": "Non",
+        "inconnu": "Inconnu"
+      },
+      "yearBuilt": "Année de construction",
+      "passengers": "Capacité passagers",
+      "vehicles": "Capacité véhicules",
+      "news": "Actualités"
     },
     "navStatus": {
       "0": "En route (moteur)",
