@@ -567,12 +567,164 @@
       "signalair": "SignalAir"
     }
   },
+  "boats": {
+    "panel": {
+      "photoLoading": "Recherche d'une photo…",
+      "photoCredit": "Photo : Wikimedia Commons",
+      "navigationSection": "Navigation",
+      "trailSection": "Trajet observé",
+      "identitySection": "Identité",
+      "characteristicsSection": "Caractéristiques",
+      "externalLinks": "Fiches externes",
+      "externalLinksHint": "Photos et historique complet du navire sur les sites spécialisés :",
+      "centerOnMap": "Centrer la carte",
+      "navStatus": "Statut",
+      "destination": "Destination",
+      "position": "Position",
+      "trailDistance": "Distance parcourue",
+      "trailDuration": "Durée du trajet",
+      "trailPoints": "Points enregistrés",
+      "imo": "N° IMO",
+      "callsign": "Indicatif radio",
+      "flag": "Pavillon",
+      "aisClass": "Classe AIS",
+      "aisClassValue": "Classe",
+      "dimensions": "Dimensions (L × l)",
+      "draught": "Tirant d'eau"
+    },
+    "navStatus": {
+      "0": "En route (moteur)",
+      "1": "Au mouillage",
+      "2": "Non maître de sa manœuvre",
+      "3": "Manœuvrabilité restreinte",
+      "4": "Contraint par son tirant d'eau",
+      "5": "Amarré",
+      "6": "Échoué",
+      "7": "En pêche",
+      "8": "En route (voile)"
+    },
+    "loadingTracks": "Chargement des positions des bateaux…",
+    "trackedCount_one": "{{count}} bateau suivi",
+    "trackedCount_other": "{{count}} bateaux suivis",
+    "popup": {
+      "mmsi": "MMSI",
+      "type": "Type",
+      "speed": "Vitesse",
+      "course": "Cap",
+      "lastUpdate": "Dernière position",
+      "knots": "nœuds"
+    },
+    "types": {
+      "fishing": "Pêche",
+      "special": "Navire de service",
+      "pleasure": "Plaisance / voilier",
+      "highspeed": "Engin à grande vitesse",
+      "passenger": "Passagers",
+      "cargo": "Cargo",
+      "tanker": "Tanker",
+      "other": "Autre"
+    }
+  },
+  "signalements": {
+    "reportTag": "Signalement",
+    "noReplies": "Aucune réponse — réagissez !",
+    "repliesTitle": "Réponses",
+    "replyPlaceholder": "Votre réponse…",
+    "placeholder": "Décrivez ce que vous signalez…",
+    "title": "Signalement",
+    "newTitle": "Nouveau signalement",
+    "newHint": "Choisissez un type (optionnel) et écrivez votre signalement. D'autres pourront y répondre.",
+    "datetimeLabel": "Date et heure de l'événement"
+  },
+  "comments": {
+    "title": "Commentaires",
+    "loading": "Chargement…",
+    "empty": "Aucun commentaire pour l'instant. Soyez le premier !",
+    "loadError": "Impossible de charger les commentaires.",
+    "postError": "Échec de l'envoi. Réessayez.",
+    "placeholder": "Votre commentaire…",
+    "namePlaceholder": "Votre nom (optionnel)",
+    "submit": "Publier",
+    "sending": "Envoi…",
+    "types": {
+      "fire": "Incendie",
+      "industrial": "Industriel",
+      "traffic": "Trafic",
+      "neighbourhood": "Voisinage"
+    }
+  },
+  "zones": {
+    "panel": {
+      "activity": "Activité",
+      "companySection": "Entreprise",
+      "sector": "Secteur",
+      "since": "Depuis",
+      "category": "Catégorie",
+      "workforce": "Effectif",
+      "activities": "Activités classées",
+      "aerialCredit": "Vue aérienne © IGN",
+      "photoLoading": "Recherche d'une photo…",
+      "photoCredit": "Photo : Wikipédia",
+      "type": "Type",
+      "codes": "Codes (IATA/ICAO)",
+      "seuil": "Classement",
+      "regime": "Régime",
+      "commune": "Commune",
+      "address": "Adresse",
+      "operator": "Exploitant",
+      "website": "Site web",
+      "centerOnMap": "Centrer la carte"
+    },
+    "title": "Zones",
+    "types": {
+      "airport": "Aéroports",
+      "port": "Ports",
+      "seveso": "Sites Seveso"
+    },
+    "kind": {
+      "airport": "Aéroport",
+      "port": "Port",
+      "seveso": "Site Seveso"
+    }
+  },
+  "planes": {
+    "types": {
+      "airliner": "Ligne",
+      "jet": "Aviation d'affaires",
+      "helicopter": "Hélicoptère",
+      "light": "Léger / planeur",
+      "other": "Autre"
+    },
+    "panel": {
+      "photoCredit": "Photo : airport-data.com",
+      "routeSection": "Route",
+      "from": "Départ",
+      "to": "Arrivée",
+      "owner": "Exploitant",
+      "photoLoading": "Recherche d'une photo…",
+      "flightSection": "Vol en cours",
+      "altitude": "Altitude",
+      "speed": "Vitesse sol",
+      "heading": "Cap",
+      "verticalRate": "Vario",
+      "squawk": "Squawk",
+      "onGround": "Au sol",
+      "identitySection": "Appareil",
+      "callsign": "Indicatif",
+      "registration": "Immatriculation",
+      "aircraft": "Type",
+      "icao": "Adresse ICAO",
+      "centerOnMap": "Centrer la carte"
+    }
+  },
   "baseLayer": {
     "title": "Fond de carte",
     "standard": "Carte standard",
     "osm": "Carte OSM",
     "satelliteIgn": "Satellite IGN",
-    "communal": "Découpage communal"
+    "communal": "Découpage communal",
+    "boats": "Bateaux",
+    "planes": "Avions"
   },
   "toast": {
     "sourceUnavailable": "{{name}} non disponible",

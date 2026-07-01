@@ -16,6 +16,11 @@ interface MapOverlaysProps {
   isComparisonPanelVisible: boolean;
   mapLayers: any;
   wildfire: any;
+  boats: any;
+  planes: any;
+  zones: any;
+  /** Mode Scan : bateaux/avions ne sont disponibles que dans ce mode */
+  isScanMode: boolean;
   visibleDevices: any[];
   visibleReports: any[];
   totalDevices: number;
@@ -40,6 +45,10 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
   isComparisonPanelVisible,
   mapLayers,
   wildfire,
+  boats,
+  planes,
+  zones,
+  isScanMode,
   visibleDevices,
   visibleReports,
   totalDevices,
@@ -97,6 +106,15 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
           onBaseLayerChange={setCurrentBaseLayer}
           isCommunalLayerEnabled={isCommunalLayerEnabled}
           onCommunalLayerToggle={setIsCommunalLayerEnabled}
+          isBoatLayerAvailable={boats.isBoatLayerEnabled && isScanMode}
+          isBoatLayerVisible={boats.isBoatLayerVisible}
+          onBoatLayerToggle={boats.setIsBoatLayerVisible}
+          isPlaneLayerAvailable={planes.isPlaneLayerEnabled && isScanMode}
+          isPlaneLayerVisible={planes.isPlaneLayerVisible}
+          onPlaneLayerToggle={planes.setIsPlaneLayerVisible}
+          zonesVisible={zones.visible}
+          zonesLoading={zones.loading}
+          onZoneToggle={zones.toggle}
         />
       </div>
 
@@ -140,11 +158,22 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
           </div>
         )}
 
-      {wildfire.isWildfireLayerEnabled && wildfire.wildfireError && (
-        <div className="absolute top-36 right-4 z-[1000] max-w-xs bg-white border border-red-200 text-red-700 text-xs px-3 py-2 rounded-md shadow-lg">
-          {wildfire.wildfireError}
-        </div>
-      )}
+      {boats.isBoatLayerEnabled &&
+        boats.isBoatLayerVisible &&
+        boats.boatLoading &&
+        boats.boatTracks.length === 0 && (
+          <div className="absolute top-48 right-4 z-[1000] max-w-xs bg-white border border-sky-200 text-sky-700 text-xs px-3 py-2 rounded-md shadow-lg">
+            {t("boats.loadingTracks")}
+          </div>
+        )}
+
+      {boats.isBoatLayerEnabled &&
+        boats.isBoatLayerVisible &&
+        boats.boatError && (
+          <div className="absolute top-60 right-4 z-[1000] max-w-xs bg-white border border-red-200 text-red-700 text-xs px-3 py-2 rounded-md shadow-lg">
+            {boats.boatError}
+          </div>
+        )}
 
       <div
         className={`absolute ${
@@ -172,6 +201,13 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
             {wildfire.wildfireReports.length > 1 ? "s" : ""} en cours
           </div>
         )}
+        {boats.isBoatLayerEnabled &&
+          boats.isBoatLayerVisible &&
+          boats.boatTracks.length > 0 && (
+            <div className="mt-1 text-xs text-gray-600">
+              • {t("boats.trackedCount", { count: boats.boatTracks.length })}
+            </div>
+          )}
       </div>
     </>
   );

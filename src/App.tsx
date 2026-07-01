@@ -495,9 +495,29 @@ const AppContent: React.FC = () => {
     temporalState.data.length,
   ]);
 
-  // Configuration de la carte basée sur le domaine
-  const mapCenter = domainConfig.mapCenter;
-  const mapZoom = domainConfig.mapZoom;
+  // Deep-link : ?lat=..&lng=..&zoom=.. recentre la carte au chargement
+  // (ex. lien « Ouvrir sur OpenAirMap » depuis la modération gestion.aircarto.fr).
+  const urlView = useMemo(() => {
+    try {
+      const p = new URLSearchParams(window.location.search);
+      const lat = parseFloat(p.get("lat") ?? "");
+      const lng = parseFloat(p.get("lng") ?? p.get("lon") ?? "");
+      const zoom = parseInt(p.get("zoom") ?? "", 10);
+      if (Number.isFinite(lat) && Number.isFinite(lng)) {
+        return {
+          center: [lat, lng] as [number, number],
+          zoom: Number.isFinite(zoom) ? zoom : 16,
+        };
+      }
+    } catch {
+      /* ignore */
+    }
+    return null;
+  }, []);
+
+  // Configuration de la carte basée sur le domaine (surchargée par le deep-link).
+  const mapCenter = urlView?.center ?? domainConfig.mapCenter;
+  const mapZoom = urlView?.zoom ?? domainConfig.mapZoom;
 
   const handleSignalAirHeaderClick = useCallback(() => {
     setOpenSignalAirPanelRequest((r) => r + 1);
