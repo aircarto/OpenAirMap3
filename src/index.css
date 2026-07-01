@@ -58,6 +58,29 @@
 .leaflet-container {
   height: 100%;
   width: 100%;
+  /* Mobile : pas de flash gris/bleu au tap, ni de menu « copier » au long-press */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  /* Rien n'est sélectionnable sur la carte (flèche nord, croix de fermeture,
+     contrôles, chrome des popups…) — sauf les champs de saisie, ré-activés
+     ci-dessous. Évite les sélections de texte parasites au long-press mobile. */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
+/* On réautorise la sélection uniquement là où l'on tape du texte. */
+.leaflet-container input,
+.leaflet-container textarea,
+.leaflet-container select {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Mode « ajout de signalement » : curseur en croix (un clic pose le point). */
+.leaflet-container.oam-placing,
+.leaflet-container.oam-placing .leaflet-grab,
+.leaflet-container.oam-placing .leaflet-interactive {
+  cursor: crosshair;
 }
 
 /* Marqueurs personnalisés */
@@ -76,6 +99,29 @@
 .leaflet-marker-icon {
   background: transparent !important;
   border: none !important;
+}
+
+/* iOS : un champ dont la police fait < 16px déclenche un zoom automatique au
+   focus (qui ne se réinitialise pas toujours). Sur écrans tactiles, on force
+   16px dans les popups de la carte pour empêcher ce zoom parasite. */
+@media (pointer: coarse) {
+  .leaflet-popup-content input,
+  .leaflet-popup-content textarea,
+  .leaflet-popup-content select {
+    font-size: 16px;
+  }
+}
+
+/* Apparition du marqueur de brouillon de signalement */
+@keyframes oam-bounce {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.08); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Popups de signalement : un peu plus d'air */
+.leaflet-popup-content {
+  margin: 12px 14px;
 }
 
 /* S'assurer que nos marqueurs personnalisés sont bien visibles */

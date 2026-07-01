@@ -634,7 +634,10 @@
     "title": "Signalement",
     "newTitle": "Nouveau signalement",
     "newHint": "Choisissez un type (optionnel) et écrivez votre signalement. D'autres pourront y répondre.",
-    "datetimeLabel": "Date et heure de l'événement"
+    "datetimeLabel": "Date et heure de l'événement",
+    "addButton": "Nouveau signalement",
+    "placingHint": "Touchez la carte à l'endroit du signalement",
+    "placingCancel": "Annuler"
   },
   "comments": {
     "title": "Commentaires",

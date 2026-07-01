@@ -636,7 +636,10 @@
     "title": "Report",
     "newTitle": "New report",
     "newHint": "Pick a type (optional) and write your report. Others can reply to it.",
-    "datetimeLabel": "Event date and time"
+    "datetimeLabel": "Event date and time",
+    "addButton": "New report",
+    "placingHint": "Tap the map where the event is",
+    "placingCancel": "Cancel"
   },
   "comments": {
     "title": "Comments",

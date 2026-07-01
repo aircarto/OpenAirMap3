@@ -1,10 +1,12 @@
 import React from "react";
+import { MapPinPlus, X } from "lucide-react";
 import BaseLayerControl from "../controls/BaseLayerControl";
 import Legend from "./Legend";
 import DeviceStatistics from "./DeviceStatistics";
 
 interface MapOverlaysProps {
   signalAir: any;
+  signalements: any;
   t: (key: string) => string;
   sidePanels: any;
   currentBaseLayer: string;
@@ -34,6 +36,7 @@ interface MapOverlaysProps {
 
 const MapOverlays: React.FC<MapOverlaysProps> = ({
   signalAir,
+  signalements,
   t,
   sidePanels,
   currentBaseLayer,
@@ -94,6 +97,22 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
         </div>
       )}
 
+      {/* Bandeau d'aide quand le mode « ajout de signalement » est actif */}
+      {signalements?.enabled && signalements.placingMode && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1200] flex items-center gap-2 bg-purple-600 text-white text-sm px-3 py-2 rounded-full shadow-lg">
+          <MapPinPlus className="w-4 h-4 flex-shrink-0" />
+          <span>{t("signalements.placingHint")}</span>
+          <button
+            type="button"
+            onClick={signalements.stopPlacing}
+            className="ml-1 -mr-1 p-0.5 rounded-full hover:bg-white/20"
+            aria-label={t("signalements.placingCancel")}
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       <div
         className={`absolute bottom-20 left-4 z-[1000] flex flex-col space-y-2 transition-all duration-300 ${
           sidePanels.isSidePanelOpen && sidePanels.panelSize !== "hidden"
@@ -101,6 +120,25 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
             : "flex"
         }`}
       >
+        {/* Bouton « Nouveau signalement » : alternative découvrable au clic droit */}
+        {signalements?.enabled && (
+          <button
+            type="button"
+            onClick={signalements.togglePlacing}
+            title={t("signalements.addButton")}
+            aria-pressed={signalements.placingMode}
+            className={`rounded-md p-2 shadow-sm border transition-colors focus:outline-none focus:ring-1 focus:ring-purple-500/50 ${
+              signalements.placingMode
+                ? "bg-purple-600 border-purple-600 text-white"
+                : "bg-white/90 backdrop-blur-sm border-gray-200/50 text-purple-600 hover:border-gray-300/70"
+            }`}
+          >
+            <div className="flex items-center justify-center">
+              <MapPinPlus className="w-4 h-4" />
+            </div>
+          </button>
+        )}
+
         <BaseLayerControl
           currentBaseLayer={currentBaseLayer as any}
           onBaseLayerChange={setCurrentBaseLayer}

@@ -26,6 +26,8 @@ import {
   SignalAirReport,
   StationInfo,
   WildfireReport,
+  BoatTrack,
+  PlaneTrack,
 } from "../../types";
 import { BaseLayerKey, ModelingLayerType } from "../../constants/mapLayers";
 import { MAX_COMPARISON_STATIONS } from "../../constants/comparison";
@@ -35,6 +37,13 @@ import ScaleControl from "../controls/ScaleControl";
 import NorthArrow from "../controls/NorthArrow";
 import Legend from "./Legend";
 import MobileAirRoutes from "./MobileAirRoutes";
+import BoatTracks from "./BoatTracks";
+import PlaneTracks from "./PlaneTracks";
+import PlaneRouteLine from "./PlaneRouteLine";
+import ZoneOverlays from "./ZoneOverlays";
+import SignalementMarkers, {
+  SignalementRightClickHandler,
+} from "./SignalementMarkers";
 import CustomSpiderfiedMarkers from "./CustomSpiderfiedMarkers";
 import CustomSpiderfiedSignalAirMarkers from "./CustomSpiderfiedSignalAirMarkers";
 import MarkerWithTooltip from "./MarkerWithTooltip";
@@ -51,6 +60,10 @@ import { DataServiceFactory } from "../../services/DataServiceFactory";
 import { useMapView } from "./hooks/useMapView";
 import { useMapLayers } from "./hooks/useMapLayers";
 import { useWildfireLayer } from "./hooks/useWildfireLayer";
+import { useBoatLayer } from "./hooks/useBoatLayer";
+import { usePlaneLayer } from "./hooks/usePlaneLayer";
+import { useZonesLayer } from "./hooks/useZonesLayer";
+import { useSignalements } from "./hooks/useSignalements";
 import { useMapAttribution } from "./hooks/useMapAttribution";
 import { useSidePanels } from "./hooks/useSidePanels";
 import { useSignalAir } from "./hooks/useSignalAir";
@@ -243,6 +256,22 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
 
   const wildfire = useWildfireLayer();
 
+  const boats = useBoatLayer(selectedTimeStep);
+
+  const planes = usePlaneLayer(selectedTimeStep);
+
+  const zones = useZonesLayer();
+
+  const signalements = useSignalements();
+
+  // Mode ajout de signalement : curseur en croix sur la carte pour signaler
+  // qu'un clic va poser un point.
+  useEffect(() => {
+    const el = mapView.mapRef.current?.getContainer();
+    if (!el) return;
+    el.classList.toggle("oam-placing", signalements.placingMode);
+  }, [signalements.placingMode, mapView.mapRef]);
+
   const sidePanels = useSidePanels({
     initialSelectedPollutant: selectedPollutant,
   });
@@ -380,13 +409,25 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
       // Fermer les panels MobileAir
       mobileAir.handleCloseMobileAirSelectionPanel();
       mobileAir.handleCloseMobileAirDetailPanel();
+
+      // Fermer le panel bateau
+      boats.handleCloseBoatPanel();
+
+      // Fermer le panel avion
+      planes.handleClosePlanePanel();
+
+      // Fermer le panel zone
+      zones.closePanel();
+
+      // Annuler un éventuel brouillon de signalement
+      signalements.cancelDraft();
     }
 
     // Mettre à jour la référence
     prevHistoricalModeRef.current = isHistoricalModeActive;
     // On inclut les objets utilisés dans l'effet pour rester synchronisé
     // avec leur état courant (règle exhaustive-deps).
-  }, [isHistoricalModeActive, sidePanels, signalAir, mobileAir]);
+  }, [isHistoricalModeActive, sidePanels, signalAir, mobileAir, boats, planes, zones, signalements]);
 
   // Gestion de l'attribution Leaflet
   useMapAttribution({
@@ -400,7 +441,9 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
       (signalAir.isSignalAirPanelOpen &&
         signalAir.signalAirPanelSize !== "hidden") ||
       (signalAir.isSignalAirDetailPanelOpen &&
-        signalAir.signalAirDetailPanelSize !== "hidden"),
+        signalAir.signalAirDetailPanelSize !== "hidden") ||
+      (Boolean(boats.selectedBoat) && boats.boatPanelSize !== "hidden") ||
+      (Boolean(planes.selectedPlane) && planes.planePanelSize !== "hidden"),
   });
 
   // Effet pour redimensionner la carte quand les panneaux latéraux changent de taille
@@ -444,6 +487,10 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
     signalAir.signalAirDetailPanelSize,
     signalAir.isSignalAirDetailPanelOpen,
     isComparisonPanelVisible,
+    boats.selectedBoat,
+    boats.boatPanelSize,
+    planes.selectedPlane,
+    planes.planePanelSize,
   ]);
 
   const handleBaseLayerChange = (layerKey: BaseLayerKey) => {
@@ -644,6 +691,12 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
         return;
       }
 
+      // Un seul panneau à la fois : fermer bateau / avion / zone à l'ouverture
+      // d'un panneau capteur.
+      boats.handleCloseBoatPanel();
+      planes.handleClosePlanePanel();
+      zones.closePanel();
+
       // Marquer comme en cours de traitement
       isProcessingClickRef.current = true;
       lastClickedDeviceIdRef.current = device.id;
@@ -812,7 +865,93 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
         }, 300); // Délai réduit à 300ms pour une meilleure réactivité
       }
     },
-    [isHistoricalModeActive, sidePanels, handleAddStationToComparison]
+    [isHistoricalModeActive, sidePanels, handleAddStationToComparison, boats, planes, zones]
+  );
+
+  // Sélection d'un bateau : traîne complète + side panel (désactivé en mode historique)
+  const handleBoatSelect = useCallback(
+    (track: BoatTrack) => {
+      if (isHistoricalModeActive) {
+        return;
+      }
+      // Un seul panneau à la fois : fermer capteur / avion / zone
+      sidePanels.handleCloseSidePanel();
+      planes.handleClosePlanePanel();
+      zones.closePanel();
+      boats.handleSelectBoat(track);
+      trackFeatureUsage("boat_selected", {
+        shipType: track.shipType ?? "unknown",
+      });
+    },
+    [isHistoricalModeActive, boats, planes, zones, sidePanels]
+  );
+
+  // Centrage de la carte sur un bateau depuis son side panel
+  const handleCenterOnBoat = useCallback(
+    (track: BoatTrack) => {
+      const mapInstance = mapView.mapRef.current;
+      if (!mapInstance) return;
+      mapInstance.setView(
+        [track.lastPoint.lat, track.lastPoint.lon],
+        Math.max(mapInstance.getZoom(), 13),
+        { animate: true, duration: 1 }
+      );
+    },
+    [mapView.mapRef]
+  );
+
+  // Sélection / centrage d'un avion (mêmes principes que les bateaux)
+  const handlePlaneSelect = useCallback(
+    (track: PlaneTrack) => {
+      if (isHistoricalModeActive) return;
+      // Un seul panneau à la fois : fermer capteur / bateau / zone
+      sidePanels.handleCloseSidePanel();
+      boats.handleCloseBoatPanel();
+      zones.closePanel();
+      planes.handleSelectPlane(track);
+      trackFeatureUsage("plane_selected", { type: track.type ?? "unknown" });
+    },
+    [isHistoricalModeActive, planes, boats, zones, sidePanels]
+  );
+
+  const handleCenterOnPlane = useCallback(
+    (track: PlaneTrack) => {
+      const mapInstance = mapView.mapRef.current;
+      if (!mapInstance) return;
+      mapInstance.setView(
+        [track.lastPoint.lat, track.lastPoint.lon],
+        Math.max(mapInstance.getZoom(), 11),
+        { animate: true, duration: 1 }
+      );
+    },
+    [mapView.mapRef]
+  );
+
+  // Sélection d'une zone (clic) : ouvre le side panel (sauf mode historique)
+  const handleZoneSelect = useCallback(
+    (selection: { props: unknown; lat: number; lon: number }) => {
+      if (isHistoricalModeActive) return;
+      // Un seul panneau à la fois : fermer capteur / bateau / avion
+      sidePanels.handleCloseSidePanel();
+      boats.handleCloseBoatPanel();
+      planes.handleClosePlanePanel();
+      zones.selectZone(selection as never);
+    },
+    [isHistoricalModeActive, zones, boats, planes, sidePanels]
+  );
+
+  // Centrage de la carte sur une zone depuis son side panel
+  const handleCenterOnZone = useCallback(
+    (selection: { lat: number; lon: number }) => {
+      const mapInstance = mapView.mapRef.current;
+      if (!mapInstance) return;
+      mapInstance.setView(
+        [selection.lat, selection.lon],
+        Math.max(mapInstance.getZoom(), 12),
+        { animate: true, duration: 1 }
+      );
+    },
+    [mapView.mapRef]
   );
 
   // Callback pour la sélection d'un capteur depuis la recherche
@@ -846,6 +985,12 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
         sidePanels={sidePanels}
         signalAir={signalAir}
         mobileAir={mobileAir}
+        boats={boats}
+        planes={planes}
+        zones={zones}
+        onCenterOnBoat={handleCenterOnBoat}
+        onCenterOnPlane={handleCenterOnPlane}
+        onCenterOnZone={handleCenterOnZone}
         selectedPollutant={selectedPollutant}
         signalAirSelectedTypes={signalAirSelectedTypes}
         signalAirPeriod={signalAirPeriod}
@@ -997,10 +1142,70 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
               </Marker>
             ))}
 
+          {/* Zones : contours aéroports / ports / Seveso (GeoJSON pré-générés).
+              Clic sur une zone -> side panel de détails (photo + infos). */}
+          <ZoneOverlays
+            visible={zones.visible}
+            data={zones.data}
+            onSelect={handleZoneSelect}
+          />
+
+          {/* Signalements GPS : clic droit pour créer, marqueurs + fil de discussion */}
+          {signalements.enabled && (
+            <>
+              <SignalementRightClickHandler
+                onPlace={(lat, lon) => {
+                  if (!isHistoricalModeActive) signalements.startDraft(lat, lon);
+                }}
+                placingMode={signalements.placingMode}
+                disabled={isHistoricalModeActive}
+              />
+              <SignalementMarkers
+                signalements={signalements.signalements}
+                draft={signalements.draft}
+                onReply={signalements.addReply}
+                onCreate={signalements.createSignalement}
+                onCancelDraft={signalements.cancelDraft}
+              />
+            </>
+          )}
+
+          {/* Suivi des bateaux (AIS) : marqueurs orientés + traîne des trajectoires.
+              Traîne courte et discrète par défaut ; clic = sélection, traîne
+              complète mise en avant + side panel de détails. */}
+          {boats.isBoatLayerEnabled &&
+            boats.isBoatLayerVisible &&
+            selectedTimeStep === "instantane" && (
+              <BoatTracks
+                tracks={boats.boatTracks}
+                selectedBoatId={boats.selectedBoatId}
+                onBoatSelect={handleBoatSelect}
+                previewMaxAgeMs={boats.previewMaxAgeMs}
+              />
+            )}
+
+          {/* Suivi des avions (ADS-B) : sillage + silhouette orientée au cap.
+              Affichés uniquement en mode Scan (comme les bateaux). */}
+          {planes.isPlaneLayerEnabled &&
+            planes.isPlaneLayerVisible &&
+            selectedTimeStep === "instantane" && (
+            <>
+              <PlaneTracks
+                tracks={planes.planeTracks}
+                selectedPlaneId={planes.selectedPlaneId}
+                onPlaneSelect={handlePlaneSelect}
+                previewMaxAgeMs={planes.previewMaxAgeMs}
+              />
+              {/* Route de l'avion sélectionné : origine ✈ destination */}
+              <PlaneRouteLine plane={planes.selectedPlane} />
+            </>
+          )}
+
         </MapContainer>
 
         <MapOverlays
           signalAir={signalAir}
+          signalements={signalements}
           t={t}
           sidePanels={sidePanels}
           currentBaseLayer={currentBaseLayer}
@@ -1012,6 +1217,10 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           isComparisonPanelVisible={isComparisonPanelVisible}
           mapLayers={mapLayers}
           wildfire={wildfire}
+          boats={boats}
+          planes={planes}
+          zones={zones}
+          isScanMode={selectedTimeStep === "instantane"}
           visibleDevices={visibleDevices}
           visibleReports={visibleReports}
           totalDevices={devices.length}

@@ -14,8 +14,11 @@ export const useSignalements = () => {
 
   const [signalements, setSignalements] = useState<Signalement[]>([]);
   const [loading, setLoading] = useState(false);
-  // Brouillon = nouveau signalement en cours (clic droit sur la carte)
+  // Brouillon = nouveau signalement en cours (clic droit / clic en mode ajout)
   const [draft, setDraft] = useState<{ lat: number; lon: number } | null>(null);
+  // Mode « ajout » : activé par le bouton, un simple clic/tap pose le signalement
+  // (alternative découvrable au clic droit / appui long).
+  const [placingMode, setPlacingMode] = useState(false);
 
   const reload = useCallback(async () => {
     if (!enabled) return;
@@ -35,9 +38,13 @@ export const useSignalements = () => {
 
   const startDraft = useCallback((lat: number, lon: number) => {
     setDraft({ lat, lon });
+    setPlacingMode(false); // un point choisi = on sort du mode ajout
   }, []);
 
   const cancelDraft = useCallback(() => setDraft(null), []);
+
+  const togglePlacing = useCallback(() => setPlacingMode((v) => !v), []);
+  const stopPlacing = useCallback(() => setPlacingMode(false), []);
 
   // Créer le signalement (premier message) depuis le brouillon
   const createSignalement = useCallback(
@@ -78,8 +85,11 @@ export const useSignalements = () => {
     signalements,
     loading,
     draft,
+    placingMode,
     startDraft,
     cancelDraft,
+    togglePlacing,
+    stopPlacing,
     createSignalement,
     addReply,
     reload,

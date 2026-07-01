@@ -18,6 +18,7 @@ import {
   setStoredUser,
   SIGNALEMENT_TYPES,
 } from "../../constants/context";
+import { linkify } from "../../utils/linkify";
 
 // Tracés SVG (lucide) inlinés pour les marqueurs Leaflet — évite react-dom/server.
 const ICON_PATHS: Record<string, string> = {
@@ -227,7 +228,7 @@ const SignalementPopupContent: React.FC<{
         </div>
         {root?.comment && (
           <p className="text-[15px] leading-snug text-gray-800 whitespace-pre-line break-words">
-            {root.comment}
+            {linkify(root.comment)}
           </p>
         )}
       </div>
@@ -259,7 +260,7 @@ const SignalementPopupContent: React.FC<{
                   </span>
                 </div>
                 <p className="text-sm text-gray-700 whitespace-pre-line break-words">
-                  {c.comment}
+                  {linkify(c.comment)}
                 </p>
               </div>
             </div>
@@ -330,7 +331,7 @@ const DraftForm: React.FC<{
   };
 
   return (
-    <div className="w-[340px] max-w-[84vw]">
+    <div className="oam-draft-form w-[340px] max-w-[84vw]">
       <p className="text-base font-semibold text-gray-900 mb-1">
         {t("signalements.newTitle")}
       </p>
@@ -381,16 +382,23 @@ const DraftForm: React.FC<{
   );
 };
 
-// ── Capture du clic droit ────────────────────────────────────────────────────
+// ── Capture du clic droit / clic en mode ajout ───────────────────────────────
 export const SignalementRightClickHandler: React.FC<{
-  onContextMenu: (lat: number, lon: number) => void;
+  /** Pose un point de signalement (clic droit, ou clic simple en mode ajout) */
+  onPlace: (lat: number, lon: number) => void;
+  /** En mode ajout, un clic gauche/tap suffit à poser le point */
+  placingMode?: boolean;
   disabled?: boolean;
-}> = ({ onContextMenu, disabled }) => {
+}> = ({ onPlace, placingMode, disabled }) => {
   useMapEvents({
     contextmenu: (e) => {
       if (disabled) return;
       e.originalEvent.preventDefault();
-      onContextMenu(e.latlng.lat, e.latlng.lng);
+      onPlace(e.latlng.lat, e.latlng.lng);
+    },
+    click: (e) => {
+      if (disabled || !placingMode) return;
+      onPlace(e.latlng.lat, e.latlng.lng);
     },
   });
   return null;
