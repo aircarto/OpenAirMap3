@@ -346,6 +346,8 @@
       "selectSensor": "Seleziona un sensore",
       "loadSensorRoute": "Carica il percorso del sensore {{sensorId}}",
       "sensorSelected": "Sensore {{sensorId}} selezionato",
+      "checkingRoutes": "Verifica dei percorsi…",
+      "noRouteData": "Nessun percorso GPS disponibile per questo sensore in questo periodo.",
       "statusConnected": "Connesso",
       "statusRecent": "Recente",
       "statusInactive": "Inattivo",

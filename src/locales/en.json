@@ -346,6 +346,8 @@
       "selectSensor": "Select a sensor",
       "loadSensorRoute": "Load sensor {{sensorId}} route",
       "sensorSelected": "Sensor {{sensorId}} selected",
+      "checkingRoutes": "Checking routes…",
+      "noRouteData": "No GPS route available for this sensor over this period.",
       "statusConnected": "Connected",
       "statusRecent": "Recent",
       "statusInactive": "Inactive",

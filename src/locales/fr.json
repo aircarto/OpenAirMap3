@@ -344,6 +344,8 @@
       "selectSensor": "Sélectionnez un capteur",
       "loadSensorRoute": "Charger le parcours du capteur {{sensorId}}",
       "sensorSelected": "Capteur {{sensorId}} sélectionné",
+      "checkingRoutes": "Vérification des trajets…",
+      "noRouteData": "Aucun trajet GPS disponible pour ce capteur sur cette période.",
       "statusConnected": "Connecté",
       "statusRecent": "Récent",
       "statusInactive": "Inactif",

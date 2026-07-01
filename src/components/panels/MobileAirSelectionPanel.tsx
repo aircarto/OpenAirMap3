@@ -40,6 +40,8 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [checkingRoutes, setCheckingRoutes] = useState(false);
+  const [noRouteData, setNoRouteData] = useState(false);
   const hasLoadedRef = useRef<boolean>(false);
   const initialPollutantRef = useRef<string>(initialPollutant);
 
@@ -92,6 +94,7 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
   }, [isOpen, loadSensors]);
 
   const handleSensorToggle = (sensorId: string) => {
+    setNoRouteData(false);
     setSelectedSensor(selectedSensor === sensorId ? null : sensorId);
   };
 
@@ -103,14 +106,16 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
   };
 
   const handleDeselectAll = () => {
+    setNoRouteData(false);
     setSelectedSensor(null);
   };
 
   const handleTimeRangeChange = (newTimeRange: TimeRange) => {
+    setNoRouteData(false);
     setTimeRange(newTimeRange);
   };
 
-  const handleLoadRoutes = () => {
+  const handleLoadRoutes = async () => {
     if (!selectedSensor) {
       setError("selectSensorRequired");
       return;
@@ -118,8 +123,39 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
 
     const { startDate, endDate } = getDateRange(timeRange);
 
-    if (onSensorSelected) {
-      onSensorSelected(selectedSensor, { startDate, endDate });
+    setNoRouteData(false);
+    setCheckingRoutes(true);
+    try {
+      // Vérifier au préalable que le capteur possède bien des trajets GPS
+      // sur la période : certains capteurs (nouvelle "manière de comm'")
+      // remontent dans la liste sans alimenter la source de parcours.
+      const devices = await mobileAirService.fetchData({
+        pollutant: initialPollutant,
+        timeStep: "instantane",
+        sources: ["mobileair"],
+        selectedSensors: [selectedSensor],
+        mobileAirPeriod: { startDate, endDate },
+      });
+
+      if (devices.length === 0) {
+        setNoRouteData(true);
+        return;
+      }
+
+      if (onSensorSelected) {
+        onSensorSelected(selectedSensor, { startDate, endDate });
+      }
+    } catch (err) {
+      console.error(
+        "Erreur lors de la vérification des parcours MobileAir:",
+        err
+      );
+      // En cas d'erreur de vérification, laisser le flux normal tenter le chargement
+      if (onSensorSelected) {
+        onSensorSelected(selectedSensor, { startDate, endDate });
+      }
+    } finally {
+      setCheckingRoutes(false);
     }
   };
 
@@ -563,22 +599,45 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
           <div className="border border-gray-200 rounded-lg p-3 sm:p-4">
             <button
               onClick={handleLoadRoutes}
-              disabled={!selectedSensor || !isPollutantSupported}
+              disabled={!selectedSensor || !isPollutantSupported || checkingRoutes}
               className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
-                !selectedSensor || !isPollutantSupported
+                !selectedSensor || !isPollutantSupported || checkingRoutes
                   ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                   : "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
               }`}
             >
-              {!selectedSensor
+              {checkingRoutes
+                ? t("panels.mobileAirSelection.checkingRoutes")
+                : !selectedSensor
                 ? t("panels.mobileAirSelection.selectSensor")
                 : t("panels.mobileAirSelection.loadSensorRoute", { sensorId: selectedSensor })}
             </button>
 
-            {selectedSensor && (
+            {selectedSensor && !noRouteData && !checkingRoutes && (
               <p className="text-xs text-gray-600 mt-2 text-center">
                 {t("panels.mobileAirSelection.sensorSelected", { sensorId: selectedSensor })}
               </p>
+            )}
+
+            {noRouteData && !checkingRoutes && (
+              <div className="mt-3 bg-amber-50 border border-amber-200 rounded-md p-3 flex items-start">
+                <svg
+                  className="w-5 h-5 text-amber-400 mr-2 mt-0.5 flex-shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <p className="text-sm text-amber-800">
+                  {t("panels.mobileAirSelection.noRouteData")}
+                </p>
+              </div>
             )}
           </div>
         </div>

@@ -346,6 +346,8 @@
       "selectSensor": "اختر مقياساً",
       "loadSensorRoute": "تحميل مسار المقياس {{sensorId}}",
       "sensorSelected": "المقياس {{sensorId}} محدد",
+      "checkingRoutes": "جارٍ التحقق من المسارات…",
+      "noRouteData": "لا يوجد مسار GPS متاح لهذا المقياس خلال هذه الفترة.",
       "statusConnected": "متصل",
       "statusRecent": "حديث",
       "statusInactive": "غير نشط",
