@@ -605,29 +605,30 @@ export class NebuleAirService extends BaseDataService {
       // Formater les dates au format ISO sans millisecondes (format attendu par l'API NebuleAir)
       const start = this.formatDateForNebuleAirAPI(startDate);
 
-      // Utiliser "now" pour stop si endDate est très proche de maintenant (dans les 5 minutes)
-      // Sinon, utiliser la date absolue pour garantir la cohérence
+      // IMPORTANT : l'API AirCarto attend le paramètre "end" (et NON "stop", qui est
+      // ignoré côté serveur et renvoie systématiquement les données jusqu'à maintenant).
+      // Utiliser "now" si endDate est très proche de maintenant (dans les 5 minutes)
+      // pour récupérer les toutes dernières données ; sinon utiliser la date absolue
+      // afin de respecter strictement la période demandée (ex : période personnalisée).
       const timeDiffFromNow = Math.abs(now.getTime() - endDate.getTime());
       const fiveMinutes = 5 * 60 * 1000;
 
-      let stop: string;
+      let end: string;
       if (timeDiffFromNow <= fiveMinutes) {
-        // endDate est très proche de maintenant, utiliser "now" pour avoir les données les plus récentes
-        stop = "now";
+        end = "now";
       } else {
-        // endDate est différente de maintenant (date personnalisée), utiliser la date absolue
-        stop = this.formatDateForNebuleAirAPI(endDate);
+        end = this.formatDateForNebuleAirAPI(endDate);
       }
 
       // Convertir le pas de temps au format de l'API
       const freq = this.convertTimeStepToFreq(params.timeStep);
 
       // Construire l'URL pour les données historiques selon l'exemple fourni
-      // Encoder les paramètres start et stop pour l'URL
+      // Encoder les paramètres start et end pour l'URL
       const url = `${this.BASE_URL}/capteurs/dataNebuleAir?capteurID=${
         params.sensorId
-      }&start=${encodeURIComponent(start)}&stop=${encodeURIComponent(
-        stop
+      }&start=${encodeURIComponent(start)}&end=${encodeURIComponent(
+        end
       )}&freq=${freq}&gas=true`;
 
       const response = await this.makeRequest(url);
