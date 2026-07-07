@@ -344,6 +344,11 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
   // Ref pour éviter les appels multiples simultanés
   const isLoadingRef = useRef(false);
   const lastLoadParamsRef = useRef<string>("");
+  // Jeton incrémental : seule la DERNIÈRE requête émise a le droit d'appliquer
+  // son résultat. Cela évite qu'une réponse obsolète (ex. données horaires)
+  // écrase le state alors que l'utilisateur est déjà passé en quart-horaire,
+  // ce qui provoquait la disparition silencieuse de la courbe.
+  const requestIdRef = useRef(0);
 
   const loadHistoricalData = useCallback(
     async (
@@ -366,6 +371,11 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
         return;
       }
 
+      // Enregistrer cette requête comme la plus récente. Toute requête émise
+      // avant celle-ci deviendra "obsolète" et ne pourra plus appliquer son
+      // résultat, même si elle se résout plus tard.
+      const requestId = ++requestIdRef.current;
+
       isLoadingRef.current = true;
       lastLoadParamsRef.current = loadKey;
       // Pour l'instant, on ne supporte que AtmoRef
@@ -386,6 +396,11 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
             endDate,
           });
           newHistoricalData[pollutant] = data;
+        }
+
+        // Ignorer cette réponse si une requête plus récente a été émise entre-temps.
+        if (requestId !== requestIdRef.current) {
+          return;
         }
 
         // Fusionner avec les données existantes au lieu de les remplacer
@@ -443,6 +458,12 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
           shouldLoadModeling !== undefined ? shouldLoadModeling : showModeling;
         const coordinates = coords !== undefined ? coords : stationCoordinates;
 
+        // Ne pas poursuivre le chargement de la modélisation si une requête
+        // plus récente a été émise entre-temps.
+        if (requestId !== requestIdRef.current) {
+          return;
+        }
+
         if (loadModeling && coordinates) {
           setLoadingModeling(true);
           const newModelingData: Record<string, HistoricalDataPoint[]> = {};
@@ -488,7 +509,10 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
               }
             }
 
-            setModelingData(newModelingData);
+            // Ignorer si une requête plus récente est arrivée pendant le fetch.
+            if (requestId === requestIdRef.current) {
+              setModelingData(newModelingData);
+            }
           } finally {
             setLoadingModeling(false);
           }
@@ -502,13 +526,20 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
           "Erreur lors du chargement des données historiques:",
           error
         );
-        setState((prev) => ({
-          ...prev,
-          loading: false,
-          error: t("panels.stationSidePanel.historicalDataLoadError"),
-        }));
+        // N'afficher l'erreur que si cette requête est toujours la plus récente.
+        if (requestId === requestIdRef.current) {
+          setState((prev) => ({
+            ...prev,
+            loading: false,
+            error: t("panels.stationSidePanel.historicalDataLoadError"),
+          }));
+        }
       } finally {
-        isLoadingRef.current = false;
+        // Ne libérer le verrou que pour la requête la plus récente afin de ne
+        // pas rouvrir la porte pendant qu'elle est encore en cours.
+        if (requestId === requestIdRef.current) {
+          isLoadingRef.current = false;
+        }
       }
     },
     [
