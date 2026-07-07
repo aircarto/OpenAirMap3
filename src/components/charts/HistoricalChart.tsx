@@ -29,6 +29,9 @@ interface HistoricalChartProps {
   sensorTimeStep?: number | null; // Pas de temps du capteur en secondes (pour le mode instantane)
   modelingData?: Record<string, HistoricalDataPoint[]>; // Données de modélisation
   hideThresholdBackgroundForColorblind?: boolean; // Masque le fond coloré par seuil (mode daltoniens)
+  revealUpToDate?: string;
+  xAxisMin?: string;
+  xAxisMax?: string;
 }
 
 const HistoricalChart: React.FC<HistoricalChartProps> = ({
@@ -43,6 +46,9 @@ const HistoricalChart: React.FC<HistoricalChartProps> = ({
   sensorTimeStep,
   modelingData,
   hideThresholdBackgroundForColorblind = false,
+  revealUpToDate,
+  xAxisMin,
+  xAxisMax,
 }) => {
   // État pour détecter le mode paysage sur mobile
   const [isLandscapeMobile, setIsLandscapeMobile] = useState(false);
@@ -124,6 +130,7 @@ const HistoricalChart: React.FC<HistoricalChartProps> = ({
     useSolidNebuleAirLines,
     timeStep,
     modelingData,
+    revealUpToDate,
   });
 
   // Calculer les marges du graphique
@@ -148,6 +155,8 @@ const HistoricalChart: React.FC<HistoricalChartProps> = ({
     isLandscapeMobile,
     stationInfo,
     timeStep,
+    xAxisMin,
+    xAxisMax,
   });
 
   // Notifier le composant parent si des données corrigées sont disponibles

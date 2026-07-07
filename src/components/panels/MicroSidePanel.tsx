@@ -31,6 +31,12 @@ interface MicroSidePanelProps {
   panelSize?: "normal" | "fullscreen" | "hidden";
   onComparisonModeToggle?: (pollutantToPreserve?: string) => void;
   isComparisonMode?: boolean;
+  historicalMode?: {
+    startDate: string;
+    endDate: string;
+    timeStep: string;
+    currentDate?: string;
+  } | null;
 }
 
 type PanelSize = "normal" | "fullscreen" | "hidden";
@@ -54,8 +60,10 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
   panelSize: externalPanelSize,
   onComparisonModeToggle,
   isComparisonMode = false,
+  historicalMode = null,
 }) => {
   const { t } = useTranslation();
+  const isHistoricalLocked = Boolean(historicalMode);
   const [state, setState] = useState<SidePanelState>({
     isOpen: false,
     selectedStation: null,
@@ -175,6 +183,19 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
     };
   };
 
+  const getEffectiveDateRange = (
+    timeRange: TimeRange
+  ): { startDate: string; endDate: string } => {
+    if (historicalMode) {
+      return {
+        startDate: historicalMode.startDate,
+        endDate: historicalMode.endDate,
+      };
+    }
+
+    return getDateRange(timeRange);
+  };
+
   const loadHistoricalData = useCallback(
     async (
       station: StationInfo,
@@ -192,7 +213,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
       }));
 
       try {
-        const { startDate, endDate } = getDateRange(timeRange);
+        const { startDate, endDate } = getEffectiveDateRange(timeRange);
         const newHistoricalData: Record<string, HistoricalDataPoint[]> = {};
 
         // Charger les données pour chaque polluant sélectionné
@@ -303,7 +324,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
         }));
       }
     },
-    [t, atmoMicroService, modelingService]
+    [t, atmoMicroService, modelingService, historicalMode]
   );
 
   // Mettre à jour l'état uniquement lors de l'ouverture du panel ou du changement de station
@@ -343,6 +364,19 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
         : availablePollutants.length > 0
         ? [availablePollutants[0]]
         : [];
+      const defaultTimeRange: TimeRange = historicalMode
+        ? {
+            type: "custom",
+            custom: {
+              startDate: historicalMode.startDate.split("T")[0],
+              endDate: historicalMode.endDate.split("T")[0],
+            },
+          }
+        : {
+            type: "preset",
+            preset: "24h",
+          };
+      const defaultTimeStep = historicalMode ? historicalMode.timeStep : "heure";
 
       setState((prev) => ({
         ...prev,
@@ -351,6 +385,8 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
         chartControls: {
           ...prev.chartControls,
           selectedPollutants,
+          timeRange: defaultTimeRange,
+          timeStep: defaultTimeStep,
         },
         historicalData: {},
         loading: false,
@@ -388,8 +424,8 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
         loadHistoricalData(
           selectedStation,
           selectedPollutants,
-          state.chartControls.timeRange,
-          state.chartControls.timeStep,
+          defaultTimeRange,
+          defaultTimeStep,
           false, // Ne pas charger la modélisation au chargement initial
           null
         );
@@ -404,7 +440,14 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
     }
     // Ouverture / changement de station uniquement (timeRange/timeStep via setState précédent).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, selectedStation, initialPollutant]);
+  }, [
+    isOpen,
+    selectedStation,
+    initialPollutant,
+    historicalMode?.startDate,
+    historicalMode?.endDate,
+    historicalMode?.timeStep,
+  ]);
 
   // Récupérer les coordonnées du site
   useEffect(() => {
@@ -556,7 +599,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
             );
           } else {
             // Charger seulement les données historiques pour le nouveau polluant
-            const { startDate, endDate } = getDateRange(
+            const { startDate, endDate } = getEffectiveDateRange(
               prev.chartControls.timeRange
             );
             atmoMicroService
@@ -597,6 +640,10 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
   };
 
   const handleTimeRangeChange = (timeRange: TimeRange) => {
+    if (isHistoricalLocked) {
+      return;
+    }
+
     setState((prev) => {
       // Vérifier et ajuster la période si nécessaire selon le pas de temps actuel
       const { adjustedRange: validatedTimeRange, wasAdjusted } =
@@ -735,6 +782,10 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
   };
 
   const handleTimeStepChange = (timeStep: string) => {
+    if (isHistoricalLocked) {
+      return;
+    }
+
     if (!isTimeStepSupportedByAtmoMicro(timeStep)) {
       const fallbackTimeStep = getMicroFallbackTimeStep();
       setState((prev) => ({
@@ -1043,14 +1094,20 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                 {onComparisonModeToggle && (
                   <button
                     onClick={() => {
+                      if (isHistoricalLocked) {
+                        return;
+                      }
                       // Passer le polluant actuellement sélectionné dans le panel
                       const currentPollutant =
                         state.chartControls.selectedPollutants[0] ||
                         initialPollutant;
                       onComparisonModeToggle(currentPollutant);
                     }}
+                    disabled={isHistoricalLocked}
                     className={`px-3 py-1.5 rounded-md text-xs transition-all duration-200 flex items-center ${
-                      isComparisonMode
+                      isHistoricalLocked
+                        ? "text-gray-400 bg-gray-50 border border-gray-200 opacity-50 cursor-not-allowed"
+                        : isComparisonMode
                         ? "text-green-700 bg-green-50 border border-green-200"
                         : "text-gray-700 hover:bg-gray-50 border border-gray-200"
                     }`}
@@ -1120,10 +1177,18 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                     {/* Sélection des polluants */}
                     <div className="flex-1 min-w-0 sm:max-w-[260px] border border-gray-200 rounded-lg flex flex-col">
                       <button
-                        onClick={() =>
-                          setShowPollutantsList(!showPollutantsList)
-                        }
-                        className="w-full h-11 flex items-center justify-between px-2 sm:px-3 text-left hover:bg-gray-50 transition-colors rounded-lg shrink-0"
+                        onClick={() => {
+                          if (isHistoricalLocked) {
+                            return;
+                          }
+                          setShowPollutantsList(!showPollutantsList);
+                        }}
+                        disabled={isHistoricalLocked}
+                        className={`w-full h-11 flex items-center justify-between px-2 sm:px-3 text-left transition-colors rounded-lg shrink-0 ${
+                          isHistoricalLocked
+                            ? "opacity-50 cursor-not-allowed"
+                            : "hover:bg-gray-50"
+                        }`}
                       >
                         <div className="flex items-center space-x-1.5 sm:space-x-2 min-w-0 flex-1">
                           <svg
@@ -1301,6 +1366,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                       onHideThresholdBackgroundForColorblindChange={
                         setHideThresholdBackgroundForColorblind
                       }
+                      historicalLocked={isHistoricalLocked}
                     />
                     </div>
                   </div>
@@ -1347,6 +1413,9 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                       hideThresholdBackgroundForColorblind={
                         hideThresholdBackgroundForColorblind
                       }
+                      revealUpToDate={historicalMode?.currentDate}
+                      xAxisMin={historicalMode?.startDate}
+                      xAxisMax={historicalMode?.endDate}
                     />
                   </div>
 
@@ -1358,6 +1427,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                         timeRange={state.chartControls.timeRange}
                         onTimeRangeChange={handleTimeRangeChange}
                         timeStep={state.chartControls.timeStep}
+                        disabled={isHistoricalLocked}
                       />
                     </div>
 
@@ -1385,6 +1455,9 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                         type="single"
                         value={state.chartControls.timeStep}
                         onValueChange={(value) => {
+                          if (isHistoricalLocked) {
+                            return;
+                          }
                           if (value && !isTimeStepValidForCurrentRange(value)) {
                             return;
                           }
@@ -1399,7 +1472,10 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                             !isTimeStepValidForCurrentRange(key);
                           const isDisabledBySupport =
                             !isTimeStepSupportedByAtmoMicro(key);
-                          const isDisabled = isDisabledByRange || isDisabledBySupport;
+                          const isDisabled =
+                            isHistoricalLocked ||
+                            isDisabledByRange ||
+                            isDisabledBySupport;
                           const maxDays = getMaxHistoryDays(key);
                           const label = t(`panels.stationSidePanel.${labelKey}`);
                           const shortLabel = t(`panels.stationSidePanel.${shortLabelKey}`);

@@ -27,6 +27,7 @@ interface UseHistoricalChartDataProps {
   useSolidNebuleAirLines: boolean;
   timeStep?: string;
   modelingData?: Record<string, HistoricalDataPoint[]>;
+  revealUpToDate?: string;
 }
 
 export const useHistoricalChartData = ({
@@ -39,6 +40,7 @@ export const useHistoricalChartData = ({
   useSolidNebuleAirLines,
   timeStep,
   modelingData,
+  revealUpToDate,
 }: UseHistoricalChartDataProps) => {
   const { t, i18n } = useTranslation();
   const locale = i18n.language || "fr";
@@ -317,6 +319,7 @@ export const useHistoricalChartData = ({
   // Ref pour mémoriser le dernier amChartsData
   const lastAmChartsDataRef = useRef<{
     chartDataString: string;
+    revealUpToDate: string | null;
     result: any[];
   } | null>(null);
 
@@ -324,13 +327,17 @@ export const useHistoricalChartData = ({
   // IMPORTANT: Préserver les valeurs null pour les gaps
   // Les points null insérés par fillGapsInData doivent être préservés
   const amChartsData = useMemo(() => {
+    const revealUpToTimestamp = revealUpToDate
+      ? new Date(revealUpToDate).getTime()
+      : null;
     // Créer une clé de comparaison basée sur le contenu de chartData
     const chartDataString = JSON.stringify(chartData);
 
     // Si les données n'ont pas changé, retourner le résultat précédent
     if (
       lastAmChartsDataRef.current &&
-      lastAmChartsDataRef.current.chartDataString === chartDataString
+      lastAmChartsDataRef.current.chartDataString === chartDataString &&
+      lastAmChartsDataRef.current.revealUpToDate === (revealUpToDate ?? null)
     ) {
       return lastAmChartsDataRef.current.result;
     }
@@ -363,11 +370,31 @@ export const useHistoricalChartData = ({
         }
       }
 
-      // Préserver toutes les propriétés du point, y compris les valeurs null
-      return {
+      const normalizedPoint = {
         ...point,
         timestamp, // S'assurer que timestamp est toujours un nombre
       };
+
+      if (revealUpToTimestamp === null || timestamp <= revealUpToTimestamp) {
+        return normalizedPoint;
+      }
+
+      // En mode historique, masquer les valeurs futures pour révéler la courbe progressivement.
+      const hiddenFuturePoint: Record<string, any> = {
+        ...normalizedPoint,
+      };
+      Object.keys(hiddenFuturePoint).forEach((key) => {
+        if (
+          key !== "timestamp" &&
+          key !== "rawTimestamp" &&
+          key !== "timestampValue" &&
+          !key.endsWith("Label")
+        ) {
+          hiddenFuturePoint[key] = null;
+        }
+      });
+
+      return hiddenFuturePoint;
     });
 
     // Trier par timestamp pour que les gaps soient correctement positionnés
@@ -376,11 +403,12 @@ export const useHistoricalChartData = ({
     // Mémoriser le résultat
     lastAmChartsDataRef.current = {
       chartDataString,
+      revealUpToDate: revealUpToDate ?? null,
       result: sorted,
     };
 
     return sorted;
-  }, [chartData]);
+  }, [chartData, revealUpToDate]);
 
   return {
     chartData,

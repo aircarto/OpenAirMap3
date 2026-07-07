@@ -129,6 +129,10 @@ interface AirQualityMapProps {
   openMobileAirPanelRequest?: number;
   /** Date actuellement affichée en mode historique (pour la période dans DeviceStatistics) */
   historicalCurrentDate?: string;
+  historicalStartDate?: string;
+  historicalEndDate?: string;
+  historicalTimeStep?: string;
+  historicalPlaybackDate?: string;
 }
 
 const defaultSpiderfyConfig = {
@@ -195,6 +199,10 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
   openSignalAirPanelRequest = 0,
   openMobileAirPanelRequest = 0,
   historicalCurrentDate,
+  historicalStartDate,
+  historicalEndDate,
+  historicalTimeStep,
+  historicalPlaybackDate,
 }) => {
   const { t } = useTranslation();
   // Configuration du spiderfier
@@ -634,11 +642,6 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
 
       // Les tooltips sont maintenant gérés par Leaflet, pas besoin de les masquer manuellement
 
-      // Désactiver les clics sur les marqueurs en mode historique
-      if (isHistoricalModeActive) {
-        return;
-      }
-
       // Exclure SignalAir
       if (device.source === "signalair") {
         return;
@@ -858,6 +861,11 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
         handleRemoveStationFromComparison={handleRemoveStationFromComparison}
         handleLoadComparisonData={handleLoadComparisonData}
         purpleAirDeviceData={purpleAirDeviceData}
+        isHistoricalModeActive={isHistoricalModeActive}
+        historicalStartDate={historicalStartDate}
+        historicalEndDate={historicalEndDate}
+        historicalTimeStep={historicalTimeStep}
+        historicalPlaybackDate={historicalPlaybackDate}
       />
 
       {/* Conteneur de la carte */}

@@ -50,6 +50,11 @@ interface MapPanelsContainerProps {
       pm10Value: number;
     }
   >;
+  isHistoricalModeActive?: boolean;
+  historicalStartDate?: string;
+  historicalEndDate?: string;
+  historicalTimeStep?: string;
+  historicalPlaybackDate?: string;
 }
 
 const MapPanelsContainer: React.FC<MapPanelsContainerProps> = ({
@@ -68,7 +73,25 @@ const MapPanelsContainer: React.FC<MapPanelsContainerProps> = ({
   handleRemoveStationFromComparison,
   handleLoadComparisonData,
   purpleAirDeviceData,
+  isHistoricalModeActive = false,
+  historicalStartDate,
+  historicalEndDate,
+  historicalTimeStep,
+  historicalPlaybackDate,
 }) => {
+  const historicalMode =
+    isHistoricalModeActive &&
+    historicalStartDate &&
+    historicalEndDate &&
+    historicalTimeStep
+      ? {
+          startDate: historicalStartDate,
+          endDate: historicalEndDate,
+          timeStep: historicalTimeStep,
+          currentDate: historicalPlaybackDate,
+        }
+      : null;
+
   return (
     <>
       {sidePanels.comparisonState.isComparisonMode &&
@@ -100,6 +123,7 @@ const MapPanelsContainer: React.FC<MapPanelsContainerProps> = ({
             initialPollutant={selectedPollutant}
             onComparisonModeToggle={sidePanels.handleComparisonModeToggle}
             isComparisonMode={sidePanels.comparisonState.isComparisonMode}
+            historicalMode={historicalMode}
           />
         )}
 
@@ -116,6 +140,7 @@ const MapPanelsContainer: React.FC<MapPanelsContainerProps> = ({
             initialPollutant={selectedPollutant}
             onComparisonModeToggle={sidePanels.handleComparisonModeToggle}
             isComparisonMode={sidePanels.comparisonState.isComparisonMode}
+            historicalMode={historicalMode}
           />
         )}
 
@@ -132,6 +157,7 @@ const MapPanelsContainer: React.FC<MapPanelsContainerProps> = ({
             initialPollutant={selectedPollutant}
             onComparisonModeToggle={sidePanels.handleComparisonModeToggle}
             isComparisonMode={sidePanels.comparisonState.isComparisonMode}
+            historicalMode={historicalMode}
           />
         )}
 

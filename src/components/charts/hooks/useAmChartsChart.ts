@@ -29,6 +29,8 @@ interface UseAmChartsChartProps {
   isLandscapeMobile: boolean;
   stationInfo: any | null;
   timeStep?: string;
+  xAxisMin?: string;
+  xAxisMax?: string;
 }
 
 export const useAmChartsChart = ({
@@ -45,6 +47,8 @@ export const useAmChartsChart = ({
   isLandscapeMobile,
   stationInfo,
   timeStep,
+  xAxisMin,
+  xAxisMax,
 }: UseAmChartsChartProps) => {
   const chartRef = useRef<am5xy.XYChart | null>(null);
   const rootRef = useRef<am5.Root | null>(null);
@@ -130,6 +134,16 @@ export const useAmChartsChart = ({
         }),
       })
     );
+
+    if (xAxisMin && xAxisMax) {
+      const minDate = new Date(xAxisMin).getTime();
+      const maxDate = new Date(xAxisMax).getTime();
+      if (!Number.isNaN(minDate) && !Number.isNaN(maxDate)) {
+        xAxis.set("strictMinMax", true);
+        xAxis.set("min", minDate);
+        xAxis.set("max", maxDate);
+      }
+    }
 
     // Configurer la grille verticale
     xAxis.get("renderer").grid.template.setAll({
@@ -321,6 +335,31 @@ export const useAmChartsChart = ({
       }
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- création unique du graphique (mises à jour via autres effets et i18n.on)
+
+  useEffect(() => {
+    if (!chartRef.current) return;
+
+    const xAxis = chartRef.current.xAxes.getIndex(
+      0
+    ) as am5xy.DateAxis<am5xy.AxisRendererX>;
+
+    if (!xAxis) return;
+
+    if (xAxisMin && xAxisMax) {
+      const minDate = new Date(xAxisMin).getTime();
+      const maxDate = new Date(xAxisMax).getTime();
+      if (!Number.isNaN(minDate) && !Number.isNaN(maxDate)) {
+        xAxis.set("strictMinMax", true);
+        xAxis.set("min", minDate);
+        xAxis.set("max", maxDate);
+        return;
+      }
+    }
+
+    xAxis.set("strictMinMax", false);
+    xAxis.set("min", undefined);
+    xAxis.set("max", undefined);
+  }, [xAxisMin, xAxisMax]);
 
   // Mettre à jour les labels de l'axe Y et la légende quand la langue change (au re-render)
   useEffect(() => {

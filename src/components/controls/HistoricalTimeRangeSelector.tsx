@@ -10,6 +10,7 @@ interface HistoricalTimeRangeSelectorProps {
   onTimeRangeChange: (timeRange: TimeRange) => void;
   className?: string;
   timeStep?: string; // Pas de temps actuel pour valider les limites
+  disabled?: boolean;
 }
 
 // Fonction pour calculer le nombre de jours entre deux dates
@@ -36,7 +37,7 @@ const getPresetDays = (preset: "3h" | "24h" | "7d" | "30d"): number => {
 
 const HistoricalTimeRangeSelector: React.FC<
   HistoricalTimeRangeSelectorProps
-> = ({ timeRange, onTimeRangeChange, className = "", timeStep }) => {
+> = ({ timeRange, onTimeRangeChange, className = "", timeStep, disabled = false }) => {
   const { t, i18n } = useTranslation();
   const [isCustomOpen, setIsCustomOpen] = useState(false);
 
@@ -155,6 +156,9 @@ const HistoricalTimeRangeSelector: React.FC<
   };
 
   const handlePresetChange = (preset: "3h" | "24h" | "7d" | "30d") => {
+    if (disabled) {
+      return;
+    }
     if (!isPresetValid(preset)) {
       setValidationError(
         t("historical.periodNotAvailableForTimeStep", {
@@ -172,10 +176,16 @@ const HistoricalTimeRangeSelector: React.FC<
   };
 
   const handleCustomToggle = () => {
+    if (disabled) {
+      return;
+    }
     setIsCustomOpen(!isCustomOpen);
   };
 
   const handleCustomDateChange = (type: "start" | "end", value: string) => {
+    if (disabled) {
+      return;
+    }
     if (type === "start") {
       setCustomStartDate(value);
     } else {
@@ -186,6 +196,9 @@ const HistoricalTimeRangeSelector: React.FC<
   };
 
   const handleLoadCustomRange = () => {
+    if (disabled) {
+      return;
+    }
     if (!customStartDate || !customEndDate) {
       setValidationError(t("historical.selectStartAndEndDate"));
       return;
@@ -225,6 +238,9 @@ const HistoricalTimeRangeSelector: React.FC<
   };
 
   const handleQuickSelect = (option: { type: "days" | "months"; value: number }) => {
+    if (disabled) {
+      return;
+    }
     const end = new Date();
     const start = new Date();
 
@@ -352,6 +368,7 @@ const HistoricalTimeRangeSelector: React.FC<
               key={key}
               value={key}
               disabled={!isValid}
+              aria-disabled={disabled}
               title={
                 !isValid && maxDays
                   ? t("historical.limitForTimeStep", { max: formatMaxDaysDisplay(maxDays) })
@@ -373,6 +390,7 @@ const HistoricalTimeRangeSelector: React.FC<
       {/* Bouton pour la sélection personnalisée */}
       <button
         onClick={handleCustomToggle}
+        disabled={disabled}
         className={`w-full px-2.5 py-1.5 text-xs rounded-md transition-all duration-200 border ${
           isCustomSelected
             ? "bg-blue-50 text-blue-700 border-blue-200"
@@ -431,7 +449,7 @@ const HistoricalTimeRangeSelector: React.FC<
                       ? "text-gray-400 cursor-not-allowed opacity-50"
                       : "text-gray-700 hover:bg-gray-50"
                   }`}
-                  disabled={maxDays !== null && 90 > maxDays}
+                  disabled={disabled || (maxDays !== null && 90 > maxDays)}
                   title={
                     maxDays && 90 > maxDays
                       ? t("historical.limitForTimeStep", { max: formatMaxDaysDisplay(maxDays) })
@@ -448,7 +466,7 @@ const HistoricalTimeRangeSelector: React.FC<
                       ? "text-gray-400 cursor-not-allowed opacity-50"
                       : "text-gray-700 hover:bg-gray-50"
                   }`}
-                  disabled={maxDays !== null && 365 > maxDays}
+                  disabled={disabled || (maxDays !== null && 365 > maxDays)}
                   title={
                     maxDays && 365 > maxDays
                       ? t("historical.limitForTimeStep", { max: formatMaxDaysDisplay(maxDays) })
@@ -478,6 +496,7 @@ const HistoricalTimeRangeSelector: React.FC<
                     onChange={(e) =>
                       handleCustomDateChange("start", e.target.value)
                     }
+                    disabled={disabled}
                     className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                     max={
                       customEndDate || new Date().toISOString().split("T")[0]
@@ -500,6 +519,7 @@ const HistoricalTimeRangeSelector: React.FC<
                     onChange={(e) =>
                       handleCustomDateChange("end", e.target.value)
                     }
+                    disabled={disabled}
                     className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                     min={customStartDate}
                     max={new Date().toISOString().split("T")[0]}
@@ -511,7 +531,8 @@ const HistoricalTimeRangeSelector: React.FC<
               <button
                 type="button"
                 onClick={handleLoadCustomRange}
-                disabled={!customStartDate || !customEndDate}
+                disabled={disabled || !customStartDate || !customEndDate}
+                aria-disabled={disabled || !customStartDate || !customEndDate}
                 className={`w-full mt-3 px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 ${
                   customStartDate && customEndDate
                     ? "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"

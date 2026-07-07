@@ -77,6 +77,12 @@ interface NebuleAirSidePanelProps {
   panelSize?: "normal" | "fullscreen" | "hidden";
   onComparisonModeToggle?: (pollutantToPreserve?: string) => void;
   isComparisonMode?: boolean;
+  historicalMode?: {
+    startDate: string;
+    endDate: string;
+    timeStep: string;
+    currentDate?: string;
+  } | null;
 }
 
 type PanelSize = "normal" | "fullscreen" | "hidden";
@@ -91,8 +97,10 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
   panelSize: externalPanelSize,
   onComparisonModeToggle,
   isComparisonMode = false,
+  historicalMode = null,
 }) => {
   const { t, i18n } = useTranslation();
+  const isHistoricalLocked = Boolean(historicalMode);
   const initialTimeStep = getInitialTimeStepForPollutants(
     initialPollutant ? [initialPollutant] : [],
     "heure"
@@ -210,6 +218,19 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
     };
   };
 
+  const getEffectiveDateRange = (
+    timeRange: TimeRange
+  ): { startDate: string; endDate: string } => {
+    if (historicalMode) {
+      return {
+        startDate: historicalMode.startDate,
+        endDate: historicalMode.endDate,
+      };
+    }
+
+    return getDateRange(timeRange);
+  };
+
   const loadHistoricalData = useCallback(
     async (
       station: StationInfo,
@@ -222,7 +243,7 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
       setState((prev) => ({ ...prev, loading: true, error: null }));
 
       try {
-        const { startDate, endDate } = getDateRange(timeRange);
+        const { startDate, endDate } = getEffectiveDateRange(timeRange);
         const newHistoricalData: Record<string, HistoricalDataPoint[]> = {};
 
         // Charger les données pour chaque polluant sélectionné
@@ -330,7 +351,7 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
         loadingRef.current = false;
       }
     },
-    [t, nebuleAirService, modelingService]
+    [t, nebuleAirService, modelingService, historicalMode]
   );
 
   // Mettre à jour l'état uniquement lors de l'ouverture du panel ou du changement de station
@@ -382,11 +403,20 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
         state.chartControls.timeStep
       );
 
-      // Définir le timeRange initial (24h par défaut)
-      const initialTimeRange: TimeRange = {
-        type: "preset",
-        preset: "24h",
-      };
+      // Définir la période initiale (synchronisée au mode historique si actif)
+      const initialTimeRange: TimeRange = historicalMode
+        ? {
+            type: "custom",
+            custom: {
+              startDate: historicalMode.startDate.split("T")[0],
+              endDate: historicalMode.endDate.split("T")[0],
+            },
+          }
+        : {
+            type: "preset",
+            preset: "24h",
+          };
+      const initialTimeStep = historicalMode ? historicalMode.timeStep : nextTimeStep;
 
       setState((prev) => ({
         ...prev,
@@ -395,7 +425,7 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
         chartControls: {
           ...prev.chartControls,
           selectedPollutants,
-          timeStep: nextTimeStep,
+          timeStep: initialTimeStep,
           timeRange: initialTimeRange,
         },
         historicalData: {},
@@ -423,7 +453,7 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
           initialTimeRange.type === "preset"
             ? initialTimeRange.preset
             : "custom"
-        }-${nextTimeStep}`;
+        }-${initialTimeStep}`;
         if (initialLoadDoneRef.current !== loadKey) {
           // Utiliser requestAnimationFrame pour s'assurer que le rendu est terminé
           requestAnimationFrame(() => {
@@ -435,7 +465,7 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                 selectedStation,
                 selectedPollutants,
                 initialTimeRange,
-                nextTimeStep,
+                initialTimeStep,
                 false, // Ne pas charger la modélisation au chargement initial
                 null
               );
@@ -452,7 +482,15 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
       }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- éviter rechargements lors des seuls changements de timeStep/timeRange
-  }, [isOpen, selectedStation, initialPollutant, loadHistoricalData]);
+  }, [
+    isOpen,
+    selectedStation,
+    initialPollutant,
+    loadHistoricalData,
+    historicalMode?.startDate,
+    historicalMode?.endDate,
+    historicalMode?.timeStep,
+  ]);
 
   // Récupérer les coordonnées du capteur
   useEffect(() => {
@@ -609,7 +647,7 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
             );
           } else {
             // Charger seulement les données historiques pour le nouveau polluant
-            const { startDate, endDate } = getDateRange(
+            const { startDate, endDate } = getEffectiveDateRange(
               prev.chartControls.timeRange
             );
             nebuleAirService
@@ -650,6 +688,10 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
   };
 
   const handleTimeRangeChange = (timeRange: TimeRange) => {
+    if (isHistoricalLocked) {
+      return;
+    }
+
     setState((prev) => {
       // Vérifier et ajuster la période si nécessaire selon le pas de temps actuel
       const { adjustedRange: validatedTimeRange, wasAdjusted } =
@@ -804,6 +846,10 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
   );
 
   const handleTimeStepChange = (timeStep: string) => {
+    if (isHistoricalLocked) {
+      return;
+    }
+
     if (!supportedTimeSteps.includes(timeStep)) {
       return;
     }
@@ -1125,14 +1171,20 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                 {onComparisonModeToggle && (
                   <button
                     onClick={() => {
+                      if (isHistoricalLocked) {
+                        return;
+                      }
                       // Passer le polluant actuellement sélectionné dans le panel
                       const currentPollutant =
                         state.chartControls.selectedPollutants[0] ||
                         initialPollutant;
                       onComparisonModeToggle(currentPollutant);
                     }}
+                    disabled={isHistoricalLocked}
                     className={`px-3 py-1.5 rounded-md text-xs transition-all duration-200 flex items-center ${
-                      isComparisonMode
+                      isHistoricalLocked
+                        ? "text-gray-400 bg-gray-50 border border-gray-200 opacity-50 cursor-not-allowed"
+                        : isComparisonMode
                         ? "text-green-700 bg-green-50 border border-green-200"
                         : "text-gray-700 hover:bg-gray-50 border border-gray-200"
                     }`}
@@ -1200,8 +1252,18 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                     {/* Sélection des polluants */}
                     <div className="flex-1 min-w-0 sm:max-w-[260px] border border-gray-200 rounded-lg flex flex-col">
                       <button
-                        onClick={() => setShowPollutantsList(!showPollutantsList)}
-                        className="w-full h-11 flex items-center justify-between px-2.5 sm:px-3 text-left hover:bg-gray-50 transition-colors rounded-lg shrink-0"
+                        onClick={() => {
+                          if (isHistoricalLocked) {
+                            return;
+                          }
+                          setShowPollutantsList(!showPollutantsList);
+                        }}
+                        disabled={isHistoricalLocked}
+                        className={`w-full h-11 flex items-center justify-between px-2.5 sm:px-3 text-left transition-colors rounded-lg shrink-0 ${
+                          isHistoricalLocked
+                            ? "opacity-50 cursor-not-allowed"
+                            : "hover:bg-gray-50"
+                        }`}
                       >
                         <div className="flex items-center space-x-2 min-w-0 flex-1">
                           <svg
@@ -1382,6 +1444,7 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                       onHideThresholdBackgroundForColorblindChange={
                         setHideThresholdBackgroundForColorblind
                       }
+                      historicalLocked={isHistoricalLocked}
                     />
                     </div>
                   </div>
@@ -1426,6 +1489,9 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                       hideThresholdBackgroundForColorblind={
                         hideThresholdBackgroundForColorblind
                       }
+                      revealUpToDate={historicalMode?.currentDate}
+                      xAxisMin={historicalMode?.startDate}
+                      xAxisMax={historicalMode?.endDate}
                     />
                   </div>
 
@@ -1437,6 +1503,7 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                         timeRange={state.chartControls.timeRange}
                         onTimeRangeChange={handleTimeRangeChange}
                         timeStep={state.chartControls.timeStep}
+                        disabled={isHistoricalLocked}
                       />
                     </div>
 
@@ -1464,6 +1531,9 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                         type="single"
                         value={state.chartControls.timeStep}
                         onValueChange={(value) => {
+                          if (isHistoricalLocked) {
+                            return;
+                          }
                           if (value) {
                             const isDisabledBySupport =
                               !supportedTimeSteps.includes(value);
@@ -1487,7 +1557,9 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                           const isDisabledByRange =
                             !isTimeStepValidForCurrentRange(key);
                           const isDisabled =
-                            isDisabledBySupport || isDisabledByRange;
+                            isHistoricalLocked ||
+                            isDisabledBySupport ||
+                            isDisabledByRange;
                           const maxDays = getMaxHistoryDays(key);
                           const label = t(`panels.stationSidePanel.${labelKey}`);
 

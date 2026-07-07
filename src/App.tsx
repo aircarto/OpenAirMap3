@@ -770,6 +770,18 @@ const AppContent: React.FC = () => {
               ? temporalState.currentDate
               : undefined
           }
+          historicalStartDate={
+            isHistoricalModeActive ? temporalState.startDate : undefined
+          }
+          historicalEndDate={
+            isHistoricalModeActive ? temporalState.endDate : undefined
+          }
+          historicalTimeStep={
+            isHistoricalModeActive ? temporalState.timeStep : undefined
+          }
+          historicalPlaybackDate={
+            isHistoricalModeActive ? temporalState.currentDate : undefined
+          }
         />
 
         {/* Panel de contrôle historique (sélection de date) - Visible si mode historique actif ET panel de date visible */}
