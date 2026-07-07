@@ -3,6 +3,7 @@ import { AtmoRefService } from "../../../services/AtmoRefService";
 import { AtmoMicroService } from "../../../services/AtmoMicroService";
 import { NebuleAirService } from "../../../services/NebuleAirService";
 import { DataServiceFactory } from "../../../services/DataServiceFactory";
+import { getCustomRangeISO } from "../../../utils/historicalTimeRange";
 
 /**
  * Fonction utilitaire pour calculer les dates (réutilisée depuis les autres panels)
@@ -15,15 +16,7 @@ export const getDateRange = (
 
   // Si c'est une plage personnalisée, utiliser les dates fournies
   if (timeRange.type === "custom" && timeRange.custom) {
-    // Créer les dates en heure LOCALE (sans Z), puis convertir en UTC
-    // Cela permet d'avoir 00:00-23:59 en heure locale, pas en UTC
-    const startDate = new Date(timeRange.custom.startDate + "T00:00:00");
-    const endDate = new Date(timeRange.custom.endDate + "T23:59:59.999");
-
-    return {
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-    };
+    return getCustomRangeISO(timeRange.custom);
   }
 
   // Sinon, utiliser les périodes prédéfinies

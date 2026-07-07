@@ -50,6 +50,8 @@ const HistoricalTimeRangeSelector: React.FC<
   );
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
+  const [customStartTime, setCustomStartTime] = useState("00:00");
+  const [customEndTime, setCustomEndTime] = useState("23:59");
   const [validationError, setValidationError] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -69,6 +71,8 @@ const HistoricalTimeRangeSelector: React.FC<
     if (timeRange.type === "custom" && timeRange.custom) {
       setCustomStartDate(timeRange.custom.startDate);
       setCustomEndDate(timeRange.custom.endDate);
+      setCustomStartTime(timeRange.custom.startTime ?? "00:00");
+      setCustomEndTime(timeRange.custom.endTime ?? "23:59");
     } else {
       // Initialiser avec des valeurs par défaut (dernières 24h)
       const now = new Date();
@@ -76,6 +80,8 @@ const HistoricalTimeRangeSelector: React.FC<
 
       setCustomStartDate(yesterday.toISOString().split("T")[0]);
       setCustomEndDate(now.toISOString().split("T")[0]);
+      setCustomStartTime("00:00");
+      setCustomEndTime("23:59");
     }
   }, [timeRange]);
 
@@ -195,6 +201,17 @@ const HistoricalTimeRangeSelector: React.FC<
     // L'utilisateur devra cliquer sur "Charger les données"
   };
 
+  const handleCustomTimeChange = (type: "start" | "end", value: string) => {
+    if (disabled) {
+      return;
+    }
+    if (type === "start") {
+      setCustomStartTime(value);
+    } else {
+      setCustomEndTime(value);
+    }
+  };
+
   const handleLoadCustomRange = () => {
     if (disabled) {
       return;
@@ -232,6 +249,8 @@ const HistoricalTimeRangeSelector: React.FC<
       custom: {
         startDate: customStartDate,
         endDate: customEndDate,
+        startTime: customStartTime,
+        endTime: customEndTime,
       },
     });
     setIsCustomOpen(false);
@@ -284,6 +303,8 @@ const HistoricalTimeRangeSelector: React.FC<
           custom: {
             startDate: adjustedStartStr,
             endDate: endDateStr,
+            startTime: "00:00",
+            endTime: "23:59",
           },
         });
         setIsCustomOpen(false);
@@ -294,12 +315,16 @@ const HistoricalTimeRangeSelector: React.FC<
     setValidationError(null);
     setCustomStartDate(startDateStr);
     setCustomEndDate(endDateStr);
+    setCustomStartTime("00:00");
+    setCustomEndTime("23:59");
 
     onTimeRangeChange({
       type: "custom",
       custom: {
         startDate: startDateStr,
         endDate: endDateStr,
+        startTime: "00:00",
+        endTime: "23:59",
       },
     });
     setIsCustomOpen(false);
@@ -308,16 +333,21 @@ const HistoricalTimeRangeSelector: React.FC<
   const getDisplayText = () => {
     if (timeRange.type === "custom" && timeRange.custom) {
       const locale = i18n.language || "fr";
-      const formatDate = (dateString: string): string => {
+      const formatDateTime = (dateString: string, timeString?: string): string => {
         const date = new Date(dateString);
-        return date.toLocaleDateString(locale, {
+        const datePart = date.toLocaleDateString(locale, {
           day: "2-digit",
           month: "2-digit",
           year: "numeric",
         });
+        if (timeString) {
+          return `${datePart} ${timeString}`;
+        }
+        return datePart;
       };
-      return `${formatDate(timeRange.custom.startDate)} - ${formatDate(
-        timeRange.custom.endDate
+      return `${formatDateTime(timeRange.custom.startDate, timeRange.custom.startTime)} - ${formatDateTime(
+        timeRange.custom.endDate,
+        timeRange.custom.endTime
       )}`;
     }
 
@@ -490,19 +520,30 @@ const HistoricalTimeRangeSelector: React.FC<
                   <label className="block text-xs text-gray-600 mb-1">
                     {t("historical.startDate")}
                   </label>
-                  <input
-                    type="date"
-                    value={customStartDate}
-                    onChange={(e) =>
-                      handleCustomDateChange("start", e.target.value)
-                    }
-                    disabled={disabled}
-                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                    max={
-                      customEndDate || new Date().toISOString().split("T")[0]
-                    }
-                    min={maxStartDate || undefined}
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="date"
+                      value={customStartDate}
+                      onChange={(e) =>
+                        handleCustomDateChange("start", e.target.value)
+                      }
+                      disabled={disabled}
+                      className="flex-1 min-w-0 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                      max={
+                        customEndDate || new Date().toISOString().split("T")[0]
+                      }
+                      min={maxStartDate || undefined}
+                    />
+                    <input
+                      type="time"
+                      value={customStartTime}
+                      onChange={(e) =>
+                        handleCustomTimeChange("start", e.target.value)
+                      }
+                      disabled={disabled}
+                      className="w-24 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
                   {maxStartDate && (
                     <p className="text-[10px] text-gray-500 mt-1">
                       {t("historical.minDateLabel")}: {new Date(maxStartDate).toLocaleDateString(i18n.language || "fr")}
@@ -513,18 +554,32 @@ const HistoricalTimeRangeSelector: React.FC<
                   <label className="block text-xs text-gray-600 mb-1">
                     {t("historical.endDate")}
                   </label>
-                  <input
-                    type="date"
-                    value={customEndDate}
-                    onChange={(e) =>
-                      handleCustomDateChange("end", e.target.value)
-                    }
-                    disabled={disabled}
-                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                    min={customStartDate}
-                    max={new Date().toISOString().split("T")[0]}
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="date"
+                      value={customEndDate}
+                      onChange={(e) =>
+                        handleCustomDateChange("end", e.target.value)
+                      }
+                      disabled={disabled}
+                      className="flex-1 min-w-0 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                      min={customStartDate}
+                      max={new Date().toISOString().split("T")[0]}
+                    />
+                    <input
+                      type="time"
+                      value={customEndTime}
+                      onChange={(e) =>
+                        handleCustomTimeChange("end", e.target.value)
+                      }
+                      disabled={disabled}
+                      className="w-24 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
                 </div>
+                <p className="text-[10px] text-gray-500">
+                  {t("historical.localTimeHint")}
+                </p>
               </div>
 
               {/* Bouton Charger les données */}

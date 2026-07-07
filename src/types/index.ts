@@ -285,6 +285,8 @@ export interface ChartControls {
     custom?: {
       startDate: string;
       endDate: string;
+      startTime?: string;
+      endTime?: string;
     };
   };
   timeStep: string;
@@ -312,6 +314,8 @@ export interface ComparisonState {
     custom?: {
       startDate: string;
       endDate: string;
+      startTime?: string;
+      endTime?: string;
     };
   };
   timeStep: string;

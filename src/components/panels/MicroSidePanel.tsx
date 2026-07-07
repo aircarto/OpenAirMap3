@@ -15,7 +15,7 @@ import { DataServiceFactory } from "../../services/DataServiceFactory";
 import { getSensorModelImage } from "../../constants/sensorModels";
 import HistoricalChart from "../charts/HistoricalChart";
 import HistoricalTimeRangeSelector from "../controls/HistoricalTimeRangeSelector";
-import { getMaxHistoryDays, type TimeRange } from "../../utils/historicalTimeRange";
+import { getMaxHistoryDays, getCustomRangeISO, type TimeRange } from "../../utils/historicalTimeRange";
 import { ToggleGroup, ToggleGroupItem } from "../ui/button-group";
 import ExpertMenu from "../controls/ExpertMenu";
 import { cn } from "../../lib/utils";
@@ -146,15 +146,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
 
     // Si c'est une plage personnalisée, utiliser les dates fournies
     if (timeRange.type === "custom" && timeRange.custom) {
-      // Créer les dates en heure LOCALE (sans Z), puis convertir en UTC
-      // Cela permet d'avoir 00:00-23:59 en heure locale, pas en UTC
-      const startDate = new Date(timeRange.custom.startDate + "T00:00:00");
-      const endDate = new Date(timeRange.custom.endDate + "T23:59:59.999");
-
-      return {
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-      };
+      return getCustomRangeISO(timeRange.custom);
     }
 
     // Sinon, utiliser les périodes prédéfinies
