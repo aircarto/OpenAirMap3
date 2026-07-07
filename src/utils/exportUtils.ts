@@ -138,6 +138,8 @@ export const exportAmChartsAsPNG = async (
     const root = resolveAmChartsRootFromContainer(container);
     let previousTooltipContainerVisible: boolean | undefined;
     let previousCursorVisible: boolean | undefined;
+    let previousZoomOutButtonForceHidden: any;
+    let zoomOutButtonWasHidden = false;
     const tooltipForceHiddenState: Array<{
       tooltip: { get: (key: string) => any; set: (key: string, value: any) => void };
       previousForceHidden: any;
@@ -162,6 +164,14 @@ export const exportAmChartsAsPNG = async (
       if (cursor?.get && cursor?.set) {
         previousCursorVisible = cursor.get("visible");
         cursor.set("visible", false);
+      }
+
+      // Masquer le bouton natif de dézoom amCharts pendant la capture
+      const zoomOutButton = chart?.zoomOutButton;
+      if (zoomOutButton?.get && zoomOutButton?.set) {
+        previousZoomOutButtonForceHidden = zoomOutButton.get("forceHidden");
+        zoomOutButton.set("forceHidden", true);
+        zoomOutButtonWasHidden = true;
       }
 
       if (chart?.series?.each) {
@@ -312,6 +322,11 @@ export const exportAmChartsAsPNG = async (
       const cursor = chart?.get?.("cursor");
       if (cursor?.set && typeof previousCursorVisible !== "undefined") {
         cursor.set("visible", previousCursorVisible);
+      }
+
+      const zoomOutButton = chart?.zoomOutButton;
+      if (zoomOutButton?.set && zoomOutButtonWasHidden) {
+        zoomOutButton.set("forceHidden", previousZoomOutButtonForceHidden ?? false);
       }
 
       tooltipForceHiddenState.forEach(({ tooltip, previousForceHidden }) => {
