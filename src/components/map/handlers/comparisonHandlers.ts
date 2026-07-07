@@ -1,6 +1,6 @@
 import { StationInfo, ComparisonState } from "../../../types";
 import { AtmoRefService } from "../../../services/AtmoRefService";
-import { AtmoMicroService } from "../../../services/AtmoMicroService";
+import { QualifiedMicroSensorService } from "../../../services/QualifiedMicroSensorService";
 import { NebuleAirService } from "../../../services/NebuleAirService";
 import { DataServiceFactory } from "../../../services/DataServiceFactory";
 
@@ -84,7 +84,7 @@ export const createLoadComparisonDataHandler = (
             endDate,
           });
         } else if (station.source === "atmoMicro") {
-          const atmoMicroService = DataServiceFactory.getService('atmoMicro') as AtmoMicroService;
+          const atmoMicroService = DataServiceFactory.getService('atmoMicro') as QualifiedMicroSensorService;
           stationData = await atmoMicroService.fetchHistoricalData({
             siteId: station.id,
             pollutant,

@@ -5,7 +5,7 @@ import {
   TemporalDataPoint,
   SignalAirReport,
 } from "../types";
-import { AtmoMicroService } from "../services/AtmoMicroService";
+import { QualifiedMicroSensorService } from "../services/QualifiedMicroSensorService";
 import { AtmoRefService } from "../services/AtmoRefService";
 import { NebuleAirService } from "../services/NebuleAirService";
 import { SignalAirService } from "../services/SignalAirService";
@@ -46,7 +46,7 @@ export const useTemporalVisualization = ({
 
   // Références pour la gestion des intervalles
   const playbackIntervalRef = useRef<number | null>(null);
-  const atmoMicroService = useRef(DataServiceFactory.getService('atmoMicro') as AtmoMicroService);
+  const atmoMicroService = useRef(DataServiceFactory.getService('atmoMicro') as QualifiedMicroSensorService);
   const atmoRefService = useRef(DataServiceFactory.getService('atmoRef') as AtmoRefService);
   const nebuleAirService = useRef(DataServiceFactory.getService('nebuleair') as NebuleAirService);
   const signalAirService = useRef(DataServiceFactory.getService('signalair') as SignalAirService);

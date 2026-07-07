@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { MeasurementDevice, SignalAirReport } from "../types";
 import { DataServiceFactory } from "../services/DataServiceFactory";
-import { AtmoMicroMeasuresUnavailableError } from "../services/AtmoMicroService";
+import { isQualifiedMicroMeasuresUnavailableError } from "../services/QualifiedMicroSensorService";
 import { pasDeTemps } from "../constants/timeSteps";
 
 interface UseAirQualityDataProps {
@@ -329,7 +329,7 @@ export const useAirQualityData = ({
 
           if (
             mappedSourceCode === "atmoMicro" &&
-            err instanceof AtmoMicroMeasuresUnavailableError
+            isQualifiedMicroMeasuresUnavailableError(err)
           ) {
             setAtmoMicroOutage(true);
           }

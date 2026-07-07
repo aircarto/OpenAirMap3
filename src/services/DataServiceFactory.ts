@@ -1,6 +1,8 @@
 import { DataService } from "../types";
+import { featureFlags } from "../config/featureFlags";
 import { AtmoRefService } from "./AtmoRefService";
 import { AtmoMicroService } from "./AtmoMicroService";
+import { MicrospotService } from "./MicrospotService";
 import { NebuleAirService } from "./NebuleAirService";
 import { SignalAirService } from "./SignalAirService";
 import { MobileAirService } from "./MobileAirService";
@@ -14,7 +16,7 @@ export class DataServiceFactory {
     new () => DataService
   > = {
     atmoRef: AtmoRefService,
-    atmoMicro: AtmoMicroService,
+    atmoMicro: featureFlags.useMicrospotApi ? MicrospotService : AtmoMicroService,
     nebuleair: NebuleAirService,
     signalair: SignalAirService,
     mobileair: MobileAirService,

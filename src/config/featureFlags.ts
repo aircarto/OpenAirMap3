@@ -43,6 +43,10 @@ export const featureFlags = {
     import.meta.env.VITE_DISPLAY_CLUSTERING_TOGGLE as string | undefined,
     true // Par défaut, le toggle est affiché
   ),
+  useMicrospotApi: parseBooleanFlag(
+    import.meta.env.VITE_USE_MICROSPOT_API as string | undefined,
+    false
+  ),
 
   /**
    * Zoom minimum pour afficher le tooltip des marqueurs.

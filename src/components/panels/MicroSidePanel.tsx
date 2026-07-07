@@ -9,7 +9,7 @@ import {
   ATMOMICRO_POLLUTANT_MAPPING,
 } from "../../types";
 import { pollutants } from "../../constants/pollutants";
-import { AtmoMicroService } from "../../services/AtmoMicroService";
+import { QualifiedMicroSensorService } from "../../services/QualifiedMicroSensorService";
 import { ModelingService } from "../../services/ModelingService";
 import { DataServiceFactory } from "../../services/DataServiceFactory";
 import { getSensorModelImage } from "../../constants/sensorModels";
@@ -107,7 +107,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
     ) || "heure";
 
   // Utiliser DataServiceFactory pour obtenir une instance singleton partagée
-  const atmoMicroService = useRef(DataServiceFactory.getService('atmoMicro') as AtmoMicroService).current;
+  const atmoMicroService = useRef(DataServiceFactory.getService('atmoMicro') as QualifiedMicroSensorService).current;
   const modelingService = useRef(new ModelingService()).current;
 
   // Fonction utilitaire pour vérifier si un polluant est disponible dans la station
@@ -342,6 +342,8 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
         ? [initialPollutant]
         : availablePollutants.length > 0
         ? [availablePollutants[0]]
+        : initialPollutant
+        ? [initialPollutant]
         : [];
 
       setState((prev) => ({

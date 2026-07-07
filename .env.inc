@@ -37,6 +37,18 @@ VITE_TOOLTIP_MIN_ZOOM=number|false
 
 
 # =====================================================
+# API Microspot (staging/preprod)
+# =====================================================
+
+# Active MicrospotService a la place d'AtmoMicroService (BDD staging pour l'instant)
+VITE_USE_MICROSPOT_API=boolean
+
+# URL de l'API Microspot — staging actuel : http://172.16.13.183:3032/microspot
+# En dev local, preferer /microspot (proxy Vite) pour eviter les soucis CORS
+VITE_MICROSPOT_API_URL=url
+
+
+# =====================================================
 # Analytics Matomo
 # =====================================================
 

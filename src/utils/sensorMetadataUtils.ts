@@ -1,6 +1,6 @@
 import { MeasurementDevice } from '../types';
 import { AtmoRefService } from '../services/AtmoRefService';
-import { AtmoMicroService } from '../services/AtmoMicroService';
+import { QualifiedMicroSensorService } from '../services/QualifiedMicroSensorService';
 import { NebuleAirService } from '../services/NebuleAirService';
 import { DataServiceFactory } from '../services/DataServiceFactory';
 
@@ -45,7 +45,7 @@ export const getSensorMetadata = async (
 
     // AtmoMicro : récupérer le modèle et les variables
     else if (device.source === 'atmoMicro') {
-      const atmoMicroService = DataServiceFactory.getService('atmoMicro') as AtmoMicroService;
+      const atmoMicroService = DataServiceFactory.getService('atmoMicro') as QualifiedMicroSensorService;
       const siteInfo = await atmoMicroService.fetchSiteVariables(device.id);
       metadata.sensorModel = siteInfo.sensorModel;
       metadata.measuredPollutants = Object.keys(siteInfo.variables).map(

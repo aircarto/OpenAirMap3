@@ -51,6 +51,25 @@ export default defineConfig({
           });
         },
       },
+      "/microspot": {
+        target: "http://172.16.13.183:3032",
+        changeOrigin: true,
+        configure: (proxy) => {
+          proxy.on("error", (err) => {
+            console.log("microspot proxy error", err);
+          });
+          proxy.on("proxyReq", (_proxyReq, req) => {
+            console.log("Sending Request to Microspot:", req.method, req.url);
+          });
+          proxy.on("proxyRes", (proxyRes, req) => {
+            console.log(
+              "Received Response from Microspot:",
+              proxyRes.statusCode,
+              req.url
+            );
+          });
+        },
+      },
     },
   },
 });
