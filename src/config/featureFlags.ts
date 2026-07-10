@@ -39,10 +39,7 @@ export const featureFlags = {
     import.meta.env.VITE_MARKER_NEBULEAIR as string | undefined,
     true // Par défaut, nebuleair a son propre marqueur (comportement d'origine)
   ),
-  displayClusteringToggle: parseBooleanFlag(
-    import.meta.env.VITE_DISPLAY_CLUSTERING_TOGGLE as string | undefined,
-    true // Par défaut, le toggle est affiché
-  ),
+
 
   /**
    * Zoom minimum pour afficher le tooltip des marqueurs.

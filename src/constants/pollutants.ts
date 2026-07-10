@@ -22,31 +22,31 @@ export const seuilsPm10 = {
 
 // Configuration des seuils pour le dioxyde d'azote (NO2)
 export const seuilsNo2 = {
-  bon: { code: "bon", min: 0, max: 10 },
-  moyen: { code: "moyen", min: 10, max: 25 },
-  degrade: { code: "degrade", min: 25, max: 60 },
-  mauvais: { code: "mauvais", min: 60, max: 100 },
-  tresMauvais: { code: "tresMauvais", min: 100, max: 150 },
-  extrMauvais: { code: "extrMauvais", min: 150, max: 9999 },
+  bon: { code: "bon", min: 0, max: 11 },
+  moyen: { code: "moyen", min: 11, max: 26 },
+  degrade: { code: "degrade", min: 26, max: 61 },
+  mauvais: { code: "mauvais", min: 61, max: 101 },
+  tresMauvais: { code: "tresMauvais", min: 101, max: 151 },
+  extrMauvais: { code: "extrMauvais", min: 151, max: 9999 },
 };
 
 // Configuration des seuils pour l'ozone (O3)
 export const seuilsO3 = {
-  bon: { code: "bon", min: 0, max: 60 },
-  moyen: { code: "moyen", min: 60, max: 100 },
-  degrade: { code: "degrade", min: 100, max: 120 },
-  mauvais: { code: "mauvais", min: 120, max: 160 },
-  tresMauvais: { code: "tresMauvais", min: 160, max: 180 },
+  bon: { code: "bon", min: 0, max: 61 },
+  moyen: { code: "moyen", min: 61, max: 101 },
+  degrade: { code: "degrade", min: 101, max: 121 },
+  mauvais: { code: "mauvais", min: 121, max: 161 },
+  tresMauvais: { code: "tresMauvais", min: 161, max: 180 },
   extrMauvais: { code: "extrMauvais", min: 180, max: 9999 },
 };
 
 // Configuration des seuils pour le dioxyde de soufre (SO2)
 export const seuilsSo2 = {
-  bon: { code: "bon", min: 0, max: 20 },
-  moyen: { code: "moyen", min: 20, max: 40 },
-  degrade: { code: "degrade", min: 40, max: 125 },
-  mauvais: { code: "mauvais", min: 125, max: 190 },
-  tresMauvais: { code: "tresMauvais", min: 190, max: 275 },
+  bon: { code: "bon", min: 0, max: 21 },
+  moyen: { code: "moyen", min: 21, max: 41 },
+  degrade: { code: "degrade", min: 41, max: 126 },
+  mauvais: { code: "mauvais", min: 126, max: 191 },
+  tresMauvais: { code: "tresMauvais", min: 191, max: 275 },
   extrMauvais: { code: "extrMauvais", min: 275, max: 9999 },
 };
 
