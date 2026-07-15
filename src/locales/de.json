@@ -453,6 +453,18 @@
       "timeStepLabelsSeparator": " und "
     }
   },
+  "promo": {
+    "sensor": {
+      "title": "Handeln Sie mit",
+      "description": "Kaufen Sie einen Sensor, um zu lokalen Messungen beizutragen",
+      "cta": "Sensor kaufen",
+      "close": "Werbebanner schließen",
+      "sensors": {
+        "nebuleair": "NebuleAir",
+        "nebuleairAlt": "NebuleAir Luftqualitätssensor"
+      }
+    }
+  },
   "search": {
     "placeholder": "Adresse oder Station/Sensor suchen…",
     "openSearch": "Suche öffnen",

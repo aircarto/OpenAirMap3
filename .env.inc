@@ -37,6 +37,17 @@ VITE_TOOLTIP_MIN_ZOOM=number|false
 
 
 # =====================================================
+# Publicite / promotion
+# =====================================================
+
+# Active l'encart promotionnel capteurs sur la carte
+VITE_USE_ADVERTISING=boolean
+
+# URL du bouton CTA "Acheter un capteur" (nouvel onglet)
+VITE_SENSOR_SHOP_URL=url
+
+
+# =====================================================
 # Analytics Matomo
 # =====================================================
 
@@ -59,3 +70,12 @@ VITE_MATOMO_URL=url
 
 # Identifiant du site dans Matomo
 VITE_MATOMO_SITE_ID=string|number
+
+
+# =====================================================
+# Debug / diagnostics
+# =====================================================
+
+# Active des logs console detailles pour le mode historique
+# (fusion multi-sources, collisions d'ID entre AtmoRef/AtmoMicro/NebuleAir)
+VITE_HISTORICAL_MODE_LOGS=boolean

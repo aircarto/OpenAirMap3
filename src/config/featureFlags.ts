@@ -39,7 +39,14 @@ export const featureFlags = {
     import.meta.env.VITE_MARKER_NEBULEAIR as string | undefined,
     true // Par défaut, nebuleair a son propre marqueur (comportement d'origine)
   ),
-
+  useAdvertising: parseBooleanFlag(
+    import.meta.env.VITE_USE_ADVERTISING as string | undefined,
+    false
+  ),
+  historicalModeLogs: parseBooleanFlag(
+    import.meta.env.VITE_HISTORICAL_MODE_LOGS as string | undefined,
+    false
+  ),
 
   /**
    * Zoom minimum pour afficher le tooltip des marqueurs.

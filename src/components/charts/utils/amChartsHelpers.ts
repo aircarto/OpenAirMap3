@@ -87,7 +87,7 @@ export const createSeriesTooltip = (
       label += " " + i18n.t("chart.correctedSuffix");
     }
     
-    tooltipText += `${label}: ${typeof value === "number" ? value.toFixed(1) : value} ${encodedUnit}`;
+    tooltipText += `${label}: ${typeof value === "number" ? value.toFixed(2) : value} ${encodedUnit}`;
     
     return tooltipText;
   });
@@ -419,4 +419,86 @@ export function restoreLegendAfterExport(
   legend.set("height", saved.height);
   legend.set("layout", saved.layout);
 }
+
+const PLAYBACK_MARKER_SERIES_ID = "__playback_marker__";
+
+export const getPlaybackMarkerSeriesId = (): string => PLAYBACK_MARKER_SERIES_ID;
+
+const isValidChartValue = (value: unknown): boolean =>
+  value !== null && value !== undefined && !Number.isNaN(value as number);
+
+/**
+ * Détermine la clé de la série principale pour le marqueur de lecture.
+ */
+export const getPrimaryPlaybackDataKey = (
+  source: string,
+  selectedPollutants: string[],
+  showRawData: boolean,
+  chartData: any[]
+): string | null => {
+  if (!selectedPollutants.length || !chartData.length) {
+    return null;
+  }
+
+  const pollutant = selectedPollutants[0];
+  const normalizedSource = source?.toLowerCase() ?? "";
+
+  if (normalizedSource === "atmomicro") {
+    const correctedKey = `${pollutant}_corrected`;
+    const hasCorrected = chartData.some((point) =>
+      isValidChartValue(point[correctedKey])
+    );
+    if (hasCorrected && !showRawData) {
+      return correctedKey;
+    }
+
+    const rawKey = `${pollutant}_raw`;
+    const hasRaw = chartData.some((point) => isValidChartValue(point[rawKey]));
+    if (hasRaw) {
+      return rawKey;
+    }
+  }
+
+  return pollutant;
+};
+
+/**
+ * Trouve le point de mesure valide le plus proche du timestamp de lecture.
+ */
+export const findNearestPlaybackPoint = (
+  chartData: any[],
+  playbackTimestamp: number,
+  dataKey: string
+): { timestamp: number; value: number } | null => {
+  if (!chartData.length || Number.isNaN(playbackTimestamp)) {
+    return null;
+  }
+
+  let nearest: { timestamp: number; value: number } | null = null;
+  let minDistance = Infinity;
+
+  chartData.forEach((point) => {
+    const value = point[dataKey];
+    if (!isValidChartValue(value)) {
+      return;
+    }
+
+    const timestamp =
+      typeof point.timestamp === "number"
+        ? point.timestamp
+        : new Date(point.timestamp).getTime();
+
+    if (Number.isNaN(timestamp)) {
+      return;
+    }
+
+    const distance = Math.abs(timestamp - playbackTimestamp);
+    if (distance < minDistance) {
+      minDistance = distance;
+      nearest = { timestamp, value: value as number };
+    }
+  });
+
+  return nearest;
+};
 

@@ -894,17 +894,18 @@ export const exportDataAsCSV = (
       stations.forEach((station) => {
         headers.push(station.name);
       });
-    } else if (source === "atmoRef" || source === "mobileair") {
-      // AtmoRef : une seule colonne par polluant (pas de distinction brut/corrigé)
-      selectedPollutants.forEach((pollutant) => {
-        const pollutantName = pollutants[pollutant]?.name || pollutant;
-        headers.push(pollutantName);
-      });
-    } else {
-      // Mode normal : une colonne par polluant (corrigé et brut)
+    } else if (source === "atmoMicro") {
+      // AtmoMicro : distinction entre valeur corrigée et valeur brute
       selectedPollutants.forEach((pollutant) => {
         headers.push(`${pollutant} (corrigé)`);
         headers.push(`${pollutant} (brut)`);
+      });
+    } else {
+      // Autres sources (AtmoRef, MobileAir, NebuleAir, etc.) : une seule colonne
+      // par polluant, ces sources ne fournissant pas de distinction brut/corrigé
+      selectedPollutants.forEach((pollutant) => {
+        const pollutantName = pollutants[pollutant]?.name || pollutant;
+        headers.push(pollutantName);
       });
     }
 
@@ -927,16 +928,17 @@ export const exportDataAsCSV = (
             // Si la valeur n'existe pas, mettre une chaîne vide
             values.push(value !== undefined && value !== null ? value : "");
           });
-        } else if (source === "atmoRef" || source === "mobileair") {
-          // AtmoRef/MobileAir : lire directement depuis la clé du polluant (pas de _corrected ou _raw)
-          selectedPollutants.forEach((pollutant) => {
-            values.push(row[pollutant] || "");
-          });
-        } else {
-          // Mode normal : données corrigées et brutes
+        } else if (source === "atmoMicro") {
+          // AtmoMicro : données corrigées et brutes
           selectedPollutants.forEach((pollutant) => {
             values.push(row[`${pollutant}_corrected`] || "");
             values.push(row[`${pollutant}_raw`] || "");
+          });
+        } else {
+          // Autres sources (AtmoRef, MobileAir, NebuleAir, etc.) : lire directement
+          // depuis la clé du polluant (pas de distinction _corrected/_raw)
+          selectedPollutants.forEach((pollutant) => {
+            values.push(row[pollutant] || "");
           });
         }
 

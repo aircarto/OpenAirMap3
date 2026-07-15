@@ -54,6 +54,7 @@ Notes :
 - toutes les variables front doivent etre prefixees par `VITE_` ;
 - `VITE_MAINTENANCE_MODE=true` affiche une page de maintenance et empeche le chargement de la carte ;
 - `VITE_TOOLTIP_MIN_ZOOM` accepte un nombre (ex: `11`) ou `false` pour desactiver le seuil de zoom.
+- pour ajouter ou rendre optionnelle une fonctionnalite via feature flag, voir [docs/FEATURE_FLAGS.md](docs/FEATURE_FLAGS.md).
 
 ### Mode maintenance
 

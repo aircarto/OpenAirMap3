@@ -453,6 +453,18 @@
       "timeStepLabelsSeparator": " و "
     }
   },
+  "promo": {
+    "sensor": {
+      "title": "تحرك للعمل",
+      "description": "اشترِ مستشعرًا للمساهمة في القياسات المحلية",
+      "cta": "شراء مستشعر",
+      "close": "إغلاق اللافتة الترويجية",
+      "sensors": {
+        "nebuleair": "NebuleAir",
+        "nebuleairAlt": "مستشعر جودة الهواء NebuleAir"
+      }
+    }
+  },
   "search": {
     "placeholder": "ابحث عن عنوان أو محطة/مقياس...",
     "openSearch": "فتح البحث",

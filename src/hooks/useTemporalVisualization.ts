@@ -11,6 +11,7 @@ import { NebuleAirService } from "../services/NebuleAirService";
 import { SignalAirService } from "../services/SignalAirService";
 import { DataServiceFactory } from "../services/DataServiceFactory";
 import { filterReportsByDisplayWindow } from "../utils/signalAirDateUtils";
+import { featureFlags } from "../config/featureFlags";
 
 interface UseTemporalVisualizationProps {
   selectedPollutant: string;
@@ -132,6 +133,8 @@ export const useTemporalVisualization = ({
     try {
       // Charger les données de toutes les sources sélectionnées en parallèle
       const promises: Promise<TemporalDataPoint[]>[] = [];
+      // DEBUG TEMPORAIRE: garde la trace de quelle source correspond à quel index de `results`
+      const debugSourceLabels: string[] = [];
 
       if (selectedSources.includes("atmoMicro")) {
         promises.push(
@@ -142,6 +145,7 @@ export const useTemporalVisualization = ({
             endDate: state.endDate,
           })
         );
+        debugSourceLabels.push("atmoMicro");
       }
 
       if (selectedSources.includes("atmoRef")) {
@@ -153,6 +157,7 @@ export const useTemporalVisualization = ({
             endDate: state.endDate,
           })
         );
+        debugSourceLabels.push("atmoRef");
       }
 
       if (selectedSources.includes("communautaire.nebuleair")) {
@@ -164,6 +169,7 @@ export const useTemporalVisualization = ({
             endDate: state.endDate,
           })
         );
+        debugSourceLabels.push("nebuleair");
       }
 
       let signalAirReports: SignalAirReport[] = [];
@@ -191,6 +197,55 @@ export const useTemporalVisualization = ({
       }
 
       const results = await Promise.all(promises);
+
+      // DEBUG (VITE_HISTORICAL_MODE_LOGS): recherche de collision d'ID entre sources.
+      // getMarkerKey (mapIconUtils.ts) utilise device.id brut, sans préfixe de source.
+      // AtmoRef utilise id_station, AtmoMicro utilise id_site.toString() : ce sont deux
+      // espaces d'ID indépendants. Si un id_station == un id_site, la clé React du marqueur
+      // entre en collision et un seul des deux marqueurs est réellement monté dans le DOM.
+      if (featureFlags.historicalModeLogs) {
+        const debugIdsBySource: Record<string, Map<string, string>> = {};
+        results.forEach((temporalData, index) => {
+          const label = debugSourceLabels[index] ?? `source_${index}`;
+          const idMap = debugIdsBySource[label] ?? new Map<string, string>();
+          temporalData.forEach((point) => {
+            point.devices.forEach((d: any) => {
+              idMap.set(d.id, d.name);
+            });
+          });
+          debugIdsBySource[label] = idMap;
+        });
+        console.log(
+          "[DEBUG historique] IDs uniques par source:",
+          Object.fromEntries(
+            Object.entries(debugIdsBySource).map(([k, v]) => [k, v.size])
+          )
+        );
+        const debugSourceKeys = Object.keys(debugIdsBySource);
+        for (let i = 0; i < debugSourceKeys.length; i++) {
+          for (let j = i + 1; j < debugSourceKeys.length; j++) {
+            const sourceA = debugSourceKeys[i];
+            const sourceB = debugSourceKeys[j];
+            const collisions: Array<{ id: string; nameA: string; nameB: string }> = [];
+            debugIdsBySource[sourceA].forEach((name, id) => {
+              const nameB = debugIdsBySource[sourceB].get(id);
+              if (nameB !== undefined) {
+                collisions.push({ id, nameA: name, nameB });
+              }
+            });
+            if (collisions.length > 0) {
+              console.warn(
+                `[DEBUG historique] COLLISION D'ID entre ${sourceA} et ${sourceB}:`,
+                collisions
+              );
+            } else {
+              console.log(
+                `[DEBUG historique] Aucune collision d'ID entre ${sourceA} et ${sourceB}`
+              );
+            }
+          }
+        }
+      }
 
       // Fonction helper pour vérifier si un device a une valeur valide
       const isValidDevice = (device: any): boolean => {
@@ -315,6 +370,29 @@ export const useTemporalVisualization = ({
           (a, b) =>
             new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
         );
+
+      // DEBUG (VITE_HISTORICAL_MODE_LOGS): composition par source de chaque point temporel fusionné.
+      // Si une ligne n'a jamais à la fois atmoRef>0 ET atmoMicro>0 alors que les deux
+      // sources sont sélectionnées, ça indique que la fusion à 5 min ne marie pas
+      // les deux séries et qu'elles alternent dans la timeline au lieu de fusionner.
+      if (featureFlags.historicalModeLogs) {
+        console.log(`[DEBUG historique] ${allTemporalData.length} points fusionnés au total`);
+        console.table(
+          allTemporalData.map((point) => {
+            const bySource: Record<string, number> = {};
+            point.devices.forEach((d: any) => {
+              bySource[d.source] = (bySource[d.source] || 0) + 1;
+            });
+            return {
+              timestamp: point.timestamp,
+              atmoRef: bySource.atmoRef || 0,
+              atmoMicro: bySource.atmoMicro || 0,
+              nebuleair: bySource.nebuleair || 0,
+              total: point.devices.length,
+            };
+          })
+        );
+      }
 
       setState((prev) => ({
         ...prev,

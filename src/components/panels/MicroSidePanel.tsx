@@ -1405,7 +1405,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                       hideThresholdBackgroundForColorblind={
                         hideThresholdBackgroundForColorblind
                       }
-                      revealUpToDate={historicalMode?.currentDate}
+                      playbackMarkerDate={historicalMode?.currentDate}
                       xAxisMin={historicalMode?.startDate}
                       xAxisMax={historicalMode?.endDate}
                     />

@@ -1481,7 +1481,7 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                       hideThresholdBackgroundForColorblind={
                         hideThresholdBackgroundForColorblind
                       }
-                      revealUpToDate={historicalMode?.currentDate}
+                      playbackMarkerDate={historicalMode?.currentDate}
                       xAxisMin={historicalMode?.startDate}
                       xAxisMax={historicalMode?.endDate}
                     />

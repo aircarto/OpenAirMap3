@@ -782,6 +782,9 @@ const AppContent: React.FC = () => {
           historicalPlaybackDate={
             isHistoricalModeActive ? temporalState.currentDate : undefined
           }
+          isHistoricalDatePanelVisible={
+            isHistoricalModeActive && isDatePanelVisible
+          }
         />
 
         {/* Panel de contrôle historique (sélection de date) - Visible si mode historique actif ET panel de date visible */}

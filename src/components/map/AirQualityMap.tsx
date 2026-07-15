@@ -43,6 +43,7 @@ import MapFloatingActions from "./MapFloatingActions";
 import MapPanelsContainer from "./MapPanelsContainer";
 import MapDataMarkers from "./MapDataMarkers";
 import MapOverlays from "./MapOverlays";
+import SensorPromoCard from "./SensorPromoCard";
 import { AtmoRefService } from "../../services/AtmoRefService";
 import { AtmoMicroService } from "../../services/AtmoMicroService";
 import { NebuleAirService } from "../../services/NebuleAirService";
@@ -75,6 +76,8 @@ import {
   createRemoveStationFromComparisonHandler,
 } from "./handlers/comparisonHandlers";
 import { trackEvent, trackFeatureUsage } from "../../services/analyticsService";
+import { featureFlags } from "../../config/featureFlags";
+import { advertisingConfig } from "../../config/advertisingConfig";
 
 // Correction pour les icônes Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -133,6 +136,8 @@ interface AirQualityMapProps {
   historicalEndDate?: string;
   historicalTimeStep?: string;
   historicalPlaybackDate?: string;
+  /** Masque l'encart promo quand le panel historique de sélection de date est visible */
+  isHistoricalDatePanelVisible?: boolean;
 }
 
 const defaultSpiderfyConfig = {
@@ -203,6 +208,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
   historicalEndDate,
   historicalTimeStep,
   historicalPlaybackDate,
+  isHistoricalDatePanelVisible = false,
 }) => {
   const { t } = useTranslation();
   // Configuration du spiderfier
@@ -883,6 +889,13 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
             setSearchPinPosition([lat, lng])
           }
         />
+
+        {featureFlags.useAdvertising && advertisingConfig.sensorShopUrl && (
+          <SensorPromoCard
+            shopUrl={advertisingConfig.sensorShopUrl}
+            hidden={isHistoricalDatePanelVisible}
+          />
+        )}
 
         <MapContainer
           center={center}

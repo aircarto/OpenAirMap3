@@ -29,7 +29,7 @@ interface HistoricalChartProps {
   sensorTimeStep?: number | null; // Pas de temps du capteur en secondes (pour le mode instantane)
   modelingData?: Record<string, HistoricalDataPoint[]>; // Données de modélisation
   hideThresholdBackgroundForColorblind?: boolean; // Masque le fond coloré par seuil (mode daltoniens)
-  revealUpToDate?: string;
+  playbackMarkerDate?: string;
   xAxisMin?: string;
   xAxisMax?: string;
 }
@@ -46,7 +46,7 @@ const HistoricalChart: React.FC<HistoricalChartProps> = ({
   sensorTimeStep,
   modelingData,
   hideThresholdBackgroundForColorblind = false,
-  revealUpToDate,
+  playbackMarkerDate,
   xAxisMin,
   xAxisMax,
 }) => {
@@ -130,7 +130,6 @@ const HistoricalChart: React.FC<HistoricalChartProps> = ({
     useSolidNebuleAirLines,
     timeStep,
     modelingData,
-    revealUpToDate,
   });
 
   // Calculer les marges du graphique
@@ -157,6 +156,10 @@ const HistoricalChart: React.FC<HistoricalChartProps> = ({
     timeStep,
     xAxisMin,
     xAxisMax,
+    playbackMarkerDate,
+    source,
+    selectedPollutants,
+    showRawData,
   });
 
   // Notifier le composant parent si des données corrigées sont disponibles

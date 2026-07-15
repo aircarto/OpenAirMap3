@@ -1416,7 +1416,7 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
                       hideThresholdBackgroundForColorblind={
                         hideThresholdBackgroundForColorblind
                       }
-                      revealUpToDate={historicalMode?.currentDate}
+                      playbackMarkerDate={historicalMode?.currentDate}
                       xAxisMin={historicalMode?.startDate}
                       xAxisMax={historicalMode?.endDate}
                     />
