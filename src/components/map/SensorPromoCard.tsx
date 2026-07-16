@@ -20,20 +20,40 @@ const SensorPromoCard: React.FC<SensorPromoCardProps> = ({
   }
 
   const isSingleSensor = promotedSensors.length === 1;
+  const isDualSensor = promotedSensors.length === 2;
+
+  const sensorsLayoutClass = isSingleSensor
+    ? "flex items-center justify-center"
+    : isDualSensor
+      ? "grid grid-cols-2 gap-1.5"
+      : "flex gap-1.5 overflow-x-auto snap-x snap-mandatory scrollbar-none";
+
+  const getFigureClass = () => {
+    if (isSingleSensor) return "relative m-0 w-full";
+    if (isDualSensor) return "relative m-0 min-w-0 w-full";
+    return "relative m-0 w-[4.5rem] flex-shrink-0 snap-center";
+  };
+
+  const getImageWrapperClass = () => {
+    const base =
+      "relative w-full overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-slate-200/70";
+    if (isSingleSensor) return `${base} aspect-[4/3]`;
+    return `${base} aspect-square`;
+  };
 
   return (
     <aside
       role="complementary"
       aria-label={t("promo.sensor.title")}
-      className="absolute z-[1500] bottom-20 left-4 right-4 max-w-sm mx-auto md:mx-0 md:bottom-auto md:left-auto md:top-14 md:right-4 md:max-w-[17rem] overflow-hidden rounded-2xl border border-white/60 bg-white/95 shadow-xl shadow-slate-900/10 backdrop-blur-md"
+      className="absolute z-[1500] bottom-20 left-4 right-4 max-w-[17rem] mx-auto md:mx-0 md:bottom-auto md:left-auto md:top-14 md:right-4 md:max-w-[13.5rem] overflow-hidden rounded-xl border border-white/60 bg-white/90 shadow-lg shadow-slate-900/5 backdrop-blur-sm"
     >
       <button
         type="button"
         onClick={dismiss}
-        className="absolute right-2 top-2 z-10 rounded-full bg-white/90 p-1.5 text-gray-500 shadow-sm transition-colors hover:bg-white hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#4271B3]/30"
+        className="absolute right-1.5 top-1.5 z-10 rounded-full bg-white/90 p-1 text-gray-500 shadow-sm transition-colors hover:bg-white hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#4271B3]/30"
         aria-label={t("promo.sensor.close")}
       >
-        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -44,39 +64,22 @@ const SensorPromoCard: React.FC<SensorPromoCardProps> = ({
       </button>
 
       <div
-        className={`relative bg-gradient-to-br from-[#4271B3]/10 via-slate-50 to-white ${
-          isSingleSensor ? "px-4 pb-3 pt-4" : "p-3"
+        className={`relative bg-gradient-to-br from-[#4271B3]/8 via-slate-50 to-white ${
+          isSingleSensor ? "px-3 pb-2 pt-3" : "p-2"
         }`}
       >
-        <div
-          className={
-            isSingleSensor
-              ? "flex items-center justify-center"
-              : "flex gap-2 overflow-x-auto snap-x snap-mandatory scrollbar-none"
-          }
-        >
+        <div className={sensorsLayoutClass}>
           {promotedSensors.map((sensor) => (
-            <figure
-              key={sensor.id}
-              className={
-                isSingleSensor
-                  ? "relative m-0 w-full"
-                  : "relative m-0 min-w-[5.5rem] flex-shrink-0 snap-center"
-              }
-            >
-              <div
-                className={`overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200/80 ${
-                  isSingleSensor ? "aspect-[4/3]" : "aspect-square"
-                }`}
-              >
+            <figure key={sensor.id} className={getFigureClass()}>
+              <div className={getImageWrapperClass()}>
                 <img
                   src={sensor.imageUrl}
                   alt={t(sensor.altKey)}
-                  className="h-full w-full object-contain p-2"
+                  className="absolute inset-0 m-auto h-full w-full max-h-full max-w-full object-contain p-1"
                   loading="lazy"
                 />
               </div>
-              <figcaption className="mt-1.5 text-center text-[10px] font-semibold uppercase tracking-wide text-[#4271B3]">
+              <figcaption className="mt-1 text-center text-[9px] font-semibold uppercase tracking-wide text-[#4271B3]">
                 {t(sensor.nameKey)}
               </figcaption>
             </figure>
@@ -84,23 +87,23 @@ const SensorPromoCard: React.FC<SensorPromoCardProps> = ({
         </div>
       </div>
 
-      <div className="border-t border-slate-100 px-4 pb-4 pt-3">
-        <h2 className="text-sm font-bold leading-tight text-slate-900">
+      <div className="border-t border-slate-100 px-3 pb-3 pt-2">
+        <h2 className="text-xs font-bold leading-tight text-slate-900">
           {t("promo.sensor.title")}
         </h2>
-        <p className="mt-1 text-xs leading-relaxed text-slate-600">
+        <p className="mt-0.5 text-[11px] leading-snug text-slate-600">
           {t("promo.sensor.description")}
         </p>
         <a
           href={shopUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#4271B3] px-3 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#325A96] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#4271B3]/40 focus:ring-offset-1"
+          className="mt-2 inline-flex w-full items-center justify-center gap-1 rounded-lg bg-[#4271B3] px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-[#325A96] focus:outline-none focus:ring-2 focus:ring-[#4271B3]/40 focus:ring-offset-1"
           aria-label={t("promo.sensor.cta")}
         >
           {t("promo.sensor.cta")}
           <svg
-            className="h-4 w-4"
+            className="h-3.5 w-3.5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

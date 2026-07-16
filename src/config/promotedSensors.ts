@@ -16,6 +16,12 @@ export const promotedSensors: PromotedSensor[] = [
     id: "nebuleair",
     nameKey: "promo.sensor.sensors.nebuleair",
     altKey: "promo.sensor.sensors.nebuleairAlt",
-    imageUrl: "/capteurs/NebuleAir_photo.png",
+    imageUrl: "/capteurs/NebuleAir.png",
+  },
+  {
+    id: "nebuleair-pro",
+    nameKey: "promo.sensor.sensors.nebuleairPro",
+    altKey: "promo.sensor.sensors.nebuleairProAlt",
+    imageUrl: "/capteurs/NebuleAirProBruit.png",
   },
 ];

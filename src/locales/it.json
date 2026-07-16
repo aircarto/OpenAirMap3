@@ -461,7 +461,9 @@
       "close": "Chiudi il banner promozionale",
       "sensors": {
         "nebuleair": "NebuleAir",
-        "nebuleairAlt": "Sensore di qualità dell'aria NebuleAir"
+        "nebuleairAlt": "Sensore di qualità dell'aria NebuleAir",
+        "nebuleairPro": "NebuleAir Pro",
+        "nebuleairProAlt": "Sensore NebuleAir Pro qualità dell'aria e rumore"
       }
     }
   },

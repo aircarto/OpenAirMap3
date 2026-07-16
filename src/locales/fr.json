@@ -459,7 +459,9 @@
       "close": "Fermer l'encart promotionnel",
       "sensors": {
         "nebuleair": "NebuleAir",
-        "nebuleairAlt": "Capteur de qualité de l'air NebuleAir"
+        "nebuleairAlt": "Capteur de qualité de l'air NebuleAir",
+        "nebuleairPro": "NebuleAir Pro",
+        "nebuleairProAlt": "Capteur NebuleAir Pro qualité de l'air et bruit"
       }
     }
   },

@@ -461,7 +461,9 @@
       "close": "Werbebanner schließen",
       "sensors": {
         "nebuleair": "NebuleAir",
-        "nebuleairAlt": "NebuleAir Luftqualitätssensor"
+        "nebuleairAlt": "NebuleAir Luftqualitätssensor",
+        "nebuleairPro": "NebuleAir Pro",
+        "nebuleairProAlt": "NebuleAir Pro Luftqualitäts- und Lärmsensor"
       }
     }
   },

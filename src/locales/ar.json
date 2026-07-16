@@ -461,7 +461,9 @@
       "close": "إغلاق اللافتة الترويجية",
       "sensors": {
         "nebuleair": "NebuleAir",
-        "nebuleairAlt": "مستشعر جودة الهواء NebuleAir"
+        "nebuleairAlt": "مستشعر جودة الهواء NebuleAir",
+        "nebuleairPro": "NebuleAir Pro",
+        "nebuleairProAlt": "مستشعر NebuleAir Pro لجودة الهواء والضوضاء"
       }
     }
   },
