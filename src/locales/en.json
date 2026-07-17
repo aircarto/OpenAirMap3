@@ -281,10 +281,22 @@
       "reportsOnMap_other": "{{count}} reports displayed on the map",
       "markerAlt": "Marker {{type}}",
       "types": {
-        "odeur": { "label": "Odours", "description": "Odour nuisance (persistent smells, smoke...)" },
-        "bruit": { "label": "Noise", "description": "Nocturnal disturbance, one-off or continuous noise" },
-        "brulage": { "label": "Burning", "description": "Open-air burning, incineration smoke" },
-        "visuel": { "label": "Visual", "description": "Fog, dust, reduced visibility" }
+        "odeur": {
+          "label": "Odours",
+          "description": "Odour nuisance (persistent smells, smoke...)"
+        },
+        "bruit": {
+          "label": "Noise",
+          "description": "Nocturnal disturbance, one-off or continuous noise"
+        },
+        "brulage": {
+          "label": "Burning",
+          "description": "Open-air burning, incineration smoke"
+        },
+        "visuel": {
+          "label": "Visual",
+          "description": "Fog, dust, reduced visibility"
+        }
       },
       "period": {
         "quickSelections": "Quick selections",
@@ -500,12 +512,36 @@
     "description": "Description",
     "source": "Source",
     "sources": {
-      "atmo-ref": { "title": "AtmoSud reference stations", "category": "monitoring station", "description": "Reference stations installed as part of AtmoSud's air quality monitoring mission." },
-      "atmo-micro": { "title": "AtmoSud qualified micro-sensors", "category": "micro-sensor", "description": "Micro-sensors deployed by AtmoSud. Hourly data is consolidated" },
-      "nebuleair": { "title": "NebuleAir sensors", "category": "micro-sensor", "description": "Open source micro-sensors co-developed by AirCarto and AtmoSud." },
-      "sensor-community": { "title": "Sensor.Community sensors", "category": "micro-sensor", "description": "Open source micro-sensors built by volunteer citizens." },
-      "purpleair": { "title": "PurpleAir sensors", "category": "micro-sensor", "description": "Micro-sensors sold by the US company PurpleAir Inc." },
-      "modeling-pm": { "title": "AtmoSud hourly pollutant modeling", "category": "modeling", "description": "Hourly fine particle modeling over the PACA region." }
+      "atmo-ref": {
+        "title": "AtmoSud reference stations",
+        "category": "monitoring station",
+        "description": "Reference stations installed as part of AtmoSud's air quality monitoring mission."
+      },
+      "atmo-micro": {
+        "title": "AtmoSud qualified micro-sensors",
+        "category": "micro-sensor",
+        "description": "Micro-sensors deployed by AtmoSud. Hourly data is consolidated"
+      },
+      "nebuleair": {
+        "title": "NebuleAir sensors",
+        "category": "micro-sensor",
+        "description": "Open source micro-sensors co-developed by AirCarto and AtmoSud."
+      },
+      "sensor-community": {
+        "title": "Sensor.Community sensors",
+        "category": "micro-sensor",
+        "description": "Open source micro-sensors built by volunteer citizens."
+      },
+      "purpleair": {
+        "title": "PurpleAir sensors",
+        "category": "micro-sensor",
+        "description": "Micro-sensors sold by the US company PurpleAir Inc."
+      },
+      "modeling-pm": {
+        "title": "AtmoSud hourly pollutant modeling",
+        "category": "modeling",
+        "description": "Hourly fine particle modeling over the PACA region."
+      }
     },
     "discoverHistorical": "Discover historical mode",
     "discoverHistoricalText": "Historical mode lets you replay a pollution episode or a typical day. Select a past date then use the time slider to step through available measurements. Data updates on the map and in related panels so you can see how the situation evolved over time.",
@@ -589,7 +625,23 @@
     "standard": "Standard map",
     "osm": "OSM map",
     "satelliteIgn": "IGN satellite",
-    "communal": "Communal boundaries"
+    "communal": "Communal boundaries",
+    "firms": "Fire hotspots (FIRMS, 7d)",
+    "firmsLegendTitle": "Fire hotspots — 7 days (NASA FIRMS)",
+    "effisHotspots": "Fire hotspots (EFFIS, 7d)",
+    "effisHotspotsLegendTitle": "Fire hotspots — 7 days (Copernicus EFFIS)",
+    "effisBurnedAreas": "Burned areas (EFFIS)",
+    "effisBurnedAreasLegendTitle": "Season burned areas (Copernicus EFFIS)",
+    "wildfire": "Active wildfires",
+    "overlayLegendsTitle": "Layer legends",
+    "overlayLegendsOpen": "Open layer legends",
+    "overlayLegendsClose": "Close layer legends",
+    "overlayLegendsModelingChip": "Modeling",
+    "overlayLegendsFirmsChip": "FIRMS",
+    "overlayLegendsEffisHotspotsChip": "EFFIS 7d",
+    "overlayLegendsEffisBurnedChip": "Burned areas",
+    "overlayLegendsLoading": "Loading legend…",
+    "overlayLegendsError": "Legend unavailable"
   },
   "toast": {
     "sourceUnavailable": "{{name}} unavailable",

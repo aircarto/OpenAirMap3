@@ -13,8 +13,16 @@ VITE_FORCE_DOMAIN_CONFIG=string
 # Couches et affichage carte
 # =====================================================
 
-# Active la couche feux de foret
+# Active la couche feux de foret (marqueurs feuxdeforet.fr)
 VITE_ENABLE_WILDFIRE_LAYER=boolean
+
+# Cle API NASA FIRMS (MAP_KEY) pour la couche WMS points chauds VIIRS (7 jours).
+# Si absente ou vide, le toggle FIRMS n'apparait pas dans le menu fonds de carte.
+VITE_FIRMS_MAP_KEY=string
+
+# Couches EFFIS/GWIS (points de chaleur 7 jours WFS+repli WMS + zones brulees saison) :
+# aucune variable d'environnement — toujours proposees dans le menu fonds de carte.
+# Voir docs/features/DOCUMENTATION_COUCHES_FEUX.md
 
 # Affiche les traces NebuleAir en ligne continue
 VITE_SOLID_LINE_NEBULEAIR=boolean

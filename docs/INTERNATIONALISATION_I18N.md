@@ -1,6 +1,6 @@
 # Internationalisation (i18n) – OpenAirMap
 
-L’application supporte quatre langues : **Français (fr)**, **English (en)**, **Español (es)**, **Italiano (it)**.
+L’application supporte **six langues** : **Français (fr)**, **English (en)**, **Español (es)**, **Italiano (it)**, **Deutsch (de)**, **العربية (ar)**.
 
 ## Comment ça fonctionne
 
@@ -17,6 +17,8 @@ Les textes sont dans des fichiers JSON par langue :
 - `src/locales/en.json`
 - `src/locales/es.json`
 - `src/locales/it.json`
+- `src/locales/de.json`
+- `src/locales/ar.json`
 
 Chaque fichier a la **même structure de clés**. Seules les valeurs changent.
 
@@ -70,16 +72,18 @@ function MonComposant() {
 
 Fichier : `src/i18n/index.ts`
 
-- Liste des langues : `supportedLanguages` (fr, en, es, it).
+- Liste des langues : `supportedLanguages` (fr, en, es, it, de, ar).
 - Langue par défaut / fallback : `fr`.
 - Pas de chargement asynchrone des traductions : tout est importé au démarrage (fichiers légers).
 
 ## Ajouter ou modifier des textes
 
-1. **Ajouter une clé** dans les 4 fichiers `src/locales/*.json` (même clé, valeurs traduites).
+1. **Ajouter une clé** dans les **6** fichiers `src/locales/*.json` (même clé, valeurs traduites).
 2. **Utiliser la clé** dans le code : `t("namespace.maCle")`.
 
-Convention de nommage : regroupement logique (`common`, `app`, `controls`, `timeSteps`, `quality`, `historical`, etc.).
+Convention de nommage : regroupement logique (`common`, `app`, `controls`, `timeSteps`, `quality`, `historical`, `baseLayer`, etc.).
+
+Exemple récent : clés `baseLayer.overlayLegends*` pour le panneau de légendes des couches carte (FIRMS, EFFIS, modélisation).
 
 ## Exemple : traduire les pas de temps
 
@@ -92,6 +96,7 @@ Déjà en place dans les JSON : `timeSteps.instantane`, `timeSteps.heure`, etc. 
 
 ## Bonnes pratiques
 
-- Toujours fournir les 4 langues pour chaque nouvelle clé.
+- Toujours fournir les **6** langues pour chaque nouvelle clé.
 - Éviter le texte en dur dans les composants ; privilégier `t("...")`.
 - Pour les textes longs (modales, aide), utiliser des clés dédiées (ex. `infoModal.title`, `infoModal.body`).
+- Pour l’arabe (`ar`), vérifier le rendu RTL là où l’UI le gère déjà (ex. légende qualité d’air).

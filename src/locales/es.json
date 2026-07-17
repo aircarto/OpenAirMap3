@@ -281,10 +281,22 @@
       "reportsOnMap_other": "{{count}} informes mostrados en el mapa",
       "markerAlt": "Marcador {{type}}",
       "types": {
-        "odeur": { "label": "Olores", "description": "Molestias olfativas (olores persistentes, humos...)" },
-        "bruit": { "label": "Ruidos", "description": "Alboroto nocturno, molestias sonoras puntuales o continuas" },
-        "brulage": { "label": "Quema", "description": "Quema al aire libre, humos de incineración" },
-        "visuel": { "label": "Visual", "description": "Niebla, polvo, visibilidad reducida" }
+        "odeur": {
+          "label": "Olores",
+          "description": "Molestias olfativas (olores persistentes, humos...)"
+        },
+        "bruit": {
+          "label": "Ruidos",
+          "description": "Alboroto nocturno, molestias sonoras puntuales o continuas"
+        },
+        "brulage": {
+          "label": "Quema",
+          "description": "Quema al aire libre, humos de incineración"
+        },
+        "visuel": {
+          "label": "Visual",
+          "description": "Niebla, polvo, visibilidad reducida"
+        }
       },
       "period": {
         "quickSelections": "Selecciones rápidas",
@@ -500,12 +512,36 @@
     "description": "Descripción",
     "source": "Fuente",
     "sources": {
-      "atmo-ref": { "title": "Estaciones de referencia AtmoSud", "category": "estación de medida", "description": "Estaciones de referencia instaladas en el marco de la misión de vigilancia de la calidad del aire de AtmoSud." },
-      "atmo-micro": { "title": "Microsensores cualificados AtmoSud", "category": "microsensor", "description": "Microsensores desplegados por AtmoSud. Los datos horarios están consolidados" },
-      "nebuleair": { "title": "Sensores NebuleAir", "category": "microsensor", "description": "Microsensores open source codesarrollados por AirCarto y AtmoSud." },
-      "sensor-community": { "title": "Sensores Sensor.Community", "category": "microsensor", "description": "Microsensores open source fabricados por ciudadanos voluntarios." },
-      "purpleair": { "title": "Sensores PurpleAir", "category": "microsensor", "description": "Microsensores comercializados por la empresa estadounidense PurpleAir Inc." },
-      "modeling-pm": { "title": "Modelización horaria por contaminante AtmoSud", "category": "modelización", "description": "Modelización de partículas finas a escala horaria en la región PACA." }
+      "atmo-ref": {
+        "title": "Estaciones de referencia AtmoSud",
+        "category": "estación de medida",
+        "description": "Estaciones de referencia instaladas en el marco de la misión de vigilancia de la calidad del aire de AtmoSud."
+      },
+      "atmo-micro": {
+        "title": "Microsensores cualificados AtmoSud",
+        "category": "microsensor",
+        "description": "Microsensores desplegados por AtmoSud. Los datos horarios están consolidados"
+      },
+      "nebuleair": {
+        "title": "Sensores NebuleAir",
+        "category": "microsensor",
+        "description": "Microsensores open source codesarrollados por AirCarto y AtmoSud."
+      },
+      "sensor-community": {
+        "title": "Sensores Sensor.Community",
+        "category": "microsensor",
+        "description": "Microsensores open source fabricados por ciudadanos voluntarios."
+      },
+      "purpleair": {
+        "title": "Sensores PurpleAir",
+        "category": "microsensor",
+        "description": "Microsensores comercializados por la empresa estadounidense PurpleAir Inc."
+      },
+      "modeling-pm": {
+        "title": "Modelización horaria por contaminante AtmoSud",
+        "category": "modelización",
+        "description": "Modelización de partículas finas a escala horaria en la región PACA."
+      }
     },
     "discoverHistorical": "Descubrir el modo histórico",
     "discoverHistoricalText": "El modo histórico permite reproducir la cronología de un episodio de contaminación o de un día tipo. Seleccione una fecha pasada y use el cursor temporal para recorrer las mediciones disponibles. Los datos se actualizan en el mapa y en los paneles asociados para visualizar la evolución en el tiempo.",
@@ -589,7 +625,23 @@
     "standard": "Mapa estándar",
     "osm": "Mapa OSM",
     "satelliteIgn": "Satélite IGN",
-    "communal": "Límites comunales"
+    "communal": "Límites comunales",
+    "firms": "Focos de calor (FIRMS, 7 d)",
+    "firmsLegendTitle": "Focos de calor — 7 días (NASA FIRMS)",
+    "effisHotspots": "Focos de calor (EFFIS, 7 d)",
+    "effisHotspotsLegendTitle": "Focos de calor — 7 días (Copernicus EFFIS)",
+    "effisBurnedAreas": "Áreas quemadas (EFFIS)",
+    "effisBurnedAreasLegendTitle": "Áreas quemadas de la temporada (Copernicus EFFIS)",
+    "wildfire": "Incendios activos",
+    "overlayLegendsTitle": "Leyendas de capas",
+    "overlayLegendsOpen": "Abrir leyendas de capas",
+    "overlayLegendsClose": "Cerrar leyendas de capas",
+    "overlayLegendsModelingChip": "Modelización",
+    "overlayLegendsFirmsChip": "FIRMS",
+    "overlayLegendsEffisHotspotsChip": "EFFIS 7d",
+    "overlayLegendsEffisBurnedChip": "Áreas quemadas",
+    "overlayLegendsLoading": "Cargando leyenda…",
+    "overlayLegendsError": "Leyenda no disponible"
   },
   "toast": {
     "sourceUnavailable": "{{name}} no disponible",

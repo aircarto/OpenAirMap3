@@ -281,10 +281,22 @@
       "reportsOnMap_other": "{{count}} تقارير معروضة على الخريطة",
       "markerAlt": "علامة {{type}}",
       "types": {
-        "odeur": { "label": "الروائح", "description": "إزعاج رائحي (روائح دائمة، دخان...)" },
-        "bruit": { "label": "الضجيج", "description": "إزعاج ليلي، ضجيج عرضي أو مستمر" },
-        "brulage": { "label": "الحرق", "description": "الحرق في الهواء الطلق، دخان الحرق" },
-        "visuel": { "label": "بصري", "description": "ضباب، غبار، انخفاض الرؤية" }
+        "odeur": {
+          "label": "الروائح",
+          "description": "إزعاج رائحي (روائح دائمة، دخان...)"
+        },
+        "bruit": {
+          "label": "الضجيج",
+          "description": "إزعاج ليلي، ضجيج عرضي أو مستمر"
+        },
+        "brulage": {
+          "label": "الحرق",
+          "description": "الحرق في الهواء الطلق، دخان الحرق"
+        },
+        "visuel": {
+          "label": "بصري",
+          "description": "ضباب، غبار، انخفاض الرؤية"
+        }
       },
       "period": {
         "quickSelections": "اختيارات سريعة",
@@ -500,12 +512,36 @@
     "description": "الوصف",
     "source": "المصدر",
     "sources": {
-      "atmo-ref": { "title": "محطات مرجعية AtmoSud", "category": "محطة مراقبة", "description": "محطات مرجعية مثبتة في إطار مهمة مراقبة جودة الهواء لـ AtmoSud." },
-      "atmo-micro": { "title": "مقاييس مصغرة مؤهلة AtmoSud", "category": "مقياس مصغر", "description": "مقاييس مصغرة منشورة من AtmoSud. البيانات الساعية موحدة." },
-      "nebuleair": { "title": "مقاييس NebuleAir", "category": "مقياس مصغر", "description": "مقاييس مصغرة مفتوحة المصدر طوّرها AirCarto وAtmoSud بالتعاون." },
-      "sensor-community": { "title": "مقاييس Sensor.Community", "category": "مقياس مصغر", "description": "مقاييس مصغرة مفتوحة المصدر بناها مواطنون متطوعون." },
-      "purpleair": { "title": "مقاييس PurpleAir", "category": "مقياس مصغر", "description": "مقاييس مصغرة تباع من الشركة الأمريكية PurpleAir Inc." },
-      "modeling-pm": { "title": "نموذج الملوثات الساعية AtmoSud", "category": "نموذج", "description": "نموذج الجسيمات الدقيقة الساعية على منطقة PACA." }
+      "atmo-ref": {
+        "title": "محطات مرجعية AtmoSud",
+        "category": "محطة مراقبة",
+        "description": "محطات مرجعية مثبتة في إطار مهمة مراقبة جودة الهواء لـ AtmoSud."
+      },
+      "atmo-micro": {
+        "title": "مقاييس مصغرة مؤهلة AtmoSud",
+        "category": "مقياس مصغر",
+        "description": "مقاييس مصغرة منشورة من AtmoSud. البيانات الساعية موحدة."
+      },
+      "nebuleair": {
+        "title": "مقاييس NebuleAir",
+        "category": "مقياس مصغر",
+        "description": "مقاييس مصغرة مفتوحة المصدر طوّرها AirCarto وAtmoSud بالتعاون."
+      },
+      "sensor-community": {
+        "title": "مقاييس Sensor.Community",
+        "category": "مقياس مصغر",
+        "description": "مقاييس مصغرة مفتوحة المصدر بناها مواطنون متطوعون."
+      },
+      "purpleair": {
+        "title": "مقاييس PurpleAir",
+        "category": "مقياس مصغر",
+        "description": "مقاييس مصغرة تباع من الشركة الأمريكية PurpleAir Inc."
+      },
+      "modeling-pm": {
+        "title": "نموذج الملوثات الساعية AtmoSud",
+        "category": "نموذج",
+        "description": "نموذج الجسيمات الدقيقة الساعية على منطقة PACA."
+      }
     },
     "discoverHistorical": "اكتشف الوضع التاريخي",
     "discoverHistoricalText": "الوضع التاريخي يتيح لك إعادة تشغيل حلقة تلوث أو يوم نموذجي. اختر تاريخاً سابقاً ثم استخدم شريط الوقت للتنقل بين القياسات المتاحة. تتحدث البيانات على الخريطة وفي اللوحات المرتبطة لترى كيف تطورت الحالة مع الزمن.",
@@ -597,7 +633,23 @@
     "standard": "خريطة قياسية",
     "osm": "خريطة OSM",
     "satelliteIgn": "قمر IGN",
-    "communal": "الحدود البلدية"
+    "communal": "الحدود البلدية",
+    "firms": "بؤر الحرائق (FIRMS، 7 أيام)",
+    "firmsLegendTitle": "بؤر الحرائق — 7 أيام (NASA FIRMS)",
+    "effisHotspots": "بؤر الحرائق (EFFIS، 7 أيام)",
+    "effisHotspotsLegendTitle": "بؤر الحرائق — 7 أيام (Copernicus EFFIS)",
+    "effisBurnedAreas": "المناطق المحروقة (EFFIS)",
+    "effisBurnedAreasLegendTitle": "المناطق المحروقة للموسم (Copernicus EFFIS)",
+    "wildfire": "حرائق نشطة",
+    "overlayLegendsTitle": "مفاتيح الطبقات",
+    "overlayLegendsOpen": "فتح مفاتيح الطبقات",
+    "overlayLegendsClose": "إغلاق مفاتيح الطبقات",
+    "overlayLegendsModelingChip": "النمذجة",
+    "overlayLegendsFirmsChip": "FIRMS",
+    "overlayLegendsEffisHotspotsChip": "EFFIS 7ي",
+    "overlayLegendsEffisBurnedChip": "محروقة",
+    "overlayLegendsLoading": "جاري تحميل المفتاح…",
+    "overlayLegendsError": "المفتاح غير متاح"
   },
   "toast": {
     "sourceUnavailable": "{{name}} غير متاح",

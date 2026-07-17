@@ -64,7 +64,6 @@ import {
   createCustomIcon,
   createSignalIcon,
   createWildfireIcon,
-  formatWildfireDate,
   getMarkerKey,
   isDeviceSelected,
   sortDevicesByPriority,
@@ -216,6 +215,12 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
   const [currentBaseLayer, setCurrentBaseLayer] =
     useState<BaseLayerKey>("Carte standard");
   const [isCommunalLayerEnabled, setIsCommunalLayerEnabled] = useState(false);
+  const [isFirmsLayerEnabled, setIsFirmsLayerEnabled] = useState(false);
+  const [isEffisHotspotsEnabled, setIsEffisHotspotsEnabled] = useState(false);
+  const [isEffisBurnedAreasEnabled, setIsEffisBurnedAreasEnabled] =
+    useState(false);
+  const [isWildfireLayerEnabledByControl, setIsWildfireLayerEnabledByControl] =
+    useState(featureFlags.wildfireLayer);
 
   // Position du pinpoint affiché après une recherche de localisation (null = masqué)
   const [searchPinPosition, setSearchPinPosition] = useState<
@@ -253,9 +258,13 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
     selectedPollutant,
     currentModelingLayer,
     isCommunalLayerEnabled,
+    isFirmsLayerEnabled,
+    isEffisHotspotsEnabled,
+    isEffisBurnedAreasEnabled,
   });
 
-  const wildfire = useWildfireLayer();
+  const wildfire = useWildfireLayer(isWildfireLayerEnabledByControl);
+  const isWildfireVisible = wildfire.isWildfireLayerEnabled;
 
   const sidePanels = useSidePanels({
     initialSelectedPollutant: selectedPollutant,
@@ -969,7 +978,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           />
 
           {/* Marqueurs pour les incendies en cours */}
-          {wildfire.isWildfireLayerEnabled &&
+          {isWildfireVisible &&
             wildfire.wildfireReports.map((incident) => (
               <Marker
                 key={`wildfire-${incident.id}`}
@@ -981,12 +990,6 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
                     <h3 className="font-bold text-lg mb-2">{incident.title}</h3>
                     <div className="space-y-2 text-sm">
                       <p>
-                        <strong>Commune:</strong> {incident.commune}
-                      </p>
-                      <p>
-                        <strong>Type:</strong> {incident.type || "Non spécifié"}
-                      </p>
-                      <p>
                         <strong>Statut:</strong> {incident.status || "Inconnu"}
                       </p>
                       {incident.fireState && (
@@ -994,22 +997,27 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
                           <strong>État du feu:</strong> {incident.fireState}
                         </p>
                       )}
-                      <p>
-                        <strong>Déclaré:</strong> {formatWildfireDate(incident)}
-                      </p>
-                      {incident.description && (
-                        <p className="whitespace-pre-line">
-                          <strong>Description:</strong> {incident.description}
+                      {incident.url && (
+                        <p>
+                          <a
+                            href={incident.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-700 underline"
+                          >
+                            Voir le signalement complet
+                          </a>
                         </p>
                       )}
-                      <p>
+                      <p className="text-xs text-gray-500 pt-1 border-t border-gray-100">
+                        Source :{" "}
                         <a
-                          href={incident.url}
+                          href="https://feuxdeforet.fr"
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-600 hover:text-blue-700 underline"
                         >
-                          Voir le signalement complet
+                          feuxdeforet.fr
                         </a>
                       </p>
                     </div>
@@ -1028,6 +1036,14 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           setCurrentBaseLayer={setCurrentBaseLayer}
           isCommunalLayerEnabled={isCommunalLayerEnabled}
           setIsCommunalLayerEnabled={setIsCommunalLayerEnabled}
+          isFirmsLayerEnabled={isFirmsLayerEnabled}
+          setIsFirmsLayerEnabled={setIsFirmsLayerEnabled}
+          isEffisHotspotsEnabled={isEffisHotspotsEnabled}
+          setIsEffisHotspotsEnabled={setIsEffisHotspotsEnabled}
+          isEffisBurnedAreasEnabled={isEffisBurnedAreasEnabled}
+          setIsEffisBurnedAreasEnabled={setIsEffisBurnedAreasEnabled}
+          isWildfireVisible={isWildfireVisible}
+          setIsWildfireLayerEnabledByControl={setIsWildfireLayerEnabledByControl}
           shouldShowStandardLegend={shouldShowStandardLegend}
           selectedPollutant={selectedPollutant}
           isComparisonPanelVisible={isComparisonPanelVisible}

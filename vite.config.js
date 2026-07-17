@@ -51,6 +51,26 @@ export default defineConfig({
           });
         },
       },
+      "/feuxdeforet": {
+        target: "https://feuxdeforet.fr",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/feuxdeforet/, ""),
+        configure: (proxy) => {
+          proxy.on("error", (err) => {
+            console.log("feuxdeforet proxy error", err);
+          });
+          proxy.on("proxyReq", (proxyReq, req) => {
+            console.log("Sending Request to FeuxDeForet:", req.method, req.url);
+          });
+          proxy.on("proxyRes", (proxyRes, req) => {
+            console.log(
+              "Received Response from FeuxDeForet:",
+              proxyRes.statusCode,
+              req.url
+            );
+          });
+        },
+      },
     },
   },
 });

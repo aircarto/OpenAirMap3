@@ -381,17 +381,18 @@ export const createWildfireIcon = (
   const img = document.createElement("img");
   img.src = "/markers/wildfire/fire_pin.svg";
   img.alt = `Incendie ${report.title}`;
-  img.style.width = "36px";
-  img.style.height = "46px";
+  img.style.width = "24px";
+  img.style.height = "24px";
   img.style.objectFit = "contain";
+  img.style.filter = "drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25))";
 
   container.appendChild(img);
 
   return L.divIcon({
     html: container.outerHTML,
     className: "custom-marker-div wildfire-marker",
-    iconSize: [36, 46],
-    iconAnchor: [18, 46],
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
   });
 };
 

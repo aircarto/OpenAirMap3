@@ -281,10 +281,22 @@
       "reportsOnMap_other": "{{count}} Meldungen auf der Karte",
       "markerAlt": "Marker {{type}}",
       "types": {
-        "odeur": { "label": "Gerüche", "description": "Geruchsbelästigung (anhaltende Gerüche, Rauch…)" },
-        "bruit": { "label": "Lärm", "description": "Nächtliche Störung, punktueller oder dauerhafter Lärm" },
-        "brulage": { "label": "Verbrennung", "description": "Freiluftverbrennung, Verbrennungsrauch" },
-        "visuel": { "label": "Sicht", "description": "Nebel, Staub, eingeschränkte Sicht" }
+        "odeur": {
+          "label": "Gerüche",
+          "description": "Geruchsbelästigung (anhaltende Gerüche, Rauch…)"
+        },
+        "bruit": {
+          "label": "Lärm",
+          "description": "Nächtliche Störung, punktueller oder dauerhafter Lärm"
+        },
+        "brulage": {
+          "label": "Verbrennung",
+          "description": "Freiluftverbrennung, Verbrennungsrauch"
+        },
+        "visuel": {
+          "label": "Sicht",
+          "description": "Nebel, Staub, eingeschränkte Sicht"
+        }
       },
       "period": {
         "quickSelections": "Schnellauswahl",
@@ -500,12 +512,36 @@
     "description": "Beschreibung",
     "source": "Quelle",
     "sources": {
-      "atmo-ref": { "title": "AtmoSud-Referenzstationen", "category": "Messstation", "description": "Referenzstationen im Rahmen der Luftqualitätsüberwachung von AtmoSud." },
-      "atmo-micro": { "title": "AtmoSud-qualifizierte Mikrosensoren", "category": "Mikrosensor", "description": "Von AtmoSud eingesetzte Mikrosensoren. Stündliche Daten werden konsolidiert." },
-      "nebuleair": { "title": "NebuleAir-Sensoren", "category": "Mikrosensor", "description": "Open-Source-Mikrosensoren, gemeinsam entwickelt von AirCarto und AtmoSud." },
-      "sensor-community": { "title": "Sensor.Community-Sensoren", "category": "Mikrosensor", "description": "Open-Source-Mikrosensoren von ehrenamtlichen Bürgern." },
-      "purpleair": { "title": "PurpleAir-Sensoren", "category": "Mikrosensor", "description": "Mikrosensoren der US-Firma PurpleAir Inc." },
-      "modeling-pm": { "title": "AtmoSud stündliche Schadstoffmodellierung", "category": "Modellierung", "description": "Modellierung feiner Partikel im Stundentakt für die Region PACA." }
+      "atmo-ref": {
+        "title": "AtmoSud-Referenzstationen",
+        "category": "Messstation",
+        "description": "Referenzstationen im Rahmen der Luftqualitätsüberwachung von AtmoSud."
+      },
+      "atmo-micro": {
+        "title": "AtmoSud-qualifizierte Mikrosensoren",
+        "category": "Mikrosensor",
+        "description": "Von AtmoSud eingesetzte Mikrosensoren. Stündliche Daten werden konsolidiert."
+      },
+      "nebuleair": {
+        "title": "NebuleAir-Sensoren",
+        "category": "Mikrosensor",
+        "description": "Open-Source-Mikrosensoren, gemeinsam entwickelt von AirCarto und AtmoSud."
+      },
+      "sensor-community": {
+        "title": "Sensor.Community-Sensoren",
+        "category": "Mikrosensor",
+        "description": "Open-Source-Mikrosensoren von ehrenamtlichen Bürgern."
+      },
+      "purpleair": {
+        "title": "PurpleAir-Sensoren",
+        "category": "Mikrosensor",
+        "description": "Mikrosensoren der US-Firma PurpleAir Inc."
+      },
+      "modeling-pm": {
+        "title": "AtmoSud stündliche Schadstoffmodellierung",
+        "category": "Modellierung",
+        "description": "Modellierung feiner Partikel im Stundentakt für die Region PACA."
+      }
     },
     "discoverHistorical": "Historischen Modus entdecken",
     "discoverHistoricalText": "Der historische Modus ermöglicht das Abspielen einer Schadstoffepisode oder eines typischen Tages. Wählen Sie ein vergangenes Datum und nutzen Sie den Zeitregler, um die verfügbaren Messungen schrittweise abzuspielen. Daten werden auf der Karte und in den zugehörigen Panels aktualisiert.",
@@ -589,7 +625,23 @@
     "standard": "Standardkarte",
     "osm": "OSM-Karte",
     "satelliteIgn": "IGN-Satellit",
-    "communal": "Gemeindegrenzen"
+    "communal": "Gemeindegrenzen",
+    "firms": "Feuer-Hotspots (FIRMS, 7 T)",
+    "firmsLegendTitle": "Feuer-Hotspots — 7 Tage (NASA FIRMS)",
+    "effisHotspots": "Feuer-Hotspots (EFFIS, 7 T)",
+    "effisHotspotsLegendTitle": "Feuer-Hotspots — 7 Tage (Copernicus EFFIS)",
+    "effisBurnedAreas": "Brandflächen (EFFIS)",
+    "effisBurnedAreasLegendTitle": "Saisonale Brandflächen (Copernicus EFFIS)",
+    "wildfire": "Aktive Waldbrände",
+    "overlayLegendsTitle": "Ebenen-Legenden",
+    "overlayLegendsOpen": "Ebenen-Legenden öffnen",
+    "overlayLegendsClose": "Ebenen-Legenden schließen",
+    "overlayLegendsModelingChip": "Modellierung",
+    "overlayLegendsFirmsChip": "FIRMS",
+    "overlayLegendsEffisHotspotsChip": "EFFIS 7T",
+    "overlayLegendsEffisBurnedChip": "Brandflächen",
+    "overlayLegendsLoading": "Legende wird geladen…",
+    "overlayLegendsError": "Legende nicht verfügbar"
   },
   "toast": {
     "sourceUnavailable": "{{name}} nicht verfügbar",

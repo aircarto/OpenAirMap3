@@ -248,10 +248,10 @@ export const useAirQualityData = ({
       }
 
 
-      // Traiter chaque service individuellement pour un affichage progressif
+      // Traiter chaque service individuellement pour un affichage progressif - TODO: Vérifier si fetchableIndexes est toujours utile
       for (const index of fetchableIndexes) {
         const service = services[index];
-        const sourceCode = selectedSources[index]; // Code original pour l'affichage
+        const sourceCode = filteredSources[index]; // Code original pour l'affichage
         const mappedSourceCode = mappedSources[index]; // Code réel du service
 
         try {
