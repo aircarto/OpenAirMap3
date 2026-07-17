@@ -830,7 +830,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
         }, 300); // Délai réduit à 300ms pour une meilleure réactivité
       }
     },
-    [isHistoricalModeActive, sidePanels, handleAddStationToComparison]
+    [sidePanels, handleAddStationToComparison]
   );
 
   // Callback pour la sélection d'un capteur depuis la recherche

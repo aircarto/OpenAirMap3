@@ -210,18 +210,19 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
     };
   };
 
-  const getEffectiveDateRange = (
-    timeRange: TimeRange
-  ): { startDate: string; endDate: string } => {
-    if (historicalMode) {
-      return {
-        startDate: historicalMode.startDate,
-        endDate: historicalMode.endDate,
-      };
-    }
+  const getEffectiveDateRange = useCallback(
+    (timeRange: TimeRange): { startDate: string; endDate: string } => {
+      if (historicalMode) {
+        return {
+          startDate: historicalMode.startDate,
+          endDate: historicalMode.endDate,
+        };
+      }
 
-    return getDateRange(timeRange);
-  };
+      return getDateRange(timeRange);
+    },
+    [historicalMode]
+  );
 
   const loadHistoricalData = useCallback(
     async (
@@ -343,7 +344,7 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
         loadingRef.current = false;
       }
     },
-    [t, nebuleAirService, modelingService, historicalMode]
+    [t, nebuleAirService, modelingService, getEffectiveDateRange]
   );
 
   // Mettre à jour l'état uniquement lors de l'ouverture du panel ou du changement de station

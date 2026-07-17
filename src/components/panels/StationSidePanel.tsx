@@ -350,6 +350,57 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
   // ce qui provoquait la disparition silencieuse de la courbe.
   const requestIdRef = useRef(0);
 
+  const getDateRange = (
+    timeRange: TimeRange
+  ): { startDate: string; endDate: string } => {
+    const now = new Date();
+    const endDate = now.toISOString();
+
+    // Si c'est une plage personnalisée, utiliser les dates fournies
+    if (timeRange.type === "custom" && timeRange.custom) {
+      return getCustomRangeISO(timeRange.custom);
+    }
+
+    // Sinon, utiliser les périodes prédéfinies
+    let startDate: Date;
+
+    switch (timeRange.preset) {
+      case "3h":
+        startDate = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+        break;
+      case "24h":
+        startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        break;
+      case "7d":
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case "30d":
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    }
+
+    return {
+      startDate: startDate.toISOString(),
+      endDate,
+    };
+  };
+
+  const getEffectiveDateRange = useCallback(
+    (timeRange: TimeRange): { startDate: string; endDate: string } => {
+      if (historicalMode) {
+        return {
+          startDate: historicalMode.startDate,
+          endDate: historicalMode.endDate,
+        };
+      }
+
+      return getDateRange(timeRange);
+    },
+    [historicalMode]
+  );
+
   const loadHistoricalData = useCallback(
     async (
       station: StationInfo,
@@ -548,59 +599,9 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
       modelingService,
       showModeling,
       stationCoordinates,
-      historicalMode,
+      getEffectiveDateRange,
     ]
   );
-
-  const getDateRange = (
-    timeRange: TimeRange
-  ): { startDate: string; endDate: string } => {
-    const now = new Date();
-    const endDate = now.toISOString();
-
-    // Si c'est une plage personnalisée, utiliser les dates fournies
-    if (timeRange.type === "custom" && timeRange.custom) {
-      return getCustomRangeISO(timeRange.custom);
-    }
-
-    // Sinon, utiliser les périodes prédéfinies
-    let startDate: Date;
-
-    switch (timeRange.preset) {
-      case "3h":
-        startDate = new Date(now.getTime() - 3 * 60 * 60 * 1000);
-        break;
-      case "24h":
-        startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-        break;
-      case "7d":
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        break;
-      case "30d":
-        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        break;
-      default:
-        startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    }
-
-    return {
-      startDate: startDate.toISOString(),
-      endDate,
-    };
-  };
-
-  const getEffectiveDateRange = (
-    timeRange: TimeRange
-  ): { startDate: string; endDate: string } => {
-    if (historicalMode) {
-      return {
-        startDate: historicalMode.startDate,
-        endDate: historicalMode.endDate,
-      };
-    }
-
-    return getDateRange(timeRange);
-  };
 
   const handlePollutantToggle = (pollutant: string) => {
     setState((prev) => {

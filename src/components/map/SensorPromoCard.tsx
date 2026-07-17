@@ -43,7 +43,6 @@ const SensorPromoCard: React.FC<SensorPromoCardProps> = ({
 
   return (
     <aside
-      role="complementary"
       aria-label={t("promo.sensor.title")}
       className="absolute z-[1500] bottom-20 left-4 right-4 max-w-[17rem] mx-auto md:mx-0 md:bottom-auto md:left-auto md:top-14 md:right-4 md:max-w-[13.5rem] overflow-hidden rounded-xl border border-white/60 bg-white/90 shadow-lg shadow-slate-900/5 backdrop-blur-sm"
     >
