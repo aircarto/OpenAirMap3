@@ -219,7 +219,6 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
   const [currentBaseLayer, setCurrentBaseLayer] =
     useState<BaseLayerKey>("Carte standard");
   const [isCommunalLayerEnabled, setIsCommunalLayerEnabled] = useState(false);
-  const [isFirmsLayerEnabled, setIsFirmsLayerEnabled] = useState(false);
   const [isEffisHotspotsEnabled, setIsEffisHotspotsEnabled] = useState(false);
   const [isEffisBurnedAreasEnabled, setIsEffisBurnedAreasEnabled] =
     useState(false);
@@ -262,7 +261,6 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
     selectedPollutant,
     currentModelingLayer,
     isCommunalLayerEnabled,
-    isFirmsLayerEnabled,
     isEffisHotspotsEnabled,
     isEffisBurnedAreasEnabled,
   });
@@ -1043,8 +1041,6 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           setCurrentBaseLayer={setCurrentBaseLayer}
           isCommunalLayerEnabled={isCommunalLayerEnabled}
           setIsCommunalLayerEnabled={setIsCommunalLayerEnabled}
-          isFirmsLayerEnabled={isFirmsLayerEnabled}
-          setIsFirmsLayerEnabled={setIsFirmsLayerEnabled}
           isEffisHotspotsEnabled={isEffisHotspotsEnabled}
           setIsEffisHotspotsEnabled={setIsEffisHotspotsEnabled}
           isEffisBurnedAreasEnabled={isEffisBurnedAreasEnabled}

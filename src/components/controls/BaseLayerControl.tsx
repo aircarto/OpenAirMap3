@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { baseLayers, BaseLayerKey } from "../../constants/mapLayers";
 import { featureFlags } from "../../config/featureFlags";
-import { isFirmsLayerAvailable } from "../../services/FirmsLayerService";
 
 const BASE_LAYER_I18N_KEYS: Record<BaseLayerKey, string> = {
   "Carte standard": "baseLayer.standard",
@@ -16,9 +15,6 @@ interface BaseLayerControlProps {
   // Nouveaux props pour le découpage communal
   isCommunalLayerEnabled: boolean;
   onCommunalLayerToggle: (enabled: boolean) => void;
-  // Props pour la couche de points chauds NASA FIRMS
-  isFirmsLayerEnabled: boolean;
-  onFirmsLayerToggle: (enabled: boolean) => void;
   // Props pour les couches EFFIS (feux actifs + zones brûlées)
   isEffisHotspotsEnabled: boolean;
   onEffisHotspotsToggle: (enabled: boolean) => void;
@@ -34,8 +30,6 @@ const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
   onBaseLayerChange,
   isCommunalLayerEnabled,
   onCommunalLayerToggle,
-  isFirmsLayerEnabled,
-  onFirmsLayerToggle,
   isEffisHotspotsEnabled,
   onEffisHotspotsToggle,
   isEffisBurnedAreasEnabled,
@@ -44,7 +38,6 @@ const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
   onWildfireLayerToggle,
 }) => {
   const { t } = useTranslation();
-  const firmsAvailable = isFirmsLayerAvailable();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -70,11 +63,6 @@ const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
   const handleCommunalLayerToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
     onCommunalLayerToggle(!isCommunalLayerEnabled);
-  };
-
-  const handleFirmsLayerToggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onFirmsLayerToggle(!isFirmsLayerEnabled);
   };
 
   const handleEffisHotspotsToggle = (e: React.MouseEvent) => {
@@ -217,42 +205,6 @@ const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
               </div>
               <span>{t("baseLayer.communal")}</span>
             </button>
-
-            {/* Option de points chauds NASA FIRMS (overlay layer) */}
-            {firmsAvailable && (
-              <button
-                type="button"
-                onClick={handleFirmsLayerToggle}
-                className={`w-full flex items-center px-2.5 py-1.5 rounded text-xs transition-colors whitespace-nowrap ${
-                  isFirmsLayerEnabled
-                    ? "bg-orange-50/80 text-orange-900 border border-orange-200/50"
-                    : "text-gray-700 hover:bg-gray-50/80"
-                }`}
-              >
-                <div
-                  className={`w-3 h-3 rounded border mr-2 flex items-center justify-center ${
-                    isFirmsLayerEnabled
-                      ? "border-orange-600 bg-orange-600"
-                      : "border-gray-300/50"
-                  }`}
-                >
-                  {isFirmsLayerEnabled && (
-                    <svg
-                      className="w-2 h-2 text-white"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  )}
-                </div>
-                <span>{t("baseLayer.firms")}</span>
-              </button>
-            )}
 
             {/* Option points de chaleur EFFIS (overlay layer) */}
             <button

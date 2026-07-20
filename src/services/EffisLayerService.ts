@@ -3,7 +3,7 @@ import { DOMAIN_CONFIG } from '../config/domainConfig';
 
 /** GWIS expose les couches temporelles (today / week / month / season) — WMS + WFS hotspots */
 const EFFIS_GWIS_BASE_URL = 'https://maps.effis.emergency.copernicus.eu/gwis';
-/** Feux actifs sur les 7 derniers jours — aligné sur FIRMS fires_viirs_7 (WMS) */
+/** Feux actifs sur les 7 derniers jours — aligné sur une fenêtre glissante de 7 jours (WMS) */
 const EFFIS_HOTSPOTS_LAYER = 'all.hs.week';
 /** Même couche en WFS GeoJSON (GWIS) */
 const EFFIS_HOTSPOTS_WFS_TYPENAME = 'ms:all.hs.week';

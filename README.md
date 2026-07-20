@@ -174,7 +174,6 @@ Cas d'usage recommande :
 
 Le menu des fonds de carte propose aussi des couches d'incendie (independantes des sources de mesures) :
 
-- **NASA FIRMS** : WMS VIIRS 7 jours (necessite `VITE_FIRMS_MAP_KEY`)
 - **EFFIS** : points de chaleur 7 jours (WFS GWIS + repli WMS) + zones brulees saison (pas de cle API)
 - **feuxdeforet.fr** : marqueurs de signalements (flag `VITE_ENABLE_WILDFIRE_LAYER`)
 

@@ -13,17 +13,12 @@ import {
 } from "../../../services/ModelingLayerService";
 import { createCommunalGeoJSONLayer } from "../../../services/CommunalLayerService";
 import {
-  createFirmsWmsLayer,
-  getFirmsLegendUrl,
-} from "../../../services/FirmsLayerService";
-import {
   createEffisHotspotsWmsLayer,
   createEffisHotspotsGeoJSONLayer,
   createEffisBurnedAreasGeoJSONLayer,
   getEffisHotspotsLegendUrl,
 } from "../../../services/EffisLayerService";
 
-const FIRMS_REDRAW_INTERVAL_MS = 10 * 60 * 1000; // 10 min : fenetre glissante 7 jours
 const EFFIS_REDRAW_INTERVAL_MS = 10 * 60 * 1000; // 10 min : fenetre glissante 7 jours
 
 interface UseMapLayersProps {
@@ -33,7 +28,6 @@ interface UseMapLayersProps {
   selectedPollutant: string;
   currentModelingLayer: ModelingLayerType | null;
   isCommunalLayerEnabled: boolean;
-  isFirmsLayerEnabled: boolean;
   isEffisHotspotsEnabled: boolean;
   isEffisBurnedAreasEnabled: boolean;
 }
@@ -45,7 +39,6 @@ export const useMapLayers = ({
   selectedPollutant,
   currentModelingLayer,
   isCommunalLayerEnabled,
-  isFirmsLayerEnabled,
   isEffisHotspotsEnabled,
   isEffisBurnedAreasEnabled,
 }: UseMapLayersProps) => {
@@ -60,9 +53,6 @@ export const useMapLayers = ({
   const [currentModelingLegendTitle, setCurrentModelingLegendTitle] = useState<
     string | null
   >(null);
-  const [currentFirmsLegendUrl, setCurrentFirmsLegendUrl] = useState<
-    string | null
-  >(null);
   const [currentEffisHotspotsLegendUrl, setCurrentEffisHotspotsLegendUrl] =
     useState<string | null>(null);
   const [currentEffisBurnedAreasLegendUrl, setCurrentEffisBurnedAreasLegendUrl] =
@@ -72,7 +62,6 @@ export const useMapLayers = ({
   const windLayerRef = useRef<L.Layer | null>(null);
   const windLayerGroupRef = useRef<L.LayerGroup | null>(null);
   const communalLayerRef = useRef<L.LayerGroup | null>(null);
-  const firmsLayerRef = useRef<L.TileLayer.WMS | null>(null);
   const effisHotspotsLayerRef = useRef<L.GeoJSON | L.TileLayer.WMS | null>(null);
   const effisBurnedAreasLayerRef = useRef<L.GeoJSON | null>(null);
 
@@ -297,46 +286,6 @@ export const useMapLayers = ({
     };
   }, [isCommunalLayerEnabled, mapRef]);
 
-  // Effet pour gérer la couche NASA FIRMS (points chauds/incendies, WMS)
-  useEffect(() => {
-    if (!mapRef.current) return;
-    const map = mapRef.current;
-
-    // Supprimer l'ancienne couche si elle existe
-    if (firmsLayerRef.current) {
-      map.removeLayer(firmsLayerRef.current);
-      firmsLayerRef.current = null;
-    }
-    setCurrentFirmsLegendUrl(null);
-
-    let redrawInterval: ReturnType<typeof setInterval> | null = null;
-
-    if (isFirmsLayerEnabled) {
-      const firmsLayer = createFirmsWmsLayer();
-      firmsLayer.addTo(map);
-      firmsLayerRef.current = firmsLayer;
-      setCurrentFirmsLegendUrl(getFirmsLegendUrl());
-
-      // La fenêtre FIRMS glisse sur 7 jours : on force un rafraîchissement périodique
-      // des tuiles déjà en cache pour éviter d'afficher des données figées.
-      redrawInterval = setInterval(() => {
-        firmsLayerRef.current?.redraw();
-      }, FIRMS_REDRAW_INTERVAL_MS);
-    }
-
-    // Cleanup
-    return () => {
-      if (redrawInterval) {
-        clearInterval(redrawInterval);
-      }
-      if (map && firmsLayerRef.current) {
-        map.removeLayer(firmsLayerRef.current);
-        firmsLayerRef.current = null;
-      }
-      setCurrentFirmsLegendUrl(null);
-    };
-  }, [isFirmsLayerEnabled, mapRef]);
-
   // Effet pour gérer la couche EFFIS feux actifs (WFS GeoJSON, repli WMS)
   useEffect(() => {
     if (!mapRef.current) return;
@@ -450,7 +399,6 @@ export const useMapLayers = ({
     currentModelingWMTSLayer,
     currentModelingLegendUrl,
     currentModelingLegendTitle,
-    currentFirmsLegendUrl,
     currentEffisHotspotsLegendUrl,
     currentEffisBurnedAreasLegendUrl,
   };

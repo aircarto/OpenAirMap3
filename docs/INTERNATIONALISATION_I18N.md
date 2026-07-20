@@ -83,7 +83,7 @@ Fichier : `src/i18n/index.ts`
 
 Convention de nommage : regroupement logique (`common`, `app`, `controls`, `timeSteps`, `quality`, `historical`, `baseLayer`, etc.).
 
-Exemple récent : clés `baseLayer.overlayLegends*` pour le panneau de légendes des couches carte (FIRMS, EFFIS, modélisation).
+Exemple récent : clés `baseLayer.overlayLegends*` pour le panneau de légendes des couches carte (EFFIS, modélisation).
 
 ## Exemple : traduire les pas de temps
 

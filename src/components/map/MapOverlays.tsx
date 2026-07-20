@@ -15,8 +15,6 @@ interface MapOverlaysProps {
   setCurrentBaseLayer: (layer: any) => void;
   isCommunalLayerEnabled: boolean;
   setIsCommunalLayerEnabled: (enabled: boolean) => void;
-  isFirmsLayerEnabled: boolean;
-  setIsFirmsLayerEnabled: (enabled: boolean) => void;
   isEffisHotspotsEnabled: boolean;
   setIsEffisHotspotsEnabled: (enabled: boolean) => void;
   isEffisBurnedAreasEnabled: boolean;
@@ -47,8 +45,6 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
   setCurrentBaseLayer,
   isCommunalLayerEnabled,
   setIsCommunalLayerEnabled,
-  isFirmsLayerEnabled,
-  setIsFirmsLayerEnabled,
   isEffisHotspotsEnabled,
   setIsEffisHotspotsEnabled,
   isEffisBurnedAreasEnabled,
@@ -84,16 +80,6 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
         t("baseLayer.overlayLegendsModelingChip"),
       imageUrl: mapLayers.currentModelingLegendUrl,
       accentClass: "bg-blue-50 text-blue-900 border-blue-200",
-    });
-  }
-
-  if (mapLayers.currentFirmsLegendUrl) {
-    overlayLegendItems.push({
-      id: "firms",
-      chipLabel: t("baseLayer.overlayLegendsFirmsChip"),
-      title: t("baseLayer.firmsLegendTitle"),
-      imageUrl: mapLayers.currentFirmsLegendUrl,
-      accentClass: "bg-orange-50 text-orange-900 border-orange-200",
     });
   }
 
@@ -162,8 +148,6 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
           onBaseLayerChange={setCurrentBaseLayer}
           isCommunalLayerEnabled={isCommunalLayerEnabled}
           onCommunalLayerToggle={setIsCommunalLayerEnabled}
-          isFirmsLayerEnabled={isFirmsLayerEnabled}
-          onFirmsLayerToggle={setIsFirmsLayerEnabled}
           isEffisHotspotsEnabled={isEffisHotspotsEnabled}
           onEffisHotspotsToggle={setIsEffisHotspotsEnabled}
           isEffisBurnedAreasEnabled={isEffisBurnedAreasEnabled}
