@@ -43,6 +43,7 @@ import MapFloatingActions from "./MapFloatingActions";
 import MapPanelsContainer from "./MapPanelsContainer";
 import MapDataMarkers from "./MapDataMarkers";
 import MapOverlays from "./MapOverlays";
+import MapViewSyncHandler from "./MapViewSyncHandler";
 import SensorPromoCard from "./SensorPromoCard";
 import { AtmoRefService } from "../../services/AtmoRefService";
 import { AtmoMicroService } from "../../services/AtmoMicroService";
@@ -137,6 +138,8 @@ interface AirQualityMapProps {
   historicalPlaybackDate?: string;
   /** Masque l'encart promo quand le panel historique de sélection de date est visible */
   isHistoricalDatePanelVisible?: boolean;
+  /** Callback quand l'utilisateur déplace ou zoome la carte */
+  onMapViewChange?: (center: [number, number], zoom: number) => void;
 }
 
 const defaultSpiderfyConfig = {
@@ -208,6 +211,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
   historicalTimeStep,
   historicalPlaybackDate,
   isHistoricalDatePanelVisible = false,
+  onMapViewChange,
 }) => {
   const { t } = useTranslation();
   // Configuration du spiderfier
@@ -927,6 +931,9 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           <MapClickHandler
             onMapClick={() => setSearchPinPosition(null)}
           />
+          {onMapViewChange && (
+            <MapViewSyncHandler onViewChange={onMapViewChange} />
+          )}
           {/* Fond de carte initial */}
           <TileLayer
             attribution='&copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

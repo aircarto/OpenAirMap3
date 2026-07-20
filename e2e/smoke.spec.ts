@@ -6,6 +6,35 @@ const isMaintenancePageVisible = async (page: Page): Promise<boolean> =>
     .isVisible()
     .catch(() => false);
 
+const getLeafletMapState = async (
+  page: Page
+): Promise<{ lat: number; lng: number; zoom: number } | null> =>
+  page.evaluate(() => {
+    const container = document.querySelector(".leaflet-container");
+    if (!container) {
+      return null;
+    }
+
+    for (const key of Object.keys(container)) {
+      const value = (container as Record<string, unknown>)[key];
+      if (
+        value &&
+        typeof value === "object" &&
+        "getCenter" in value &&
+        "getZoom" in value
+      ) {
+        const map = value as {
+          getCenter: () => { lat: number; lng: number };
+          getZoom: () => number;
+        };
+        const center = map.getCenter();
+        return { lat: center.lat, lng: center.lng, zoom: map.getZoom() };
+      }
+    }
+
+    return null;
+  });
+
 test.describe("Smoke et navigation", () => {
   test("chargement : titre h1 et région carte visibles", async ({ page }) => {
     await page.goto("/");
@@ -19,6 +48,30 @@ test.describe("Smoke et navigation", () => {
     await expect(
       page.getByRole("region", { name: /carte|air|quality|map/i })
     ).toBeVisible({ timeout: 10000 });
+  });
+
+  test("chargement avec params URL : carte centrée sur lat/lng/zoom", async ({
+    page,
+  }) => {
+    await page.goto("/?lat=43.71&lng=7.26&zoom=14");
+    test.skip(
+      await isMaintenancePageVisible(page),
+      "La page maintenance remplace l'application principale."
+    );
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible({
+      timeout: 15000,
+    });
+    await page.waitForSelector(".leaflet-container", { timeout: 10000 });
+
+    await expect
+      .poll(async () => getLeafletMapState(page), { timeout: 10000 })
+      .not.toBeNull();
+
+    const mapState = await getLeafletMapState(page);
+    expect(mapState).not.toBeNull();
+    expect(mapState!.lat).toBeCloseTo(43.71, 1);
+    expect(mapState!.lng).toBeCloseTo(7.26, 1);
+    expect(mapState!.zoom).toBe(14);
   });
 
   test("lien d'évitement : visible et cible le contenu principal", async ({

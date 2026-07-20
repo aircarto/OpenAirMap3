@@ -12,13 +12,17 @@ import { useDomainConfig } from "./hooks/useDomainConfig";
 import { useFavicon } from "./hooks/useFavicon";
 import { useDocumentTitle } from "./hooks/useDocumentTitle";
 import {
-  pollutants,
-  getDefaultPollutant,
   isPollutantSupportedForTimeStep,
   getSupportedPollutantsForTimeStep,
 } from "./constants/pollutants";
 import { pasDeTemps, isHistoricalModeAllowedForTimeStep } from "./constants/timeSteps";
-import { getDefaultSources } from "./constants/sources";
+import { DOMAIN_CONFIG } from "./config/domainConfig";
+import {
+  buildAppUrlDefaults,
+  parseAppUrlParams,
+  AppUrlParams,
+} from "./utils/appUrlParams";
+import { useAppUrlSync } from "./hooks/useAppUrlSync";
 import PollutantDropdown from "./components/controls/PollutantDropdown";
 import SourceDropdown from "./components/controls/SourceDropdown";
 import TimeStepDropdown from "./components/controls/TimeStepDropdown";
@@ -59,6 +63,21 @@ const DEFAULT_ATMOMICRO_MAINTENANCE_BANNER: AtmoMicroMaintenanceBannerConfig = {
     "Suite a un probleme technique, les donnees des capteurs qualifies ne sont plus accessibles. AtmoSud met tout en oeuvre pour le resoudre.",
 };
 
+const getInitialAppUrlParams = (): AppUrlParams => {
+  const defaults = buildAppUrlDefaults({
+    mapCenter: DOMAIN_CONFIG.default.mapCenter,
+    mapZoom: DOMAIN_CONFIG.default.mapZoom,
+  });
+  return parseAppUrlParams(window.location.search, defaults);
+};
+
+const INITIAL_APP_URL_PARAMS = getInitialAppUrlParams();
+
+const hadMapParamsInInitialUrl = ((): boolean => {
+  const params = new URLSearchParams(window.location.search);
+  return params.has("lat") || params.has("lng") || params.has("zoom");
+})();
+
 const AppContent: React.FC = () => {
   const { t } = useTranslation();
   // Configuration basée sur le domaine
@@ -98,13 +117,13 @@ const AppContent: React.FC = () => {
 
   // États pour les contrôles avec polluant par défaut
   const [selectedPollutant, setSelectedPollutant] = useState<string>(
-    getDefaultPollutant()
+    INITIAL_APP_URL_PARAMS.pollutant
   );
   const [selectedSources, setSelectedSources] = useState<string[]>(
-    getDefaultSources()
+    INITIAL_APP_URL_PARAMS.sources
   );
   const [selectedTimeStep, setSelectedTimeStep] =
-    useState<string>(defaultTimeStep);
+    useState<string>(INITIAL_APP_URL_PARAMS.timeStep);
   const [signalAirPeriod, setSignalAirPeriod] = useState(
     defaultSignalAirPeriod
   );
@@ -495,9 +514,63 @@ const AppContent: React.FC = () => {
     temporalState.data.length,
   ]);
 
-  // Configuration de la carte basée sur le domaine
-  const mapCenter = domainConfig.mapCenter;
-  const mapZoom = domainConfig.mapZoom;
+  // Configuration de la carte basée sur le domaine et l'URL
+  const [mapCenter, setMapCenter] = useState<[number, number]>([
+    INITIAL_APP_URL_PARAMS.lat,
+    INITIAL_APP_URL_PARAMS.lng,
+  ]);
+  const [mapZoom, setMapZoom] = useState<number>(INITIAL_APP_URL_PARAMS.zoom);
+
+  const appUrlDefaults = useMemo(
+    () =>
+      buildAppUrlDefaults({
+        mapCenter: domainConfig.mapCenter,
+        mapZoom: domainConfig.mapZoom,
+      }),
+    [domainConfig.mapCenter, domainConfig.mapZoom]
+  );
+
+  const appUrlState = useMemo(
+    () => ({
+      lat: mapCenter[0],
+      lng: mapCenter[1],
+      zoom: mapZoom,
+      pollutant: selectedPollutant,
+      timeStep: selectedTimeStep,
+      sources: selectedSources,
+    }),
+    [
+      mapCenter,
+      mapZoom,
+      selectedPollutant,
+      selectedTimeStep,
+      selectedSources,
+    ]
+  );
+
+  const handlePopStateFromUrl = useCallback((params: AppUrlParams) => {
+    setMapCenter([params.lat, params.lng]);
+    setMapZoom(params.zoom);
+    setSelectedPollutant(params.pollutant);
+    setSelectedTimeStep(params.timeStep);
+    setSelectedSources(params.sources);
+  }, []);
+
+  const { markMapViewTouched } = useAppUrlSync({
+    state: appUrlState,
+    defaults: appUrlDefaults,
+    onPopState: handlePopStateFromUrl,
+    initialMapViewTouched: hadMapParamsInInitialUrl,
+  });
+
+  const handleMapViewChange = useCallback(
+    (center: [number, number], zoom: number) => {
+      markMapViewTouched();
+      setMapCenter(center);
+      setMapZoom(zoom);
+    },
+    [markMapViewTouched]
+  );
 
   const handleSignalAirHeaderClick = useCallback(() => {
     setOpenSignalAirPanelRequest((r) => r + 1);
@@ -733,6 +806,7 @@ const AppContent: React.FC = () => {
           reports={reportsForMap}
           center={mapCenter}
           zoom={mapZoom}
+          onMapViewChange={handleMapViewChange}
           selectedPollutant={selectedPollutant}
           selectedSources={selectedSources}
           selectedTimeStep={selectedTimeStep}
