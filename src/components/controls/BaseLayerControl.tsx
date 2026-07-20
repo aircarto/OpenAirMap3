@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { baseLayers, BaseLayerKey } from "../../constants/mapLayers";
+import { featureFlags } from "../../config/featureFlags";
 import { isFirmsLayerAvailable } from "../../services/FirmsLayerService";
 
 const BASE_LAYER_I18N_KEYS: Record<BaseLayerKey, string> = {
@@ -321,38 +322,40 @@ const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
               <span>{t("baseLayer.effisBurnedAreas")}</span>
             </button>
 
-            <button
-              type="button"
-              onClick={handleWildfireLayerToggle}
-              className={`w-full flex items-center px-2.5 py-1.5 rounded text-xs transition-colors whitespace-nowrap ${
-                isWildfireLayerEnabled
-                  ? "bg-red-50/80 text-red-900 border border-red-200/50"
-                  : "text-gray-700 hover:bg-gray-50/80"
-              }`}
-            >
-              <div
-                className={`w-3 h-3 rounded border mr-2 flex items-center justify-center ${
+            {featureFlags.wildfireLayer && (
+              <button
+                type="button"
+                onClick={handleWildfireLayerToggle}
+                className={`w-full flex items-center px-2.5 py-1.5 rounded text-xs transition-colors whitespace-nowrap ${
                   isWildfireLayerEnabled
-                    ? "border-red-600 bg-red-600"
-                    : "border-gray-300/50"
+                    ? "bg-red-50/80 text-red-900 border border-red-200/50"
+                    : "text-gray-700 hover:bg-gray-50/80"
                 }`}
               >
-                {isWildfireLayerEnabled && (
-                  <svg
-                    className="w-2 h-2 text-white"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                )}
-              </div>
-              <span>{t("baseLayer.wildfire")}</span>
-            </button>
+                <div
+                  className={`w-3 h-3 rounded border mr-2 flex items-center justify-center ${
+                    isWildfireLayerEnabled
+                      ? "border-red-600 bg-red-600"
+                      : "border-gray-300/50"
+                  }`}
+                >
+                  {isWildfireLayerEnabled && (
+                    <svg
+                      className="w-2 h-2 text-white"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  )}
+                </div>
+                <span>{t("baseLayer.wildfire")}</span>
+              </button>
+            )}
           </div>
         </div>
       )}
