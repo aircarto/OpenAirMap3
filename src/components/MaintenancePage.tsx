@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useDomainConfig } from "../hooks/useDomainConfig";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { useFavicon } from "../hooks/useFavicon";
+import { useMetaDescription } from "../hooks/useMetaDescription";
+import { useCanonicalUrl } from "../hooks/useCanonicalUrl";
 
 interface MaintenanceContent {
   title: string;
@@ -37,6 +39,8 @@ const MaintenancePage: React.FC = () => {
 
   useFavicon(domainConfig.favicon);
   useDocumentTitle(`Maintenance - ${domainConfig.title}`);
+  useMetaDescription(domainConfig.description);
+  useCanonicalUrl();
 
   useEffect(() => {
     const controller = new AbortController();

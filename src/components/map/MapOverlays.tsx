@@ -181,6 +181,18 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
           </div>
         )}
 
+      {isEffisHotspotsEnabled && mapLayers.isEffisHotspotsLoading && (
+        <div className="absolute top-32 right-4 z-[1000] max-w-xs bg-white border border-orange-200 text-orange-700 text-xs px-3 py-2 rounded-md shadow-lg">
+          {t("panels.loadingEffisHotspots")}
+        </div>
+      )}
+
+      {isEffisBurnedAreasEnabled && mapLayers.isEffisBurnedAreasLoading && (
+        <div className="absolute top-40 right-4 z-[1000] max-w-xs bg-white border border-orange-200 text-orange-700 text-xs px-3 py-2 rounded-md shadow-lg">
+          {t("panels.loadingEffisBurnedAreas")}
+        </div>
+      )}
+
       {isWildfireVisible && wildfire.wildfireError && (
         <div className="absolute top-36 right-4 z-[1000] max-w-xs bg-white border border-red-200 text-red-700 text-xs px-3 py-2 rounded-md shadow-lg">
           {wildfire.wildfireError}

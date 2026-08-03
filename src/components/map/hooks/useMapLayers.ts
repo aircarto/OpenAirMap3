@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import L from "leaflet";
-import { baseLayers, BaseLayerKey, ModelingLayerType } from "../../../constants/mapLayers";
+import {
+  BaseLayerKey,
+  ModelingLayerType,
+  createBaseLayer,
+  getBaseLayerMaxZoom,
+} from "../../../constants/mapLayers";
 import {
   getModelingLayerHour,
   formatHourLayerName,
@@ -23,6 +28,8 @@ const EFFIS_REDRAW_INTERVAL_MS = 10 * 60 * 1000; // 10 min : fenetre glissante 7
 
 interface UseMapLayersProps {
   mapRef: React.RefObject<L.Map | null>;
+  /** Incrémente quand la carte Leaflet est prête (évite course au montage) */
+  mapReadyVersion: number;
   currentBaseLayer: BaseLayerKey;
   selectedTimeStep: string;
   selectedPollutant: string;
@@ -34,6 +41,7 @@ interface UseMapLayersProps {
 
 export const useMapLayers = ({
   mapRef,
+  mapReadyVersion,
   currentBaseLayer,
   selectedTimeStep,
   selectedPollutant,
@@ -42,9 +50,10 @@ export const useMapLayers = ({
   isEffisHotspotsEnabled,
   isEffisBurnedAreasEnabled,
 }: UseMapLayersProps) => {
-  const [currentTileLayer, setCurrentTileLayer] = useState<L.TileLayer | null>(
+  const [currentTileLayer, setCurrentTileLayer] = useState<L.Layer | null>(
     null
   );
+  const baseLayerRef = useRef<L.Layer | null>(null);
   const [currentModelingWMTSLayer, setCurrentModelingWMTSLayer] =
     useState<L.TileLayer | null>(null);
   const [currentModelingLegendUrl, setCurrentModelingLegendUrl] = useState<
@@ -57,6 +66,8 @@ export const useMapLayers = ({
     useState<string | null>(null);
   const [currentEffisBurnedAreasLegendUrl, setCurrentEffisBurnedAreasLegendUrl] =
     useState<string | null>(null);
+  const [isEffisHotspotsLoading, setIsEffisHotspotsLoading] = useState(false);
+  const [isEffisBurnedAreasLoading, setIsEffisBurnedAreasLoading] = useState(false);
 
   const modelingLayerRef = useRef<L.TileLayer | null>(null);
   const windLayerRef = useRef<L.Layer | null>(null);
@@ -128,29 +139,30 @@ export const useMapLayers = ({
     }
   }, [mapRef]);
 
-  // Effet pour mettre à jour le fond de carte et le maxZoom
+  // Effet pour mettre à jour le fond de carte et le maxZoom (tous les fonds, y compris Positron)
   useEffect(() => {
-    if (mapRef.current) {
-      // Supprimer l'ancien fond de carte s'il existe
-      if (currentTileLayer) {
-        mapRef.current.removeLayer(currentTileLayer);
-      }
+    const map = mapRef.current;
+    if (!map || mapReadyVersion < 1) return;
 
-      // Ajouter le nouveau fond de carte seulement si ce n'est pas la carte standard
-      if (currentBaseLayer !== "Carte standard") {
-        const newTileLayer = baseLayers[currentBaseLayer];
-        newTileLayer.addTo(mapRef.current);
-        setCurrentTileLayer(newTileLayer);
-      } else {
-        setCurrentTileLayer(null);
-      }
-
-      // Ajuster le maxZoom en fonction de la couche active
-      const layerConfig = baseLayers[currentBaseLayer];
-      const maxZoom = layerConfig.options.maxZoom || 18;
-      mapRef.current.setMaxZoom(maxZoom);
+    if (baseLayerRef.current) {
+      map.removeLayer(baseLayerRef.current);
+      baseLayerRef.current = null;
     }
-  }, [currentBaseLayer, currentTileLayer, mapRef]);
+
+    const newBaseLayer = createBaseLayer(currentBaseLayer);
+    newBaseLayer.addTo(map);
+    baseLayerRef.current = newBaseLayer;
+    setCurrentTileLayer(newBaseLayer);
+
+    map.setMaxZoom(getBaseLayerMaxZoom(currentBaseLayer));
+
+    return () => {
+      if (baseLayerRef.current && map) {
+        map.removeLayer(baseLayerRef.current);
+        baseLayerRef.current = null;
+      }
+    };
+  }, [currentBaseLayer, mapReadyVersion, mapRef]);
 
   // Effet pour gérer les layers de modélisation WMTS
   useEffect(() => {
@@ -311,6 +323,7 @@ export const useMapLayers = ({
     };
 
     const loadHotspotsWfs = async () => {
+      setIsEffisHotspotsLoading(true);
       try {
         const geoJsonLayer = await createEffisHotspotsGeoJSONLayer();
         if (isCancelled || !map) return;
@@ -325,6 +338,10 @@ export const useMapLayers = ({
         );
         if (!isCancelled) {
           addWmsFallback();
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsEffisHotspotsLoading(false);
         }
       }
     };
@@ -369,6 +386,7 @@ export const useMapLayers = ({
     setCurrentEffisBurnedAreasLegendUrl(null);
 
     if (isEffisBurnedAreasEnabled) {
+      setIsEffisBurnedAreasLoading(true);
       createEffisBurnedAreasGeoJSONLayer()
         .then((burnedAreasLayer) => {
           if (!isCancelled && map) {
@@ -381,6 +399,11 @@ export const useMapLayers = ({
             'Erreur lors du chargement des zones brûlées EFFIS:',
             error
           );
+        })
+        .finally(() => {
+          if (!isCancelled) {
+            setIsEffisBurnedAreasLoading(false);
+          }
         });
     }
 
@@ -401,5 +424,7 @@ export const useMapLayers = ({
     currentModelingLegendTitle,
     currentEffisHotspotsLegendUrl,
     currentEffisBurnedAreasLegendUrl,
+    isEffisHotspotsLoading,
+    isEffisBurnedAreasLoading,
   };
 };

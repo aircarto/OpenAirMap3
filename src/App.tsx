@@ -11,6 +11,8 @@ import { useTemporalVisualization } from "./hooks/useTemporalVisualization";
 import { useDomainConfig } from "./hooks/useDomainConfig";
 import { useFavicon } from "./hooks/useFavicon";
 import { useDocumentTitle } from "./hooks/useDocumentTitle";
+import { useMetaDescription } from "./hooks/useMetaDescription";
+import { useCanonicalUrl } from "./hooks/useCanonicalUrl";
 import {
   isPollutantSupportedForTimeStep,
   getSupportedPollutantsForTimeStep,
@@ -86,6 +88,8 @@ const AppContent: React.FC = () => {
   // Gestion dynamique de la favicon et du titre
   useFavicon(domainConfig.favicon);
   useDocumentTitle(domainConfig.title);
+  useMetaDescription(domainConfig.description);
+  useCanonicalUrl();
 
   // Hook pour les notifications toast
   const { toasts, addToast, removeToast } = useToast();

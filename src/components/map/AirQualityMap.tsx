@@ -2,13 +2,13 @@ import React, { useEffect, useState, useCallback, useRef, useMemo } from "react"
 import { useTranslation } from "react-i18next";
 import {
   MapContainer,
-  TileLayer,
   Marker,
   Popup,
   useMapEvents,
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import "maplibre-gl/dist/maplibre-gl.css";
 import "geoportal-extensions-leaflet";
 import "leaflet-velocity";
 import "leaflet-velocity/dist/leaflet-velocity.css";
@@ -34,6 +34,7 @@ import CustomSearchControl from "../controls/CustomSearchControl";
 import ScaleControl from "../controls/ScaleControl";
 import NorthArrow from "../controls/NorthArrow";
 import Legend from "./Legend";
+import MapReadyNotifier from "./MapReadyNotifier";
 import MobileAirRoutes from "./MobileAirRoutes";
 import CustomSpiderfiedMarkers from "./CustomSpiderfiedMarkers";
 import CustomSpiderfiedSignalAirMarkers from "./CustomSpiderfiedSignalAirMarkers";
@@ -218,6 +219,10 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
   const [spiderfyConfig, setSpiderfyConfig] = useState(defaultSpiderfyConfig);
   const [currentBaseLayer, setCurrentBaseLayer] =
     useState<BaseLayerKey>("Carte standard");
+  const [mapReadyVersion, setMapReadyVersion] = useState(0);
+  const handleMapReady = useCallback(() => {
+    setMapReadyVersion((v) => v + 1);
+  }, []);
   const [isCommunalLayerEnabled, setIsCommunalLayerEnabled] = useState(false);
   const [isEffisHotspotsEnabled, setIsEffisHotspotsEnabled] = useState(false);
   const [isEffisBurnedAreasEnabled, setIsEffisBurnedAreasEnabled] =
@@ -256,6 +261,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
 
   const mapLayers = useMapLayers({
     mapRef: mapView.mapRef,
+    mapReadyVersion,
     currentBaseLayer,
     selectedTimeStep,
     selectedPollutant,
@@ -929,16 +935,10 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           <MapClickHandler
             onMapClick={() => setSearchPinPosition(null)}
           />
+          <MapReadyNotifier onReady={handleMapReady} />
           {onMapViewChange && (
             <MapViewSyncHandler onViewChange={onMapViewChange} />
           )}
-          {/* Fond de carte initial */}
-          <TileLayer
-            attribution='&copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png"
-            minZoom={0}
-            maxZoom={20}
-          />
 
           {/* Contrôle d'échelle */}
           <ScaleControl

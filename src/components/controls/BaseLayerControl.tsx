@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { baseLayers, BaseLayerKey } from "../../constants/mapLayers";
+import { BASE_LAYER_KEYS, BaseLayerKey } from "../../constants/mapLayers";
 import { featureFlags } from "../../config/featureFlags";
 
 const BASE_LAYER_I18N_KEYS: Record<BaseLayerKey, string> = {
@@ -143,7 +143,7 @@ const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
       {isOpen && (
         <div className="absolute z-[2000] w-auto min-w-full mb-1 bg-white/95 backdrop-blur-sm border border-gray-200/50 rounded-md shadow-sm bottom-full">
           <div className="p-1">
-            {Object.keys(baseLayers).map((layerKey) => (
+            {BASE_LAYER_KEYS.map((layerKey) => (
               <button
                 key={layerKey}
                 type="button"
