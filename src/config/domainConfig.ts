@@ -35,6 +35,8 @@ export interface DomainConfig {
   /** Emprise [sud, ouest] / [nord, est] pour limiter les overlays WMS (région Sud) */
   mapBounds: [[number, number], [number, number]];
   title: string;
+  /** Titre long utilisé uniquement pour <title>/document.title. Si absent, `title` sert de repli (voir useDocumentTitle). */
+  seoTitle?: string;
   /** Utilisée pour <meta name="description"> — garder ~150-160 caractères pour un bon rendu dans les résultats de recherche */
   description: string;
   links: {
@@ -66,6 +68,18 @@ const defaultConfig: DomainConfig = {
     about: 'https://atmosud.org/a-propos',
   },
   organization: 'AtmoSud',
+};
+
+// Contenu distinct du "default" pour que Google cesse de traiter cette instance
+// comme un doublon d'openairmap.fr (même titre/description = même config avant ce fix).
+// Le bloc `legal` (mentions légales AtmoSud) vit uniquement ici : les autres domaines
+// (openairmap.fr, etc.) ne sont pas opérés par AtmoSud et ne doivent pas l'afficher.
+const atmosudConfig: DomainConfig = {
+  ...defaultConfig,
+  title: "OpenAirMap",
+  seoTitle: "OpenAirMap – Qualité de l'air en temps réel en région Sud | AtmoSud",
+  description:
+    "Carte interactive de la qualité de l'air en région Provence-Alpes-Côte d'Azur : stations de mesure officielles et microcapteurs citoyens NebuleAir, données en temps réel proposées par AtmoSud.",
   legal: {
     siret: '10795525400019',
     legalForm: 'Association loi 1901',
@@ -91,15 +105,6 @@ const defaultConfig: DomainConfig = {
     vatNumber: 'FR40107955254',
     privacyPolicyUrl: 'https://www.atmosud.org/article/politique-de-confidentialite',
   },
-};
-
-// Contenu distinct du "default" pour que Google cesse de traiter cette instance
-// comme un doublon d'openairmap.fr (même titre/description = même config avant ce fix).
-const atmosudConfig: DomainConfig = {
-  ...defaultConfig,
-  title: "OpenAirMap – Qualité de l'air en temps réel en région Sud | AtmoSud",
-  description:
-    "Carte interactive de la qualité de l'air en région Provence-Alpes-Côte d'Azur : stations de mesure officielles et microcapteurs citoyens NebuleAir, données en temps réel proposées par AtmoSud.",
 };
 
 export const DOMAIN_CONFIG: Record<string, DomainConfig> = {

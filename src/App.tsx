@@ -87,7 +87,7 @@ const AppContent: React.FC = () => {
 
   // Gestion dynamique de la favicon et du titre
   useFavicon(domainConfig.favicon);
-  useDocumentTitle(domainConfig.title);
+  useDocumentTitle(domainConfig.seoTitle ?? domainConfig.title);
   useMetaDescription(domainConfig.description);
   useCanonicalUrl();
 
