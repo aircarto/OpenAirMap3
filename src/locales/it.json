@@ -503,6 +503,9 @@
     "episodesCount_other": "{{count}} episodi di inquinamento trovati per questo inquinante",
     "loadError": "Impossibile caricare gli episodi di inquinamento"
   },
+  "aboutPanel": {
+    "summary": "Informazioni su questa mappa"
+  },
   "infoModal": {
     "consolidatedData": "Dati consolidati",
     "welcome": "Benvenuto su OpenAirMap",

@@ -489,6 +489,9 @@
     "episodesCount_other": "{{count}} épisodes de pollution trouvés pour ce polluant",
     "loadError": "Impossible de charger les épisodes de pollution"
   },
+  "aboutPanel": {
+    "summary": "À propos de cette carte"
+  },
   "infoModal": {
     "consolidatedData": "Données consolidées",
     "welcome": "Bienvenue sur OpenAirMap",

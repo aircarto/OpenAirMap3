@@ -12,6 +12,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import "geoportal-extensions-leaflet";
 import "leaflet-velocity";
 import "leaflet-velocity/dist/leaflet-velocity.css";
+import { DomainConfig } from "../../config/domainConfig";
 
 // Déclaration de type pour l'extension Geoportal
 declare module "leaflet" {
@@ -141,6 +142,8 @@ interface AirQualityMapProps {
   isHistoricalDatePanelVisible?: boolean;
   /** Callback quand l'utilisateur déplace ou zoome la carte */
   onMapViewChange?: (center: [number, number], zoom: number) => void;
+  /** Emprise de l'instance courante (voir DomainConfig.mapBounds) — limite les couches EFFIS */
+  mapBounds: DomainConfig["mapBounds"];
 }
 
 const defaultSpiderfyConfig = {
@@ -213,6 +216,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
   historicalPlaybackDate,
   isHistoricalDatePanelVisible = false,
   onMapViewChange,
+  mapBounds,
 }) => {
   const { t } = useTranslation();
   // Configuration du spiderfier
@@ -269,6 +273,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
     isCommunalLayerEnabled,
     isEffisHotspotsEnabled,
     isEffisBurnedAreasEnabled,
+    mapBounds,
   });
 
   const wildfire = useWildfireLayer(isWildfireLayerEnabledByControl);

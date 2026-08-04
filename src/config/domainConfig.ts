@@ -39,6 +39,8 @@ export interface DomainConfig {
   seoTitle?: string;
   /** Utilisée pour <meta name="description"> — garder ~150-160 caractères pour un bon rendu dans les résultats de recherche */
   description: string;
+  /** Date (YYYY-MM-DD) de la première mesure exploitable du réseau propre à cette instance, pour temporalCoverage (JSON-LD). Ne pas renseigner si inconnue pour l'instance. */
+  earliestMeasurementDate?: string;
   links: {
     website: string;
     contact: string;
@@ -52,12 +54,12 @@ const defaultConfig: DomainConfig = {
   logo: './logo_atmosud_inspirer_ok_web.png',
   logo2: './LogoAirCarto.png',
   favicon: './AtmoFavicon.png',
-  mapCenter: [43.7102, 7.262], // Nice
-  mapZoom: 9,
-  // PACA (04, 05, 06, 13, 83, 84) avec marge
+  mapCenter: [46.6, 2.5], // Centre approximatif de la France métropolitaine
+  mapZoom: 6,
+  // France métropolitaine avec marge (hors DROM-COM)
   mapBounds: [
-    [42.85, 4.0],
-    [45.25, 7.95],
+    [41.3, -5.2],
+    [51.1, 9.6],
   ],
   title: 'OpenAirMap',
   seoTitle: "OpenAirMap – Qualité de l'air en temps réel | AtmoSud",
@@ -93,19 +95,32 @@ const defaultConfig: DomainConfig = {
     contact: 'https://atmosud.org/contact',
     about: 'https://atmosud.org/a-propos',
   },
-  organization: 'AtmoSud',
+  organization: 'AtmoSud et AirCarto',
 };
 
 // Contenu distinct du "default" pour que Google cesse de traiter cette instance
 // comme un doublon d'openairmap.fr (même titre/description = même config avant ce fix).
 // Le bloc `legal` (mentions légales AtmoSud) vit uniquement ici : les autres domaines
 // (openairmap.fr, etc.) ne sont pas opérés par AtmoSud et ne doivent pas l'afficher.
+// mapCenter/mapZoom/mapBounds et organization sont explicitement redéfinis (pas hérités
+// de defaultConfig, désormais recentré sur la France) : cf. src/App.tsx (résolution par
+// hostname) et src/services/EffisLayerService.ts (REGION_SUD_BOUNDS) qui en dépendent.
 const atmosudConfig: DomainConfig = {
   ...defaultConfig,
+  mapCenter: [43.7102, 7.262], // Nice
+  mapZoom: 9,
+  // PACA (04, 05, 06, 13, 83, 84) avec marge
+  mapBounds: [
+    [42.85, 4.0],
+    [45.25, 7.95],
+  ],
   title: "OpenAirMap",
   seoTitle: "OpenAirMap – Qualité de l'air en temps réel en région Sud | AtmoSud",
   description:
     "Carte interactive de la qualité de l'air en région Provence-Alpes-Côte d'Azur : stations de mesure officielles et microcapteurs citoyens NebuleAir, données en temps réel proposées par AtmoSud.",
+  organization: 'AtmoSud',
+  // Première mesure exploitable du réseau AtmoSud (station de référence la plus ancienne).
+  earliestMeasurementDate: '2007-05-22',
   legal: {
     siret: '10795525400019',
     legalForm: 'Association loi 1901',

@@ -1,5 +1,8 @@
 import L from 'leaflet';
-import { DOMAIN_CONFIG } from '../config/domainConfig';
+import { DomainConfig } from '../config/domainConfig';
+
+/** Emprise carte d'une instance (voir DomainConfig.mapBounds) — passée par l'appelant, pas supposée fixe. */
+type MapBounds = DomainConfig['mapBounds'];
 
 /** GWIS expose les couches temporelles (today / week / month / season) — WMS + WFS hotspots */
 const EFFIS_GWIS_BASE_URL = 'https://maps.effis.emergency.copernicus.eu/gwis';
@@ -15,19 +18,22 @@ const EFFIS_BURNED_AREAS_TYPENAME = 'ms:modis.ba.poly.season';
 /** Plafond requis côté serveur EFFIS (évite 500 / timeout) */
 const EFFIS_BURNED_AREAS_MAX_FEATURES = 500;
 
-/** Emprise région Sud — Leaflet ne charge les tuiles WMS que dans ces bounds */
-const REGION_SUD_BOUNDS = L.latLngBounds(DOMAIN_CONFIG.default.mapBounds);
-
-const commonWmsOptions: L.WMSOptions = {
-  format: 'image/png',
-  transparent: true,
-  version: '1.1.1',
-  opacity: 0.85,
-  minZoom: 1,
-  maxZoom: 18,
-  pane: 'overlayPane',
-  bounds: REGION_SUD_BOUNDS,
-};
+/**
+ * Options WMS communes pour l'emprise de l'instance courante — Leaflet ne
+ * charge les tuiles WMS que dans ces bounds.
+ */
+function buildWmsOptions(mapBounds: MapBounds): L.WMSOptions {
+  return {
+    format: 'image/png',
+    transparent: true,
+    version: '1.1.1',
+    opacity: 0.85,
+    minZoom: 1,
+    maxZoom: 18,
+    pane: 'overlayPane',
+    bounds: L.latLngBounds(mapBounds),
+  };
+}
 
 const burnedAreaStyle: L.PathOptions = {
   color: '#c2410c',
@@ -87,8 +93,8 @@ const HOTSPOT_SATELLITE_LABELS: Record<string, string> = {
 /**
  * Construit le BBOX WFS 1.1.0 (minLon,minLat,maxLon,maxLat) depuis mapBounds
  */
-function getRegionSudBbox(): string {
-  const [[south, west], [north, east]] = DOMAIN_CONFIG.default.mapBounds;
+function getBbox(mapBounds: MapBounds): string {
+  const [[south, west], [north, east]] = mapBounds;
   return `${west},${south},${east},${north}`;
 }
 
@@ -221,24 +227,28 @@ function buildHotspotPopupHtml(props: EffisHotspotProperties): string {
  * Cree un layer WMS Leaflet affichant les feux actifs EFFIS (7 derniers jours)
  * Conservé comme repli si le WFS échoue
  */
-export function createEffisHotspotsWmsLayer(): L.TileLayer.WMS {
+export function createEffisHotspotsWmsLayer(
+  mapBounds: MapBounds
+): L.TileLayer.WMS {
   return L.tileLayer.wms(EFFIS_GWIS_BASE_URL, {
-    ...commonWmsOptions,
+    ...buildWmsOptions(mapBounds),
     layers: EFFIS_HOTSPOTS_LAYER,
     attribution: 'Copernicus EFFIS',
   });
 }
 
 /**
- * Charge les points de chaleur (7 jours) via WFS GeoJSON GWIS sur l'emprise region Sud
+ * Charge les points de chaleur (7 jours) via WFS GeoJSON GWIS sur l'emprise de l'instance courante
  */
-export async function createEffisHotspotsGeoJSONLayer(): Promise<L.GeoJSON> {
+export async function createEffisHotspotsGeoJSONLayer(
+  mapBounds: MapBounds
+): Promise<L.GeoJSON> {
   const wfsUrl = new URL(EFFIS_GWIS_BASE_URL);
   wfsUrl.searchParams.set('SERVICE', 'WFS');
   wfsUrl.searchParams.set('VERSION', '1.1.0');
   wfsUrl.searchParams.set('REQUEST', 'GetFeature');
   wfsUrl.searchParams.set('TYPENAME', EFFIS_HOTSPOTS_WFS_TYPENAME);
-  wfsUrl.searchParams.set('BBOX', getRegionSudBbox());
+  wfsUrl.searchParams.set('BBOX', getBbox(mapBounds));
   wfsUrl.searchParams.set('OUTPUTFORMAT', 'geojson');
   wfsUrl.searchParams.set(
     'MAXFEATURES',
@@ -281,15 +291,17 @@ export async function createEffisHotspotsGeoJSONLayer(): Promise<L.GeoJSON> {
 }
 
 /**
- * Charge les zones brulees de la saison via WFS (GeoJSON) sur l'emprise region Sud
+ * Charge les zones brulees de la saison via WFS (GeoJSON) sur l'emprise de l'instance courante
  */
-export async function createEffisBurnedAreasGeoJSONLayer(): Promise<L.GeoJSON> {
+export async function createEffisBurnedAreasGeoJSONLayer(
+  mapBounds: MapBounds
+): Promise<L.GeoJSON> {
   const wfsUrl = new URL(EFFIS_WFS_BASE_URL);
   wfsUrl.searchParams.set('SERVICE', 'WFS');
   wfsUrl.searchParams.set('VERSION', '1.1.0');
   wfsUrl.searchParams.set('REQUEST', 'GetFeature');
   wfsUrl.searchParams.set('TYPENAME', EFFIS_BURNED_AREAS_TYPENAME);
-  wfsUrl.searchParams.set('BBOX', getRegionSudBbox());
+  wfsUrl.searchParams.set('BBOX', getBbox(mapBounds));
   wfsUrl.searchParams.set('OUTPUTFORMAT', 'geojson');
   wfsUrl.searchParams.set(
     'MAXFEATURES',

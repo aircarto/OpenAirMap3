@@ -13,12 +13,13 @@ import { useFavicon } from "./hooks/useFavicon";
 import { useDocumentTitle } from "./hooks/useDocumentTitle";
 import { useMetaDescription } from "./hooks/useMetaDescription";
 import { useCanonicalUrl } from "./hooks/useCanonicalUrl";
+import { useStructuredData } from "./hooks/useStructuredData";
 import {
   isPollutantSupportedForTimeStep,
   getSupportedPollutantsForTimeStep,
 } from "./constants/pollutants";
 import { pasDeTemps, isHistoricalModeAllowedForTimeStep } from "./constants/timeSteps";
-import { DOMAIN_CONFIG } from "./config/domainConfig";
+import { getConfigForDomain } from "./config/domainConfig";
 import {
   buildAppUrlDefaults,
   parseAppUrlParams,
@@ -35,6 +36,7 @@ import MobileMenuBurger from "./components/controls/MobileMenuBurger";
 import ModelingLayerControl from "./components/controls/ModelingLayerControl";
 import SpecialSourceHeaderDropdown from "./components/controls/SpecialSourceHeaderDropdown";
 import InformationModal from "./components/modals/InformationModal";
+import AboutPanel from "./components/AboutPanel";
 import { ModelingLayerType } from "./constants/mapLayers";
 import { useToast } from "./hooks/useToast";
 import { ToastContainer } from "./components/ui/toast";
@@ -66,9 +68,10 @@ const DEFAULT_ATMOMICRO_MAINTENANCE_BANNER: AtmoMicroMaintenanceBannerConfig = {
 };
 
 const getInitialAppUrlParams = (): AppUrlParams => {
+  const domainConfig = getConfigForDomain(window.location.hostname);
   const defaults = buildAppUrlDefaults({
-    mapCenter: DOMAIN_CONFIG.default.mapCenter,
-    mapZoom: DOMAIN_CONFIG.default.mapZoom,
+    mapCenter: domainConfig.mapCenter,
+    mapZoom: domainConfig.mapZoom,
   });
   return parseAppUrlParams(window.location.search, defaults);
 };
@@ -90,6 +93,7 @@ const AppContent: React.FC = () => {
   useDocumentTitle(domainConfig.seoTitle ?? domainConfig.title);
   useMetaDescription(domainConfig.description);
   useCanonicalUrl();
+  useStructuredData(domainConfig);
 
   // Hook pour les notifications toast
   const { toasts, addToast, removeToast } = useToast();
@@ -750,6 +754,8 @@ const AppContent: React.FC = () => {
         )}
       </header>
 
+      <AboutPanel domainConfig={domainConfig} />
+
       {/* Carte en plein écran */}
       <main id="main-content" className="flex-1 relative" tabIndex={-1}>
         {shouldShowAtmoMicroOutageBanner && (
@@ -810,6 +816,7 @@ const AppContent: React.FC = () => {
           reports={reportsForMap}
           center={mapCenter}
           zoom={mapZoom}
+          mapBounds={domainConfig.mapBounds}
           onMapViewChange={handleMapViewChange}
           selectedPollutant={selectedPollutant}
           selectedSources={selectedSources}

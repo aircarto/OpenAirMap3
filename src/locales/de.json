@@ -503,6 +503,9 @@
     "episodesCount_other": "{{count}} Schadstoffepisoden für diesen Schadstoff gefunden",
     "loadError": "Schadstoffepisoden konnten nicht geladen werden"
   },
+  "aboutPanel": {
+    "summary": "Über diese Karte"
+  },
   "infoModal": {
     "consolidatedData": "Konsolidierte Daten",
     "welcome": "Willkommen bei OpenAirMap",

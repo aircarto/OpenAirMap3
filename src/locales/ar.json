@@ -503,6 +503,9 @@
     "episodesCount_other": "تم العثور على {{count}} حلقات تلوث لهذا الملوث",
     "loadError": "تعذر تحميل حلقات التلوث"
   },
+  "aboutPanel": {
+    "summary": "حول هذه الخريطة"
+  },
   "infoModal": {
     "consolidatedData": "البيانات الموحدة",
     "welcome": "مرحباً بك في OpenAirMap",

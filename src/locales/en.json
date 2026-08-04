@@ -503,6 +503,9 @@
     "episodesCount_other": "{{count}} pollution episodes found for this pollutant",
     "loadError": "Unable to load pollution episodes"
   },
+  "aboutPanel": {
+    "summary": "About this map"
+  },
   "infoModal": {
     "consolidatedData": "Consolidated data",
     "welcome": "Welcome to OpenAirMap",

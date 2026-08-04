@@ -23,6 +23,7 @@ import {
   createEffisBurnedAreasGeoJSONLayer,
   getEffisHotspotsLegendUrl,
 } from "../../../services/EffisLayerService";
+import { DomainConfig } from "../../../config/domainConfig";
 
 const EFFIS_REDRAW_INTERVAL_MS = 10 * 60 * 1000; // 10 min : fenetre glissante 7 jours
 
@@ -37,6 +38,8 @@ interface UseMapLayersProps {
   isCommunalLayerEnabled: boolean;
   isEffisHotspotsEnabled: boolean;
   isEffisBurnedAreasEnabled: boolean;
+  /** Emprise de l'instance courante (voir DomainConfig.mapBounds) — les couches EFFIS s'y limitent */
+  mapBounds: DomainConfig["mapBounds"];
 }
 
 export const useMapLayers = ({
@@ -49,6 +52,7 @@ export const useMapLayers = ({
   isCommunalLayerEnabled,
   isEffisHotspotsEnabled,
   isEffisBurnedAreasEnabled,
+  mapBounds,
 }: UseMapLayersProps) => {
   const [currentTileLayer, setCurrentTileLayer] = useState<L.Layer | null>(
     null
@@ -316,7 +320,7 @@ export const useMapLayers = ({
     const addWmsFallback = () => {
       if (isCancelled || !map) return;
       removeHotspotsLayer();
-      const wmsLayer = createEffisHotspotsWmsLayer();
+      const wmsLayer = createEffisHotspotsWmsLayer(mapBounds);
       wmsLayer.addTo(map);
       effisHotspotsLayerRef.current = wmsLayer;
       setCurrentEffisHotspotsLegendUrl(getEffisHotspotsLegendUrl());
@@ -325,7 +329,7 @@ export const useMapLayers = ({
     const loadHotspotsWfs = async () => {
       setIsEffisHotspotsLoading(true);
       try {
-        const geoJsonLayer = await createEffisHotspotsGeoJSONLayer();
+        const geoJsonLayer = await createEffisHotspotsGeoJSONLayer(mapBounds);
         if (isCancelled || !map) return;
         removeHotspotsLayer();
         geoJsonLayer.addTo(map);
@@ -370,7 +374,7 @@ export const useMapLayers = ({
       removeHotspotsLayer();
       setCurrentEffisHotspotsLegendUrl(null);
     };
-  }, [isEffisHotspotsEnabled, mapRef]);
+  }, [isEffisHotspotsEnabled, mapRef, mapBounds]);
 
   // Effet pour gérer la couche EFFIS zones brûlées (WFS GeoJSON)
   useEffect(() => {
@@ -387,7 +391,7 @@ export const useMapLayers = ({
 
     if (isEffisBurnedAreasEnabled) {
       setIsEffisBurnedAreasLoading(true);
-      createEffisBurnedAreasGeoJSONLayer()
+      createEffisBurnedAreasGeoJSONLayer(mapBounds)
         .then((burnedAreasLayer) => {
           if (!isCancelled && map) {
             burnedAreasLayer.addTo(map);
@@ -415,7 +419,7 @@ export const useMapLayers = ({
       }
       setCurrentEffisBurnedAreasLegendUrl(null);
     };
-  }, [isEffisBurnedAreasEnabled, mapRef]);
+  }, [isEffisBurnedAreasEnabled, mapRef, mapBounds]);
 
   return {
     currentTileLayer,
