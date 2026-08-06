@@ -2,13 +2,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { driver, type Driver } from "driver.js";
 import { useTranslation } from "react-i18next";
 import { buildHistoricalModeTourSteps } from "../config/tours/historicalModeTour";
+import { buildAppOverviewTourSteps } from "../config/tours/globalAppTour";
 import {
   isTourCompleted,
   markTourCompleted,
   resetTourCompletion,
 } from "../config/tours/tourStorage";
 import {
-  HISTORICAL_TOUR_STEP,
   type HistoricalTourStepIndex,
   type TourId,
 } from "../config/tours/types";
@@ -69,7 +69,7 @@ export const useFeatureTour = (): UseFeatureTourResult => {
       const steps =
         tourId === "historical_mode"
           ? buildHistoricalModeTourSteps(t)
-          : [];
+          : buildAppOverviewTourSteps(t);
 
       const instance = driver({
         animate: !prefersReducedMotion(),
@@ -87,9 +87,7 @@ export const useFeatureTour = (): UseFeatureTourResult => {
         popoverClass: "openairmap-tour-popover",
         steps,
         onCloseClick: (_element, _step, { driver: activeDriver }) => {
-          const stepIndex = activeDriver.getActiveIndex();
-          const isLastStep = stepIndex === HISTORICAL_TOUR_STEP.playback;
-          stopTour({ skipped: !isLastStep });
+          stopTour({ skipped: !activeDriver.isLastStep() });
         },
         onDestroyed: () => {
           activeTourIdRef.current = null;
@@ -109,25 +107,6 @@ export const useFeatureTour = (): UseFeatureTourResult => {
               locale: i18n.language,
             });
           }
-        },
-        onPopoverRender: (popover) => {
-          const existingSkip = popover.footer.querySelector(
-            ".openairmap-tour-skip-btn"
-          );
-          if (existingSkip) {
-            return;
-          }
-
-          const skipButton = document.createElement("button");
-          skipButton.type = "button";
-          skipButton.className =
-            "driver-popover-skip-btn openairmap-tour-skip-btn";
-          skipButton.textContent = t("tour.common.skip");
-          skipButton.addEventListener("click", () => {
-            stopTour({ skipped: true });
-          });
-
-          popover.footerButtons.prepend(skipButton);
         },
       });
 
@@ -150,7 +129,7 @@ export const useFeatureTour = (): UseFeatureTourResult => {
       driverRef.current = instance;
       activeTourIdRef.current = tourId;
       setActiveTourId(tourId);
-      setActiveStepIndex(HISTORICAL_TOUR_STEP.discovery);
+      setActiveStepIndex(0);
 
       trackFeatureUsage(options?.replay ? "tour_replayed" : "tour_started", {
         tourId,

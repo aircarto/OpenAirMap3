@@ -717,6 +717,32 @@
         "title": "Controles de reproducción",
         "description": "Use reproducción/pausa, la línea de tiempo y la velocidad para navegar en el tiempo. Este panel es movible; reabra el calendario con el icono superior derecho."
       }
+    },
+    "global": {
+      "welcome": {
+        "title": "[Por redactar] Bienvenida",
+        "description": "[Por redactar]"
+      },
+      "pollutant": {
+        "title": "[Por redactar] Selector de contaminante",
+        "description": "[Por redactar]"
+      },
+      "sources": {
+        "title": "[Por redactar] Fuentes y redes",
+        "description": "[Por redactar]"
+      },
+      "timeStep": {
+        "title": "[Por redactar] Paso de tiempo",
+        "description": "[Por redactar]"
+      },
+      "search": {
+        "title": "[Por redactar] Búsqueda",
+        "description": "[Por redactar]"
+      },
+      "legend": {
+        "title": "[Por redactar] Leyenda",
+        "description": "[Por redactar]"
+      }
     }
   }
 }

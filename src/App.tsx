@@ -51,6 +51,8 @@ import {
 } from "./services/analyticsService";
 import { FeatureTourProvider } from "./components/tour/FeatureTourProvider";
 import HistoricalModeTourController from "./components/tour/HistoricalModeTourController";
+import GlobalAppTourController from "./components/tour/GlobalAppTourController";
+import TourReplayButton from "./components/tour/TourReplayButton";
 
 interface AtmoMicroMaintenanceBannerConfig {
   enabled: boolean;
@@ -731,6 +733,7 @@ const AppContent: React.FC = () => {
               )}
             >
               <LanguageSwitcher />
+              <TourReplayButton tourId="app_overview" iconOnly />
               <button
                 type="button"
                 onClick={() => setIsInfoModalOpen(true)}
@@ -936,6 +939,7 @@ const AppContent: React.FC = () => {
         hasHistoricalData={hasHistoricalData}
         isDatePanelVisible={isDatePanelVisible}
       />
+      <GlobalAppTourController />
     </div>
   );
 };

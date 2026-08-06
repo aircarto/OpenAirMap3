@@ -480,11 +480,6 @@
   color: #6b7280;
 }
 
-.driver-popover.openairmap-tour-popover .driver-popover-skip-btn {
-  color: #6b7280;
-  font-size: 0.8125rem;
-}
-
 .driver-active-element,
 .driver-overlay {
   z-index: 3400 !important;

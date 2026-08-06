@@ -717,6 +717,32 @@
         "title": "Controlli di riproduzione",
         "description": "Usa play/pausa, la timeline e la velocità per navigare nel tempo. Questo pannello è trascinabile; riapri il calendario con l'icona in alto a destra."
       }
+    },
+    "global": {
+      "welcome": {
+        "title": "[Da scrivere] Benvenuto",
+        "description": "[Da scrivere]"
+      },
+      "pollutant": {
+        "title": "[Da scrivere] Selettore inquinante",
+        "description": "[Da scrivere]"
+      },
+      "sources": {
+        "title": "[Da scrivere] Fonti e reti",
+        "description": "[Da scrivere]"
+      },
+      "timeStep": {
+        "title": "[Da scrivere] Passo temporale",
+        "description": "[Da scrivere]"
+      },
+      "search": {
+        "title": "[Da scrivere] Ricerca",
+        "description": "[Da scrivere]"
+      },
+      "legend": {
+        "title": "[Da scrivere] Legenda",
+        "description": "[Da scrivere]"
+      }
     }
   }
 }

@@ -508,7 +508,11 @@ const CustomSearchControl: React.FC<CustomSearchControlProps> = ({
   };
 
   return (
-    <div className="absolute top-4 right-4 z-[800]" ref={containerRef}>
+    <div
+      className="absolute top-4 right-4 z-[800]"
+      ref={containerRef}
+      data-tour="global-search"
+    >
       <div className="relative">
         {/* Mode compact : juste la loupe */}
         {!isExpanded && (

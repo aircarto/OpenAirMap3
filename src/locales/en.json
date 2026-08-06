@@ -717,6 +717,32 @@
         "title": "Playback controls",
         "description": "Use play/pause, the timeline and speed to navigate through time. This panel is draggable; reopen the calendar via the icon at the top right."
       }
+    },
+    "global": {
+      "welcome": {
+        "title": "[TBD] Welcome",
+        "description": "[TBD]"
+      },
+      "pollutant": {
+        "title": "[TBD] Pollutant selector",
+        "description": "[TBD]"
+      },
+      "sources": {
+        "title": "[TBD] Sources and networks",
+        "description": "[TBD]"
+      },
+      "timeStep": {
+        "title": "[TBD] Time step",
+        "description": "[TBD]"
+      },
+      "search": {
+        "title": "[TBD] Search",
+        "description": "[TBD]"
+      },
+      "legend": {
+        "title": "[TBD] Legend",
+        "description": "[TBD]"
+      }
     }
   }
 }

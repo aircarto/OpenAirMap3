@@ -89,6 +89,7 @@ const Legend: React.FC<LegendProps> = ({
   return (
     <div
       className={`${getLegendPosition()} z-[1000] transition-all duration-300 ease-in-out max-w-[95vw] md:max-w-none ${visibilityClass}`}
+      data-tour="global-legend"
     >
       <div className="bg-white/90 backdrop-blur-sm rounded-md shadow-sm border border-gray-200/50 px-2 py-1.5 lg:px-3 lg:py-2">
         {/* Grille des seuils - verticale sur mobile et petits écrans, horizontale sur grands écrans */}

@@ -1,4 +1,4 @@
-export type TourId = "historical_mode";
+export type TourId = "historical_mode" | "app_overview";
 
 export interface TourCompletionRecord {
   completedAt: string;
@@ -15,6 +15,11 @@ export const TOUR_SELECTORS = {
   historicalDateRange: '[data-tour="historical-date-range"]',
   historicalLoadData: '[data-tour="historical-load-data"]',
   historicalPlayback: '[data-tour="historical-playback"]',
+  globalPollutant: '[data-tour="global-pollutant"]',
+  globalSources: '[data-tour="global-sources"]',
+  globalTimeStep: '[data-tour="global-timestep"]',
+  globalSearch: '[data-tour="global-search"]',
+  globalLegend: '[data-tour="global-legend"]',
 } as const;
 
 export const HISTORICAL_TOUR_STEP = {
@@ -27,3 +32,15 @@ export const HISTORICAL_TOUR_STEP = {
 
 export type HistoricalTourStepIndex =
   (typeof HISTORICAL_TOUR_STEP)[keyof typeof HISTORICAL_TOUR_STEP];
+
+export const APP_OVERVIEW_TOUR_STEP = {
+  welcome: 0,
+  pollutant: 1,
+  sources: 2,
+  timeStep: 3,
+  search: 4,
+  legend: 5,
+} as const;
+
+export type AppOverviewTourStepIndex =
+  (typeof APP_OVERVIEW_TOUR_STEP)[keyof typeof APP_OVERVIEW_TOUR_STEP];

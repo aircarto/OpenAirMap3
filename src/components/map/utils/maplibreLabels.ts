@@ -39,6 +39,76 @@ export const applyFrenchLabels = (map: MaplibreMap): void => {
 };
 
 /**
+ * Applique un facteur d'échelle à une valeur `text-size`.
+ *
+ * On ne peut pas simplement envelopper l'expression dans `['*', expr, scale]` :
+ * MapLibre n'autorise `['zoom']` qu'en entrée directe d'un `step`/`interpolate`
+ * de premier niveau. Le facteur est donc appliqué aux valeurs de sortie
+ * (stops) de l'expression, pas à l'expression elle-même.
+ *
+ * Renvoie `null` quand la valeur n'est pas reconnue et dépend du zoom : mieux
+ * vaut laisser la taille d'origine qu'émettre un style invalide.
+ */
+const scaleTextSize = (value: unknown, scale: number): unknown | null => {
+  if (typeof value === 'number') return value * scale;
+
+  if (Array.isArray(value)) {
+    const [operator] = value;
+
+    // ['interpolate', interpolation, input, stop, output, stop, output, …]
+    if (
+      operator === 'interpolate' ||
+      operator === 'interpolate-hcl' ||
+      operator === 'interpolate-lab'
+    ) {
+      const head = value.slice(0, 3);
+      const stops = value.slice(3);
+      const scaled: unknown[] = [];
+      for (let i = 0; i < stops.length; i += 2) {
+        const output = scaleTextSize(stops[i + 1], scale);
+        if (output === null) return null;
+        scaled.push(stops[i], output);
+      }
+      return [...head, ...scaled];
+    }
+
+    // ['step', input, defaultOutput, stop, output, stop, output, …]
+    if (operator === 'step') {
+      const fallback = scaleTextSize(value[2], scale);
+      if (fallback === null) return null;
+      const stops = value.slice(3);
+      const scaled: unknown[] = [];
+      for (let i = 0; i < stops.length; i += 2) {
+        const output = scaleTextSize(stops[i + 1], scale);
+        if (output === null) return null;
+        scaled.push(stops[i], output);
+      }
+      return [value[0], value[1], fallback, ...scaled];
+    }
+
+    // Expression non reconnue : sûre à multiplier seulement sans ['zoom']
+    return JSON.stringify(value).includes('"zoom"')
+      ? null
+      : ['*', value, scale];
+  }
+
+  // Style function historique : { base?, stops: [[zoom, size], …] }
+  if (value && typeof value === 'object' && 'stops' in value) {
+    const fn = value as { stops: [number, unknown][] };
+    if (!Array.isArray(fn.stops)) return null;
+    const stops: [number, unknown][] = [];
+    for (const [stop, output] of fn.stops) {
+      const scaled = scaleTextSize(output, scale);
+      if (scaled === null) return null;
+      stops.push([stop, scaled]);
+    }
+    return { ...fn, stops };
+  }
+
+  return null;
+};
+
+/**
  * Adoucit les labels de lieux (villes, villages, pays…) du style Positron :
  * taille réduite, gris, Regular à la place de Bold.
  */
@@ -53,11 +123,14 @@ export const softenPlaceLabels = (map: MaplibreMap): void => {
 
     const currentSize = map.getLayoutProperty(layer.id, 'text-size');
     if (currentSize != null) {
-      map.setLayoutProperty(layer.id, 'text-size', [
-        '*',
-        currentSize as ExpressionSpecification | number,
-        PLACE_LABEL_SIZE_SCALE,
-      ]);
+      const scaledSize = scaleTextSize(currentSize, PLACE_LABEL_SIZE_SCALE);
+      if (scaledSize !== null) {
+        map.setLayoutProperty(
+          layer.id,
+          'text-size',
+          scaledSize as ExpressionSpecification | number
+        );
+      }
     }
 
     const currentFont = map.getLayoutProperty(layer.id, 'text-font') as

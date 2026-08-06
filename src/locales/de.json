@@ -717,6 +717,32 @@
         "title": "Wiedergabesteuerung",
         "description": "Nutzen Sie Wiedergabe/Pause, die Zeitleiste und die Geschwindigkeit zur Navigation. Dieses Panel ist verschiebbar; öffnen Sie den Kalender über das Symbol oben rechts."
       }
+    },
+    "global": {
+      "welcome": {
+        "title": "[TBD] Willkommen",
+        "description": "[TBD]"
+      },
+      "pollutant": {
+        "title": "[TBD] Schadstoffauswahl",
+        "description": "[TBD]"
+      },
+      "sources": {
+        "title": "[TBD] Quellen und Netzwerke",
+        "description": "[TBD]"
+      },
+      "timeStep": {
+        "title": "[TBD] Zeitschritt",
+        "description": "[TBD]"
+      },
+      "search": {
+        "title": "[TBD] Suche",
+        "description": "[TBD]"
+      },
+      "legend": {
+        "title": "[TBD] Legende",
+        "description": "[TBD]"
+      }
     }
   }
 }

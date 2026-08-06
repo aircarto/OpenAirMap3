@@ -679,6 +679,32 @@
         "title": "Contrôles de lecture",
         "description": "Utilisez lecture/pause, la timeline et la vitesse pour naviguer dans le temps. Ce panneau est déplaçable ; rouvrez le calendrier via l'icône en haut à droite."
       }
+    },
+    "global": {
+      "welcome": {
+        "title": "[À rédiger] Bienvenue",
+        "description": "[À rédiger]"
+      },
+      "pollutant": {
+        "title": "[À rédiger] Sélecteur de polluant",
+        "description": "[À rédiger]"
+      },
+      "sources": {
+        "title": "[À rédiger] Sources et réseaux",
+        "description": "[À rédiger]"
+      },
+      "timeStep": {
+        "title": "[À rédiger] Pas de temps",
+        "description": "[À rédiger]"
+      },
+      "search": {
+        "title": "[À rédiger] Recherche",
+        "description": "[À rédiger]"
+      },
+      "legend": {
+        "title": "[À rédiger] Légende",
+        "description": "[À rédiger]"
+      }
     }
   }
 }
