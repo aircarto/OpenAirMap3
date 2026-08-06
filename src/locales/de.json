@@ -720,28 +720,28 @@
     },
     "global": {
       "welcome": {
-        "title": "[TBD] Willkommen",
-        "description": "[TBD]"
+        "title": "Willkommen bei OpenAirMap!",
+        "description": "Die Open-Source-Anwendung von AtmoSud und AirCarto zur Visualisierung der Luftqualitätsmessungen in Echtzeit."
       },
       "pollutant": {
-        "title": "[TBD] Schadstoffauswahl",
-        "description": "[TBD]"
+        "title": "Wählen Sie einen Schadstoff aus",
+        "description": "Wählen Sie den Schadstoff, den Sie auf der Karte anzeigen möchten"
       },
       "sources": {
-        "title": "[TBD] Quellen und Netzwerke",
-        "description": "[TBD]"
+        "title": "Wählen Sie die Quellen aus",
+        "description": "Wählen Sie das oder die Geräte aus, die als Quelle dienen sollen"
       },
       "timeStep": {
-        "title": "[TBD] Zeitschritt",
-        "description": "[TBD]"
+        "title": "Legen Sie den Zeitschritt fest",
+        "description": "Wählen Sie das Zeitintervall zwischen zwei Messungen"
       },
       "search": {
-        "title": "[TBD] Suche",
-        "description": "[TBD]"
+        "title": "Suchen Sie nach einer Adresse oder einer Station/einem Sensor",
+        "description": "Finden Sie schnell eine Adresse oder ein Messgerät"
       },
       "legend": {
-        "title": "[TBD] Legende",
-        "description": "[TBD]"
+        "title": "Legende",
+        "description": "Fahren Sie mit der Maus über die verschiedenen Qualitätsstufen, um die zugehörigen Konzentrationen zu erfahren"
       }
     }
   }

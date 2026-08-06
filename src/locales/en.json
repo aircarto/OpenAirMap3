@@ -720,28 +720,28 @@
     },
     "global": {
       "welcome": {
-        "title": "[TBD] Welcome",
-        "description": "[TBD]"
+        "title": "Welcome to OpenAirMap!",
+        "description": "The open-source application developed by AtmoSud and AirCarto to visualize real-time air quality measurements."
       },
       "pollutant": {
-        "title": "[TBD] Pollutant selector",
-        "description": "[TBD]"
+        "title": "Select a pollutant",
+        "description": "Choose the pollutant you want to display on the map"
       },
       "sources": {
-        "title": "[TBD] Sources and networks",
-        "description": "[TBD]"
+        "title": "Choose the sources",
+        "description": "Select the device(s) to use as a source"
       },
       "timeStep": {
-        "title": "[TBD] Time step",
-        "description": "[TBD]"
+        "title": "Set the time step",
+        "description": "Choose the time interval between two measurements"
       },
       "search": {
-        "title": "[TBD] Search",
-        "description": "[TBD]"
+        "title": "Search for an address or a station/sensor",
+        "description": "Quickly find an address or a measuring device"
       },
       "legend": {
-        "title": "[TBD] Legend",
-        "description": "[TBD]"
+        "title": "Legend",
+        "description": "Hover over the different quality levels to see their associated concentrations"
       }
     }
   }

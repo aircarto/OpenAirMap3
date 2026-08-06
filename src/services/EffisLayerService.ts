@@ -9,8 +9,8 @@ const EFFIS_GWIS_BASE_URL = 'https://maps.effis.emergency.copernicus.eu/gwis';
 /** Feux actifs sur les 7 derniers jours — aligné sur une fenêtre glissante de 7 jours (WMS) */
 const EFFIS_HOTSPOTS_LAYER = 'all.hs.week';
 /** Même couche en WFS GeoJSON (GWIS) */
-const EFFIS_HOTSPOTS_WFS_TYPENAME = 'ms:all.hs.week';
-const EFFIS_HOTSPOTS_MAX_FEATURES = 500;
+const EFFIS_HOTSPOTS_WFS_TYPENAME = 'ms:all.hs.today';
+const EFFIS_HOTSPOTS_MAX_FEATURES = 1000;
 
 /** Zones brûlées saison — WFS MapServer */
 const EFFIS_WFS_BASE_URL = 'https://maps.effis.emergency.copernicus.eu/effis';

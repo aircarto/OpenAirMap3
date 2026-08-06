@@ -720,28 +720,28 @@
     },
     "global": {
       "welcome": {
-        "title": "[Da scrivere] Benvenuto",
-        "description": "[Da scrivere]"
+        "title": "Benvenuto su OpenAirMap!",
+        "description": "L'applicazione open source sviluppata da AtmoSud e AirCarto per visualizzare le misurazioni della qualità dell'aria in tempo reale."
       },
       "pollutant": {
-        "title": "[Da scrivere] Selettore inquinante",
-        "description": "[Da scrivere]"
+        "title": "Seleziona un inquinante",
+        "description": "Scegli l'inquinante che vuoi visualizzare sulla mappa"
       },
       "sources": {
-        "title": "[Da scrivere] Fonti e reti",
-        "description": "[Da scrivere]"
+        "title": "Scegli le fonti",
+        "description": "Seleziona il o i dispositivi che fungeranno da fonte"
       },
       "timeStep": {
-        "title": "[Da scrivere] Passo temporale",
-        "description": "[Da scrivere]"
+        "title": "Imposta il passo temporale",
+        "description": "Scegli l'intervallo di tempo tra due misurazioni"
       },
       "search": {
-        "title": "[Da scrivere] Ricerca",
-        "description": "[Da scrivere]"
+        "title": "Cerca un indirizzo o una stazione/sensore",
+        "description": "Trova rapidamente un indirizzo o un dispositivo di misurazione"
       },
       "legend": {
-        "title": "[Da scrivere] Legenda",
-        "description": "[Da scrivere]"
+        "title": "Legenda",
+        "description": "Passa il mouse sui diversi livelli di qualità per conoscere le concentrazioni associate"
       }
     }
   }

@@ -720,28 +720,28 @@
     },
     "global": {
       "welcome": {
-        "title": "[Por redactar] Bienvenida",
-        "description": "[Por redactar]"
+        "title": "¡Bienvenido a OpenAirMap!",
+        "description": "La aplicación de código abierto desarrollada por AtmoSud y AirCarto para visualizar las mediciones de calidad del aire en tiempo real."
       },
       "pollutant": {
-        "title": "[Por redactar] Selector de contaminante",
-        "description": "[Por redactar]"
+        "title": "Seleccione un contaminante",
+        "description": "Elija el contaminante que desea mostrar en el mapa"
       },
       "sources": {
-        "title": "[Por redactar] Fuentes y redes",
-        "description": "[Por redactar]"
+        "title": "Elija las fuentes",
+        "description": "Seleccione el o los dispositivos que servirán de fuente"
       },
       "timeStep": {
-        "title": "[Por redactar] Paso de tiempo",
-        "description": "[Por redactar]"
+        "title": "Defina el paso de tiempo",
+        "description": "Elija el intervalo de tiempo entre dos mediciones"
       },
       "search": {
-        "title": "[Por redactar] Búsqueda",
-        "description": "[Por redactar]"
+        "title": "Busque una dirección o una estación/sensor",
+        "description": "Encuentre rápidamente una dirección o un dispositivo de medición"
       },
       "legend": {
-        "title": "[Por redactar] Leyenda",
-        "description": "[Por redactar]"
+        "title": "Leyenda",
+        "description": "Pase el ratón sobre los distintos calificativos para conocer las concentraciones asociadas"
       }
     }
   }
