@@ -7,7 +7,14 @@ export interface OverlayLegendItem {
   chipLabel: string;
   /** Titre affiché dans le détail */
   title: string;
-  imageUrl: string;
+  /** Légende servie par le service distant (GetLegendGraphic) */
+  imageUrl?: string;
+  /**
+   * Légende rendue localement. Nécessaire dès que le style est calculé côté client
+   * (points de chaleur : rayon proportionnel au FRP), cas où aucune image serveur
+   * ne décrirait fidèlement ce que la carte affiche.
+   */
+  content?: React.ReactNode;
   accentClass?: string;
 }
 
@@ -105,25 +112,29 @@ export const OverlayLegendsCard: React.FC<OverlayLegendsCardProps> = ({
             {expandedItem.title}
           </p>
           <div className="max-h-48 max-w-[280px] overflow-auto overscroll-contain rounded border border-gray-100 bg-gray-50/50 p-1">
-            {imageStatus === 'loading' && (
-              <p className="text-[11px] text-gray-400 px-1 py-2">
-                {t('baseLayer.overlayLegendsLoading')}
-              </p>
+            {expandedItem.content ?? (
+              <>
+                {imageStatus === 'loading' && (
+                  <p className="text-[11px] text-gray-400 px-1 py-2">
+                    {t('baseLayer.overlayLegendsLoading')}
+                  </p>
+                )}
+                {imageStatus === 'error' && (
+                  <p className="text-[11px] text-red-500 px-1 py-2">
+                    {t('baseLayer.overlayLegendsError')}
+                  </p>
+                )}
+                <img
+                  src={expandedItem.imageUrl}
+                  alt={expandedItem.title}
+                  className={`h-auto max-w-full ${
+                    imageStatus === 'ready' ? 'block' : 'hidden'
+                  }`}
+                  onLoad={() => setImageStatus('ready')}
+                  onError={() => setImageStatus('error')}
+                />
+              </>
             )}
-            {imageStatus === 'error' && (
-              <p className="text-[11px] text-red-500 px-1 py-2">
-                {t('baseLayer.overlayLegendsError')}
-              </p>
-            )}
-            <img
-              src={expandedItem.imageUrl}
-              alt={expandedItem.title}
-              className={`h-auto max-w-full ${
-                imageStatus === 'ready' ? 'block' : 'hidden'
-              }`}
-              onLoad={() => setImageStatus('ready')}
-              onError={() => setImageStatus('error')}
-            />
           </div>
         </div>
       )}

@@ -38,13 +38,13 @@ const SensorPromoCard: React.FC<SensorPromoCardProps> = ({
     const base =
       "relative w-full overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-slate-200/70";
     if (isSingleSensor) return `${base} aspect-[4/3]`;
-    return `${base} aspect-square`;
+    return `${base} aspect-[4/3] md:aspect-square`;
   };
 
   return (
     <aside
       aria-label={t("promo.sensor.title")}
-      className="absolute z-[1500] bottom-20 left-4 right-4 max-w-[17rem] mx-auto md:mx-0 md:bottom-auto md:left-auto md:top-14 md:right-4 md:max-w-[13.5rem] overflow-hidden rounded-xl border border-white/60 bg-white/90 shadow-lg shadow-slate-900/5 backdrop-blur-sm"
+      className="absolute z-[1500] top-14 right-4 max-w-[11rem] md:max-w-[13.5rem] overflow-hidden rounded-xl border border-white/60 bg-white/90 shadow-lg shadow-slate-900/5 backdrop-blur-sm"
     >
       <button
         type="button"
@@ -64,7 +64,7 @@ const SensorPromoCard: React.FC<SensorPromoCardProps> = ({
 
       <div
         className={`relative bg-gradient-to-br from-[#4271B3]/8 via-slate-50 to-white ${
-          isSingleSensor ? "px-3 pb-2 pt-3" : "p-2"
+          isSingleSensor ? "px-3 pb-2 pt-3" : "p-1.5 md:p-2"
         }`}
       >
         <div className={sensorsLayoutClass}>
@@ -78,7 +78,7 @@ const SensorPromoCard: React.FC<SensorPromoCardProps> = ({
                   loading="lazy"
                 />
               </div>
-              <figcaption className="mt-1 text-center text-[9px] font-semibold uppercase tracking-wide text-[#4271B3]">
+              <figcaption className="mt-0.5 md:mt-1 text-center text-[9px] font-semibold uppercase tracking-wide text-[#4271B3]">
                 {t(sensor.nameKey)}
               </figcaption>
             </figure>
@@ -86,7 +86,7 @@ const SensorPromoCard: React.FC<SensorPromoCardProps> = ({
         </div>
       </div>
 
-      <div className="border-t border-slate-100 px-3 pb-3 pt-2">
+      <div className="border-t border-slate-100 px-3 pb-2 pt-1.5 md:pb-3 md:pt-2">
         <h2 className="text-xs font-bold leading-tight text-slate-900">
           {t("promo.sensor.title")}
         </h2>
@@ -97,7 +97,7 @@ const SensorPromoCard: React.FC<SensorPromoCardProps> = ({
           href={shopUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-2 inline-flex w-full items-center justify-center gap-1 rounded-lg bg-[#4271B3] px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-[#325A96] focus:outline-none focus:ring-2 focus:ring-[#4271B3]/40 focus:ring-offset-1"
+          className="mt-1.5 md:mt-2 inline-flex w-full items-center justify-center gap-1 rounded-lg bg-[#4271B3] px-2.5 py-1 md:py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-[#325A96] focus:outline-none focus:ring-2 focus:ring-[#4271B3]/40 focus:ring-offset-1"
           aria-label={t("promo.sensor.cta")}
         >
           {t("promo.sensor.cta")}

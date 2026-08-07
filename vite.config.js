@@ -28,6 +28,7 @@ export default defineConfig({
       "crista-unlockable-vivan.ngrok-free.dev",
       "localhost",
       "127.0.0.1",
+      "openairmap.atmosud.org",
       ".ngrok-free.dev",
     ],
     proxy: {

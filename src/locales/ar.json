@@ -465,7 +465,12 @@
       "sixMonths": "6 أشهر",
       "limitationLabel": "الحد:",
       "timeStepLabelsSeparator": " و "
-    }
+    },
+    "effisHotspotsEmpty": "لم يتم رصد أي بؤرة حرارية خلال {{period}} في هذه المنطقة.",
+    "effisBurnedAreasEmpty": "لا توجد منطقة محروقة مرسومة لهذه الفترة.",
+    "effisHotspotsError": "بؤر الحرائق EFFIS غير متاحة.",
+    "effisBurnedAreasError": "المناطق المحروقة EFFIS غير متاحة.",
+    "effisHotspotsBeyondRetention": "بؤر الحرائق متاحة فقط لآخر 365 يومًا (حد Copernicus EFFIS)."
   },
   "promo": {
     "sensor": {
@@ -660,7 +665,21 @@
       "purpleair": "PurpleAir",
       "mobileair": "MobileAir",
       "signalair": "SignalAir"
-    }
+    },
+    "effisHotspots_zero": "لا توجد بؤر حرارية",
+    "effisHotspots_one": "بؤرة حرارية واحدة",
+    "effisHotspots_two": "بؤرتان حراريتان",
+    "effisHotspots_few": "{{count}} بؤر حرارية",
+    "effisHotspots_many": "{{count}} بؤرة حرارية",
+    "effisHotspots_other": "{{count}} بؤرة حرارية",
+    "effisMaxPower": "بحد أقصى {{frp}} ميغاواط",
+    "effisBurnedAreas_zero": "لا توجد مناطق محروقة",
+    "effisBurnedAreas_one": "منطقة محروقة واحدة",
+    "effisBurnedAreas_two": "منطقتان محروقتان",
+    "effisBurnedAreas_few": "{{count}} مناطق محروقة",
+    "effisBurnedAreas_many": "{{count}} منطقة محروقة",
+    "effisBurnedAreas_other": "{{count}} منطقة محروقة",
+    "effisBurnedTotal": "{{hectares}} هكتار"
   },
   "baseLayer": {
     "title": "الخريطة الأساسية",
@@ -668,19 +687,34 @@
     "osm": "خريطة OSM",
     "satelliteIgn": "قمر IGN",
     "communal": "الحدود البلدية",
-    "effisHotspots": "بؤر الحرائق (EFFIS، 7 أيام)",
-    "effisHotspotsLegendTitle": "بؤر الحرائق — 7 أيام (Copernicus EFFIS)",
+    "effisHotspots": "بؤر الحرائق (EFFIS)",
+    "effisHotspotsLegendTitle": "بؤر الحرائق (Copernicus EFFIS)",
     "effisBurnedAreas": "المناطق المحروقة (EFFIS)",
-    "effisBurnedAreasLegendTitle": "المناطق المحروقة للموسم (Copernicus EFFIS)",
+    "effisBurnedAreasLegendTitle": "المناطق المحروقة (Copernicus EFFIS)",
     "wildfire": "حرائق نشطة",
     "overlayLegendsTitle": "مفاتيح الطبقات",
     "overlayLegendsOpen": "فتح مفاتيح الطبقات",
     "overlayLegendsClose": "إغلاق مفاتيح الطبقات",
     "overlayLegendsModelingChip": "النمذجة",
-    "overlayLegendsEffisHotspotsChip": "EFFIS 7ي",
+    "overlayLegendsEffisHotspotsChip": "بؤر الحرائق",
     "overlayLegendsEffisBurnedChip": "محروقة",
     "overlayLegendsLoading": "جاري تحميل المفتاح…",
-    "overlayLegendsError": "المفتاح غير متاح"
+    "overlayLegendsError": "المفتاح غير متاح",
+    "firePeriod24h": "24 ساعة",
+    "firePeriod7d": "7 أيام",
+    "firePeriodDay": "يوم",
+    "firePeriodWeek": "أسبوع",
+    "firePeriodSeason": "الموسم",
+    "firePeriodHotspotsAria": "فترة بؤر الحرائق",
+    "firePeriodBurnedAria": "فترة المناطق المحروقة",
+    "fireLegendFreshness": "الحداثة",
+    "fireLegendLast24h": "أقل من 24 ساعة",
+    "fireLegendOlder": "أقدم",
+    "fireLegendPower": "القدرة الإشعاعية",
+    "fireLegendPowerUnit": "ميغاواط (مقياس لوغاريتمي)",
+    "fireLegendMaskNote": "يتم استبعاد مصادر الحرارة الدائمة (الشعلات الصناعية، صناعة الصلب): {{count}} منطقة رُصدت في {{days}} أيام مختلفة على الأقل خلال 12 شهرًا.",
+    "fireLegendBurnedArea": "المحيط المحروق",
+    "fireLegendBurnedNote": "محيطات مرسومة بواسطة MODIS. قد يستغرق ظهور حريق حديث عدة أيام."
   },
   "toast": {
     "sourceUnavailable": "{{name}} غير متاح",

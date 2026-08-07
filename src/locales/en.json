@@ -465,7 +465,12 @@
       "sixMonths": "6 months",
       "limitationLabel": "Limitation:",
       "timeStepLabelsSeparator": " and "
-    }
+    },
+    "effisHotspotsEmpty": "No fire hotspot detected over {{period}} in this area.",
+    "effisBurnedAreasEmpty": "No burned area mapped for this period.",
+    "effisHotspotsError": "EFFIS fire hotspots unavailable.",
+    "effisBurnedAreasError": "EFFIS burned areas unavailable.",
+    "effisHotspotsBeyondRetention": "Fire hotspots are only available for the last 365 days (Copernicus EFFIS limit)."
   },
   "promo": {
     "sensor": {
@@ -652,7 +657,13 @@
       "purpleair": "PurpleAir",
       "mobileair": "MobileAir",
       "signalair": "SignalAir"
-    }
+    },
+    "effisHotspots_one": "{{count}} fire hotspot",
+    "effisHotspots_other": "{{count}} fire hotspots",
+    "effisMaxPower": "max {{frp}} MW",
+    "effisBurnedAreas_one": "{{count}} burned area",
+    "effisBurnedAreas_other": "{{count}} burned areas",
+    "effisBurnedTotal": "{{hectares}} ha"
   },
   "baseLayer": {
     "title": "Base map",
@@ -660,19 +671,34 @@
     "osm": "OSM map",
     "satelliteIgn": "IGN satellite",
     "communal": "Communal boundaries",
-    "effisHotspots": "Fire hotspots (EFFIS, 7d)",
-    "effisHotspotsLegendTitle": "Fire hotspots — 7 days (Copernicus EFFIS)",
+    "effisHotspots": "Fire hotspots (EFFIS)",
+    "effisHotspotsLegendTitle": "Fire hotspots (Copernicus EFFIS)",
     "effisBurnedAreas": "Burned areas (EFFIS)",
-    "effisBurnedAreasLegendTitle": "Season burned areas (Copernicus EFFIS)",
+    "effisBurnedAreasLegendTitle": "Burned areas (Copernicus EFFIS)",
     "wildfire": "Active wildfires",
     "overlayLegendsTitle": "Layer legends",
     "overlayLegendsOpen": "Open layer legends",
     "overlayLegendsClose": "Close layer legends",
     "overlayLegendsModelingChip": "Modeling",
-    "overlayLegendsEffisHotspotsChip": "EFFIS 7d",
+    "overlayLegendsEffisHotspotsChip": "Hotspots",
     "overlayLegendsEffisBurnedChip": "Burned areas",
     "overlayLegendsLoading": "Loading legend…",
-    "overlayLegendsError": "Legend unavailable"
+    "overlayLegendsError": "Legend unavailable",
+    "firePeriod24h": "24 h",
+    "firePeriod7d": "7 days",
+    "firePeriodDay": "Day",
+    "firePeriodWeek": "Week",
+    "firePeriodSeason": "Season",
+    "firePeriodHotspotsAria": "Fire hotspots period",
+    "firePeriodBurnedAria": "Burned areas period",
+    "fireLegendFreshness": "Freshness",
+    "fireLegendLast24h": "Less than 24 h",
+    "fireLegendOlder": "Older",
+    "fireLegendPower": "Radiative power",
+    "fireLegendPowerUnit": "Megawatts (logarithmic scale)",
+    "fireLegendMaskNote": "Permanent heat sources (industrial flares, steelworks) are excluded: {{count}} areas detected on at least {{days}} different days over 12 months.",
+    "fireLegendBurnedArea": "Burned perimeter",
+    "fireLegendBurnedNote": "Perimeters mapped by MODIS. A recent fire may take several days to appear."
   },
   "toast": {
     "sourceUnavailable": "{{name}} unavailable",

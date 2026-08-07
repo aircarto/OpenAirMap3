@@ -18,14 +18,16 @@ import {
 } from "../../../services/ModelingLayerService";
 import { createCommunalGeoJSONLayer } from "../../../services/CommunalLayerService";
 import {
-  createEffisHotspotsWmsLayer,
   createEffisHotspotsGeoJSONLayer,
   createEffisBurnedAreasGeoJSONLayer,
-  getEffisHotspotsLegendUrl,
+  BurnedAreaPeriod,
+  EffisBurnedAreaStats,
+  EffisHotspotStats,
+  HotspotPeriod,
 } from "../../../services/EffisLayerService";
 import { DomainConfig } from "../../../config/domainConfig";
 
-const EFFIS_REDRAW_INTERVAL_MS = 10 * 60 * 1000; // 10 min : fenetre glissante 7 jours
+const EFFIS_REDRAW_INTERVAL_MS = 10 * 60 * 1000; // 10 min : fenêtre glissante
 
 interface UseMapLayersProps {
   mapRef: React.RefObject<L.Map | null>;
@@ -38,6 +40,15 @@ interface UseMapLayersProps {
   isCommunalLayerEnabled: boolean;
   isEffisHotspotsEnabled: boolean;
   isEffisBurnedAreasEnabled: boolean;
+  /** Fenêtre des points de chaleur : 24 h ou 7 jours */
+  effisHotspotsPeriod: HotspotPeriod;
+  /** Fenêtre des zones brûlées : jour, semaine ou saison */
+  effisBurnedAreasPeriod: BurnedAreaPeriod;
+  /**
+   * Date rejouée en mode historique. Absente = temps réel.
+   * Les couches feux affichent alors une fenêtre glissante de 24 h fermée à cette date.
+   */
+  effisReferenceDate?: Date;
   /** Emprise de l'instance courante (voir DomainConfig.mapBounds) — les couches EFFIS s'y limitent */
   mapBounds: DomainConfig["mapBounds"];
 }
@@ -52,6 +63,9 @@ export const useMapLayers = ({
   isCommunalLayerEnabled,
   isEffisHotspotsEnabled,
   isEffisBurnedAreasEnabled,
+  effisHotspotsPeriod,
+  effisBurnedAreasPeriod,
+  effisReferenceDate,
   mapBounds,
 }: UseMapLayersProps) => {
   const [currentTileLayer, setCurrentTileLayer] = useState<L.Layer | null>(
@@ -66,19 +80,34 @@ export const useMapLayers = ({
   const [currentModelingLegendTitle, setCurrentModelingLegendTitle] = useState<
     string | null
   >(null);
-  const [currentEffisHotspotsLegendUrl, setCurrentEffisHotspotsLegendUrl] =
-    useState<string | null>(null);
-  const [currentEffisBurnedAreasLegendUrl, setCurrentEffisBurnedAreasLegendUrl] =
-    useState<string | null>(null);
   const [isEffisHotspotsLoading, setIsEffisHotspotsLoading] = useState(false);
   const [isEffisBurnedAreasLoading, setIsEffisBurnedAreasLoading] = useState(false);
+  const [effisHotspotsStats, setEffisHotspotsStats] =
+    useState<EffisHotspotStats | null>(null);
+  const [effisBurnedAreasStats, setEffisBurnedAreasStats] =
+    useState<EffisBurnedAreaStats | null>(null);
+  const [effisHotspotsError, setEffisHotspotsError] = useState<string | null>(
+    null
+  );
+  const [effisBurnedAreasError, setEffisBurnedAreasError] = useState<
+    string | null
+  >(null);
 
   const modelingLayerRef = useRef<L.TileLayer | null>(null);
   const windLayerRef = useRef<L.Layer | null>(null);
   const windLayerGroupRef = useRef<L.LayerGroup | null>(null);
   const communalLayerRef = useRef<L.LayerGroup | null>(null);
-  const effisHotspotsLayerRef = useRef<L.GeoJSON | L.TileLayer.WMS | null>(null);
+  const effisHotspotsLayerRef = useRef<L.GeoJSON | null>(null);
   const effisBurnedAreasLayerRef = useRef<L.GeoJSON | null>(null);
+  /**
+   * Renderer canvas partagé par tous les points de chaleur. L'emprise France remonte
+   * ~1700 points affichés sur 7 jours : en SVG (défaut Leaflet) chaque cercle serait
+   * un nœud du DOM, ce qui alourdit nettement le zoom et le déplacement.
+   */
+  const hotspotsRendererRef = useRef<L.Renderer | null>(null);
+  if (!hotspotsRendererRef.current) {
+    hotspotsRendererRef.current = L.canvas({ padding: 0.5 });
+  }
 
   // Fonction pour charger la modélisation de vent
   const loadWindModeling = useCallback(async () => {
@@ -302,13 +331,14 @@ export const useMapLayers = ({
     };
   }, [isCommunalLayerEnabled, mapRef]);
 
-  // Effet pour gérer la couche EFFIS feux actifs (WFS GeoJSON, repli WMS)
+  // Effet pour gérer la couche EFFIS points de chaleur (WFS GeoJSON)
   useEffect(() => {
     if (!mapRef.current) return;
     const map = mapRef.current;
 
     let isCancelled = false;
     let refreshInterval: ReturnType<typeof setInterval> | null = null;
+    const abortController = new AbortController();
 
     const removeHotspotsLayer = () => {
       if (effisHotspotsLayerRef.current && map) {
@@ -317,32 +347,31 @@ export const useMapLayers = ({
       }
     };
 
-    const addWmsFallback = () => {
-      if (isCancelled || !map) return;
-      removeHotspotsLayer();
-      const wmsLayer = createEffisHotspotsWmsLayer(mapBounds);
-      wmsLayer.addTo(map);
-      effisHotspotsLayerRef.current = wmsLayer;
-      setCurrentEffisHotspotsLegendUrl(getEffisHotspotsLegendUrl());
-    };
-
-    const loadHotspotsWfs = async () => {
+    const loadHotspots = async () => {
       setIsEffisHotspotsLoading(true);
+      setEffisHotspotsError(null);
       try {
-        const geoJsonLayer = await createEffisHotspotsGeoJSONLayer(mapBounds);
+        const { layer, stats } = await createEffisHotspotsGeoJSONLayer(
+          mapBounds,
+          effisHotspotsPeriod,
+          {
+            renderer: hotspotsRendererRef.current ?? undefined,
+            referenceDate: effisReferenceDate,
+            signal: abortController.signal,
+          }
+        );
         if (isCancelled || !map) return;
         removeHotspotsLayer();
-        geoJsonLayer.addTo(map);
-        effisHotspotsLayerRef.current = geoJsonLayer;
-        setCurrentEffisHotspotsLegendUrl(getEffisHotspotsLegendUrl());
+        layer.addTo(map);
+        effisHotspotsLayerRef.current = layer;
+        setEffisHotspotsStats(stats);
       } catch (error) {
-        console.error(
-          'Erreur WFS EFFIS hotspots — repli sur WMS:',
-          error
+        if (isCancelled || abortController.signal.aborted) return;
+        console.error('Erreur WFS EFFIS points de chaleur:', error);
+        setEffisHotspotsError(
+          error instanceof Error ? error.message : String(error)
         );
-        if (!isCancelled) {
-          addWmsFallback();
-        }
+        setEffisHotspotsStats(null);
       } finally {
         if (!isCancelled) {
           setIsEffisHotspotsLoading(false);
@@ -351,30 +380,33 @@ export const useMapLayers = ({
     };
 
     removeHotspotsLayer();
-    setCurrentEffisHotspotsLegendUrl(null);
+    setEffisHotspotsStats(null);
 
     if (isEffisHotspotsEnabled) {
-      loadHotspotsWfs();
+      loadHotspots();
 
-      refreshInterval = setInterval(() => {
-        const current = effisHotspotsLayerRef.current;
-        if (current && !(current instanceof L.GeoJSON)) {
-          (current as L.TileLayer.WMS).redraw();
-        } else {
-          loadHotspotsWfs();
-        }
-      }, EFFIS_REDRAW_INTERVAL_MS);
+      // Inutile de rafraîchir une date passée : elle ne bouge plus.
+      if (!effisReferenceDate) {
+        refreshInterval = setInterval(loadHotspots, EFFIS_REDRAW_INTERVAL_MS);
+      }
     }
 
     return () => {
       isCancelled = true;
+      abortController.abort();
       if (refreshInterval) {
         clearInterval(refreshInterval);
       }
       removeHotspotsLayer();
-      setCurrentEffisHotspotsLegendUrl(null);
+      setEffisHotspotsStats(null);
     };
-  }, [isEffisHotspotsEnabled, mapRef, mapBounds]);
+  }, [
+    isEffisHotspotsEnabled,
+    effisHotspotsPeriod,
+    effisReferenceDate,
+    mapRef,
+    mapBounds,
+  ]);
 
   // Effet pour gérer la couche EFFIS zones brûlées (WFS GeoJSON)
   useEffect(() => {
@@ -382,27 +414,39 @@ export const useMapLayers = ({
     const map = mapRef.current;
 
     let isCancelled = false;
+    const abortController = new AbortController();
 
-    if (effisBurnedAreasLayerRef.current) {
-      map.removeLayer(effisBurnedAreasLayerRef.current);
-      effisBurnedAreasLayerRef.current = null;
-    }
-    setCurrentEffisBurnedAreasLegendUrl(null);
+    const removeBurnedAreasLayer = () => {
+      if (effisBurnedAreasLayerRef.current && map) {
+        map.removeLayer(effisBurnedAreasLayerRef.current);
+        effisBurnedAreasLayerRef.current = null;
+      }
+    };
+
+    removeBurnedAreasLayer();
+    setEffisBurnedAreasStats(null);
 
     if (isEffisBurnedAreasEnabled) {
       setIsEffisBurnedAreasLoading(true);
-      createEffisBurnedAreasGeoJSONLayer(mapBounds)
-        .then((burnedAreasLayer) => {
-          if (!isCancelled && map) {
-            burnedAreasLayer.addTo(map);
-            effisBurnedAreasLayerRef.current = burnedAreasLayer;
-          }
+      setEffisBurnedAreasError(null);
+      createEffisBurnedAreasGeoJSONLayer(mapBounds, effisBurnedAreasPeriod, {
+        referenceDate: effisReferenceDate,
+        signal: abortController.signal,
+      })
+        .then(({ layer, stats }) => {
+          if (isCancelled || !map) return;
+          removeBurnedAreasLayer();
+          layer.addTo(map);
+          effisBurnedAreasLayerRef.current = layer;
+          setEffisBurnedAreasStats(stats);
         })
         .catch((error) => {
-          console.error(
-            'Erreur lors du chargement des zones brûlées EFFIS:',
-            error
+          if (isCancelled || abortController.signal.aborted) return;
+          console.error('Erreur WFS EFFIS zones brûlées:', error);
+          setEffisBurnedAreasError(
+            error instanceof Error ? error.message : String(error)
           );
+          setEffisBurnedAreasStats(null);
         })
         .finally(() => {
           if (!isCancelled) {
@@ -413,22 +457,28 @@ export const useMapLayers = ({
 
     return () => {
       isCancelled = true;
-      if (map && effisBurnedAreasLayerRef.current) {
-        map.removeLayer(effisBurnedAreasLayerRef.current);
-        effisBurnedAreasLayerRef.current = null;
-      }
-      setCurrentEffisBurnedAreasLegendUrl(null);
+      abortController.abort();
+      removeBurnedAreasLayer();
+      setEffisBurnedAreasStats(null);
     };
-  }, [isEffisBurnedAreasEnabled, mapRef, mapBounds]);
+  }, [
+    isEffisBurnedAreasEnabled,
+    effisBurnedAreasPeriod,
+    effisReferenceDate,
+    mapRef,
+    mapBounds,
+  ]);
 
   return {
     currentTileLayer,
     currentModelingWMTSLayer,
     currentModelingLegendUrl,
     currentModelingLegendTitle,
-    currentEffisHotspotsLegendUrl,
-    currentEffisBurnedAreasLegendUrl,
     isEffisHotspotsLoading,
     isEffisBurnedAreasLoading,
+    effisHotspotsStats,
+    effisBurnedAreasStats,
+    effisHotspotsError,
+    effisBurnedAreasError,
   };
 };

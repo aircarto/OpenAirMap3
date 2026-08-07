@@ -465,7 +465,12 @@
       "sixMonths": "6 mesi",
       "limitationLabel": "Limitazione:",
       "timeStepLabelsSeparator": " e "
-    }
+    },
+    "effisHotspotsEmpty": "Nessun punto di calore rilevato in {{period}} in quest'area.",
+    "effisBurnedAreasEmpty": "Nessuna area bruciata cartografata in questo periodo.",
+    "effisHotspotsError": "Punti di calore EFFIS non disponibili.",
+    "effisBurnedAreasError": "Aree bruciate EFFIS non disponibili.",
+    "effisHotspotsBeyondRetention": "I punti di calore sono disponibili solo per gli ultimi 365 giorni (limite Copernicus EFFIS)."
   },
   "promo": {
     "sensor": {
@@ -652,7 +657,13 @@
       "purpleair": "PurpleAir",
       "mobileair": "MobileAir",
       "signalair": "SignalAir"
-    }
+    },
+    "effisHotspots_one": "{{count}} punto di calore",
+    "effisHotspots_other": "{{count}} punti di calore",
+    "effisMaxPower": "max {{frp}} MW",
+    "effisBurnedAreas_one": "{{count}} area bruciata",
+    "effisBurnedAreas_other": "{{count}} aree bruciate",
+    "effisBurnedTotal": "{{hectares}} ha"
   },
   "baseLayer": {
     "title": "Mappa di base",
@@ -660,19 +671,34 @@
     "osm": "Mappa OSM",
     "satelliteIgn": "Satellite IGN",
     "communal": "Confini comunali",
-    "effisHotspots": "Punti di calore (EFFIS, 7 g)",
-    "effisHotspotsLegendTitle": "Punti di calore — 7 giorni (Copernicus EFFIS)",
+    "effisHotspots": "Punti di calore (EFFIS)",
+    "effisHotspotsLegendTitle": "Punti di calore (Copernicus EFFIS)",
     "effisBurnedAreas": "Aree bruciate (EFFIS)",
-    "effisBurnedAreasLegendTitle": "Aree bruciate della stagione (Copernicus EFFIS)",
+    "effisBurnedAreasLegendTitle": "Aree bruciate (Copernicus EFFIS)",
     "wildfire": "Incendi attivi",
     "overlayLegendsTitle": "Legende livelli",
     "overlayLegendsOpen": "Apri legende livelli",
     "overlayLegendsClose": "Chiudi legende livelli",
     "overlayLegendsModelingChip": "Modellazione",
-    "overlayLegendsEffisHotspotsChip": "EFFIS 7g",
+    "overlayLegendsEffisHotspotsChip": "Punti di calore",
     "overlayLegendsEffisBurnedChip": "Aree bruciate",
     "overlayLegendsLoading": "Caricamento legenda…",
-    "overlayLegendsError": "Legenda non disponibile"
+    "overlayLegendsError": "Legenda non disponibile",
+    "firePeriod24h": "24 h",
+    "firePeriod7d": "7 giorni",
+    "firePeriodDay": "Giorno",
+    "firePeriodWeek": "Settimana",
+    "firePeriodSeason": "Stagione",
+    "firePeriodHotspotsAria": "Periodo dei punti di calore",
+    "firePeriodBurnedAria": "Periodo delle aree bruciate",
+    "fireLegendFreshness": "Aggiornamento",
+    "fireLegendLast24h": "Meno di 24 h",
+    "fireLegendOlder": "Più vecchio",
+    "fireLegendPower": "Potenza radiativa",
+    "fireLegendPowerUnit": "Megawatt (scala logaritmica)",
+    "fireLegendMaskNote": "Le sorgenti di calore permanenti (torce industriali, siderurgia) sono escluse: {{count}} zone rilevate in almeno {{days}} giorni diversi su 12 mesi.",
+    "fireLegendBurnedArea": "Perimetro bruciato",
+    "fireLegendBurnedNote": "Perimetri cartografati da MODIS. Un incendio recente può richiedere alcuni giorni per comparire."
   },
   "toast": {
     "sourceUnavailable": "{{name}} non disponibile",

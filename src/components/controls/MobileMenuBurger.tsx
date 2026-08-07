@@ -36,6 +36,7 @@ interface MobileMenuBurgerProps {
   onMobileAirToggle?: (visible: boolean) => void;
   hasSignalAirData?: boolean;
   hasMobileAirData?: boolean;
+  onOpenInfoModal?: () => void;
 }
 
 const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
@@ -63,6 +64,7 @@ const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
   onMobileAirToggle,
   hasSignalAirData = false,
   hasMobileAirData = false,
+  onOpenInfoModal,
 }) => {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
@@ -342,6 +344,23 @@ const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
               </label>
               <LanguageSwitcher />
             </div>
+
+            {/* Informations / mentions légales */}
+            {onOpenInfoModal && (
+              <div className="border-t border-gray-200 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onOpenInfoModal();
+                    setIsOpen(false);
+                  }}
+                  className="w-full min-h-[44px] rounded-md px-2 py-1.5 text-left text-sm font-medium text-[#4271B3] hover:bg-[#4271B3]/10 active:bg-[#4271B3]/15 transition-colors duration-150 touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#4271B3]/30 focus:ring-offset-1"
+                  aria-label={t("app.infoButton")}
+                >
+                  {t("app.infoButton")}
+                </button>
+              </div>
+            )}
 
             {/* Bouton fermer */}
             <div className="border-t border-gray-200 pt-4">

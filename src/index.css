@@ -374,6 +374,10 @@
     right: 2px !important;
     font-size: 10px !important;
     padding: 1px 4px !important;
+    max-width: 210px !important;
+    text-align: right !important;
+    white-space: normal !important;
+    line-height: 1.3 !important;
   }
 }
 
@@ -384,6 +388,10 @@
     right: 2px !important;
     font-size: 10px !important;
     padding: 1px 4px !important;
+    max-width: 210px !important;
+    text-align: right !important;
+    white-space: normal !important;
+    line-height: 1.3 !important;
   }
 }
 

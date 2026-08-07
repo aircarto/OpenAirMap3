@@ -5,6 +5,7 @@ import {
   Marker,
   Popup,
   useMapEvents,
+  AttributionControl,
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -29,6 +30,11 @@ import {
   WildfireReport,
 } from "../../types";
 import { BaseLayerKey, ModelingLayerType } from "../../constants/mapLayers";
+import {
+  BurnedAreaPeriod,
+  HotspotPeriod,
+  isWithinHotspotsRetention,
+} from "../../services/EffisLayerService";
 import { MAX_COMPARISON_STATIONS } from "../../constants/comparison";
 import BaseLayerControl from "../controls/BaseLayerControl";
 import CustomSearchControl from "../controls/CustomSearchControl";
@@ -231,6 +237,39 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
   const [isEffisHotspotsEnabled, setIsEffisHotspotsEnabled] = useState(false);
   const [isEffisBurnedAreasEnabled, setIsEffisBurnedAreasEnabled] =
     useState(false);
+  /** 24 h par défaut : la demande porte d'abord sur la donnée la plus fraîche */
+  const [effisHotspotsPeriod, setEffisHotspotsPeriod] =
+    useState<HotspotPeriod>("24h");
+  /**
+   * Saison par défaut : `today` renvoie très souvent zéro polygone (MODIS met
+   * plusieurs jours à cartographier un périmètre), un défaut vide serait trompeur.
+   */
+  const [effisBurnedAreasPeriod, setEffisBurnedAreasPeriod] =
+    useState<BurnedAreaPeriod>("season");
+
+  /**
+   * Date rejouée par la timeline historique, source de vérité des couches feux.
+   * Absente hors mode historique : les couches repassent alors en temps réel.
+   */
+  const effisReferenceDate = useMemo(() => {
+    if (!historicalPlaybackDate) return undefined;
+    // Les timestamps du mode historique peuvent arriver en "YYYY-MM-DD HH:mm:ss" :
+    // Safari refuse ce format, d'où la normalisation en ISO avant parsing.
+    const normalized = historicalPlaybackDate.includes("T")
+      ? historicalPlaybackDate
+      : historicalPlaybackDate.replace(" ", "T");
+    const parsed = new Date(normalized);
+    return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+  }, [historicalPlaybackDate]);
+
+  /**
+   * `all.hs.query` ne conserve que 365 jours glissants (mesuré sur le service).
+   * Au-delà, mieux vaut désactiver la couche et l'expliquer que d'afficher un vide
+   * que l'utilisateur prendrait pour une absence de feux.
+   */
+  const isHotspotsBeyondRetention = Boolean(
+    effisReferenceDate && !isWithinHotspotsRetention(effisReferenceDate)
+  );
   const [isWildfireLayerEnabledByControl, setIsWildfireLayerEnabledByControl] =
     useState(featureFlags.wildfireLayer);
 
@@ -271,8 +310,11 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
     selectedPollutant,
     currentModelingLayer,
     isCommunalLayerEnabled,
-    isEffisHotspotsEnabled,
+    isEffisHotspotsEnabled: isEffisHotspotsEnabled && !isHotspotsBeyondRetention,
     isEffisBurnedAreasEnabled,
+    effisHotspotsPeriod,
+    effisBurnedAreasPeriod,
+    effisReferenceDate,
     mapBounds,
   });
 
@@ -929,6 +971,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           }}
           ref={mapView.mapRef}
           zoomControl={false}
+          attributionControl={false}
           scrollWheelZoom={true}
           doubleClickZoom={true}
           dragging={true}
@@ -936,6 +979,9 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           minZoom={1}
           maxZoom={18}
         >
+          {/* Attribution sans le préfixe "Leaflet" pour laisser plus de place sur mobile */}
+          <AttributionControl position="bottomright" prefix={false} />
+
           {/* Gestionnaire d'événements pour les clics sur la carte */}
           <MapClickHandler
             onMapClick={() => setSearchPinPosition(null)}
@@ -1048,8 +1094,13 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           setIsCommunalLayerEnabled={setIsCommunalLayerEnabled}
           isEffisHotspotsEnabled={isEffisHotspotsEnabled}
           setIsEffisHotspotsEnabled={setIsEffisHotspotsEnabled}
+          effisHotspotsPeriod={effisHotspotsPeriod}
+          setEffisHotspotsPeriod={setEffisHotspotsPeriod}
           isEffisBurnedAreasEnabled={isEffisBurnedAreasEnabled}
           setIsEffisBurnedAreasEnabled={setIsEffisBurnedAreasEnabled}
+          effisBurnedAreasPeriod={effisBurnedAreasPeriod}
+          setEffisBurnedAreasPeriod={setEffisBurnedAreasPeriod}
+          isHotspotsBeyondRetention={isHotspotsBeyondRetention}
           isWildfireVisible={isWildfireVisible}
           setIsWildfireLayerEnabledByControl={setIsWildfireLayerEnabledByControl}
           shouldShowStandardLegend={shouldShowStandardLegend}

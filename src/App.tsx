@@ -658,6 +658,7 @@ const AppContent: React.FC = () => {
                 onMobileAirToggle={handleMobileAirVisibilityToggle}
                 hasSignalAirData={hasSignalAirData}
                 hasMobileAirData={hasMobileAirData}
+                onOpenInfoModal={() => setIsInfoModalOpen(true)}
               />
             </div>
 

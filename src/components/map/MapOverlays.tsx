@@ -6,10 +6,18 @@ import OverlayLegendsCard, {
   OverlayLegendItem,
   OverlayLegendsMobile,
 } from "./OverlayLegendsPanel";
+import {
+  EffisBurnedAreasLegend,
+  EffisHotspotsLegend,
+} from "./FireLegends";
+import {
+  BurnedAreaPeriod,
+  HotspotPeriod,
+} from "../../services/EffisLayerService";
 
 interface MapOverlaysProps {
   signalAir: any;
-  t: (key: string) => string;
+  t: (key: string, options?: Record<string, unknown>) => string;
   sidePanels: any;
   currentBaseLayer: string;
   setCurrentBaseLayer: (layer: any) => void;
@@ -17,8 +25,14 @@ interface MapOverlaysProps {
   setIsCommunalLayerEnabled: (enabled: boolean) => void;
   isEffisHotspotsEnabled: boolean;
   setIsEffisHotspotsEnabled: (enabled: boolean) => void;
+  effisHotspotsPeriod: HotspotPeriod;
+  setEffisHotspotsPeriod: (period: HotspotPeriod) => void;
   isEffisBurnedAreasEnabled: boolean;
   setIsEffisBurnedAreasEnabled: (enabled: boolean) => void;
+  effisBurnedAreasPeriod: BurnedAreaPeriod;
+  setEffisBurnedAreasPeriod: (period: BurnedAreaPeriod) => void;
+  /** Date rejouée antérieure à la rétention EFFIS de 365 jours */
+  isHotspotsBeyondRetention: boolean;
   isWildfireVisible: boolean;
   setIsWildfireLayerEnabledByControl: (enabled: boolean) => void;
   shouldShowStandardLegend: boolean;
@@ -47,8 +61,13 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
   setIsCommunalLayerEnabled,
   isEffisHotspotsEnabled,
   setIsEffisHotspotsEnabled,
+  effisHotspotsPeriod,
+  setEffisHotspotsPeriod,
   isEffisBurnedAreasEnabled,
   setIsEffisBurnedAreasEnabled,
+  effisBurnedAreasPeriod,
+  setEffisBurnedAreasPeriod,
+  isHotspotsBeyondRetention,
   isWildfireVisible,
   setIsWildfireLayerEnabledByControl,
   shouldShowStandardLegend,
@@ -83,25 +102,48 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
     });
   }
 
-  if (mapLayers.currentEffisHotspotsLegendUrl) {
+  // Légendes feux : rendues localement, le style ne vient plus du serveur
+  if (isEffisHotspotsEnabled) {
     overlayLegendItems.push({
       id: "effis-hotspots",
       chipLabel: t("baseLayer.overlayLegendsEffisHotspotsChip"),
       title: t("baseLayer.effisHotspotsLegendTitle"),
-      imageUrl: mapLayers.currentEffisHotspotsLegendUrl,
+      content: <EffisHotspotsLegend />,
       accentClass: "bg-orange-50 text-orange-900 border-orange-200",
     });
   }
 
-  if (mapLayers.currentEffisBurnedAreasLegendUrl) {
+  if (isEffisBurnedAreasEnabled) {
     overlayLegendItems.push({
       id: "effis-burned",
       chipLabel: t("baseLayer.overlayLegendsEffisBurnedChip"),
       title: t("baseLayer.effisBurnedAreasLegendTitle"),
-      imageUrl: mapLayers.currentEffisBurnedAreasLegendUrl,
+      content: <EffisBurnedAreasLegend />,
       accentClass: "bg-amber-50 text-amber-900 border-amber-200",
     });
   }
+
+  const hotspotsStats = mapLayers.effisHotspotsStats;
+  const burnedAreasStats = mapLayers.effisBurnedAreasStats;
+
+  /**
+   * Une couche activée qui ne renvoie rien doit le dire. `today` en zones brûlées
+   * est très souvent vide (MODIS met plusieurs jours à cartographier un périmètre),
+   * et la vue 24 h des points de chaleur peut l'être un jour calme : sans message,
+   * l'utilisateur conclut à une panne.
+   */
+  const showHotspotsEmpty =
+    isEffisHotspotsEnabled &&
+    !isHotspotsBeyondRetention &&
+    !mapLayers.isEffisHotspotsLoading &&
+    !mapLayers.effisHotspotsError &&
+    hotspotsStats?.displayed === 0;
+
+  const showBurnedAreasEmpty =
+    isEffisBurnedAreasEnabled &&
+    !mapLayers.isEffisBurnedAreasLoading &&
+    !mapLayers.effisBurnedAreasError &&
+    burnedAreasStats?.displayed === 0;
 
   return (
     <>
@@ -150,8 +192,12 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
           onCommunalLayerToggle={setIsCommunalLayerEnabled}
           isEffisHotspotsEnabled={isEffisHotspotsEnabled}
           onEffisHotspotsToggle={setIsEffisHotspotsEnabled}
+          effisHotspotsPeriod={effisHotspotsPeriod}
+          onEffisHotspotsPeriodChange={setEffisHotspotsPeriod}
           isEffisBurnedAreasEnabled={isEffisBurnedAreasEnabled}
           onEffisBurnedAreasToggle={setIsEffisBurnedAreasEnabled}
+          effisBurnedAreasPeriod={effisBurnedAreasPeriod}
+          onEffisBurnedAreasPeriodChange={setEffisBurnedAreasPeriod}
           isWildfireLayerEnabled={isWildfireVisible}
           onWildfireLayerToggle={setIsWildfireLayerEnabledByControl}
         />
@@ -199,6 +245,42 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
         </div>
       )}
 
+      {isEffisHotspotsEnabled && isHotspotsBeyondRetention && (
+        <div className="absolute top-32 right-4 z-[1000] max-w-xs bg-white border border-amber-200 text-amber-800 text-xs px-3 py-2 rounded-md shadow-lg">
+          {t("panels.effisHotspotsBeyondRetention")}
+        </div>
+      )}
+
+      {showHotspotsEmpty && (
+        <div className="absolute top-32 right-4 z-[1000] max-w-xs bg-white border border-gray-200 text-gray-600 text-xs px-3 py-2 rounded-md shadow-lg">
+          {t("panels.effisHotspotsEmpty", {
+            period: t(
+              effisHotspotsPeriod === "24h"
+                ? "baseLayer.firePeriod24h"
+                : "baseLayer.firePeriod7d"
+            ),
+          })}
+        </div>
+      )}
+
+      {showBurnedAreasEmpty && (
+        <div className="absolute top-40 right-4 z-[1000] max-w-xs bg-white border border-gray-200 text-gray-600 text-xs px-3 py-2 rounded-md shadow-lg">
+          {t("panels.effisBurnedAreasEmpty")}
+        </div>
+      )}
+
+      {isEffisHotspotsEnabled && mapLayers.effisHotspotsError && (
+        <div className="absolute top-32 right-4 z-[1000] max-w-xs bg-white border border-red-200 text-red-700 text-xs px-3 py-2 rounded-md shadow-lg">
+          {t("panels.effisHotspotsError")}
+        </div>
+      )}
+
+      {isEffisBurnedAreasEnabled && mapLayers.effisBurnedAreasError && (
+        <div className="absolute top-40 right-4 z-[1000] max-w-xs bg-white border border-red-200 text-red-700 text-xs px-3 py-2 rounded-md shadow-lg">
+          {t("panels.effisBurnedAreasError")}
+        </div>
+      )}
+
       {/* Colonne droite desktop : légendes au-dessus des stats, sans chevauchement */}
       <div
         className={`absolute ${
@@ -232,6 +314,46 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
               <span className="text-gray-400">(feuxdeforet.fr)</span>
             </div>
           )}
+
+          {isEffisHotspotsEnabled && hotspotsStats && hotspotsStats.displayed > 0 && (
+            <div className="mt-1 text-xs text-gray-600">
+              •{" "}
+              {t("statistics.effisHotspots", {
+                count: hotspotsStats.displayed,
+              })}{" "}
+              <span className="text-gray-400">
+                ({t(
+                  effisHotspotsPeriod === "24h"
+                    ? "baseLayer.firePeriod24h"
+                    : "baseLayer.firePeriod7d"
+                )}
+                {hotspotsStats.maxFrp > 0 &&
+                  ` · ${t("statistics.effisMaxPower", {
+                    frp: hotspotsStats.maxFrp.toFixed(0),
+                  })}`}
+                )
+              </span>
+            </div>
+          )}
+
+          {isEffisBurnedAreasEnabled &&
+            burnedAreasStats &&
+            burnedAreasStats.displayed > 0 && (
+              <div className="mt-1 text-xs text-gray-600">
+                •{" "}
+                {t("statistics.effisBurnedAreas", {
+                  count: burnedAreasStats.displayed,
+                })}{" "}
+                <span className="text-gray-400">
+                  ({t("statistics.effisBurnedTotal", {
+                    hectares: Math.round(
+                      burnedAreasStats.totalAreaHa
+                    ).toLocaleString("fr-FR"),
+                  })}
+                  )
+                </span>
+              </div>
+            )}
         </div>
       </div>
     </>

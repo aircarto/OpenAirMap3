@@ -2,6 +2,10 @@ import React, { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { BASE_LAYER_KEYS, BaseLayerKey } from "../../constants/mapLayers";
 import { featureFlags } from "../../config/featureFlags";
+import {
+  BurnedAreaPeriod,
+  HotspotPeriod,
+} from "../../services/EffisLayerService";
 
 const BASE_LAYER_I18N_KEYS: Record<BaseLayerKey, string> = {
   "Carte standard": "baseLayer.standard",
@@ -9,17 +13,90 @@ const BASE_LAYER_I18N_KEYS: Record<BaseLayerKey, string> = {
   "Satellite IGN": "baseLayer.satelliteIgn",
 };
 
+const HOTSPOT_PERIOD_I18N_KEYS: Record<HotspotPeriod, string> = {
+  "24h": "baseLayer.firePeriod24h",
+  "7d": "baseLayer.firePeriod7d",
+};
+
+const BURNED_AREA_PERIOD_I18N_KEYS: Record<BurnedAreaPeriod, string> = {
+  today: "baseLayer.firePeriodDay",
+  week: "baseLayer.firePeriodWeek",
+  season: "baseLayer.firePeriodSeason",
+};
+
+interface PeriodSelectorProps<T extends string> {
+  options: readonly T[];
+  value: T;
+  onChange: (value: T) => void;
+  getLabel: (option: T) => string;
+  ariaLabel: string;
+  /** Teinte alignée sur celle du toggle auquel le sélecteur se rattache */
+  accent: "orange" | "amber";
+}
+
+/**
+ * Sélecteur de période affiché sous un toggle de couche feux.
+ * Rendu en retrait pour signaler qu'il dépend du toggle au-dessus de lui.
+ */
+function PeriodSelector<T extends string>({
+  options,
+  value,
+  onChange,
+  getLabel,
+  ariaLabel,
+  accent,
+}: PeriodSelectorProps<T>) {
+  const activeClass =
+    accent === "orange"
+      ? "bg-orange-600 text-white border-orange-600"
+      : "bg-amber-700 text-white border-amber-700";
+
+  return (
+    <div
+      className="flex gap-1 pl-7 pr-2.5 pb-1.5 pt-0.5"
+      role="group"
+      aria-label={ariaLabel}
+    >
+      {options.map((option) => {
+        const isActive = option === value;
+        return (
+          <button
+            key={option}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onChange(option);
+            }}
+            className={`px-2 py-0.5 rounded text-[11px] border transition-colors whitespace-nowrap ${
+              isActive
+                ? activeClass
+                : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+            }`}
+            aria-pressed={isActive}
+          >
+            {getLabel(option)}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 interface BaseLayerControlProps {
   currentBaseLayer: BaseLayerKey;
   onBaseLayerChange: (layerKey: BaseLayerKey) => void;
   // Nouveaux props pour le découpage communal
   isCommunalLayerEnabled: boolean;
   onCommunalLayerToggle: (enabled: boolean) => void;
-  // Props pour les couches EFFIS (feux actifs + zones brûlées)
+  // Props pour les couches EFFIS (points de chaleur + zones brûlées)
   isEffisHotspotsEnabled: boolean;
   onEffisHotspotsToggle: (enabled: boolean) => void;
+  effisHotspotsPeriod: HotspotPeriod;
+  onEffisHotspotsPeriodChange: (period: HotspotPeriod) => void;
   isEffisBurnedAreasEnabled: boolean;
   onEffisBurnedAreasToggle: (enabled: boolean) => void;
+  effisBurnedAreasPeriod: BurnedAreaPeriod;
+  onEffisBurnedAreasPeriodChange: (period: BurnedAreaPeriod) => void;
   // Props pour la couche feux de foret en cours
   isWildfireLayerEnabled: boolean;
   onWildfireLayerToggle: (enabled: boolean) => void;
@@ -32,8 +109,12 @@ const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
   onCommunalLayerToggle,
   isEffisHotspotsEnabled,
   onEffisHotspotsToggle,
+  effisHotspotsPeriod,
+  onEffisHotspotsPeriodChange,
   isEffisBurnedAreasEnabled,
   onEffisBurnedAreasToggle,
+  effisBurnedAreasPeriod,
+  onEffisBurnedAreasPeriodChange,
   isWildfireLayerEnabled,
   onWildfireLayerToggle,
 }) => {
@@ -240,6 +321,17 @@ const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
               <span>{t("baseLayer.effisHotspots")}</span>
             </button>
 
+            {isEffisHotspotsEnabled && (
+              <PeriodSelector
+                options={["24h", "7d"] as const}
+                value={effisHotspotsPeriod}
+                onChange={onEffisHotspotsPeriodChange}
+                getLabel={(option) => t(HOTSPOT_PERIOD_I18N_KEYS[option])}
+                ariaLabel={t("baseLayer.firePeriodHotspotsAria")}
+                accent="orange"
+              />
+            )}
+
             {/* Option zones brûlées EFFIS (overlay layer) */}
             <button
               type="button"
@@ -273,6 +365,17 @@ const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
               </div>
               <span>{t("baseLayer.effisBurnedAreas")}</span>
             </button>
+
+            {isEffisBurnedAreasEnabled && (
+              <PeriodSelector
+                options={["today", "week", "season"] as const}
+                value={effisBurnedAreasPeriod}
+                onChange={onEffisBurnedAreasPeriodChange}
+                getLabel={(option) => t(BURNED_AREA_PERIOD_I18N_KEYS[option])}
+                ariaLabel={t("baseLayer.firePeriodBurnedAria")}
+                accent="amber"
+              />
+            )}
 
             {featureFlags.wildfireLayer && (
               <button
