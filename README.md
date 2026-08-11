@@ -133,17 +133,54 @@ Note cache : `maintenance.json` est charge avec une strategie `no-store` cote na
 
 ### Configuration domaine (`src/config/domainConfig.ts`)
 
-Le branding et certains liens institutionnels sont portes par `src/config/domainConfig.ts`.
+Le branding, les liens institutionnels et les metadonnees SEO sont portes par `src/config/domainConfig.ts`.
 
 Structure principale :
-- `DOMAIN_CONFIG.default` contient la configuration par defaut (logo, favicon, centre/zoom de carte, titre, liens, organisation) 
-- `getConfigForDomain(domain)` applique la config associee au domaine courant 
-- si le domaine n'est pas defini dans `DOMAIN_CONFIG`, fallback automatique vers `DOMAIN_CONFIG.default`.
+- `DOMAIN_CONFIG.default` contient la configuration par defaut (logo, favicon, centre/zoom/emprise de carte, titre, description, liens, organisation, mentions legales)
+- `getConfigForDomain(domain)` applique la config associee au domaine courant, avec repli automatique vers `DOMAIN_CONFIG.default` si le domaine n'a pas d'entree dediee
+- l'instance AtmoSud (`atmosud`) est un exemple d'entree dediee : elle est selectionnee pour tout hostname en `*.atmosud.org` (voir `isAtmoSudHost`), pas seulement une correspondance exacte — utile pour couvrir prod + preprod sans dupliquer la config.
+
+Champs disponibles sur une entree (`DomainConfig`) :
+
+| Champ | Usage |
+|---|---|
+| `logo`, `logo2`, `favicon` | Assets affiches dans le header et l'onglet du navigateur |
+| `mapCenter`, `mapZoom`, `mapBounds` | Vue initiale de la carte **et** emprise reelle de l'instance (voir section Referencement) |
+| `title` | Affiche dans la navbar — a garder court |
+| `seoTitle` (optionnel) | Utilise pour `<title>`/`document.title` a la place de `title` si plus descriptif est souhaite sans casser l'UI |
+| `description` | `<meta name="description">`, JSON-LD, et panneau "A propos" sous le header |
+| `earliestMeasurementDate` (optionnel, `YYYY-MM-DD`) | Date de premiere mesure exploitable du reseau de **cette** instance, pour `temporalCoverage` (JSON-LD) — ne renseigner que si connue et verifiee, sinon laisser absent |
+| `links.website/contact/about` | Liens institutionnels affiches dans l'app et les mentions legales |
+| `organization` | Nom de l'entite qui opere cette instance |
+| `legal` (optionnel) | Mentions legales (SIRET, forme juridique, adresse, representant legal, hebergeur, DPO...) affichees dans la modale d'information |
 
 Pour ajouter un nouveau domaine :
-1. Ajouter une entree dans `DOMAIN_CONFIG` avec la cle du domaine (ex: `web-prod-no2.xpr`) 
-2. Renseigner `logo`, `logo2`, `favicon`, `mapCenter`, `mapZoom`, `title`, `links`, `organization` 
-3. Verifier le rendu du header, du favicon et du centrage de carte.
+1. Ajouter une entree dans `DOMAIN_CONFIG` avec une cle explicite (pas forcement le hostname exact, voir `atmosud` + `isAtmoSudHost`) ;
+2. Renseigner tous les champs du tableau ci-dessus avec les vraies valeurs de l'instance (voir checklist Referencement ci-dessous) ;
+3. Ajuster `getConfigForDomain` si necessaire pour que le(s) hostname(s) de cette instance y soient correctement resolus ;
+4. Verifier le rendu du header, du favicon, du centrage de carte, et le panneau "A propos".
+
+### Referencement (SEO) — checklist pour chaque instance
+
+Plusieurs organisations deploient OpenAirMap sur des domaines differents a partir du **meme code**. Sans differenciation, ces instances servent un contenu quasiment identique et Google les traite comme des doublons : il n'en montre qu'une dans les resultats de recherche generiques, au detriment des autres (c'est ce qui est arrive a `openairmap.atmosud.org`, invisible pendant plusieurs mois face a `openairmap.fr`).
+
+Ce que fait deja l'app **automatiquement**, sans configuration supplementaire, une fois qu'une instance a sa propre entree dans `DOMAIN_CONFIG` :
+- `<link rel="canonical">` auto-referent (voir `useCanonicalUrl`) ;
+- `<meta name="description">` (voir `useMetaDescription`) ;
+- JSON-LD `Dataset` (voir `useStructuredData` / `structuredData.ts`), avec `spatialCoverage` derive de `mapBounds` ;
+- panneau "A propos" toujours present dans le DOM, meme replie (voir `AboutPanel`), avec `description` en premier paragraphe.
+
+Ce que **chaque instance doit renseigner elle-meme** dans `domainConfig.ts` pour que cette differenciation soit reelle (pas juste copier la config d'une autre instance) :
+
+- [ ] **Une entree dediee dans `DOMAIN_CONFIG`** (ne pas rester sur `default`, qui est le repli generique/France) ;
+- [ ] **`title`/`seoTitle`** vraiment differents des autres instances — pas juste "OpenAirMap" partout ;
+- [ ] **`description`** qui decrit reellement ce que couvre *cette* instance (zone, public, source des donnees) — court, factuel, pas de bourrage de mots-cles ;
+- [ ] **`mapCenter`/`mapZoom`/`mapBounds`** correspondant a la vraie zone geographique couverte par cette instance (pas la region Sud, pas la France, si ce n'est pas son perimetre) — ca alimente aussi `spatialCoverage` du JSON-LD, c'est la difference la plus difficile a confondre avec une autre instance pour Google ;
+- [ ] **`organization`** = le nom reel de l'entite qui opere cette instance ;
+- [ ] **`links.website/contact/about`** = les vrais liens de cette organisation, pas ceux d'AtmoSud ;
+- [ ] **`legal`** = les vraies mentions legales de l'organisation qui opere l'instance (SIRET, forme juridique, adresse, representant legal, hebergeur, DPO...) — a renseigner par l'organisation elle-meme, personne d'autre ne peut le faire correctement a sa place ;
+- [ ] **`earliestMeasurementDate`** (optionnel) uniquement si la date de premiere mesure exploitable du reseau de cette instance est connue et verifiee ;
+- [ ] **`logo`/`logo2`/`favicon`** propres a l'instance, ajoutes dans `public/`.
 
 ### Fond de carte StadiaMaps
 
