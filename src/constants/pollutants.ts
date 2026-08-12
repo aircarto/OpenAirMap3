@@ -103,6 +103,8 @@ export const pollutants: Record<string, Pollutant> = {
     unit: "dB(A)",
     thresholds: seuilsBruit,
     supportedTimeSteps: ["instantane", "deuxMin"],
+    // Pas encore exposé dans le sélecteur global (Scan / ≤2 min)
+    activated: false,
   },
 };
 
@@ -144,6 +146,7 @@ export const isPollutantSupportedForTimeStep = (
 ): boolean => {
   const pollutant = pollutants[pollutantCode];
   if (!pollutant) return false;
+  if (pollutant.activated === false) return false;
   if (!pollutant.supportedTimeSteps || pollutant.supportedTimeSteps.length === 0)
     return true;
   return pollutant.supportedTimeSteps.includes(timeStep);
@@ -154,6 +157,7 @@ export const getSupportedPollutantsForTimeStep = (
 ): string[] => {
   return Object.entries(pollutants)
     .filter(([, pollutant]) => {
+      if (pollutant.activated === false) return false;
       if (!pollutant.supportedTimeSteps || pollutant.supportedTimeSteps.length === 0)
         return true;
       return pollutant.supportedTimeSteps.includes(timeStep);

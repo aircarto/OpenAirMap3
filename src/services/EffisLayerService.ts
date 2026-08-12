@@ -356,11 +356,30 @@ function formatPercent(value?: string): string | null {
   return `${num.toFixed(1)} %`;
 }
 
+/**
+ * Affiche une date EFFIS (UTC, souvent sans suffixe) en heure locale du navigateur.
+ * Format français : `JJ/MM/AAAA HH:mm:ss`.
+ */
 function formatDateLabel(value?: string): string {
   if (!value) {
     return '—';
   }
-  return escapeHtml(value.replace('T', ' ').trim());
+  const trimmed = value.replace('T', ' ').trim();
+  // EFFIS envoie souvent `YYYY-MM-DD HH:mm:ss` sans Z : on force l'UTC pour
+  // éviter que le moteur JS l'interprète déjà comme locale.
+  const hasTimezone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(trimmed);
+  const isoCandidate = hasTimezone
+    ? trimmed.replace(' ', 'T')
+    : `${trimmed.replace(' ', 'T')}Z`;
+  const date = new Date(isoCandidate);
+  if (Number.isNaN(date.getTime())) {
+    return escapeHtml(trimmed);
+  }
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const local =
+    `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ` +
+    `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+  return escapeHtml(local);
 }
 
 /** Arrondit le FRP : le service renvoie « 5.2000000000000000 » */
@@ -447,7 +466,7 @@ function buildHotspotPopupHtml(props: EffisHotspotProperties): string {
   return `
     <div class="effis-hotspot-popup" style="min-width:210px;font-size:13px;line-height:1.35;">
       <div style="font-weight:700;margin-bottom:6px;">Point de chaleur EFFIS</div>
-      <div><strong>Détection :</strong> ${formatDateLabel(props.acq_at)} UTC</div>
+      <div><strong>Détection :</strong> ${formatDateLabel(props.acq_at)}</div>
       ${location ? `<div><strong>Lieu :</strong> ${location}</div>` : ''}
       <div><strong>Puissance :</strong> ${formatFrp(props.frp)}</div>
       <div><strong>Confiance :</strong> ${confidence}</div>

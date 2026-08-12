@@ -42,6 +42,8 @@ export interface Pollutant {
   unit: string;
   thresholds: Seuils;
   supportedTimeSteps?: string[];
+  /** Si false, le polluant n'apparaît pas dans le sélecteur global (défaut: true) */
+  activated?: boolean;
 }
 
 // Types pour les pas de temps
