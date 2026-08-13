@@ -111,26 +111,36 @@ export const useAmChartsChart = ({
   const xAxisMinRef = useRef(xAxisMin);
   const xAxisMaxRef = useRef(xAxisMax);
   const timeStepRef = useRef(timeStep);
+  // Dernier jeu de données connu : les mises à jour différées (setTimeout) doivent
+  // TOUJOURS repartir de cette ref et jamais de la valeur capturée dans leur closure,
+  // sinon un jeu obsolète peut écraser des données déjà appliquées.
+  const amChartsDataRef = useRef(amChartsData);
   unitKeysRef.current = unitKeys;
   seriesConfigsRef.current = seriesConfigs;
   xAxisMinRef.current = xAxisMin;
   xAxisMaxRef.current = xAxisMax;
   timeStepRef.current = timeStep;
+  amChartsDataRef.current = amChartsData;
 
   // Mettre à jour la ref du formatter quand xAxisDateFormat change
   useEffect(() => {
     xAxisDateFormatRef.current = xAxisDateFormat;
   }, [xAxisDateFormat]);
 
-  // Création initiale du graphique
+  // Création du graphique.
+  // Dépend de la présence de données : quand il n'y en a pas, HistoricalChart
+  // n'affiche pas le conteneur DOM et la création est impossible. L'effet doit
+  // donc être rejoué dès que des données arrivent (et le graphique détruit quand
+  // elles disparaissent), sinon le graphique ne serait jamais créé pour cette
+  // instance et resterait vide définitivement.
+  const hasChartData = chartData.length > 0;
   useEffect(() => {
-    if (!containerRef.current) {
-      console.warn("[HistoricalChart] Conteneur DOM non disponible");
+    if (!hasChartData) {
       return;
     }
 
-    if (!chartData || chartData.length === 0) {
-      console.warn("[HistoricalChart] Aucune donnée à afficher");
+    if (!containerRef.current) {
+      console.warn("[HistoricalChart] Conteneur DOM non disponible");
       return;
     }
 
@@ -382,8 +392,15 @@ export const useAmChartsChart = ({
         rootRef.current = null;
         chartRef.current = null;
       }
+      // Le graphique est détruit : les mémos de comparaison doivent repartir de
+      // zéro pour que les données et les séries soient bien réappliquées si un
+      // nouveau graphique est créé.
+      lastAmChartsDataRef.current = "";
+      lastSeriesConfigsRef.current = "";
+      isUpdatingRef.current = false;
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- création unique du graphique (mises à jour via autres effets et i18n.on)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- création/destruction pilotée par la disponibilité des données ; mises à jour via les autres effets et i18n.on
+  }, [hasChartData]);
 
   useEffect(() => {
     if (!chartRef.current) return;
@@ -490,6 +507,7 @@ export const useAmChartsChart = ({
   const lastAmChartsDataRef = useRef<string>("");
   const isUpdatingRef = useRef(false);
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const zoomTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Mise à jour des données sans recréer le graphique
   useEffect(() => {
@@ -510,8 +528,11 @@ export const useAmChartsChart = ({
       }
       // Programmer une mise à jour après un court délai
       updateTimeoutRef.current = setTimeout(() => {
-        // Réessayer la mise à jour
-        const currentDataKey = JSON.stringify(amChartsData);
+        updateTimeoutRef.current = null;
+        // Toujours repartir des données les plus récentes (ref), jamais de la
+        // closure : de nouvelles données peuvent être arrivées pendant l'attente.
+        const latestData = amChartsDataRef.current;
+        const currentDataKey = JSON.stringify(latestData);
         if (lastAmChartsDataRef.current !== currentDataKey) {
           lastAmChartsDataRef.current = currentDataKey;
           isUpdatingRef.current = false;
@@ -524,7 +545,7 @@ export const useAmChartsChart = ({
             ) as am5xy.DateAxis<am5xy.AxisRendererX>;
             if (xAxis) {
               chart.series.values.forEach((lineSeries) => {
-                (lineSeries as am5xy.LineSeries).data.setAll(amChartsData);
+                (lineSeries as am5xy.LineSeries).data.setAll(latestData);
               });
               if (xAxisMinRef.current && xAxisMaxRef.current) {
                 applyFixedXAxisRange(
@@ -533,7 +554,7 @@ export const useAmChartsChart = ({
                   xAxisMaxRef.current,
                   true,
                   timeStepRef.current,
-                  amChartsData
+                  latestData
                 );
               }
             }
@@ -587,7 +608,8 @@ export const useAmChartsChart = ({
     });
 
     // Restaurer le zoom ou cadrer sur toute la période historique
-    setTimeout(() => {
+    zoomTimeoutRef.current = setTimeout(() => {
+      zoomTimeoutRef.current = null;
       try {
         if (hasFixedHistoricalRange) {
           applyFixedXAxisRange(
@@ -596,7 +618,7 @@ export const useAmChartsChart = ({
             xAxisMaxRef.current,
             true,
             timeStepRef.current,
-            amChartsData
+            amChartsDataRef.current
           );
         } else if (zoomStart !== undefined && zoomEnd !== undefined) {
           xAxis.zoomToDates(new Date(zoomStart), new Date(zoomEnd));
@@ -613,11 +635,27 @@ export const useAmChartsChart = ({
         clearTimeout(updateTimeoutRef.current);
         updateTimeoutRef.current = null;
       }
+      if (zoomTimeoutRef.current) {
+        clearTimeout(zoomTimeoutRef.current);
+        zoomTimeoutRef.current = null;
+        isUpdatingRef.current = false;
+      }
     };
   }, [amChartsData]);
 
   // Ref pour mémoriser la dernière configuration des séries
   const lastSeriesConfigsRef = useRef<string>("");
+  const seriesDataTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Annuler la mise à jour différée des séries au démontage
+  useEffect(() => {
+    return () => {
+      if (seriesDataTimeoutRef.current) {
+        clearTimeout(seriesDataTimeoutRef.current);
+        seriesDataTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   // Mise à jour des séries (quand la configuration change)
   useEffect(() => {
@@ -698,8 +736,18 @@ export const useAmChartsChart = ({
     // Forcer une mise à jour du graphique après recréation des séries
     // Cela garantit que les données sont bien appliquées avec le bon connectNulls
     // Utiliser un petit délai pour s'assurer que les séries sont bien créées
-    setTimeout(() => {
-      if (chartRef.current && amChartsData && amChartsData.length > 0) {
+    if (seriesDataTimeoutRef.current) {
+      clearTimeout(seriesDataTimeoutRef.current);
+    }
+    seriesDataTimeoutRef.current = setTimeout(() => {
+      seriesDataTimeoutRef.current = null;
+      // IMPORTANT: repartir des données les plus récentes (ref) et non de la
+      // closure. Sinon, si de nouvelles données ont été appliquées entre-temps
+      // (ex. réponse API arrivée en moins de 50 ms après un changement de pas
+      // de temps), ce timeout réécrirait le jeu obsolète et la courbe
+      // disparaîtrait (points isolés entourés de null avec connect: false).
+      const latestData = amChartsDataRef.current;
+      if (chartRef.current && latestData && latestData.length > 0) {
         const chart = chartRef.current;
         const xAxis = chart.xAxes.getIndex(
           0
@@ -707,10 +755,12 @@ export const useAmChartsChart = ({
         // Mettre à jour les données de toutes les séries
         chart.series.values.forEach((lineSeries) => {
           const series = lineSeries as am5xy.LineSeries;
-          series.data.setAll(amChartsData);
+          series.data.setAll(latestData);
           // S'assurer que connect est bien configuré selon timeStep
+          const currentTimeStep = timeStepRef.current;
           const isAggregatedTimeStep =
-            timeStep && ["quartHeure", "heure", "jour"].includes(timeStep);
+            currentTimeStep &&
+            ["quartHeure", "heure", "jour"].includes(currentTimeStep);
           const shouldConnect = !isAggregatedTimeStep;
           series.set("connect" as keyof am5xy.IXYSeriesSettings, shouldConnect);
         });
@@ -721,7 +771,7 @@ export const useAmChartsChart = ({
             xAxisMaxRef.current,
             true,
             timeStepRef.current,
-            amChartsData
+            latestData
           );
         }
       }
