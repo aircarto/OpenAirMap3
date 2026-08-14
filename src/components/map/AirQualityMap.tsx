@@ -36,7 +36,6 @@ import {
   isWithinHotspotsRetention,
 } from "../../services/EffisLayerService";
 import { MAX_COMPARISON_STATIONS } from "../../constants/comparison";
-import BaseLayerControl from "../controls/BaseLayerControl";
 import CustomSearchControl from "../controls/CustomSearchControl";
 import ScaleControl from "../controls/ScaleControl";
 import NorthArrow from "../controls/NorthArrow";

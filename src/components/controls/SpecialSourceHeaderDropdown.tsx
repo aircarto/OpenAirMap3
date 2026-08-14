@@ -6,6 +6,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
+import { DropdownButton } from "./DropdownButton";
 import { cn } from "../../lib/utils";
 
 export interface SpecialSourceHeaderDropdownProps {
@@ -37,13 +38,11 @@ const SpecialSourceHeaderDropdown: React.FC<SpecialSourceHeaderDropdownProps> = 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button
-          type="button"
+        <DropdownButton
           disabled={disabled}
+          chevronClassName="justify-end pr-2 w-7"
           className={cn(
-            "relative flex items-center gap-2 bg-gradient-to-br from-gray-50 to-white border border-gray-200/60 text-gray-800",
-            "hover:from-gray-100 hover:to-gray-50 hover:border-gray-300 shadow-sm backdrop-blur-sm rounded-lg pl-3 pr-8 py-2 text-left text-sm font-medium",
-            "transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#4271B3]/20 focus:border-[#4271B3] min-w-[100px] max-w-[160px]",
+            "flex items-center gap-2 pr-8 min-w-[100px] max-w-[160px]",
             disabled && "opacity-60 pointer-events-none"
           )}
           aria-label={t("controls.specialSourcesAria")}
@@ -54,12 +53,7 @@ const SpecialSourceHeaderDropdown: React.FC<SpecialSourceHeaderDropdownProps> = 
               <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" aria-hidden title="Au moins une source active" />
             )}
           </span>
-          <span className="absolute inset-y-0 right-0 flex items-center justify-end pr-2 pointer-events-none text-gray-500 w-7">
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
-          </span>
-        </button>
+        </DropdownButton>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
