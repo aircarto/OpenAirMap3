@@ -1,8 +1,32 @@
+import tailwindcssAnimate from "tailwindcss-animate";
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["var(--font-ui)"],
+        display: ["var(--font-display)"],
+      },
+      // Échelle nommée : remplace 13 valeurs arbitraires posées à la main.
+      // Miroir en --z-* dans index.css pour les règles CSS en !important.
+      zIndex: {
+        "map-ambient": "400", // échelle, boussole, attribution
+        "map-info": "500", // légende, statistiques, légendes de couches
+        "map-tooltip": "510", // tooltips de la légende
+        "map-search": "600", // contrôle de recherche et ses résultats
+        notify: "700", // pile de notifications de carte
+        panel: "800", // panneaux latéraux, bannières
+        "panel-raised": "810", // panneau de statistiques déplié
+        rail: "900", // rail de contrôles
+        floating: "1000", // panneaux historiques (date, lecture)
+        popover: "1100", // contenus Radix, menu de langue
+        "tour-overlay": "1200", // voile driver.js
+        "tour-popover": "1210", // bulle driver.js
+        modal: "1300", // modale d'informations
+        toast: "1400", // toasts, lien d'évitement, tooltip de marqueur
+      },
       keyframes: {
         'slide-in-left': {
           '0%': {
@@ -136,5 +160,5 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [tailwindcssAnimate],
 };

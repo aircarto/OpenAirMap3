@@ -4,6 +4,16 @@
     <meta charset="UTF-8" />
     <link rel="shortcut icon" type="image/x-icon" href="/AtmoFavicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Police d'interface auto-hébergée : un seul preload, sur le sous-ensemble
+         latin de la variable. Les autres fichiers (latin-ext, serif display,
+         arabe) sont chargés à la demande via unicode-range. -->
+    <link
+      rel="preload"
+      href="/fonts/instrument-sans-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
     <title>OpenAirMap</title>
     <meta
       name="description"

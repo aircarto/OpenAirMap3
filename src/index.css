@@ -1,8 +1,298 @@
 @import "driver.js/dist/driver.css";
 
+/* ──────────────────────────────────────────────────────────────────────────
+   Polices auto-hébergées (OFL 1.1 — licences dans public/fonts/OFL-*.txt).
+   Servies depuis notre origine : pas de requête vers un CDN tiers, donc pas
+   de transfert d'adresses IP de visiteurs à un sous-traitant hors UE.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Instrument Sans — police d'interface, variable 400→700 */
+@font-face {
+  font-family: "Instrument Sans";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/instrument-sans-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Instrument Sans";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/instrument-sans-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF,
+    U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* Instrument Serif — display, réservé aux titres du panneau À propos et de la modale */
+@font-face {
+  font-family: "Instrument Serif";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/instrument-serif-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* IBM Plex Sans Arabic — chargée uniquement pour les lecteurs arabophones
+   grâce à unicode-range : aucun octet transféré pour les autres locales. */
+@font-face {
+  font-family: "IBM Plex Sans Arabic";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/ibm-plex-sans-arabic-400.woff2") format("woff2");
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891,
+    U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41,
+    U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
+}
+@font-face {
+  font-family: "IBM Plex Sans Arabic";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/ibm-plex-sans-arabic-600.woff2") format("woff2");
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891,
+    U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41,
+    U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Tokens de conception — « Instrument de verre »
+   ...........................................................................
+   ATTENTION : les variables consommées par tailwind.config.js (--primary,
+   --background, --border, --radius…) doivent rester des triplets HSL NUS,
+   sans fonction hsl(). Tailwind les enveloppe lui-même. Les tokens de verre
+   ne peuvent donc pas passer par ce canal : ce sont des couleurs complètes,
+   consommées par les classes .glass-* définies plus bas.
+   ────────────────────────────────────────────────────────────────────────── */
+:root {
+  /* ── Familles ─────────────────────────────────────────────────────────── */
+  --font-ui: "Instrument Sans", "IBM Plex Sans Arabic", system-ui,
+    -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Instrument Serif", Georgia, "Times New Roman", serif;
+
+  /* ── Rampe de marque, teinte verrouillée sur #4271B3 ──────────────────────
+     Quatre paliers sont épinglés sur les hex déjà utilisés dans le code pour
+     que la migration ne déplace aucune couleur existante :
+     brand-100 = #e7eef8, brand-500 = #4271B3, brand-600 = #325A96,
+     brand-800 = #1f3c6d. Les autres sont interpolés.                       */
+  --brand-50: 213 52% 96%;
+  --brand-100: 215 55% 94%;
+  --brand-200: 215 52% 86%;
+  --brand-300: 215 50% 76%;
+  --brand-400: 215 47% 62%;
+  --brand-500: 215 46% 48%;
+  --brand-600: 216 50% 39%;
+  --brand-700: 216 52% 31%;
+  --brand-800: 218 56% 27%;
+  --brand-900: 217 56% 18%;
+
+  /* ── Canal shadcn (consommé par tailwind.config.js) ───────────────────── */
+  --background: 210 20% 98%;
+  --foreground: 214 31% 15%;
+  --card: 0 0% 100%;
+  --card-foreground: 214 31% 15%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 214 31% 15%;
+  --primary: 215 46% 48%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 215 55% 94%;
+  --secondary-foreground: 218 56% 27%;
+  --muted: 214 20% 95%;
+  --muted-foreground: 214 20% 26%;
+  --accent: 215 55% 94%;
+  --accent-foreground: 218 56% 27%;
+  --destructive: 0 65% 42%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 214 20% 88%;
+  --input: 214 20% 88%;
+  --ring: 216 50% 39%;
+  /* Était absente : `borderRadius` est surchargé par var(--radius) dans
+     tailwind.config.js, donc les 255 `rounded-lg/md/sm` du code produisaient
+     un border-radius invalide, c'est-à-dire des coins carrés. On restitue
+     0.5rem, la valeur par défaut de Tailwind pour `rounded-lg` — soit ce que
+     le code visait en écrivant ces classes, plutôt qu'un nouveau parti pris.
+     Les rayons plus généreux du rail passent par --r-lg / --r-xl. */
+  --radius: 0.5rem;
+
+  /* ── Texte sur verre ──────────────────────────────────────────────────────
+     Valeurs contraintes par le pire cas de contraste : surface à 72 % d'opacité
+     au-dessus d'une imagerie satellite noire, soit une luminance composée de
+     0,466. Ratios garantis : --fg 7,46:1 · --fg-muted 4,97:1 · --fg-warn 4,8:1
+     · --fg-danger 5,37:1. RÈGLE : aucun texte sur verre plus clair que
+     --fg-muted (slate-600 tombe à 3,59:1, amber-700 à 2,47:1).              */
+  --fg: #1b2733;
+  --fg-muted: #364350;
+  --fg-warn: #6b2e08;
+  --fg-danger: #7a1410;
+  --fg-ok: #0f5132;
+
+  /* ── Échelle de verre — trois niveaux, pas un de plus ─────────────────── */
+  --glass-tint: 250 251 255; /* blanc froid, jamais blanc pur */
+  --glass-1-alpha: 0.72; /* rail, chrome de carte */
+  --glass-2-alpha: 0.88; /* flyouts et panneaux : portent du texte dense */
+  --glass-3-alpha: 0.62; /* ambiant : échelle, boussole, notices */
+  --glass-blur: 20px;
+  --glass-sat: 160%;
+
+  /* ── Arêtes : le « ménisque », lumière prise sur le rebord de la plaque ── */
+  --edge-hi: inset 0 1px 0 rgb(255 255 255 / 0.72);
+  --edge-lo: inset 0 -1px 0 rgb(16 32 56 / 0.05);
+  --edge-ring: 0 0 0 1px rgb(16 32 56 / 0.09);
+
+  /* ── Ombres teintées froid : de la lumière dans de la brume, pas du noir ── */
+  --shadow-1: 0 1px 2px rgb(16 32 56 / 0.06), 0 1px 1px rgb(16 32 56 / 0.04);
+  --shadow-2: 0 2px 6px -1px rgb(16 32 56 / 0.1), 0 1px 3px rgb(16 32 56 / 0.06);
+  --shadow-3: 0 8px 24px -6px rgb(16 32 56 / 0.16), 0 2px 6px rgb(16 32 56 / 0.07);
+  --shadow-4: 0 20px 48px -12px rgb(16 32 56 / 0.24), 0 4px 12px rgb(16 32 56 / 0.1);
+
+  /* ── Rayons ───────────────────────────────────────────────────────────── */
+  --r-xs: 6px;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 20px;
+  --r-pill: 999px;
+
+  /* ── Mouvement ────────────────────────────────────────────────────────── */
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+  --dur-slow: 260ms;
+  --dur-panel: 300ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.25, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-spring: cubic-bezier(0.22, 1.2, 0.36, 1);
+
+  /* ── Échelle de z-index ───────────────────────────────────────────────────
+     Miroir des clés `zIndex` de tailwind.config.js, pour les quelques règles
+     CSS en !important qui ne peuvent pas utiliser une classe utilitaire.    */
+  --z-map-ambient: 400;
+  --z-map-info: 500;
+  --z-map-tooltip: 510;
+  --z-map-search: 600;
+  --z-notify: 700;
+  --z-panel: 800;
+  --z-panel-raised: 810;
+  --z-rail: 900;
+  --z-floating: 1000;
+  --z-popover: 1100;
+  --z-tour-overlay: 1200;
+  --z-tour-popover: 1210;
+  --z-modal: 1300;
+  --z-toast: 1400;
+}
+
+/* Police d'interface appliquée globalement ; la locale arabe bascule sur
+   IBM Plex Sans Arabic par le seul jeu des unicode-range. */
+html {
+  font-family: var(--font-ui);
+}
+
+@layer components {
+  /* ────────────────────────────────────────────────────────────────────────
+     Les trois surfaces de verre. Mécanisme anti-dérive : plus aucun
+     `bg-white/xx backdrop-blur-xx` bricolé dans l'UI carte — toute surface
+     flottante passe par .glass-1, .glass-2 ou .glass-3.
+     ──────────────────────────────────────────────────────────────────────── */
+  .glass-1,
+  .glass-2,
+  .glass-3 {
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+    /* isolation + contain : le flou ne coûte qu'une seule lecture de fond par
+       surface, et les enfants ne créent pas de couches supplémentaires. */
+    isolation: isolate;
+    contain: layout paint;
+    color: var(--fg);
+  }
+
+  .glass-1 {
+    background: rgb(var(--glass-tint) / var(--glass-1-alpha));
+    box-shadow: var(--edge-ring), var(--edge-hi), var(--edge-lo), var(--shadow-3);
+  }
+
+  .glass-2 {
+    background: rgb(var(--glass-tint) / var(--glass-2-alpha));
+    box-shadow: var(--edge-ring), var(--edge-hi), var(--shadow-4);
+  }
+
+  .glass-3 {
+    background: rgb(var(--glass-tint) / var(--glass-3-alpha));
+    box-shadow: var(--edge-ring), var(--edge-hi), var(--shadow-2);
+  }
+}
+
+/* Fond de carte sombre : le chrome ne bascule pas de thème, c'est l'opacité
+   qui compense. Un attribut sur la colonne carte, une règle, aucun état React. */
+[data-basemap="satellite"] {
+  --glass-1-alpha: 0.84;
+  --glass-3-alpha: 0.76;
+  --glass-sat: 130%;
+}
+
+/* Pendant un déplacement de carte, le fond change à chaque frame : couper le
+   flou supprime la relecture par frame. Invisible, car la surface s'opacifie
+   simultanément. C'est la mitigation de performance à plus fort rendement. */
+[data-map-moving="true"] {
+  --glass-blur: 0px;
+  --glass-1-alpha: 0.92;
+  --glass-2-alpha: 0.96;
+  --glass-3-alpha: 0.88;
+}
+
+/* Repli sans backdrop-filter (Firefox < 103, Safari anciens, compositing GPU
+   désactivé). Les valeurs par défaut sont déjà lisibles ; on ne fait que les
+   opacifier — le sens du @supports existant plus bas est conservé. */
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  :root {
+    --glass-1-alpha: 0.96;
+    --glass-2-alpha: 0.98;
+    --glass-3-alpha: 0.94;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --glass-1-alpha: 1;
+    --glass-2-alpha: 1;
+    --glass-3-alpha: 1;
+    --glass-blur: 0px;
+  }
+
+  .glass-1,
+  .glass-2,
+  .glass-3 {
+    border: 1px solid var(--fg-muted);
+    box-shadow: var(--shadow-2);
+  }
+}
+
+@media (forced-colors: active) {
+  .glass-1,
+  .glass-2,
+  .glass-3 {
+    background: Canvas;
+    color: CanvasText;
+    border: 1px solid CanvasText;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
+    forced-color-adjust: none;
+  }
+}
 
 /* Lien d'évitement : masqué visuellement, visible au focus (accessibilité) */
 .skip-link {
@@ -46,6 +336,14 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    /* Sans cela, un décalage d'apparition échelonné laisse les éléments
+       invisibles pendant toute la durée du delay, y compris pour qui a
+       justement demandé l'absence de mouvement. */
+    animation-delay: 0.01ms !important;
+  }
+
+  html {
+    scroll-behavior: auto !important;
   }
 }
 
