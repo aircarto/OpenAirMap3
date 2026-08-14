@@ -88,7 +88,7 @@ const Legend: React.FC<LegendProps> = ({
 
   return (
     <div
-      className={`${getLegendPosition()} z-[1000] transition-all duration-300 ease-in-out max-w-[95vw] md:max-w-none ${visibilityClass}`}
+      className={`${getLegendPosition()} z-map-info transition-all duration-300 ease-in-out max-w-[95vw] md:max-w-none ${visibilityClass}`}
       data-tour="global-legend"
     >
       <div className="bg-white/90 backdrop-blur-sm rounded-md shadow-sm border border-gray-200/50 px-2 py-1.5 lg:px-3 lg:py-2">
@@ -118,7 +118,7 @@ const Legend: React.FC<LegendProps> = ({
 
               {/* Tooltip au hover - grands écrans uniquement */}
               {item.range && (
-                <div className="hidden lg:block absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-[1001]">
+                <div className="hidden lg:block absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-map-tooltip">
                   {item.range} {pollutant.unit}
                   <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
                 </div>

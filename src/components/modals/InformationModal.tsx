@@ -563,7 +563,7 @@ const InformationModal: React.FC<InformationModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[4000] flex items-center justify-center overflow-y-auto bg-slate-900/40 backdrop-blur-sm px-3 py-4 sm:py-6"
+      className="fixed inset-0 z-modal flex items-center justify-center overflow-y-auto bg-slate-900/40 backdrop-blur-sm px-3 py-4 sm:py-6"
       role="dialog"
       aria-modal="true"
       aria-labelledby="info-modal-title"

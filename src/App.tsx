@@ -610,7 +610,7 @@ const AppContent: React.FC = () => {
         {t("app.skipToContent")}
       </a>
       {/* Header : barre unique avec regroupement logique des contrôles */}
-      <header className="relative bg-white border-b border-gray-200/80 shadow-sm z-[2500]">
+      <header className="relative bg-white border-b border-gray-200/80 shadow-sm z-rail">
         <div className="px-4 sm:px-5 py-2.5">
           <div className="flex items-center justify-between gap-3 flex-nowrap">
             {/* Marque : logo + titre */}
@@ -763,7 +763,7 @@ const AppContent: React.FC = () => {
       {/* Carte en plein écran */}
       <main id="main-content" className="flex-1 relative" tabIndex={-1}>
         {shouldShowAtmoMicroOutageBanner && (
-          <div className="absolute top-4 left-4 right-4 z-[1500]">
+          <div className="absolute top-4 left-4 right-4 z-panel">
             <div className="relative mx-auto max-w-5xl rounded-lg border border-amber-300 bg-amber-50 px-10 py-3 shadow">
               <p className="text-center text-sm font-medium text-amber-900">
                 {atmoMicroMaintenanceBanner.message}
@@ -782,7 +782,7 @@ const AppContent: React.FC = () => {
 
         {/* Indicateur de chargement */}
         {loading && (
-          <div className="absolute top-4 right-4 z-[1500]">
+          <div className="absolute top-4 right-4 z-panel">
             <div className="bg-white/90 backdrop-blur-sm px-3 py-2 rounded-lg shadow-lg border border-gray-200">
               <div className="flex items-center space-x-2">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
@@ -810,7 +810,7 @@ const AppContent: React.FC = () => {
         )}
 
         {error && (
-          <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-2 rounded-md shadow-lg z-[1500] max-w-xs">
+          <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-2 rounded-md shadow-lg z-panel max-w-xs">
             <p className="text-xs">{t("common.error")}: {error}</p>
           </div>
         )}

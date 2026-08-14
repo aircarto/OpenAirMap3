@@ -503,7 +503,7 @@ const PollutionEpisodeCalendar: React.FC<PollutionEpisodeCalendarProps> = ({
         
         return (
           <div
-            className="fixed z-[3000] bg-gray-900 text-white text-xs rounded-lg shadow-lg p-3 pointer-events-none max-w-xs"
+            className="fixed z-popover bg-gray-900 text-white text-xs rounded-lg shadow-lg p-3 pointer-events-none max-w-xs"
             style={{
               left: `${hoveredDatePosition.x}px`,
               top: `${hoveredDatePosition.y}px`,

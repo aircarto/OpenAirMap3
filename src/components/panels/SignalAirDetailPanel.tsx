@@ -140,7 +140,7 @@ const SignalAirDetailPanel: React.FC<SignalAirDetailPanelProps> = ({
 
   const getPanelClasses = () => {
     const baseClasses =
-      "bg-white shadow-xl flex flex-col border-r border-gray-200 transition-all duration-300 h-full md:h-[calc(100vh-64px)] relative z-[1500]";
+      "bg-white shadow-xl flex flex-col border-r border-gray-200 transition-all duration-300 h-full md:h-[calc(100vh-64px)] relative z-panel";
 
     switch (currentPanelSize) {
       case "fullscreen":

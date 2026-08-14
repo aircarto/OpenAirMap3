@@ -62,7 +62,7 @@ const LanguageSwitcher: React.FC = () => {
             id="language-listbox"
             role="listbox"
             aria-labelledby="language-switcher"
-            className="fixed z-[3000] min-w-[7rem] rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
+            className="fixed z-popover min-w-[7rem] rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
             style={{ top: dropdownRect.top, left: dropdownRect.left }}
           >
             {supportedLanguages.map((lang) => (

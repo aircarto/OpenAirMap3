@@ -226,7 +226,7 @@ const MapFloatingActions: React.FC<MapFloatingActionsProps> = ({
 
   return (
     <div
-      className="fixed left-2 top-1/2 -translate-y-1/2 z-[2001] 
+      className="fixed left-2 top-1/2 -translate-y-1/2 z-rail 
                  bg-stone-50/60 backdrop-blur-sm rounded-xl shadow-xl border border-stone-200/40 
                  flex flex-col gap-2.5 p-2.5
                  animate-slide-in-left transition-all duration-300 ease-out

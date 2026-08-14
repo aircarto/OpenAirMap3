@@ -157,7 +157,7 @@ const HistoricalPlaybackControl: React.FC<HistoricalPlaybackControlProps> = ({
       ref={containerRef}
       data-tour="historical-playback"
       className={cn(
-        "fixed z-[2000] flex flex-col min-w-[280px] max-w-[320px]",
+        "fixed z-floating flex flex-col min-w-[280px] max-w-[320px]",
         isDragging ? "select-none opacity-95" : "transition-all duration-300",
         "max-w-[calc(100vw-16px)] sm:max-w-[320px]"
       )}

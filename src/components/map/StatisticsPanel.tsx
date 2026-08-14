@@ -309,7 +309,7 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
       {/* Overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/20 z-[1600] transition-opacity"
+          className="fixed inset-0 bg-black/20 z-panel-raised transition-opacity"
           onClick={onClose}
           aria-hidden="true"
         />
@@ -318,7 +318,7 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
       {/* Panel */}
       <div
         className={cn(
-          "fixed bottom-6 right-4 z-[1601] w-[420px] max-h-[80vh]",
+          "fixed bottom-6 right-4 z-panel-sheet w-[420px] max-h-[80vh]",
           "bg-white rounded-lg border border-gray-200 shadow-xl",
           "flex flex-col transition-all duration-300",
           isOpen

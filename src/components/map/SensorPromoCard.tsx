@@ -44,7 +44,7 @@ const SensorPromoCard: React.FC<SensorPromoCardProps> = ({
   return (
     <aside
       aria-label={t("promo.sensor.title")}
-      className="absolute z-[1500] top-14 right-4 max-w-[11rem] md:max-w-[13.5rem] overflow-hidden rounded-xl border border-white/60 bg-white/90 shadow-lg shadow-slate-900/5 backdrop-blur-sm"
+      className="absolute z-panel top-14 right-4 max-w-[11rem] md:max-w-[13.5rem] overflow-hidden rounded-xl border border-white/60 bg-white/90 shadow-lg shadow-slate-900/5 backdrop-blur-sm"
     >
       <button
         type="button"

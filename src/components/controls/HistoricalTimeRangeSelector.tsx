@@ -464,7 +464,7 @@ const HistoricalTimeRangeSelector: React.FC<
 
       {/* Dropdown pour la sélection personnalisée */}
       {isCustomOpen && (
-        <div className="absolute z-[2000] w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+        <div className="absolute z-popover w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
           <div className="p-3 space-y-3">
             <div>
               <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">

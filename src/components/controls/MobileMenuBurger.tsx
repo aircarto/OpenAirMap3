@@ -129,7 +129,7 @@ const MobileMenuBurger: React.FC<MobileMenuBurgerProps> = ({
 
       {/* Menu déroulant */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-[min(100vw-2rem,28rem)] max-w-sm sm:max-w-md bg-white rounded-xl shadow-xl border border-gray-200 z-[3000] max-h-[80vh] overflow-y-auto overscroll-contain">
+        <div className="absolute right-0 top-full mt-2 w-[min(100vw-2rem,28rem)] max-w-sm sm:max-w-md bg-white rounded-xl shadow-xl border border-gray-200 z-popover max-h-[80vh] overflow-y-auto overscroll-contain">
           <div className="p-4 space-y-3 sm:space-y-2">
             {/* Polluant */}
             <div className="space-y-1">

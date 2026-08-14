@@ -148,7 +148,7 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
   return (
     <>
       {signalAir.signalAirFeedback && (
-        <div className="absolute top-24 right-4 z-[1000] max-w-sm bg-white border border-blue-200 text-blue-800 text-sm px-3 py-2 rounded-lg shadow-lg">
+        <div className="absolute top-24 right-4 z-map-info max-w-sm bg-white border border-blue-200 text-blue-800 text-sm px-3 py-2 rounded-lg shadow-lg">
           <div className="flex items-start space-x-2">
             <svg
               className="w-5 h-5 flex-shrink-0 mt-0.5"
@@ -181,7 +181,7 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
       )}
 
       <div
-        className={`absolute bottom-20 left-4 z-[1000] flex flex-col space-y-2 transition-all duration-300 ${
+        className={`absolute bottom-20 left-4 z-map-info flex flex-col space-y-2 transition-all duration-300 ${
           sidePanelOffset ? "hidden md:flex" : "flex"
         }`}
       >
@@ -222,37 +222,37 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
       {isWildfireVisible &&
         wildfire.wildfireLoading &&
         wildfire.wildfireReports.length === 0 && (
-          <div className="absolute top-24 right-4 z-[1000] max-w-xs bg-white border border-orange-200 text-orange-700 text-xs px-3 py-2 rounded-md shadow-lg">
+          <div className="absolute top-24 right-4 z-map-info max-w-xs bg-white border border-orange-200 text-orange-700 text-xs px-3 py-2 rounded-md shadow-lg">
             {t("panels.loadingFireReports")}
           </div>
         )}
 
       {isEffisHotspotsEnabled && mapLayers.isEffisHotspotsLoading && (
-        <div className="absolute top-32 right-4 z-[1000] max-w-xs bg-white border border-orange-200 text-orange-700 text-xs px-3 py-2 rounded-md shadow-lg">
+        <div className="absolute top-32 right-4 z-map-info max-w-xs bg-white border border-orange-200 text-orange-700 text-xs px-3 py-2 rounded-md shadow-lg">
           {t("panels.loadingEffisHotspots")}
         </div>
       )}
 
       {isEffisBurnedAreasEnabled && mapLayers.isEffisBurnedAreasLoading && (
-        <div className="absolute top-40 right-4 z-[1000] max-w-xs bg-white border border-orange-200 text-orange-700 text-xs px-3 py-2 rounded-md shadow-lg">
+        <div className="absolute top-40 right-4 z-map-info max-w-xs bg-white border border-orange-200 text-orange-700 text-xs px-3 py-2 rounded-md shadow-lg">
           {t("panels.loadingEffisBurnedAreas")}
         </div>
       )}
 
       {isWildfireVisible && wildfire.wildfireError && (
-        <div className="absolute top-36 right-4 z-[1000] max-w-xs bg-white border border-red-200 text-red-700 text-xs px-3 py-2 rounded-md shadow-lg">
+        <div className="absolute top-36 right-4 z-map-info max-w-xs bg-white border border-red-200 text-red-700 text-xs px-3 py-2 rounded-md shadow-lg">
           {wildfire.wildfireError}
         </div>
       )}
 
       {isEffisHotspotsEnabled && isHotspotsBeyondRetention && (
-        <div className="absolute top-32 right-4 z-[1000] max-w-xs bg-white border border-amber-200 text-amber-800 text-xs px-3 py-2 rounded-md shadow-lg">
+        <div className="absolute top-32 right-4 z-map-info max-w-xs bg-white border border-amber-200 text-amber-800 text-xs px-3 py-2 rounded-md shadow-lg">
           {t("panels.effisHotspotsBeyondRetention")}
         </div>
       )}
 
       {showHotspotsEmpty && (
-        <div className="absolute top-32 right-4 z-[1000] max-w-xs bg-white border border-gray-200 text-gray-600 text-xs px-3 py-2 rounded-md shadow-lg">
+        <div className="absolute top-32 right-4 z-map-info max-w-xs bg-white border border-gray-200 text-gray-600 text-xs px-3 py-2 rounded-md shadow-lg">
           {t("panels.effisHotspotsEmpty", {
             period: t(
               effisHotspotsPeriod === "24h"
@@ -264,19 +264,19 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
       )}
 
       {showBurnedAreasEmpty && (
-        <div className="absolute top-40 right-4 z-[1000] max-w-xs bg-white border border-gray-200 text-gray-600 text-xs px-3 py-2 rounded-md shadow-lg">
+        <div className="absolute top-40 right-4 z-map-info max-w-xs bg-white border border-gray-200 text-gray-600 text-xs px-3 py-2 rounded-md shadow-lg">
           {t("panels.effisBurnedAreasEmpty")}
         </div>
       )}
 
       {isEffisHotspotsEnabled && mapLayers.effisHotspotsError && (
-        <div className="absolute top-32 right-4 z-[1000] max-w-xs bg-white border border-red-200 text-red-700 text-xs px-3 py-2 rounded-md shadow-lg">
+        <div className="absolute top-32 right-4 z-map-info max-w-xs bg-white border border-red-200 text-red-700 text-xs px-3 py-2 rounded-md shadow-lg">
           {t("panels.effisHotspotsError")}
         </div>
       )}
 
       {isEffisBurnedAreasEnabled && mapLayers.effisBurnedAreasError && (
-        <div className="absolute top-40 right-4 z-[1000] max-w-xs bg-white border border-red-200 text-red-700 text-xs px-3 py-2 rounded-md shadow-lg">
+        <div className="absolute top-40 right-4 z-map-info max-w-xs bg-white border border-red-200 text-red-700 text-xs px-3 py-2 rounded-md shadow-lg">
           {t("panels.effisBurnedAreasError")}
         </div>
       )}
@@ -285,7 +285,7 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
       <div
         className={`absolute ${
           sidePanelOffset ? "bottom-8 right-4" : "bottom-6 right-0"
-        } z-[1000] hidden lg:flex flex-col gap-2 items-end max-h-[min(70vh,calc(100%-6rem))]`}
+        } z-map-info hidden lg:flex flex-col gap-2 items-end max-h-[min(70vh,calc(100%-6rem))]`}
       >
         {overlayLegendItems.length > 0 && (
           <div className="min-h-0 overflow-y-auto shrink">

@@ -169,7 +169,7 @@ const PurpleAirSidePanel: React.FC<PurpleAirSidePanelProps> = ({
 
   const getPanelClasses = () => {
     const baseClasses =
-      "bg-white shadow-xl flex flex-col border-r border-gray-200 h-full md:h-[calc(100vh-64px)] relative z-[1500]";
+      "bg-white shadow-xl flex flex-col border-r border-gray-200 h-full md:h-[calc(100vh-64px)] relative z-panel";
 
     // Si on est en train d'animer la sortie, utiliser fixed pour rester visible pendant l'animation
     // mais le panelSize est déjà "hidden" donc le panel est retiré du flux flex

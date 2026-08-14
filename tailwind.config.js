@@ -18,7 +18,8 @@ export default {
         "map-search": "600", // contrôle de recherche et ses résultats
         notify: "700", // pile de notifications de carte
         panel: "800", // panneaux latéraux, bannières
-        "panel-raised": "810", // panneau de statistiques déplié
+        "panel-raised": "810", // voile du panneau de statistiques
+        "panel-sheet": "820", // panneau de statistiques lui-même
         rail: "900", // rail de contrôles
         floating: "1000", // panneaux historiques (date, lecture)
         popover: "1100", // contenus Radix, menu de langue

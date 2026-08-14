@@ -222,7 +222,7 @@ const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
       </button>
 
       {isOpen && (
-        <div className="absolute z-[2000] w-auto min-w-full mb-1 bg-white/95 backdrop-blur-sm border border-gray-200/50 rounded-md shadow-sm bottom-full">
+        <div className="absolute z-popover w-auto min-w-full mb-1 bg-white/95 backdrop-blur-sm border border-gray-200/50 rounded-md shadow-sm bottom-full">
           <div className="p-1">
             {BASE_LAYER_KEYS.map((layerKey) => (
               <button
