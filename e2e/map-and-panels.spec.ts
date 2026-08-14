@@ -1,7 +1,9 @@
 import { test, expect } from "@playwright/test";
+import { seedToursCompleted } from "./tourSetup";
 
 test.describe("Carte et side panels", () => {
   test.beforeEach(async ({ page }) => {
+    await seedToursCompleted(page);
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible({
       timeout: 15000,

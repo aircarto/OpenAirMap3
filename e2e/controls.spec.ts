@@ -1,9 +1,11 @@
 import { test, expect } from "@playwright/test";
+import { seedToursCompleted } from "./tourSetup";
 
 test.describe("Contrôles header et panneaux", () => {
   test.use({ viewport: { width: 1280, height: 720 } });
 
   test.beforeEach(async ({ page }) => {
+    await seedToursCompleted(page);
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible({
       timeout: 15000,

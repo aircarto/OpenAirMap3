@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { seedToursCompleted } from "./tourSetup";
 
 const isMaintenancePageVisible = async (page: Page): Promise<boolean> =>
   page
@@ -36,6 +37,10 @@ const getLeafletMapState = async (
   });
 
 test.describe("Smoke et navigation", () => {
+  test.beforeEach(async ({ page }) => {
+    await seedToursCompleted(page);
+  });
+
   test("chargement : titre h1 et région carte visibles", async ({ page }) => {
     await page.goto("/");
     test.skip(

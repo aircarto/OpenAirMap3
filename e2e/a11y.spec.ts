@@ -1,7 +1,12 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { clearToursCompleted, seedToursCompleted } from "./tourSetup";
 
 test.describe("Accessibilité (a11y)", () => {
+  test.beforeEach(async ({ page }) => {
+    await seedToursCompleted(page);
+  });
+
   test("page principale : pas de violations axe critiques", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 15000 });
@@ -104,9 +109,9 @@ test.describe("Accessibilité (a11y)", () => {
       timeout: 15000,
     });
 
-    await page.evaluate(() => {
-      localStorage.removeItem("openairmap-tours-completed");
-    });
+    // Enregistré après seedToursCompleted : le script s'exécute ensuite et neutralise
+    // l'amorçage, ce qui laisse le tutoriel se déclencher au rechargement.
+    await clearToursCompleted(page);
     await page.reload();
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible({
       timeout: 15000,

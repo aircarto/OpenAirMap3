@@ -1,4 +1,5 @@
 import { test, expect, Page } from "@playwright/test";
+import { seedToursCompleted } from "./tourSetup";
 
 /**
  * Non-régression : au changement de pas de temps (heure <-> 15 min) dans le side
@@ -102,17 +103,7 @@ test("side panel station : la courbe reste affichée au changement de pas de tem
     ) => realSetTimeout(handler, delay === seriesDelay ? 900 : delay, ...args);
   }, SERIES_UPDATE_DELAY_MS);
 
-  // Ne pas laisser le tour guidé intercepter les clics
-  await page.addInitScript(() => {
-    const now = new Date().toISOString();
-    localStorage.setItem(
-      "openairmap-tours-completed",
-      JSON.stringify({
-        app_overview: { completedAt: now, skipped: true },
-        historical_mode: { completedAt: now, skipped: true },
-      })
-    );
-  });
+  await seedToursCompleted(page);
 
   await page.goto("/?pollutant=o3&sources=atmoRef");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible({
@@ -207,16 +198,7 @@ test("side panel microcapteur : voile de chargement sans remontage du graphique"
 }) => {
   test.setTimeout(180000);
 
-  await page.addInitScript(() => {
-    const now = new Date().toISOString();
-    localStorage.setItem(
-      "openairmap-tours-completed",
-      JSON.stringify({
-        app_overview: { completedAt: now, skipped: true },
-        historical_mode: { completedAt: now, skipped: true },
-      })
-    );
-  });
+  await seedToursCompleted(page);
 
   // Ralentir uniquement les mesures historiques du capteur, pour que le voile de
   // chargement soit observable sans ralentir tout le chargement de la carte.
