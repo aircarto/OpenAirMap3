@@ -14,6 +14,7 @@ import { ModelingService } from "../../services/ModelingService";
 import { DataServiceFactory } from "../../services/DataServiceFactory";
 import { getSensorModelImage } from "../../constants/sensorModels";
 import HistoricalChart from "../charts/HistoricalChart";
+import ChartLoadingOverlay from "../charts/ChartLoadingOverlay";
 import HistoricalTimeRangeSelector from "../controls/HistoricalTimeRangeSelector";
 import { getMaxHistoryDays, getCustomRangeISO, type TimeRange } from "../../utils/historicalTimeRange";
 import { ToggleGroup, ToggleGroupItem } from "../ui/button-group";
@@ -81,6 +82,14 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
     infoMessage: null,
   });
 
+  // Pas de temps auquel correspondent les données actuellement affichées.
+  // Distinct de `state.chartControls.timeStep` (pas de temps sélectionné) : le
+  // graphique doit toujours recevoir un couple cohérent (données, pas de temps)
+  // et basculer d'un seul coup quand les nouvelles données arrivent.
+  const [dataTimeStep, setDataTimeStep] = useState<string>(
+    historicalMode ? historicalMode.timeStep : "heure"
+  );
+
   const [internalPanelSize, setInternalPanelSize] =
     useState<PanelSize>("normal");
   const [showPollutantsList, setShowPollutantsList] = useState(false);
@@ -106,6 +115,14 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
 
   // Utiliser la taille externe si fournie, sinon la taille interne
   const currentPanelSize = externalPanelSize || internalPanelSize;
+
+  // Premier chargement (aucune donnée à afficher) : écran de chargement plein.
+  // Rechargements suivants : voile par-dessus le graphique, qui reste monté.
+  const isInitialChartLoading =
+    state.loading && Object.keys(state.historicalData).length === 0;
+  // Les contrôles restent visibles sous le voile : les désactiver évite de
+  // lancer un second chargement pendant qu'un autre est en cours.
+  const chartControlsDisabled = state.loading;
   const microSupportedTimeSteps = sources.atmoMicro.supportedTimeSteps || [];
   const isTimeStepSupportedByAtmoMicro = (timeStep: string): boolean =>
     microSupportedTimeSteps.includes(timeStep);
@@ -295,6 +312,11 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
           setModelingData({});
         }
 
+        // Les données affichées correspondent désormais à ce pas de temps.
+        // Même lot de mises à jour que celui des données : le graphique ne voit
+        // jamais un couple (données, pas de temps) incohérent.
+        setDataTimeStep(timeStep);
+
         setState((prev) => ({
           ...prev,
           historicalData: { ...prev.historicalData, ...newHistoricalData },
@@ -370,6 +392,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
             preset: "24h",
           };
       const defaultTimeStep = historicalMode ? historicalMode.timeStep : "heure";
+      setDataTimeStep(defaultTimeStep);
 
       setState((prev) => ({
         ...prev,
@@ -637,53 +660,56 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
       return;
     }
 
-    setState((prev) => {
-      // Vérifier et ajuster la période si nécessaire selon le pas de temps actuel
-      const { adjustedRange: validatedTimeRange, wasAdjusted } =
-        adjustTimeRangeIfNeeded(timeRange, prev.chartControls.timeStep);
+    const currentTimeStep = state.chartControls.timeStep;
 
-      // Si la période a été ajustée, afficher un message d'information
-      let infoMessage: string | null = null;
-      if (wasAdjusted) {
-        const maxDays = getMaxHistoryDays(prev.chartControls.timeStep);
-        if (maxDays) {
-          infoMessage = t("panels.stationSidePanel.periodAutoAdjusted", {
-            maxDays,
-          });
-          // Faire disparaître le message après 5 secondes
-          setTimeout(() => {
-            setState((current) => ({
-              ...current,
-              infoMessage: null,
-            }));
-          }, 5000);
-        }
+    // Vérifier et ajuster la période si nécessaire selon le pas de temps actuel
+    const { adjustedRange: validatedTimeRange, wasAdjusted } =
+      adjustTimeRangeIfNeeded(timeRange, currentTimeStep);
+
+    // Si la période a été ajustée, afficher un message d'information
+    let infoMessage: string | null = null;
+    if (wasAdjusted) {
+      const maxDays = getMaxHistoryDays(currentTimeStep);
+      if (maxDays) {
+        infoMessage = t("panels.stationSidePanel.periodAutoAdjusted", {
+          maxDays,
+        });
+        // Faire disparaître le message après 5 secondes
+        setTimeout(() => {
+          setState((current) => ({
+            ...current,
+            infoMessage: null,
+          }));
+        }, 5000);
       }
+    }
 
-      // Charger les données avec la période validée
-      // Ne pas charger la modélisation si le pas de temps n'est pas horaire
-      const shouldLoadModeling =
-        prev.chartControls.timeStep === "heure" && showModeling;
-      if (selectedStation) {
-        loadHistoricalData(
-          selectedStation,
-          prev.chartControls.selectedPollutants,
-          validatedTimeRange,
-          prev.chartControls.timeStep,
-          shouldLoadModeling,
-          stationCoordinates
-        );
-      }
+    setState((prev) => ({
+      ...prev,
+      chartControls: {
+        ...prev.chartControls,
+        timeRange: validatedTimeRange,
+      },
+      infoMessage,
+    }));
 
-      return {
-        ...prev,
-        chartControls: {
-          ...prev.chartControls,
-          timeRange: validatedTimeRange,
-        },
-        infoMessage,
-      };
-    });
+    // Charger les données avec la période validée.
+    // Ne pas charger la modélisation si le pas de temps n'est pas horaire.
+    // IMPORTANT: hors de l'updater de setState. Appelé à l'intérieur, le
+    // `setState({ loading: true })` déclenché par loadHistoricalData serait
+    // perdu (mise à jour émise pendant la phase de rendu) : aucun indicateur de
+    // chargement n'apparaîtrait.
+    const shouldLoadModeling = currentTimeStep === "heure" && showModeling;
+    if (selectedStation) {
+      loadHistoricalData(
+        selectedStation,
+        state.chartControls.selectedPollutants,
+        validatedTimeRange,
+        currentTimeStep,
+        shouldLoadModeling,
+        stationCoordinates
+      );
+    }
   };
 
   // Vérifier si un pas de temps est valide selon la période actuelle
@@ -791,60 +817,62 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
       return;
     }
 
-    setState((prev) => {
-      // Ajuster la période si nécessaire
-      const { adjustedRange: adjustedTimeRange, wasAdjusted } =
-        adjustTimeRangeIfNeeded(prev.chartControls.timeRange, timeStep);
+    // Ajuster la période si nécessaire
+    const { adjustedRange: adjustedTimeRange, wasAdjusted } =
+      adjustTimeRangeIfNeeded(state.chartControls.timeRange, timeStep);
 
-      // Si la période a été ajustée, afficher un message d'information
-      let infoMessage: string | null = null;
-      if (wasAdjusted) {
-        const maxDays = getMaxHistoryDays(timeStep);
-        if (maxDays) {
-          infoMessage = t("panels.stationSidePanel.periodAutoAdjusted", {
-            maxDays,
-          });
-          // Faire disparaître le message après 5 secondes
-          setTimeout(() => {
-            setState((current) => ({
-              ...current,
-              infoMessage: null,
-            }));
-          }, 5000);
-        }
+    // Si la période a été ajustée, afficher un message d'information
+    let infoMessage: string | null = null;
+    if (wasAdjusted) {
+      const maxDays = getMaxHistoryDays(timeStep);
+      if (maxDays) {
+        infoMessage = t("panels.stationSidePanel.periodAutoAdjusted", {
+          maxDays,
+        });
+        // Faire disparaître le message après 5 secondes
+        setTimeout(() => {
+          setState((current) => ({
+            ...current,
+            infoMessage: null,
+          }));
+        }, 5000);
       }
+    }
 
-      // Désactiver la modélisation si on change de pas de temps et que ce n'est pas horaire
-      if (timeStep !== "heure" && showModeling) {
-        setShowModeling(false);
-        setModelingData({});
-        setLoadingModeling(false);
-      }
+    // Désactiver la modélisation si on change de pas de temps et que ce n'est pas horaire
+    if (timeStep !== "heure" && showModeling) {
+      setShowModeling(false);
+      setModelingData({});
+      setLoadingModeling(false);
+    }
 
-      // Charger les données avec la période ajustée
-      // Ne pas charger la modélisation si le pas de temps n'est pas horaire
-      const shouldLoadModeling = timeStep === "heure" && showModeling;
-      if (selectedStation) {
-        loadHistoricalData(
-          selectedStation,
-          prev.chartControls.selectedPollutants,
-          adjustedTimeRange,
-          timeStep,
-          shouldLoadModeling,
-          stationCoordinates
-        );
-      }
+    setState((prev) => ({
+      ...prev,
+      chartControls: {
+        ...prev.chartControls,
+        timeStep,
+        timeRange: adjustedTimeRange,
+      },
+      infoMessage: infoMessage || prev.infoMessage, // Conserver le message existant si pas de nouveau message
+    }));
 
-      return {
-        ...prev,
-        chartControls: {
-          ...prev.chartControls,
-          timeStep,
-          timeRange: adjustedTimeRange,
-        },
-        infoMessage: infoMessage || prev.infoMessage, // Conserver le message existant si pas de nouveau message
-      };
-    });
+    // Charger les données avec la période ajustée.
+    // Ne pas charger la modélisation si le pas de temps n'est pas horaire.
+    // IMPORTANT: hors de l'updater de setState. Appelé à l'intérieur, le
+    // `setState({ loading: true })` déclenché par loadHistoricalData serait
+    // perdu (mise à jour émise pendant la phase de rendu) : aucun indicateur de
+    // chargement n'apparaîtrait.
+    const shouldLoadModeling = timeStep === "heure" && showModeling;
+    if (selectedStation) {
+      loadHistoricalData(
+        selectedStation,
+        state.chartControls.selectedPollutants,
+        adjustedTimeRange,
+        timeStep,
+        shouldLoadModeling,
+        stationCoordinates
+      );
+    }
   };
 
   useEffect(() => {
@@ -1133,7 +1161,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                   {t("panels.microSidePanel.temporalEvolutionAtmoMicro")}
                 </h3>
               </div>
-              {state.loading ? (
+              {isInitialChartLoading ? (
                 <div className="flex items-center justify-center h-64 sm:h-72 md:h-80 lg:h-96 bg-gray-50 rounded-lg">
                   <div className="flex flex-col items-center space-y-2">
                     <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-[#4271B3]"></div>
@@ -1245,7 +1273,9 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                                     handlePollutantToggle(pollutantCode)
                                   }
                                   disabled={
-                                    !isEnabled || isLastSelectedAndDisabled
+                                    !isEnabled ||
+                                    isLastSelectedAndDisabled ||
+                                    chartControlsDisabled
                                   }
                                   title={
                                     isLastSelectedAndDisabled
@@ -1386,7 +1416,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                   )}
 
                   {/* Graphique */}
-                  <div className="h-80 sm:h-72 md:h-80 lg:h-96 mb-2 sm:mb-3 md:mb-4">
+                  <div className="relative h-80 sm:h-72 md:h-80 lg:h-96 mb-2 sm:mb-3 md:mb-4">
                     <HistoricalChart
                       data={state.historicalData}
                       selectedPollutants={
@@ -1396,7 +1426,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                       onHasCorrectedDataChange={handleHasCorrectedDataChange}
                       showRawData={showRawData}
                       stationInfo={selectedStation}
-                      timeStep={state.chartControls.timeStep}
+                      timeStep={dataTimeStep}
                       sensorTimeStep={sensorTimeStep}
                       modelingData={
                         showModeling && Object.keys(modelingData).length > 0
@@ -1410,6 +1440,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                       xAxisMin={historicalMode?.startDate}
                       xAxisMax={historicalMode?.endDate}
                     />
+                    {state.loading && <ChartLoadingOverlay />}
                   </div>
 
                   {/* Contrôles du graphique - en bas du graphique */}
@@ -1420,7 +1451,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                         timeRange={state.chartControls.timeRange}
                         onTimeRangeChange={handleTimeRangeChange}
                         timeStep={state.chartControls.timeStep}
-                        disabled={isHistoricalLocked}
+                        disabled={isHistoricalLocked || chartControlsDisabled}
                       />
                     </div>
 
@@ -1448,7 +1479,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                         type="single"
                         value={state.chartControls.timeStep}
                         onValueChange={(value) => {
-                          if (isHistoricalLocked) {
+                          if (isHistoricalLocked || chartControlsDisabled) {
                             return;
                           }
                           if (value && !isTimeStepValidForCurrentRange(value)) {
@@ -1467,6 +1498,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                             !isTimeStepSupportedByAtmoMicro(key);
                           const isDisabled =
                             isHistoricalLocked ||
+                            chartControlsDisabled ||
                             isDisabledByRange ||
                             isDisabledBySupport;
                           const maxDays = getMaxHistoryDays(key);

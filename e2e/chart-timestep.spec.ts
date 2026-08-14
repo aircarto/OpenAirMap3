@@ -71,9 +71,12 @@ test("side panel station : la courbe reste affichée au changement de pas de tem
         return realFetch(input, init);
       }
       const key = url.replace(/date_debut=[^&]*&date_fin=[^&]*/, "dates");
+      const extraDelay = (window as any).__replayDelayMs as number | undefined;
       const cached = cache.get(key);
       if (cached !== undefined) {
-        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        await new Promise((resolve) =>
+          setTimeout(resolve, extraDelay ?? delayMs)
+        );
         return new Response(cached, {
           status: 200,
           headers: { "content-type": "application/json" },
@@ -81,6 +84,9 @@ test("side panel station : la courbe reste affichée au changement de pas de tem
       }
       const response = await realFetch(input, init);
       cache.set(key, await response.clone().text());
+      if (extraDelay !== undefined) {
+        await new Promise((resolve) => setTimeout(resolve, extraDelay));
+      }
       return response;
     };
   }, API_REPLAY_DELAY_MS);
@@ -143,10 +149,42 @@ test("side panel station : la courbe reste affichée au changement de pas de tem
     test.skip(true, "Pas de données O₃ pour cette station");
   }
 
+  // Marquer les canvas actuels : ils doivent survivre aux changements de pas de
+  // temps. Un voile de chargement est affiché par-dessus le graphique, qui reste
+  // monté — l'instance amCharts n'est donc pas détruite/recréée.
+  await page.evaluate(() => {
+    document
+      .querySelectorAll('[data-testid="station-side-panel"] canvas')
+      .forEach((canvas) => canvas.setAttribute("data-e2e-persist", "1"));
+  });
+  const persistedCanvas = panel.locator("canvas[data-e2e-persist='1']");
+  const initialCanvasCount = await persistedCanvas.count();
+  expect(initialCanvasCount).toBeGreaterThan(0);
+
+  // Chargement volontairement lent : le voile doit être visible pendant ce
+  // temps, et les contrôles désactivés.
+  await page.evaluate(() => {
+    (window as any).__replayDelayMs = 1500;
+  });
+  await quarterHour.click();
+  const overlay = panel.getByRole("status");
+  await expect(overlay).toBeVisible({ timeout: 3000 });
+  await expect(hour).toBeDisabled();
+  await expect(persistedCanvas).toHaveCount(initialCanvasCount);
+  await expect(overlay).toBeHidden({ timeout: 15000 });
+  await expect(hour).toBeEnabled();
+  await page.evaluate(() => {
+    (window as any).__replayDelayMs = undefined;
+  });
+  expect(
+    await countCurvePixels(page),
+    "courbe absente après le chargement lent"
+  ).toBeGreaterThanOrEqual(MIN_CURVE_PIXELS);
+
   for (let i = 0; i < 5; i++) {
     for (const [label, button] of [
-      ["15 min", quarterHour],
       ["heure", hour],
+      ["15 min", quarterHour],
     ] as const) {
       await button.click();
       await page.waitForTimeout(2000);
@@ -155,6 +193,108 @@ test("side panel station : la courbe reste affichée au changement de pas de tem
         pixels,
         `courbe absente après passage au pas de temps ${label} (itération ${i})`
       ).toBeGreaterThanOrEqual(MIN_CURVE_PIXELS);
+      // Le graphique ne doit jamais être remonté à un changement de pas de temps
+      expect(
+        await persistedCanvas.count(),
+        `graphique remonté au pas de temps ${label} (itération ${i})`
+      ).toBe(initialCanvasCount);
     }
   }
+});
+
+test("side panel microcapteur : voile de chargement sans remontage du graphique", async ({
+  page,
+}) => {
+  test.setTimeout(180000);
+
+  await page.addInitScript(() => {
+    const now = new Date().toISOString();
+    localStorage.setItem(
+      "openairmap-tours-completed",
+      JSON.stringify({
+        app_overview: { completedAt: now, skipped: true },
+        historical_mode: { completedAt: now, skipped: true },
+      })
+    );
+  });
+
+  // Ralentir uniquement les mesures historiques du capteur, pour que le voile de
+  // chargement soit observable sans ralentir tout le chargement de la carte.
+  await page.route("**/observations/capteurs/mesures?*", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    await route.continue();
+  });
+
+  await page.goto("/?pollutant=pm25&sources=atmoMicro");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible({
+    timeout: 20000,
+  });
+
+  const markers = page.locator(".custom-marker-container.atmoMicro");
+  try {
+    await expect(markers.first()).toBeVisible({ timeout: 30000 });
+  } catch {
+    test.skip(true, "Aucun microcapteur affiché (API vide ou lente)");
+  }
+
+  // Tous les capteurs n'ont pas de mesures sur les dernières 24 h : essayer
+  // plusieurs marqueurs jusqu'à en trouver un avec un graphique.
+  const panel = page.locator('[data-testid="micro-side-panel"]');
+  const markerCount = Math.min(await markers.count(), 6);
+  let chartFound = false;
+  for (let i = 0; i < markerCount && !chartFound; i++) {
+    await markers.nth(i).click({ force: true });
+    try {
+      await expect(panel).toBeVisible({ timeout: 15000 });
+      await expect(panel.locator("canvas").first()).toBeVisible({
+        timeout: 12000,
+      });
+      chartFound = true;
+    } catch {
+      // Capteur sans mesure sur la période : essayer le suivant
+    }
+  }
+  if (!chartFound) {
+    test.skip(true, "Aucun microcapteur avec des mesures sur la période");
+  }
+
+  await page.waitForTimeout(1500);
+
+  await page.evaluate(() => {
+    document
+      .querySelectorAll('[data-testid="micro-side-panel"] canvas')
+      .forEach((canvas) => canvas.setAttribute("data-e2e-persist", "1"));
+  });
+  const persistedCanvas = panel.locator("canvas[data-e2e-persist='1']");
+  const initialCanvasCount = await persistedCanvas.count();
+  expect(initialCanvasCount).toBeGreaterThan(0);
+
+  const timeStepButtons = panel.locator(
+    'button[role="radio"]:has(span.time-step-button-full)'
+  );
+  const quarterHour = timeStepButtons.nth(1);
+  if (await quarterHour.isDisabled()) {
+    test.skip(true, "Pas de temps 15 min non supporté par ce capteur");
+  }
+
+  await quarterHour.click();
+  const overlay = panel.getByRole("status");
+  await expect(overlay).toBeVisible({ timeout: 5000 });
+  await expect(persistedCanvas).toHaveCount(initialCanvasCount);
+  await expect(overlay).toBeHidden({ timeout: 30000 });
+
+  // Si le capteur n'a pas de mesures au pas de temps 15 min, le graphique est
+  // légitimement retiré (message « Aucune donnée disponible ») : rien à vérifier.
+  const hasNoData = await panel
+    .getByText(/Aucune donnée disponible/i)
+    .isVisible()
+    .catch(() => false);
+  if (hasNoData) {
+    test.skip(true, "Pas de mesures 15 min pour ce capteur");
+  }
+
+  expect(
+    await persistedCanvas.count(),
+    "graphique remonté au changement de pas de temps"
+  ).toBe(initialCanvasCount);
 });

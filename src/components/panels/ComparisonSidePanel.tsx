@@ -12,6 +12,7 @@ import { MAX_COMPARISON_STATIONS } from "../../constants/comparison";
 import { AtmoRefService } from "../../services/AtmoRefService";
 import { AtmoMicroService } from "../../services/AtmoMicroService";
 import HistoricalChart from "../charts/HistoricalChart";
+import ChartLoadingOverlay from "../charts/ChartLoadingOverlay";
 import HistoricalTimeRangeSelector from "../controls/HistoricalTimeRangeSelector";
 import { getMaxHistoryDays, type TimeRange } from "../../utils/historicalTimeRange";
 import { sources } from "../../constants/sources";
@@ -159,6 +160,18 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
       ) || "heure",
     [isTimeStepSupportedByComparedStations]
   );
+
+  // Premier chargement (aucune donnée à afficher) : écran de chargement plein.
+  // Rechargements suivants : voile par-dessus le graphique, qui reste monté.
+  // Le couple (données, pas de temps) est déjà cohérent ici : comparisonState
+  // n'est mis à jour qu'au moment où les données sont appliquées
+  // (createLoadComparisonDataHandler).
+  const isInitialChartLoading =
+    comparisonState.loading &&
+    Object.keys(comparisonState.comparisonData).length === 0;
+  // Les contrôles restent visibles sous le voile : les désactiver évite de
+  // lancer un second chargement pendant qu'un autre est en cours.
+  const chartControlsDisabled = comparisonState.loading;
 
   // Handler pour mettre à jour l'état des données corrigées
   const handleHasCorrectedDataChange = (hasCorrected: boolean) => {
@@ -683,7 +696,7 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
                 {t("panels.comparisonSidePanel.dataComparisonTitle")}
               </h3>
             </div>
-            {comparisonState.loading ? (
+            {isInitialChartLoading ? (
               <div className="flex items-center justify-center h-80 sm:h-96 md:h-[28rem] bg-gray-50 rounded-lg">
                 <div className="flex flex-col items-center space-y-2">
                   <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-600"></div>
@@ -773,7 +786,11 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
                         return (
                           <button
                             key={pollutantCode}
-                            onClick={() => handlePollutantChange(pollutantCode)}
+                            onClick={() =>
+                              !chartControlsDisabled &&
+                              handlePollutantChange(pollutantCode)
+                            }
+                            disabled={chartControlsDisabled}
                             className={`w-full flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-md text-sm transition-all duration-200 ${
                               isSelected
                                 ? "text-blue-700 bg-blue-50 border border-blue-200"
@@ -867,7 +884,7 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
                       </p>
                     </div>
                   )}
-                  <div className="h-80 sm:h-96 md:h-[28rem]">
+                  <div className="relative h-80 sm:h-96 md:h-[28rem]">
                   <HistoricalChart
                     data={
                       comparisonState.comparisonData[
@@ -881,6 +898,7 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
                     onHasCorrectedDataChange={handleHasCorrectedDataChange}
                     showRawData={showRawData}
                   />
+                  {comparisonState.loading && <ChartLoadingOverlay />}
                   </div>
                 </div>
 
@@ -892,6 +910,7 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
                       timeRange={comparisonState.timeRange}
                       onTimeRangeChange={handleTimeRangeChange}
                       timeStep={comparisonState.timeStep}
+                      disabled={chartControlsDisabled}
                     />
                   </div>
 
@@ -921,6 +940,10 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
                         const isDisabledBySupport =
                           !isTimeStepSupportedByComparedStations(key);
                         const isDisabled = isDisabledByRange || isDisabledBySupport;
+                        // Bloquer aussi le clic pendant un chargement, sans
+                        // changer l'apparence (le pas de temps sélectionné doit
+                        // rester visible).
+                        const isBlocked = isDisabled || chartControlsDisabled;
                         const isSelected = comparisonState.timeStep === key;
                         const maxDays = getMaxHistoryDays(key);
                         const label = t(`panels.comparisonSidePanel.${labelKey}`);
@@ -937,8 +960,8 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
                         return (
                           <button
                             key={key}
-                            onClick={() => !isDisabled && handleTimeStepChange(key)}
-                            disabled={isDisabled}
+                            onClick={() => !isBlocked && handleTimeStepChange(key)}
+                            disabled={isBlocked}
                             title={tooltip}
                             className={`px-1.5 py-1 text-xs rounded-md transition-all duration-200 ${
                               isDisabled
