@@ -49,6 +49,18 @@ export const featureFlags = {
   ),
 
   /**
+   * Rail de contrôles flottant à gauche de la carte, en remplacement du header.
+   *
+   * Drapeau de transition : tant qu'il est à false, le header reste la seule
+   * surface de contrôle et le rail n'est pas monté. Il sera retiré une fois le
+   * header supprimé.
+   */
+  useControlRail: parseBooleanFlag(
+    import.meta.env.VITE_USE_CONTROL_RAIL as string | undefined,
+    false
+  ),
+
+  /**
    * Zoom minimum pour afficher le tooltip des marqueurs.
    * null = pas de restriction (tooltip à tous les niveaux de zoom).
    * number = tooltip uniquement quand zoom >= cette valeur.

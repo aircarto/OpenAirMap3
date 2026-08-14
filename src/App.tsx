@@ -6,6 +6,17 @@ import React, {
   useRef,
 } from "react";
 import AirQualityMap from "./components/map/AirQualityMap";
+import { MapControlsProvider } from "./contexts/MapControlsProvider";
+import type {
+  MapControlsBrand,
+  MapControlsFilters,
+  MapControlsHistorical,
+  MapControlsModeling,
+  MapControlsRefresh,
+  MapControlsSpecialSources,
+  MapControlsUi,
+  MapControlsValue,
+} from "./contexts/mapControlsContext";
 import { useAirQualityData } from "./hooks/useAirQualityData";
 import { useTemporalVisualization } from "./hooks/useTemporalVisualization";
 import { useDomainConfig } from "./hooks/useDomainConfig";
@@ -18,7 +29,10 @@ import {
   isPollutantSupportedForTimeStep,
   getSupportedPollutantsForTimeStep,
 } from "./constants/pollutants";
-import { pasDeTemps, isHistoricalModeAllowedForTimeStep } from "./constants/timeSteps";
+import {
+  pasDeTemps,
+  isHistoricalModeAllowedForTimeStep,
+} from "./constants/timeSteps";
 import { getConfigForDomain } from "./config/domainConfig";
 import {
   buildAppUrlDefaults,
@@ -103,7 +117,7 @@ const AppContent: React.FC = () => {
   // Trouver le pas de temps activé par défaut (calculé une seule fois)
   const defaultTimeStep = useMemo(() => {
     const defaultTimeStep = Object.entries(pasDeTemps).find(
-      ([_, timeStep]) => timeStep.activated
+      ([_, timeStep]) => timeStep.activated,
     );
     return defaultTimeStep ? defaultTimeStep[0] : "heure";
   }, []);
@@ -122,23 +136,24 @@ const AppContent: React.FC = () => {
 
   const SIGNAL_AIR_DEFAULT_TYPES = useMemo(
     () => ["odeur", "bruit", "brulage", "visuel"],
-    []
+    [],
   );
 
   // États pour les contrôles avec polluant par défaut
   const [selectedPollutant, setSelectedPollutant] = useState<string>(
-    INITIAL_APP_URL_PARAMS.pollutant
+    INITIAL_APP_URL_PARAMS.pollutant,
   );
   const [selectedSources, setSelectedSources] = useState<string[]>(
-    INITIAL_APP_URL_PARAMS.sources
+    INITIAL_APP_URL_PARAMS.sources,
   );
-  const [selectedTimeStep, setSelectedTimeStep] =
-    useState<string>(INITIAL_APP_URL_PARAMS.timeStep);
+  const [selectedTimeStep, setSelectedTimeStep] = useState<string>(
+    INITIAL_APP_URL_PARAMS.timeStep,
+  );
   const [signalAirPeriod, setSignalAirPeriod] = useState(
-    defaultSignalAirPeriod
+    defaultSignalAirPeriod,
   );
   const [signalAirDraftPeriod, setSignalAirDraftPeriod] = useState(
-    defaultSignalAirPeriod
+    defaultSignalAirPeriod,
   );
   const [signalAirSelectedTypes, setSignalAirSelectedTypes] = useState<
     string[]
@@ -160,7 +175,7 @@ const AppContent: React.FC = () => {
 
   // États pour MobileAir
   const [mobileAirPeriod, setMobileAirPeriod] = useState(
-    defaultSignalAirPeriod // Utiliser la même période par défaut
+    defaultSignalAirPeriod, // Utiliser la même période par défaut
   );
   const [selectedMobileAirSensor, setSelectedMobileAirSensor] = useState<
     string | null
@@ -187,8 +202,12 @@ const AppContent: React.FC = () => {
 
   const handleSourceChange = useCallback((sources: string[]) => {
     setSelectedSources((previousSources) => {
-      const addedSources = sources.filter((source) => !previousSources.includes(source));
-      const removedSources = previousSources.filter((source) => !sources.includes(source));
+      const addedSources = sources.filter(
+        (source) => !previousSources.includes(source),
+      );
+      const removedSources = previousSources.filter(
+        (source) => !sources.includes(source),
+      );
 
       trackFeatureUsage("sources_change", {
         selectedCount: sources.length,
@@ -205,10 +224,13 @@ const AppContent: React.FC = () => {
     trackFeatureUsage("time_step_change", { timeStep });
   }, []);
 
-  const handleModelingLayerChange = useCallback((layer: ModelingLayerType | null) => {
-    setCurrentModelingLayer(layer);
-    trackFeatureUsage("modeling_layer_change", { layer: layer ?? "none" });
-  }, []);
+  const handleModelingLayerChange = useCallback(
+    (layer: ModelingLayerType | null) => {
+      setCurrentModelingLayer(layer);
+      trackFeatureUsage("modeling_layer_change", { layer: layer ?? "none" });
+    },
+    [],
+  );
 
   const handleAutoRefreshToggle = useCallback((enabled: boolean) => {
     setAutoRefreshEnabled(enabled);
@@ -228,7 +250,7 @@ const AppContent: React.FC = () => {
   // Fonction wrapper pour gérer le changement de période SignalAir
   const handleSignalAirDraftPeriodChange = (
     startDate: string,
-    endDate: string
+    endDate: string,
   ) => {
     setSignalAirDraftPeriod({ startDate, endDate });
   };
@@ -256,7 +278,7 @@ const AppContent: React.FC = () => {
   // Fonction pour gérer la sélection d'un capteur MobileAir
   const handleMobileAirSensorSelected = (
     sensorId: string,
-    period: { startDate: string; endDate: string }
+    period: { startDate: string; endDate: string },
   ) => {
     // Toujours mettre à jour pour forcer le rechargement même si les valeurs sont identiques
     // Cela permet de recharger les données qui remplaceront celles existantes
@@ -309,7 +331,7 @@ const AppContent: React.FC = () => {
       loadTrigger: signalAirLoadTrigger,
       isSourceSelected: isSignalAirEnabled, // Utiliser isSignalAirEnabled au lieu de selectedSources
     }),
-    [signalAirSelectedTypes, signalAirLoadTrigger, isSignalAirEnabled]
+    [signalAirSelectedTypes, signalAirLoadTrigger, isSignalAirEnabled],
   );
 
   useEffect(() => {
@@ -320,7 +342,7 @@ const AppContent: React.FC = () => {
         setSelectedPollutant((current) =>
           supportedPollutants.includes(current)
             ? current
-            : supportedPollutants[0]
+            : supportedPollutants[0],
         );
       }
     }
@@ -354,11 +376,14 @@ const AppContent: React.FC = () => {
   });
 
   // Mode historique autorisé uniquement pour les pas 15 min, heure et jour
-  const isHistoricalModeAllowed = isHistoricalModeAllowedForTimeStep(selectedTimeStep);
+  const isHistoricalModeAllowed =
+    isHistoricalModeAllowedForTimeStep(selectedTimeStep);
 
   const handleHistoricalModeToggle = useCallback(() => {
     toggleHistoricalMode();
-    trackFeatureUsage("historical_mode_toggle", { from: isHistoricalModeActive });
+    trackFeatureUsage("historical_mode_toggle", {
+      from: isHistoricalModeActive,
+    });
   }, [toggleHistoricalMode, isHistoricalModeActive]);
 
   // Désactiver le mode historique si l'utilisateur passe sur Scan ou ≤2 min
@@ -420,7 +445,7 @@ const AppContent: React.FC = () => {
   });
   const [atmoMicroMaintenanceBanner, setAtmoMicroMaintenanceBanner] =
     useState<AtmoMicroMaintenanceBannerConfig>(
-      DEFAULT_ATMOMICRO_MAINTENANCE_BANNER
+      DEFAULT_ATMOMICRO_MAINTENANCE_BANNER,
     );
   const [isAtmoMicroBannerDismissed, setIsAtmoMicroBannerDismissed] =
     useState(false);
@@ -474,7 +499,7 @@ const AppContent: React.FC = () => {
 
   const signalAirReports = useMemo(
     () => reports.filter((report) => report.source === "signalair"),
-    [reports]
+    [reports],
   );
 
   // En mode historique avec données : afficher les signalements filtrés par fenêtre temporelle (période locale)
@@ -483,7 +508,12 @@ const AppContent: React.FC = () => {
       return getCurrentSignalAirReports();
     }
     return reports;
-  }, [isHistoricalModeActive, hasHistoricalData, getCurrentSignalAirReports, reports]);
+  }, [
+    isHistoricalModeActive,
+    hasHistoricalData,
+    getCurrentSignalAirReports,
+    reports,
+  ]);
 
   const isSignalAirLoading = loadingSources.includes("signalair");
   // En mode historique : considérer "chargé" si des signalements ont été récupérés
@@ -537,7 +567,7 @@ const AppContent: React.FC = () => {
         mapCenter: domainConfig.mapCenter,
         mapZoom: domainConfig.mapZoom,
       }),
-    [domainConfig.mapCenter, domainConfig.mapZoom]
+    [domainConfig.mapCenter, domainConfig.mapZoom],
   );
 
   const appUrlState = useMemo(
@@ -549,13 +579,7 @@ const AppContent: React.FC = () => {
       timeStep: selectedTimeStep,
       sources: selectedSources,
     }),
-    [
-      mapCenter,
-      mapZoom,
-      selectedPollutant,
-      selectedTimeStep,
-      selectedSources,
-    ]
+    [mapCenter, mapZoom, selectedPollutant, selectedTimeStep, selectedSources],
   );
 
   const handlePopStateFromUrl = useCallback((params: AppUrlParams) => {
@@ -579,7 +603,7 @@ const AppContent: React.FC = () => {
       setMapCenter(center);
       setMapZoom(zoom);
     },
-    [markMapViewTouched]
+    [markMapViewTouched],
   );
 
   const handleSignalAirHeaderClick = useCallback(() => {
@@ -592,7 +616,139 @@ const AppContent: React.FC = () => {
     handleMobileAirPanelOpen();
   }, []);
 
+  const handleOpenInfoModal = useCallback(() => setIsInfoModalOpen(true), []);
+
   const headerDisabled = isHistoricalModeActive && temporalState.isPlaying;
+
+  // ── Valeur du contexte de contrôles de carte ──────────────────────────────
+  // Mémoïsée par groupe, et non d'un bloc : hasSignalAirData / hasMobileAirData
+  // se recalculent à chaque rafraîchissement de données, et invalideraient
+  // sinon `filters` — donc le rail entier — à chaque poll.
+  const brandValue = useMemo<MapControlsBrand>(
+    () => ({
+      logo: domainConfig.logo,
+      markSquare: domainConfig.markSquare,
+      favicon: domainConfig.favicon,
+      title: domainConfig.title,
+      organization: domainConfig.organization,
+    }),
+    [
+      domainConfig.logo,
+      domainConfig.markSquare,
+      domainConfig.favicon,
+      domainConfig.title,
+      domainConfig.organization,
+    ],
+  );
+
+  const filtersValue = useMemo<MapControlsFilters>(
+    () => ({
+      selectedPollutant,
+      selectedSources,
+      selectedTimeStep,
+      onPollutantChange: handlePollutantChange,
+      onSourceChange: handleSourceChange,
+      onTimeStepChange: handleTimeStepChange,
+    }),
+    [
+      selectedPollutant,
+      selectedSources,
+      selectedTimeStep,
+      handlePollutantChange,
+      handleSourceChange,
+      handleTimeStepChange,
+    ],
+  );
+
+  const modelingValue = useMemo<MapControlsModeling>(
+    () => ({
+      currentModelingLayer,
+      onModelingLayerChange: handleModelingLayerChange,
+    }),
+    [currentModelingLayer, handleModelingLayerChange],
+  );
+
+  const refreshValue = useMemo<MapControlsRefresh>(
+    () => ({
+      autoRefreshEnabled: autoRefreshEnabled && !isHistoricalModeActive,
+      onToggleAutoRefresh: handleAutoRefreshToggle,
+      loading,
+      lastRefresh,
+    }),
+    [
+      autoRefreshEnabled,
+      isHistoricalModeActive,
+      handleAutoRefreshToggle,
+      loading,
+      lastRefresh,
+    ],
+  );
+
+  const historicalValue = useMemo<MapControlsHistorical>(
+    () => ({
+      isActive: isHistoricalModeActive,
+      isAllowed: isHistoricalModeAllowed,
+      onToggle: handleHistoricalModeToggle,
+    }),
+    [
+      isHistoricalModeActive,
+      isHistoricalModeAllowed,
+      handleHistoricalModeToggle,
+    ],
+  );
+
+  const specialSourcesValue = useMemo<MapControlsSpecialSources>(
+    () => ({
+      onSignalAirClick: handleSignalAirHeaderClick,
+      onMobileAirClick: handleMobileAirHeaderClick,
+      isSignalAirVisible,
+      isMobileAirVisible,
+      onSignalAirToggle: handleSignalAirVisibilityToggle,
+      onMobileAirToggle: handleMobileAirVisibilityToggle,
+      hasSignalAirData,
+      hasMobileAirData,
+    }),
+    [
+      handleSignalAirHeaderClick,
+      handleMobileAirHeaderClick,
+      isSignalAirVisible,
+      isMobileAirVisible,
+      handleSignalAirVisibilityToggle,
+      handleMobileAirVisibilityToggle,
+      hasSignalAirData,
+      hasMobileAirData,
+    ],
+  );
+
+  const uiValue = useMemo<MapControlsUi>(
+    () => ({
+      controlsLocked: headerDisabled,
+      onOpenInfoModal: handleOpenInfoModal,
+      onToast: addToast,
+    }),
+    [headerDisabled, handleOpenInfoModal, addToast],
+  );
+
+  const mapControlsValue = useMemo<MapControlsValue>(
+    () => ({
+      brand: brandValue,
+      filters: filtersValue,
+      modeling: modelingValue,
+      refresh: refreshValue,
+      historical: historicalValue,
+      specialSources: specialSourcesValue,
+      ui: uiValue,
+    }),
+    [
+      brandValue,
+      filtersValue,
+      modelingValue,
+      refreshValue,
+      historicalValue,
+      specialSourcesValue,
+      uiValue,
+    ],
+  );
   const shouldShowAtmoMicroOutageBanner =
     selectedSources.includes("atmoMicro") &&
     atmoMicroOutage &&
@@ -602,11 +758,7 @@ const AppContent: React.FC = () => {
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       {/* Lien d'évitement : premier élément focusable pour la navigation clavier et lecteurs d'écran */}
-      <a
-        href="#main-content"
-        className="skip-link"
-        data-testid="skip-link"
-      >
+      <a href="#main-content" className="skip-link" data-testid="skip-link">
         {t("app.skipToContent")}
       </a>
       {/* Header : barre unique avec regroupement logique des contrôles */}
@@ -617,7 +769,9 @@ const AppContent: React.FC = () => {
             <div className="flex items-center gap-3 min-w-0 shrink-0">
               <img
                 src={domainConfig.logo}
-                alt={t("app.logoAlt", { organization: domainConfig.organization })}
+                alt={t("app.logoAlt", {
+                  organization: domainConfig.organization,
+                })}
                 className="h-8 md:h-9 object-contain"
               />
               <h1 className="text-base md:text-lg font-semibold text-[#4271B3] leading-tight truncate">
@@ -666,7 +820,7 @@ const AppContent: React.FC = () => {
             <div
               className={cn(
                 "hidden xl:flex items-center justify-center gap-3 flex-1 min-w-0 flex-nowrap overflow-hidden",
-                headerDisabled && "opacity-50 pointer-events-none"
+                headerDisabled && "opacity-50 pointer-events-none",
               )}
             >
               {/* Filtres : polluant, sources, pas de temps */}
@@ -682,7 +836,9 @@ const AppContent: React.FC = () => {
                   onSourceChange={handleSourceChange}
                   onTimeStepChange={handleTimeStepChange}
                   onToast={addToast}
-                  autoRefreshEnabled={autoRefreshEnabled && !isHistoricalModeActive}
+                  autoRefreshEnabled={
+                    autoRefreshEnabled && !isHistoricalModeActive
+                  }
                   onToggleAutoRefresh={handleAutoRefreshToggle}
                   loading={loading}
                   isHistoricalModeActive={isHistoricalModeActive}
@@ -730,7 +886,7 @@ const AppContent: React.FC = () => {
             <div
               className={cn(
                 "hidden xl:flex items-center gap-2 shrink-0",
-                headerDisabled && "opacity-50 pointer-events-none"
+                headerDisabled && "opacity-50 pointer-events-none",
               )}
             >
               <LanguageSwitcher />
@@ -794,7 +950,9 @@ const AppContent: React.FC = () => {
                   </span>
                   {loadingSources.length > 0 && (
                     <span className="text-xs text-gray-500">
-                      {t("common.sourcesCount", { count: loadingSources.length })}
+                      {t("common.sourcesCount", {
+                        count: loadingSources.length,
+                      })}
                       {loadingSources.length > 0 && (
                         <span className="ml-1">
                           ({loadingSources.slice(0, 2).join(", ")}
@@ -811,70 +969,79 @@ const AppContent: React.FC = () => {
 
         {error && (
           <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-2 rounded-md shadow-lg z-panel max-w-xs">
-            <p className="text-xs">{t("common.error")}: {error}</p>
+            <p className="text-xs">
+              {t("common.error")}: {error}
+            </p>
           </div>
         )}
         {/* Carte */}
-        <AirQualityMap
-          devices={devices}
-          reports={reportsForMap}
-          center={mapCenter}
-          zoom={mapZoom}
-          mapBounds={domainConfig.mapBounds}
-          onMapViewChange={handleMapViewChange}
-          selectedPollutant={selectedPollutant}
-          selectedSources={selectedSources}
-          selectedTimeStep={selectedTimeStep}
-          currentModelingLayer={currentModelingLayer}
-          loading={loading || temporalState.loading}
-          signalAirPeriod={signalAirDraftPeriod}
-          signalAirSelectedTypes={signalAirSelectedTypes}
-          onSignalAirPeriodChange={handleSignalAirDraftPeriodChange}
-          onSignalAirTypesChange={handleSignalAirTypesChange}
-          onSignalAirLoadRequest={handleSignalAirLoadRequest}
-          isSignalAirLoading={isSignalAirLoading}
-          signalAirHasLoaded={hasSignalAirLoaded}
-          signalAirReportsCount={reportsForMap.filter((r) => r.source === "signalair").length}
-          isHistoricalModeWithSignalAirData={
-            isHistoricalModeActive &&
-            hasHistoricalData &&
-            (temporalState.historicalSignalAirReports?.length ?? 0) > 0
-          }
-          onSignalAirSourceDeselected={handleSignalAirSourceDeselected}
-          onMobileAirSensorSelected={handleMobileAirSensorSelected}
-          onMobileAirSourceDeselected={handleMobileAirSourceDeselected}
-          isHistoricalModeActive={isHistoricalModeActive}
-          isSignalAirEnabled={isSignalAirEnabled}
-          isMobileAirEnabled={isMobileAirEnabled}
-          isSignalAirVisible={isSignalAirVisible}
-          isMobileAirVisible={isMobileAirVisible}
-          onSignalAirToggle={handleSignalAirVisibilityToggle}
-          onMobileAirToggle={handleMobileAirVisibilityToggle}
-          onSignalAirPanelOpen={handleSignalAirPanelOpen}
-          onMobileAirPanelOpen={handleMobileAirPanelOpen}
-          openSignalAirPanelRequest={openSignalAirPanelRequest}
-          openMobileAirPanelRequest={openMobileAirPanelRequest}
-          historicalCurrentDate={
-            isHistoricalModeActive && temporalState.isPlaying
-              ? temporalState.currentDate
-              : undefined
-          }
-          historicalStartDate={
-            isHistoricalModeActive ? temporalState.startDate : undefined
-          }
-          historicalEndDate={
-            isHistoricalModeActive ? temporalState.endDate : undefined
-          }
-          historicalTimeStep={
-            isHistoricalModeActive ? temporalState.timeStep : undefined
-          }
-          historicalPlaybackDate={
-            isHistoricalModeActive ? temporalState.currentDate : undefined
-          }
-          isHistoricalDatePanelVisible={
-            isHistoricalModeActive && isDatePanelVisible
-          }
-        />
+        {/* Le provider n'enveloppe que la carte : AirQualityMap ne gagne aucune
+            prop, et le rail de contrôles qui vit dans sa colonne lit l'état
+            applicatif par contexte au lieu d'un troisième chemin de props. */}
+        <MapControlsProvider value={mapControlsValue}>
+          <AirQualityMap
+            devices={devices}
+            reports={reportsForMap}
+            center={mapCenter}
+            zoom={mapZoom}
+            mapBounds={domainConfig.mapBounds}
+            onMapViewChange={handleMapViewChange}
+            selectedPollutant={selectedPollutant}
+            selectedSources={selectedSources}
+            selectedTimeStep={selectedTimeStep}
+            currentModelingLayer={currentModelingLayer}
+            loading={loading || temporalState.loading}
+            signalAirPeriod={signalAirDraftPeriod}
+            signalAirSelectedTypes={signalAirSelectedTypes}
+            onSignalAirPeriodChange={handleSignalAirDraftPeriodChange}
+            onSignalAirTypesChange={handleSignalAirTypesChange}
+            onSignalAirLoadRequest={handleSignalAirLoadRequest}
+            isSignalAirLoading={isSignalAirLoading}
+            signalAirHasLoaded={hasSignalAirLoaded}
+            signalAirReportsCount={
+              reportsForMap.filter((r) => r.source === "signalair").length
+            }
+            isHistoricalModeWithSignalAirData={
+              isHistoricalModeActive &&
+              hasHistoricalData &&
+              (temporalState.historicalSignalAirReports?.length ?? 0) > 0
+            }
+            onSignalAirSourceDeselected={handleSignalAirSourceDeselected}
+            onMobileAirSensorSelected={handleMobileAirSensorSelected}
+            onMobileAirSourceDeselected={handleMobileAirSourceDeselected}
+            isHistoricalModeActive={isHistoricalModeActive}
+            isSignalAirEnabled={isSignalAirEnabled}
+            isMobileAirEnabled={isMobileAirEnabled}
+            isSignalAirVisible={isSignalAirVisible}
+            isMobileAirVisible={isMobileAirVisible}
+            onSignalAirToggle={handleSignalAirVisibilityToggle}
+            onMobileAirToggle={handleMobileAirVisibilityToggle}
+            onSignalAirPanelOpen={handleSignalAirPanelOpen}
+            onMobileAirPanelOpen={handleMobileAirPanelOpen}
+            openSignalAirPanelRequest={openSignalAirPanelRequest}
+            openMobileAirPanelRequest={openMobileAirPanelRequest}
+            historicalCurrentDate={
+              isHistoricalModeActive && temporalState.isPlaying
+                ? temporalState.currentDate
+                : undefined
+            }
+            historicalStartDate={
+              isHistoricalModeActive ? temporalState.startDate : undefined
+            }
+            historicalEndDate={
+              isHistoricalModeActive ? temporalState.endDate : undefined
+            }
+            historicalTimeStep={
+              isHistoricalModeActive ? temporalState.timeStep : undefined
+            }
+            historicalPlaybackDate={
+              isHistoricalModeActive ? temporalState.currentDate : undefined
+            }
+            isHistoricalDatePanelVisible={
+              isHistoricalModeActive && isDatePanelVisible
+            }
+          />
+        </MapControlsProvider>
 
         {/* Panel de contrôle historique (sélection de date) - Visible si mode historique actif ET panel de date visible */}
         <HistoricalControlPanel

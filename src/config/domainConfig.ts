@@ -30,6 +30,15 @@ export interface DomainConfig {
   logo: string;
   logo2: string;
   favicon: string;
+  /**
+   * Variante carrée ou empilée de la marque, pour le rail de contrôles.
+   *
+   * `logo` et `logo2` sont horizontaux (respectivement 2,5:1 et 4:1) et ne sont
+   * pas lisibles dans une colonne de 60 px — ne jamais les y mettre à l'échelle.
+   * Le logo horizontal complet reste utilisé là où il y a de la place : panneau
+   * « À propos » et en-tête de la modale d'informations.
+   */
+  markSquare?: string;
   mapCenter: [number, number];
   mapZoom: number;
   /** Emprise [sud, ouest] / [nord, est] pour limiter les overlays WMS (région Sud) */
@@ -54,6 +63,7 @@ const defaultConfig: DomainConfig = {
   logo: './logo_atmosud_inspirer_ok_web.png',
   logo2: './LogoAirCarto.png',
   favicon: './AtmoFavicon.png',
+  markSquare: './logo-atmosud-atmofrance.png',
   mapCenter: [46.6, 2.5], // Centre approximatif de la France métropolitaine
   mapZoom: 6,
   // France métropolitaine avec marge (hors DROM-COM)

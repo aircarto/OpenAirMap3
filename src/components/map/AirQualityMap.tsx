@@ -37,6 +37,7 @@ import {
 } from "../../services/EffisLayerService";
 import { MAX_COMPARISON_STATIONS } from "../../constants/comparison";
 import CustomSearchControl from "../controls/CustomSearchControl";
+import MapControlRail from "./rail/MapControlRail";
 import ScaleControl from "../controls/ScaleControl";
 import NorthArrow from "../controls/NorthArrow";
 import Legend from "./Legend";
@@ -943,6 +944,10 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
         role="region"
         aria-label={t("app.mapAriaLabel")}
       >
+        {/* Rail de contrôles : absolute dans cette colonne, donc il glisse
+            quand un panneau latéral la pousse. */}
+        {featureFlags.useControlRail && <MapControlRail />}
+
         {/* Contrôle de recherche personnalisé */}
         <CustomSearchControl
           devices={devices}
