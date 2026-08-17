@@ -793,6 +793,7 @@
       "specialSources": "SPÉ",
       "historical": "HIST"
     },
-    "groupUtilities": "Utilitaires"
+    "groupUtilities": "Utilitaires",
+    "groupBaseLayer": "Fond de carte"
   }
 }

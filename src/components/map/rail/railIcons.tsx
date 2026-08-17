@@ -9,14 +9,23 @@ import React from "react";
  * icônes, qui ne se localisent pas et rendent différemment selon la plateforme.
  */
 
+/*
+ * Trait de 1,75 et non 1,5, à 22 px et non 20.
+ *
+ * Le contraste n'était pas en cause : mesuré, une icône en --fg-muted sur la
+ * surface composée au-dessus d'une carte claire atteint déjà 9,2:1, et opacifier
+ * la surface ne gagne que 0,3 point. Ce qui manquait était la MASSE visuelle.
+ * Le cas du fond sombre est traité ailleurs, par la compensation d'opacité de
+ * `[data-basemap="satellite"]` (6,7:1).
+ */
 const base = {
   viewBox: "0 0 24 24",
   fill: "none",
   stroke: "currentColor",
-  strokeWidth: 1.5,
+  strokeWidth: 1.75,
   strokeLinecap: "round" as const,
   strokeLinejoin: "round" as const,
-  className: "h-5 w-5",
+  className: "h-[22px] w-[22px]",
 };
 
 /** Polluant : particule centrale et satellites */

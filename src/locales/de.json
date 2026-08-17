@@ -793,6 +793,7 @@
       "specialSources": "SPEZ",
       "historical": "VERL"
     },
-    "groupUtilities": "Extras"
+    "groupUtilities": "Extras",
+    "groupBaseLayer": "Kartenhintergrund"
   }
 }

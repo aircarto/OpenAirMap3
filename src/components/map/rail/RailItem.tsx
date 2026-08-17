@@ -75,7 +75,7 @@ export const RailItem = React.forwardRef<HTMLButtonElement, RailItemProps>(
       <span
         aria-hidden="true"
         className={cn(
-          "flex h-5 w-5 items-center justify-center transition-colors duration-[var(--dur-base)]",
+          "flex h-[22px] w-[22px] items-center justify-center transition-colors duration-[var(--dur-base)]",
           warning
             ? "text-[color:var(--fg-warn)]"
             : active
@@ -104,8 +104,9 @@ export const RailItem = React.forwardRef<HTMLButtonElement, RailItemProps>(
       {dot === "ok" && (
         <span
           aria-hidden="true"
-          // Dans les limites du bouton : le rail porte `contain: paint`, un
-          // débord type -top-1 -right-1 serait rogné
+          // Dans les limites du bouton, et non en débord type -top-1 -right-1 :
+          // la pastille resterait lisible mais mordrait sur l'item voisin dans
+          // une colonne de 60 px.
           className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-[color:var(--fg-ok)] ring-2 ring-[rgb(var(--glass-tint))]"
         />
       )}

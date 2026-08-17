@@ -1,7 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import ModelingLayerControl from "../../../controls/ModelingLayerControl";
-import BaseLayerControl from "../../../controls/BaseLayerControl";
 import SpecialSourceHeaderDropdown from "../../../controls/SpecialSourceHeaderDropdown";
 import { useMapControls } from "../../../../contexts/mapControlsContext";
 import RailItem from "../RailItem";
@@ -11,31 +10,24 @@ import {
   RAIL_FLYOUT_SIDE_OFFSET,
   railFlyoutSide,
 } from "../railFlyout";
-import {
-  IconBaseLayer,
-  IconModeling,
-  IconSpecialSources,
-} from "../railIcons";
+import { IconModeling, IconSpecialSources } from "../railIcons";
 import type { RailOrientation } from "../useRailRoving";
-import type { BaseLayerControlBinding } from "../railBindings";
 
 export interface RailLayersSectionProps {
   orientation: RailOrientation;
   onItemFocus: (event: React.FocusEvent<HTMLElement>) => void;
-  baseLayer: BaseLayerControlBinding;
 }
 
 /**
- * Groupe « couches » : modélisation, fond de carte et calques, sources spéciales.
+ * Groupe « couches de données » : modélisation et sources spéciales.
  *
- * `BaseLayerControl` vient d'être déplacé depuis MapOverlays, où il occupait
- * `bottom-20 left-4` — exactement le bord que le rail réclame. Son état est
- * local à la carte, il arrive donc en props et non par contexte.
+ * Le fond de carte a sa propre section (RailBaseLayerSection) : ces deux
+ * contrôles ajoutent de la donnée SUR la carte, alors que le fond change le
+ * support lui-même.
  */
 export const RailLayersSection: React.FC<RailLayersSectionProps> = ({
   orientation,
   onItemFocus,
-  baseLayer,
 }) => {
   const { filters, modeling, specialSources, ui } = useMapControls();
   const { t } = useTranslation();
@@ -95,28 +87,6 @@ export const RailLayersSection: React.FC<RailLayersSectionProps> = ({
           defaultValue: t("controls.modelingUnavailable"),
         })}
       </span>
-
-      {/* Fond de carte et calques */}
-      <BaseLayerControl
-        {...baseLayer}
-        placement={orientation === "vertical" ? "right" : "top"}
-        panelClassName={RAIL_FLYOUT_CLASS}
-        renderTrigger={({ isOpen, label }) => (
-          <RailItem
-            itemId="baselayer"
-            data-testid="rail-basemap-trigger"
-            // Ni onClick ni aria-expanded ici : Radix PopoverTrigger les fournit
-            // via asChild, et un second basculement annulerait le premier.
-            aria-label={`${t("baseLayer.title")} : ${label}`}
-            title={`${t("baseLayer.title")} : ${label}`}
-            onFocus={onItemFocus}
-            active={isOpen}
-            label={t("baseLayer.title")}
-            icon={<IconBaseLayer />}
-            caption={t("rail.caption.baseLayer")}
-          />
-        )}
-      />
 
       {/* Sources spéciales */}
       <SpecialSourceHeaderDropdown

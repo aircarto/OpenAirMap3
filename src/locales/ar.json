@@ -809,6 +809,7 @@
       "specialSources": "خاصة",
       "historical": "تاريخ"
     },
-    "groupUtilities": "أدوات"
+    "groupUtilities": "أدوات",
+    "groupBaseLayer": "خلفية الخريطة"
   }
 }

@@ -793,6 +793,7 @@
       "specialSources": "SPEC",
       "historical": "STOR"
     },
-    "groupUtilities": "Utilità"
+    "groupUtilities": "Utilità",
+    "groupBaseLayer": "Mappa di base"
   }
 }

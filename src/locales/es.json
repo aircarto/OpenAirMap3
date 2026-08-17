@@ -793,6 +793,7 @@
       "specialSources": "ESP",
       "historical": "HIST"
     },
-    "groupUtilities": "Utilidades"
+    "groupUtilities": "Utilidades",
+    "groupBaseLayer": "Mapa base"
   }
 }

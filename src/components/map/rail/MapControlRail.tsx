@@ -5,6 +5,7 @@ import { useMapControls } from "../../../contexts/mapControlsContext";
 import RailBrand from "./RailBrand";
 import RailFiltersSection from "./sections/RailFiltersSection";
 import RailLayersSection from "./sections/RailLayersSection";
+import RailBaseLayerSection from "./sections/RailBaseLayerSection";
 import RailTimeSection from "./sections/RailTimeSection";
 import RailShortcutsSection from "./sections/RailShortcutsSection";
 import RailFooter from "./sections/RailFooter";
@@ -153,12 +154,18 @@ export const MapControlRail: React.FC<MapControlRailProps> = ({
           <RailLayersSection
             orientation={orientation}
             onItemFocus={onItemFocus}
-            baseLayer={baseLayer}
           />
           <RailTimeSection orientation={orientation} onItemFocus={onItemFocus} />
           <RailShortcutsSection
             orientation={orientation}
             shortcuts={shortcuts}
+          />
+          {/* Dernier de la zone défilante, donc directement au-dessus du pied :
+              le fond de carte se range avec les réglages d'affichage. */}
+          <RailBaseLayerSection
+            orientation={orientation}
+            onItemFocus={onItemFocus}
+            baseLayer={baseLayer}
           />
         </div>
 
