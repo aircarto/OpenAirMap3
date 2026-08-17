@@ -93,7 +93,12 @@
     "rawData": "Raw data",
     "rawDataDescription": "Show uncorrected data on the chart",
     "thresholdBackgroundDisabled": "Thresholds disabled",
-    "thresholdBackgroundDisabledDescription": "Hide colored threshold background (recommended for colorblind users)"
+    "thresholdBackgroundDisabledDescription": "Hide colored threshold background (recommended for colorblind users)",
+    "specialSourcesActive": "At least one active source",
+    "visibleOnMap": "Visible on the map",
+    "hiddenOnMap": "Hidden on the map",
+    "active": "On",
+    "inactive": "Off"
   },
   "historical": {
     "periodLabel": "Historical",
@@ -787,6 +792,7 @@
       "baseLayer": "BASE",
       "specialSources": "SPEC",
       "historical": "HIST"
-    }
+    },
+    "groupUtilities": "Utilities"
   }
 }

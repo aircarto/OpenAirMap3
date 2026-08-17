@@ -4,10 +4,21 @@ import { cn } from "../../../lib/utils";
 import { useMapControls } from "../../../contexts/mapControlsContext";
 import RailBrand from "./RailBrand";
 import RailFiltersSection from "./sections/RailFiltersSection";
+import RailLayersSection from "./sections/RailLayersSection";
+import RailTimeSection from "./sections/RailTimeSection";
+import RailShortcutsSection from "./sections/RailShortcutsSection";
+import RailFooter from "./sections/RailFooter";
 import { useRailRoving, type RailOrientation } from "./useRailRoving";
+import type {
+  BaseLayerControlBinding,
+  RailShortcutsBinding,
+} from "./railBindings";
 
 export interface MapControlRailProps {
   orientation?: RailOrientation;
+  /** État local à la carte : voyage par props, pas par contexte */
+  baseLayer: BaseLayerControlBinding;
+  shortcuts: RailShortcutsBinding;
 }
 
 /**
@@ -24,6 +35,8 @@ export interface MapControlRailProps {
  */
 export const MapControlRail: React.FC<MapControlRailProps> = ({
   orientation = "vertical",
+  baseLayer,
+  shortcuts,
 }) => {
   const { t } = useTranslation();
   const { ui } = useMapControls();
@@ -79,6 +92,10 @@ export const MapControlRail: React.FC<MapControlRailProps> = ({
     >
       <RailBrand onOpenAbout={ui.onOpenInfoModal} />
 
+      {/* Le toolbar englobe la zone de défilement ET le pied : tous les items
+          doivent participer au même roving tabindex, sinon ceux du pied
+          garderaient tabIndex 0 et créeraient un arrêt de tabulation
+          supplémentaire. Seuls les groupes de contrôles défilent. */}
       <div
         ref={containerRef}
         role="toolbar"
@@ -87,19 +104,42 @@ export const MapControlRail: React.FC<MapControlRailProps> = ({
         onKeyDownCapture={onKeyDownCapture}
         className={cn(
           "flex min-h-0 min-w-0 items-center gap-1",
-          isVertical
-            ? "flex-col overflow-y-auto overflow-x-hidden"
-            : "flex-row overflow-x-auto overflow-y-hidden [scroll-snap-type:x_mandatory]",
-          "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          isVertical ? "flex-col" : "flex-row"
         )}
-        style={{
-          // Masques de bord : indiquent qu'il reste des items hors champ
-          maskImage: isVertical
-            ? "linear-gradient(to bottom, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%)"
-            : "linear-gradient(to right, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%)",
-        }}
       >
-        <RailFiltersSection orientation={orientation} onItemFocus={onItemFocus} />
+        <div
+          className={cn(
+            "flex min-h-0 min-w-0 items-center gap-1",
+            isVertical
+              ? "flex-col overflow-y-auto overflow-x-hidden"
+              : "flex-row overflow-x-auto overflow-y-hidden [scroll-snap-type:x_mandatory]",
+            "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          )}
+          style={{
+            // Masques de bord : indiquent qu'il reste des items hors champ
+            maskImage: isVertical
+              ? "linear-gradient(to bottom, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%)"
+              : "linear-gradient(to right, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%)",
+          }}
+        >
+          <RailFiltersSection
+            orientation={orientation}
+            onItemFocus={onItemFocus}
+          />
+          <RailLayersSection
+            orientation={orientation}
+            onItemFocus={onItemFocus}
+            baseLayer={baseLayer}
+          />
+          <RailTimeSection orientation={orientation} onItemFocus={onItemFocus} />
+          <RailShortcutsSection
+            orientation={orientation}
+            shortcuts={shortcuts}
+          />
+        </div>
+
+        {/* Pied épinglé : ne défile jamais avec les groupes de contrôles */}
+        <RailFooter orientation={orientation} onItemFocus={onItemFocus} />
       </div>
     </nav>
   );

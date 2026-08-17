@@ -1,5 +1,4 @@
 import React from "react";
-import BaseLayerControl from "../controls/BaseLayerControl";
 import Legend from "./Legend";
 import DeviceStatistics from "./DeviceStatistics";
 import OverlayLegendsCard, {
@@ -19,22 +18,13 @@ interface MapOverlaysProps {
   signalAir: any;
   t: (key: string, options?: Record<string, unknown>) => string;
   sidePanels: any;
-  currentBaseLayer: string;
-  setCurrentBaseLayer: (layer: any) => void;
-  isCommunalLayerEnabled: boolean;
-  setIsCommunalLayerEnabled: (enabled: boolean) => void;
   isEffisHotspotsEnabled: boolean;
-  setIsEffisHotspotsEnabled: (enabled: boolean) => void;
   effisHotspotsPeriod: HotspotPeriod;
-  setEffisHotspotsPeriod: (period: HotspotPeriod) => void;
   isEffisBurnedAreasEnabled: boolean;
-  setIsEffisBurnedAreasEnabled: (enabled: boolean) => void;
   effisBurnedAreasPeriod: BurnedAreaPeriod;
-  setEffisBurnedAreasPeriod: (period: BurnedAreaPeriod) => void;
   /** Date rejouée antérieure à la rétention EFFIS de 365 jours */
   isHotspotsBeyondRetention: boolean;
   isWildfireVisible: boolean;
-  setIsWildfireLayerEnabledByControl: (enabled: boolean) => void;
   shouldShowStandardLegend: boolean;
   selectedPollutant: string;
   isComparisonPanelVisible: boolean;
@@ -55,21 +45,12 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
   signalAir,
   t,
   sidePanels,
-  currentBaseLayer,
-  setCurrentBaseLayer,
-  isCommunalLayerEnabled,
-  setIsCommunalLayerEnabled,
   isEffisHotspotsEnabled,
-  setIsEffisHotspotsEnabled,
   effisHotspotsPeriod,
-  setEffisHotspotsPeriod,
   isEffisBurnedAreasEnabled,
-  setIsEffisBurnedAreasEnabled,
   effisBurnedAreasPeriod,
-  setEffisBurnedAreasPeriod,
   isHotspotsBeyondRetention,
   isWildfireVisible,
-  setIsWildfireLayerEnabledByControl,
   shouldShowStandardLegend,
   selectedPollutant,
   isComparisonPanelVisible,
@@ -180,28 +161,6 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
         </div>
       )}
 
-      <div
-        className={`absolute bottom-20 left-4 z-map-info flex flex-col space-y-2 transition-all duration-300 ${
-          sidePanelOffset ? "hidden md:flex" : "flex"
-        }`}
-      >
-        <BaseLayerControl
-          currentBaseLayer={currentBaseLayer as any}
-          onBaseLayerChange={setCurrentBaseLayer}
-          isCommunalLayerEnabled={isCommunalLayerEnabled}
-          onCommunalLayerToggle={setIsCommunalLayerEnabled}
-          isEffisHotspotsEnabled={isEffisHotspotsEnabled}
-          onEffisHotspotsToggle={setIsEffisHotspotsEnabled}
-          effisHotspotsPeriod={effisHotspotsPeriod}
-          onEffisHotspotsPeriodChange={setEffisHotspotsPeriod}
-          isEffisBurnedAreasEnabled={isEffisBurnedAreasEnabled}
-          onEffisBurnedAreasToggle={setIsEffisBurnedAreasEnabled}
-          effisBurnedAreasPeriod={effisBurnedAreasPeriod}
-          onEffisBurnedAreasPeriodChange={setEffisBurnedAreasPeriod}
-          isWildfireLayerEnabled={isWildfireVisible}
-          onWildfireLayerToggle={setIsWildfireLayerEnabledByControl}
-        />
-      </div>
 
       {shouldShowStandardLegend && (
         <Legend

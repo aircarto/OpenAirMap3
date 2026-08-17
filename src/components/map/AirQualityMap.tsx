@@ -47,7 +47,6 @@ import CustomSpiderfiedMarkers from "./CustomSpiderfiedMarkers";
 import CustomSpiderfiedSignalAirMarkers from "./CustomSpiderfiedSignalAirMarkers";
 import MarkerWithTooltip from "./MarkerWithTooltip";
 import DeviceStatistics from "./DeviceStatistics";
-import MapFloatingActions from "./MapFloatingActions";
 import MapPanelsContainer from "./MapPanelsContainer";
 import MapDataMarkers from "./MapDataMarkers";
 import MapOverlays from "./MapOverlays";
@@ -946,7 +945,33 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
       >
         {/* Rail de contrôles : absolute dans cette colonne, donc il glisse
             quand un panneau latéral la pousse. */}
-        {featureFlags.useControlRail && <MapControlRail />}
+        {featureFlags.useControlRail && (
+          <MapControlRail
+            baseLayer={{
+              currentBaseLayer: currentBaseLayer as BaseLayerKey,
+              onBaseLayerChange: setCurrentBaseLayer,
+              isCommunalLayerEnabled,
+              onCommunalLayerToggle: setIsCommunalLayerEnabled,
+              isEffisHotspotsEnabled,
+              onEffisHotspotsToggle: setIsEffisHotspotsEnabled,
+              effisHotspotsPeriod,
+              onEffisHotspotsPeriodChange: setEffisHotspotsPeriod,
+              isEffisBurnedAreasEnabled,
+              onEffisBurnedAreasToggle: setIsEffisBurnedAreasEnabled,
+              effisBurnedAreasPeriod,
+              onEffisBurnedAreasPeriodChange: setEffisBurnedAreasPeriod,
+              isWildfireLayerEnabled: isWildfireVisible,
+              onWildfireLayerToggle: setIsWildfireLayerEnabledByControl,
+            }}
+            shortcuts={{
+              sidePanels,
+              signalAir,
+              mobileAir,
+              isComparisonPanelVisible,
+              selectedSources,
+            }}
+          />
+        )}
 
         {/* Contrôle de recherche personnalisé */}
         <CustomSearchControl
@@ -1092,21 +1117,12 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           signalAir={signalAir}
           t={t}
           sidePanels={sidePanels}
-          currentBaseLayer={currentBaseLayer}
-          setCurrentBaseLayer={setCurrentBaseLayer}
-          isCommunalLayerEnabled={isCommunalLayerEnabled}
-          setIsCommunalLayerEnabled={setIsCommunalLayerEnabled}
           isEffisHotspotsEnabled={isEffisHotspotsEnabled}
-          setIsEffisHotspotsEnabled={setIsEffisHotspotsEnabled}
           effisHotspotsPeriod={effisHotspotsPeriod}
-          setEffisHotspotsPeriod={setEffisHotspotsPeriod}
           isEffisBurnedAreasEnabled={isEffisBurnedAreasEnabled}
-          setIsEffisBurnedAreasEnabled={setIsEffisBurnedAreasEnabled}
           effisBurnedAreasPeriod={effisBurnedAreasPeriod}
-          setEffisBurnedAreasPeriod={setEffisBurnedAreasPeriod}
           isHotspotsBeyondRetention={isHotspotsBeyondRetention}
           isWildfireVisible={isWildfireVisible}
-          setIsWildfireLayerEnabledByControl={setIsWildfireLayerEnabledByControl}
           shouldShowStandardLegend={shouldShowStandardLegend}
           selectedPollutant={selectedPollutant}
           isComparisonPanelVisible={isComparisonPanelVisible}
@@ -1124,14 +1140,6 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
         />
       </div>
 
-      <MapFloatingActions
-        sidePanels={sidePanels}
-        signalAir={signalAir}
-        mobileAir={mobileAir}
-        isComparisonPanelVisible={isComparisonPanelVisible}
-        selectedSources={selectedSources}
-        t={t}
-      />
     </div>
   );
 };

@@ -2,14 +2,14 @@ import React from "react";
 
 type PanelSize = "normal" | "compact" | "fullscreen" | "hidden";
 
-interface SidePanelsProps {
+export interface SidePanelsProps {
   isSidePanelOpen: boolean;
   panelSize: PanelSize;
   comparisonState: { isComparisonMode: boolean };
   handleSidePanelSizeChange: (size: PanelSize) => void;
 }
 
-interface SignalAirProps {
+export interface SignalAirProps {
   isSignalAirDetailPanelOpen: boolean;
   signalAirDetailPanelSize: PanelSize;
   selectedSignalAirReport: { signalType?: string | null } | null;
@@ -20,7 +20,7 @@ interface SignalAirProps {
   handleSignalAirPanelSizeChange: (size: PanelSize) => void;
 }
 
-interface MobileAirProps {
+export interface MobileAirProps {
   mobileAirRoutes: unknown[];
   mobileAirDetailPanelSize: PanelSize;
   handleOpenMobileAirDetailPanel: () => void;
@@ -30,7 +30,7 @@ interface MobileAirProps {
   handleMobileAirSelectionPanelSizeChange: (size: PanelSize) => void;
 }
 
-interface MapFloatingActionsProps {
+export interface MapFloatingActionsProps {
   sidePanels: SidePanelsProps;
   signalAir: SignalAirProps;
   mobileAir: MobileAirProps;
@@ -224,68 +224,27 @@ const MapFloatingActions: React.FC<MapFloatingActionsProps> = ({
     otherButtons.length + signalAirButtons.length + mobileAirButtons.length;
   if (totalButtons === 0) return null;
 
+  const all = [...otherButtons, ...signalAirButtons, ...mobileAirButtons];
+
+  // Ni enveloppe ni ancrage : le conteneur est fourni par l'appelant, à savoir
+  // la section « raccourcis » du rail de contrôles. L'ancienne enveloppe
+  // `fixed left-2 top-1/2` doublonnait le rail et restait par-dessus les
+  // panneaux latéraux au lieu de se décaler avec la colonne carte.
+  //
+  // Le `hover:scale-110` d'origine est retiré : un agrandissement au survol
+  // décale la mise en page de ses voisins dans une colonne étroite.
   return (
-    <div
-      className="fixed left-2 top-1/2 -translate-y-1/2 z-rail 
-                 bg-stone-50/60 backdrop-blur-sm rounded-xl shadow-xl border border-stone-200/40 
-                 flex flex-col gap-2.5 p-2.5
-                 animate-slide-in-left transition-all duration-300 ease-out
-                 hover:bg-stone-50/95 hover:shadow-2xl hover:border-stone-300/80
-                 opacity-70 hover:opacity-100"
-    >
-      {otherButtons.map((btn, index) => (
+    <>
+      {all.map((btn, index) => (
         <div
           key={btn.key}
-          className="animate-scale-in transition-all duration-200 ease-out 
-                     hover:scale-110 hover:z-10 transform-gpu"
+          className="animate-scale-in shrink-0"
           style={{ animationDelay: `${index * 60}ms`, animationFillMode: "both" }}
         >
           {btn.element}
         </div>
       ))}
-
-      {signalAirButtons.length > 0 && (
-        <div className={`flex flex-col gap-1 ${otherButtons.length > 0 ? "mt-3" : ""}`}>
-          {signalAirButtons.map((btn, index) => (
-            <div
-              key={btn.key}
-              className="animate-scale-in transition-all duration-200 ease-out 
-                         hover:scale-110 hover:z-10 transform-gpu"
-              style={{
-                animationDelay: `${(otherButtons.length + index) * 60}ms`,
-                animationFillMode: "both",
-              }}
-            >
-              {btn.element}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {mobileAirButtons.length > 0 && (
-        <div
-          className={`flex flex-col gap-1 ${
-            otherButtons.length > 0 || signalAirButtons.length > 0 ? "mt-3" : ""
-          }`}
-        >
-          {mobileAirButtons.map((btn, index) => (
-            <div
-              key={btn.key}
-              className="animate-scale-in transition-all duration-200 ease-out 
-                         hover:scale-110 hover:z-10 transform-gpu"
-              style={{
-                animationDelay: `${
-                  (otherButtons.length + signalAirButtons.length + index) * 60
-                }ms`,
-                animationFillMode: "both",
-              }}
-            >
-              {btn.element}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+    </>
   );
 };
 

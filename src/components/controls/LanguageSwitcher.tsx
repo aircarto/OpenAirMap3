@@ -1,122 +1,100 @@
-import React, { useState, useRef, useEffect } from "react";
-import { createPortal } from "react-dom";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import { supportedLanguages, type SupportedLocale } from "../../i18n";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import { DropdownButton } from "./DropdownButton";
+import type { CustomTriggerProps } from "./dropdownTriggerContract";
 import { cn } from "../../lib/utils";
 
-const DROPDOWN_OFFSET = 4;
+export interface LanguageSwitcherTriggerContext {
+  /** Libellé de la langue courante, ex. « Français » */
+  displayText: string;
+  /** Code de locale en majuscules, ex. « FR » — seule forme tenant dans une caption */
+  code: string;
+}
 
-const LanguageSwitcher: React.FC = () => {
+type Props = Omit<CustomTriggerProps, "renderTrigger"> & {
+  renderTrigger?: (context: LanguageSwitcherTriggerContext) => React.ReactNode;
+};
+
+/**
+ * Sélecteur de langue.
+ *
+ * Bâti sur Radix `DropdownMenu` : l'implémentation précédente était un portail
+ * fait main dont la position était calculée par `getBoundingClientRect`, avec un
+ * `left: rect.right - 112` codé en dur qui supposait un alignement à droite —
+ * dans un rail à gauche, le menu se serait posé par-dessus le rail. Radix gère
+ * en plus le retour du focus au déclencheur et la fermeture par Échap, que
+ * l'implémentation maison n'assurait pas.
+ *
+ * La sémantique passe de `listbox`/`option` à `menu`/`menuitemradio`, ce qui est
+ * correct pour un déclencheur de menu et reste annoncé comme un choix unique.
+ */
+const LanguageSwitcher: React.FC<Props> = ({
+  renderTrigger,
+  menuSide,
+  menuAlign,
+  menuSideOffset,
+  menuClassName,
+}) => {
   const { t, i18n } = useTranslation();
-  const [isOpen, setIsOpen] = useState(false);
-  const [dropdownRect, setDropdownRect] = useState<{ top: number; left: number } | null>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const currentLang = supportedLanguages.find((l) => l.code === i18n.language) ?? supportedLanguages[0];
-
-  // Positionner le menu sous le bouton (en fixed pour le portal)
-  useEffect(() => {
-    if (!isOpen || !buttonRef.current) {
-      setDropdownRect(null);
-      return;
-    }
-    const updatePosition = () => {
-      if (!buttonRef.current) return;
-      const rect = buttonRef.current.getBoundingClientRect();
-      setDropdownRect({
-        top: rect.bottom + DROPDOWN_OFFSET,
-        left: rect.right - 112, // min-w-[7rem] = 112px, aligné à droite du bouton
-      });
-    };
-    updatePosition();
-    window.addEventListener("scroll", updatePosition, true);
-    window.addEventListener("resize", updatePosition);
-    return () => {
-      window.removeEventListener("scroll", updatePosition, true);
-      window.removeEventListener("resize", updatePosition);
-    };
-  }, [isOpen]);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        const target = e.target as HTMLElement;
-        if (!target.closest("[data-language-listbox]")) setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const handleSelect = (code: SupportedLocale) => {
-    i18n.changeLanguage(code);
-    setIsOpen(false);
-  };
-
-  const dropdownContent =
-    isOpen && dropdownRect && typeof document !== "undefined"
-      ? createPortal(
-          <ul
-            data-language-listbox
-            id="language-listbox"
-            role="listbox"
-            aria-labelledby="language-switcher"
-            className="fixed z-popover min-w-[7rem] rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
-            style={{ top: dropdownRect.top, left: dropdownRect.left }}
-          >
-            {supportedLanguages.map((lang) => (
-              <li key={lang.code} role="option" aria-selected={i18n.language === lang.code}>
-                <button
-                  type="button"
-                  onClick={() => handleSelect(lang.code)}
-                  className={cn(
-                    "w-full flex items-center px-2.5 py-1.5 text-left text-xs font-medium transition-colors",
-                    i18n.language === lang.code
-                      ? "bg-[#4271B3]/10 text-[#4271B3]"
-                      : "text-gray-700 hover:bg-gray-50"
-                  )}
-                  title={lang.label}
-                >
-                  <span>{lang.label}</span>
-                </button>
-              </li>
-            ))}
-          </ul>,
-          document.body
-        )
-      : null;
+  const currentLang =
+    supportedLanguages.find((l) => l.code === i18n.language) ??
+    supportedLanguages[0];
 
   return (
-    <div className="relative shrink-0" ref={containerRef}>
-      <button
-        ref={buttonRef}
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          "flex items-center gap-1 rounded-lg border border-gray-200/80 px-2 py-1 text-xs font-semibold text-gray-700",
-          "hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#4271B3]/20 focus:border-[#4271B3] transition-colors"
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        {renderTrigger ? (
+          renderTrigger({
+            displayText: currentLang.label,
+            code: currentLang.code.toUpperCase(),
+          })
+        ) : (
+          <DropdownButton
+            id="language-switcher"
+            aria-label={t("common.chooseLanguage")}
+            title={currentLang.label}
+            size="compact"
+            variant="minimal"
+            chevronClassName="pr-1.5"
+            className="pr-6 font-semibold text-gray-700"
+          >
+            <span className="block truncate pr-1">{currentLang.label}</span>
+          </DropdownButton>
         )}
-        aria-label={t("common.chooseLanguage")}
-        aria-haspopup="listbox"
-        aria-expanded={isOpen}
-        aria-controls="language-listbox"
-        id="language-switcher"
-        title={currentLang.label}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        side={menuSide}
+        align={menuAlign ?? "end"}
+        sideOffset={menuSideOffset}
+        className={cn("min-w-[7rem]", menuClassName)}
       >
-        <span>{currentLang.label}</span>
-        <svg
-          className={cn("w-3.5 h-3.5 text-gray-500 transition-transform shrink-0", isOpen && "rotate-180")}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden
+        <DropdownMenuRadioGroup
+          value={i18n.language}
+          onValueChange={(code) => i18n.changeLanguage(code as SupportedLocale)}
         >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-      {dropdownContent}
-    </div>
+          {supportedLanguages.map((lang) => (
+            <DropdownMenuRadioItem
+              key={lang.code}
+              value={lang.code}
+              className={cn(
+                "py-2 pr-3 text-sm",
+                i18n.language === lang.code && "bg-[#e7eef8] text-[#1f3c6d]"
+              )}
+            >
+              {lang.label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 

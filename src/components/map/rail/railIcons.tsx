@@ -56,11 +56,13 @@ export const IconModeling: React.FC = () => (
   </svg>
 );
 
-/** Fond de carte : plans superposés */
+/** Fond de carte : carte pliée. Volontairement distincte d'IconSources, dont
+ *  les plans empilés étaient trop proches pour être distingués à 20 px. */
 export const IconBaseLayer: React.FC = () => (
   <svg {...base} aria-hidden="true">
-    <path d="M4 8.5 12 4.5l8 4-8 4-8-4Z" />
-    <path d="M4 15.5 12 19.5l8-4" />
+    <path d="M3.25 6.5 9 4.25l6 2.25 5.75-2.25v13L15 19.5 9 17.25 3.25 19.5v-13Z" />
+    <path d="M9 4.25v13" />
+    <path d="M15 6.5v13" />
   </svg>
 );
 

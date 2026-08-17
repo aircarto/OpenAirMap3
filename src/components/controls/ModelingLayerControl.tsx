@@ -11,9 +11,10 @@ import {
   DropdownMenuRadioItem,
 } from "../ui/dropdown-menu";
 import { DropdownButton } from "./DropdownButton";
+import type { CustomTriggerProps } from "./dropdownTriggerContract";
 import { cn } from "../../lib/utils";
 
-interface ModelingLayerControlProps {
+interface ModelingLayerControlProps extends CustomTriggerProps {
   currentModelingLayer: ModelingLayerType | null;
   onModelingLayerChange: (layerType: ModelingLayerType | null) => void;
   selectedPollutant?: string;
@@ -28,6 +29,11 @@ const ModelingLayerControl: React.FC<ModelingLayerControlProps> = ({
   selectedPollutant,
   selectedTimeStep = "heure",
   triggerId,
+  renderTrigger,
+  menuSide,
+  menuAlign,
+  menuSideOffset,
+  menuClassName,
 }) => {
   const { t } = useTranslation();
   const handleLayerSelect = (layerType: ModelingLayerType) => {
@@ -83,6 +89,14 @@ const ModelingLayerControl: React.FC<ModelingLayerControlProps> = ({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
+        {renderTrigger ? (
+          renderTrigger({
+            displayText: isDisabled
+              ? t("controls.modelingUnavailable")
+              : getDisplayText(),
+            disabled: isDisabled,
+          })
+        ) : (
         <DropdownButton
           id={triggerId}
           disabled={isDisabled}
@@ -101,12 +115,18 @@ const ModelingLayerControl: React.FC<ModelingLayerControlProps> = ({
             {isDisabled ? t("controls.modelingUnavailable") : getDisplayText()}
           </span>
         </DropdownButton>
+        )}
       </DropdownMenuTrigger>
       {!isDisabled && (
-        <DropdownMenuContent 
-          align="start" 
+        <DropdownMenuContent
+          side={menuSide}
+          align={menuAlign ?? "start"}
           alignOffset={0}
-          className="w-[var(--radix-dropdown-menu-trigger-width)]"
+          sideOffset={menuSideOffset}
+          className={cn(
+            !renderTrigger && "w-[var(--radix-dropdown-menu-trigger-width)]",
+            menuClassName
+          )}
         >
           <DropdownMenuRadioGroup
             value={currentModelingLayer || ""}

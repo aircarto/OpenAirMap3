@@ -7,24 +7,28 @@ interface AboutPanelProps {
 }
 
 /**
- * Panneau "À propos" replié par défaut (élément natif <details>) sous le header.
- * Contrairement à InformationModal (démonté du DOM tant qu'il n'est pas ouvert),
- * ce contenu reste toujours présent dans le DOM — visible pour les crawlers qui
- * n'exécutent pas de clic, même carte repliée visuellement.
+ * Texte « À propos » conservé en permanence dans le DOM pour l'indexation.
+ *
+ * Contrairement à InformationModal, démontée tant qu'elle n'est pas ouverte, ce
+ * contenu est toujours présent : il reste lisible par les robots qui n'exécutent
+ * pas de clic. Il est masqué visuellement par `sr-only`, technique de clip et
+ * NON `display: none` — ce dernier sortirait le contenu de l'arbre
+ * d'accessibilité et n'offre pas les mêmes garanties d'indexation.
+ *
+ * `aria-hidden` parce que les mêmes chaînes sont rendues par InformationModal,
+ * qu'ouvre le bloc de marque du rail : sans cela un lecteur d'écran les
+ * annoncerait deux fois. La modale est la surface interactive « À propos » ;
+ * ce bloc n'existe que pour les robots.
  */
 const AboutPanel: React.FC<AboutPanelProps> = ({ domainConfig }) => {
   const { t } = useTranslation();
 
   return (
-    <details className="border-b border-gray-200/80 bg-gray-50/60">
-      <summary className="cursor-pointer select-none px-4 sm:px-5 py-2 text-sm font-medium text-[#4271B3]">
-        {t("aboutPanel.summary")}
-      </summary>
-      <div className="px-4 sm:px-5 pb-4 max-w-3xl space-y-2 text-sm text-gray-600">
-        <p>{domainConfig.description}</p>
-        <p>{t("infoModal.intro")}</p>
-      </div>
-    </details>
+    <section className="sr-only" aria-hidden="true" data-testid="about-seo-text">
+      <h2>{t("aboutPanel.summary")}</h2>
+      <p>{domainConfig.description}</p>
+      <p>{t("infoModal.intro")}</p>
+    </section>
   );
 };
 

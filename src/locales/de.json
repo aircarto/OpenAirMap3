@@ -93,7 +93,12 @@
     "rawData": "Rohdaten",
     "rawDataDescription": "Unkorrigierte Daten im Diagramm anzeigen",
     "thresholdBackgroundDisabled": "Schwellen deaktiviert",
-    "thresholdBackgroundDisabledDescription": "Farbigen Schwellen-Hintergrund ausblenden (empfohlen für Farbenblinde)"
+    "thresholdBackgroundDisabledDescription": "Farbigen Schwellen-Hintergrund ausblenden (empfohlen für Farbenblinde)",
+    "specialSourcesActive": "Mindestens eine aktive Quelle",
+    "visibleOnMap": "Auf der Karte sichtbar",
+    "hiddenOnMap": "Auf der Karte ausgeblendet",
+    "active": "Ein",
+    "inactive": "Aus"
   },
   "historical": {
     "periodLabel": "Verlauf",
@@ -787,6 +792,7 @@
       "baseLayer": "BASIS",
       "specialSources": "SPEZ",
       "historical": "VERL"
-    }
+    },
+    "groupUtilities": "Extras"
   }
 }

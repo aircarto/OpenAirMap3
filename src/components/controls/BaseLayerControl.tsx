@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { BASE_LAYER_KEYS, BaseLayerKey } from "../../constants/mapLayers";
 import { featureFlags } from "../../config/featureFlags";
+import { cn } from "../../lib/utils";
 import {
   BurnedAreaPeriod,
   HotspotPeriod,
@@ -100,6 +101,27 @@ interface BaseLayerControlProps {
   // Props pour la couche feux de foret en cours
   isWildfireLayerEnabled: boolean;
   onWildfireLayerToggle: (enabled: boolean) => void;
+  /**
+   * Placement du panneau. « top » correspond au site historique (bas-gauche de
+   * la carte, panneau qui s'ouvre vers le haut) ; « right » sert au rail.
+   */
+  placement?: "top" | "right";
+  /** Surface du panneau, pour l'aligner sur celle des flyouts du rail */
+  panelClassName?: string;
+  /**
+   * Déclencheur fourni par l'appelant. Reçoit l'état d'ouverture pour renseigner
+   * `aria-expanded` et refléter l'état visuellement.
+   *
+   * Ce composant conserve son panneau fait main : ses 400 lignes de sélecteurs
+   * de période imbriqués et sa gestion du clic extérieur fonctionnent, et les
+   * porter sur Radix serait un chantier distinct sans gain fonctionnel ici.
+   */
+  renderTrigger?: (context: {
+    isOpen: boolean;
+    label: string;
+    icon: React.ReactNode;
+    toggle: () => void;
+  }) => React.ReactNode;
 }
 
 const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
@@ -117,6 +139,9 @@ const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
   onEffisBurnedAreasPeriodChange,
   isWildfireLayerEnabled,
   onWildfireLayerToggle,
+  placement = "top",
+  panelClassName,
+  renderTrigger,
 }) => {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
@@ -206,23 +231,44 @@ const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
     );
   };
 
+  const toggle = () => setIsOpen((open) => !open);
+
   return (
     <div className="relative" ref={dropdownRef}>
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="bg-white/90 backdrop-blur-sm border border-gray-200/50 rounded-md p-2 text-center shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500/50 hover:border-gray-300/70 transition-colors"
-        title={`${t("baseLayer.title")}: ${getLayerLabel(currentBaseLayer)}`}
-      >
-        <div className="flex items-center justify-center">
-          <span className="text-gray-700">
-            {getLayerIcon(currentBaseLayer)}
-          </span>
-        </div>
-      </button>
+      {renderTrigger ? (
+        renderTrigger({
+          isOpen,
+          label: getLayerLabel(currentBaseLayer),
+          icon: getLayerIcon(currentBaseLayer),
+          toggle,
+        })
+      ) : (
+        <button
+          type="button"
+          onClick={toggle}
+          aria-expanded={isOpen}
+          className="bg-white/90 backdrop-blur-sm border border-gray-200/50 rounded-md p-2 text-center shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500/50 hover:border-gray-300/70 transition-colors"
+          title={`${t("baseLayer.title")}: ${getLayerLabel(currentBaseLayer)}`}
+        >
+          <div className="flex items-center justify-center">
+            <span className="text-gray-700">
+              {getLayerIcon(currentBaseLayer)}
+            </span>
+          </div>
+        </button>
+      )}
 
       {isOpen && (
-        <div className="absolute z-popover w-auto min-w-full mb-1 bg-white/95 backdrop-blur-sm border border-gray-200/50 rounded-md shadow-sm bottom-full">
+        <div
+          className={cn(
+            "absolute z-popover w-auto min-w-full",
+            placement === "right"
+              ? "left-full top-0 ml-2.5 min-w-[248px]"
+              : "bottom-full mb-1",
+            panelClassName ??
+              "bg-white/95 backdrop-blur-sm border border-gray-200/50 rounded-md shadow-sm"
+          )}
+        >
           <div className="p-1">
             {BASE_LAYER_KEYS.map((layerKey) => (
               <button

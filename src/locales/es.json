@@ -93,7 +93,12 @@
     "rawData": "Datos brutos",
     "rawDataDescription": "Mostrar los datos no corregidos en el gráfico",
     "thresholdBackgroundDisabled": "Umbrales desactivados",
-    "thresholdBackgroundDisabledDescription": "Oculta el fondo coloreado por umbral (recomendado para daltónicos)"
+    "thresholdBackgroundDisabledDescription": "Oculta el fondo coloreado por umbral (recomendado para daltónicos)",
+    "specialSourcesActive": "Al menos una fuente activa",
+    "visibleOnMap": "Visible en el mapa",
+    "hiddenOnMap": "Oculto en el mapa",
+    "active": "Activo",
+    "inactive": "Inactivo"
   },
   "historical": {
     "periodLabel": "Histórico",
@@ -787,6 +792,7 @@
       "baseLayer": "BASE",
       "specialSources": "ESP",
       "historical": "HIST"
-    }
+    },
+    "groupUtilities": "Utilidades"
   }
 }

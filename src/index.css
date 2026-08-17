@@ -260,6 +260,13 @@ html {
   }
 }
 
+/* La section des raccourcis de panneaux se monte et se démonte selon l'état des
+   panneaux : quand elle ne rend aucun bouton, le groupe et son filet de
+   séparation disparaissent ensemble. */
+.rail-section:empty {
+  display: none;
+}
+
 /* État gelé pendant la lecture historique : le verre s'embue. La trame dit
    « pourquoi », là où un simple opacity-50 ne disait que « non ». */
 .rail-section-frozen {

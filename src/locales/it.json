@@ -93,7 +93,12 @@
     "rawData": "Dati grezzi",
     "rawDataDescription": "Mostra i dati non corretti sul grafico",
     "thresholdBackgroundDisabled": "Soglie disattivate",
-    "thresholdBackgroundDisabledDescription": "Nasconde lo sfondo colorato per soglia (consigliato per daltonici)"
+    "thresholdBackgroundDisabledDescription": "Nasconde lo sfondo colorato per soglia (consigliato per daltonici)",
+    "specialSourcesActive": "Almeno una fonte attiva",
+    "visibleOnMap": "Visibile sulla mappa",
+    "hiddenOnMap": "Nascosto sulla mappa",
+    "active": "Attivo",
+    "inactive": "Inattivo"
   },
   "historical": {
     "periodLabel": "Storico",
@@ -787,6 +792,7 @@
       "baseLayer": "BASE",
       "specialSources": "SPEC",
       "historical": "STOR"
-    }
+    },
+    "groupUtilities": "Utilità"
   }
 }

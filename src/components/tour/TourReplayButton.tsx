@@ -4,12 +4,20 @@ import { cn } from "../../lib/utils";
 import type { TourId } from "../../config/tours/types";
 import { useFeatureTourContext } from "./featureTourContext";
 
+export interface TourReplayTriggerContext {
+  label: string;
+  disabled: boolean;
+  onReplay: () => void;
+}
+
 interface TourReplayButtonProps {
   tourId: TourId;
   className?: string;
   disabled?: boolean;
   /** Affiche uniquement l'icône, dans un bouton carré (ex: barre d'outils desktop) */
   iconOnly?: boolean;
+  /** Déclencheur fourni par l'appelant (rail de contrôles) */
+  renderTrigger?: (context: TourReplayTriggerContext) => React.ReactNode;
 }
 
 const TourReplayButton: React.FC<TourReplayButtonProps> = ({
@@ -17,10 +25,17 @@ const TourReplayButton: React.FC<TourReplayButtonProps> = ({
   className,
   disabled = false,
   iconOnly = false,
+  renderTrigger,
 }) => {
   const { t } = useTranslation();
   const { startTour, isTourActive } = useFeatureTourContext();
   const label = t("tour.common.replay");
+  const isDisabled = disabled || isTourActive;
+  const replay = () => startTour(tourId, { replay: true });
+
+  if (renderTrigger) {
+    return <>{renderTrigger({ label, disabled: isDisabled, onReplay: replay })}</>;
+  }
 
   const icon = (
     <svg

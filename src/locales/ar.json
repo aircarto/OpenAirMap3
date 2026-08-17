@@ -93,7 +93,12 @@
     "rawData": "البيانات الخام",
     "rawDataDescription": "عرض البيانات غير المصححة على الرسم البياني",
     "thresholdBackgroundDisabled": "العتبات معطلة",
-    "thresholdBackgroundDisabledDescription": "إخفاء الخلفية الملونة حسب العتبة (موصى به للمصابين بعمى الألوان)"
+    "thresholdBackgroundDisabledDescription": "إخفاء الخلفية الملونة حسب العتبة (موصى به للمصابين بعمى الألوان)",
+    "specialSourcesActive": "مصدر واحد نشط على الأقل",
+    "visibleOnMap": "مرئي على الخريطة",
+    "hiddenOnMap": "مخفي على الخريطة",
+    "active": "نشط",
+    "inactive": "غير نشط"
   },
   "historical": {
     "periodLabel": "تاريخي",
@@ -803,6 +808,7 @@
       "baseLayer": "خلفية",
       "specialSources": "خاصة",
       "historical": "تاريخ"
-    }
+    },
+    "groupUtilities": "أدوات"
   }
 }
