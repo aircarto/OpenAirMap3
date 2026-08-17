@@ -7,18 +7,21 @@ interface AboutPanelProps {
 }
 
 /**
- * Texte « À propos » conservé en permanence dans le DOM pour l'indexation.
+ * Bloc de texte destiné à l'indexation, et à elle seule.
  *
- * Contrairement à InformationModal, démontée tant qu'elle n'est pas ouverte, ce
- * contenu est toujours présent : il reste lisible par les robots qui n'exécutent
- * pas de clic. Il est masqué visuellement par `sr-only`, technique de clip et
- * NON `display: none` — ce dernier sortirait le contenu de l'arbre
- * d'accessibilité et n'offre pas les mêmes garanties d'indexation.
+ * Choix assumé : ce contenu n'est atteignable par aucun humain. Il est masqué
+ * visuellement par `sr-only` et retiré de l'arbre d'accessibilité par
+ * `aria-hidden`, donc invisible aux voyants comme aux lecteurs d'écran. Il
+ * existe pour les robots qui n'exécutent pas de clic, en complément de
+ * `<meta name="description">` et du JSON-LD.
  *
- * `aria-hidden` parce que les mêmes chaînes sont rendues par InformationModal,
- * qu'ouvre le bloc de marque du rail : sans cela un lecteur d'écran les
- * annoncerait deux fois. La modale est la surface interactive « À propos » ;
- * ce bloc n'existe que pour les robots.
+ * Ne pas le présenter comme le miroir d'une surface interactive : `infoModal.intro`
+ * est certes repris par InformationModal, mais `domainConfig.description` n'est
+ * rendu qu'ici. Si l'on veut un jour exposer ce texte à l'utilisateur, il faut
+ * créer la surface correspondante — elle n'existe pas.
+ *
+ * `sr-only` plutôt que `display: none` : la technique de clip conserve le
+ * contenu dans le rendu, ce que ne fait pas `display: none`.
  */
 const AboutPanel: React.FC<AboutPanelProps> = ({ domainConfig }) => {
   const { t } = useTranslation();
