@@ -8,6 +8,10 @@ export default defineConfig({
     globals: true,
     environment: "jsdom",
     setupFiles: "./src/tests/setupTests.ts",
+    // Cantonne Vitest à src/ : sans cela le motif par défaut ramasse aussi les
+    // specs Playwright de e2e/, qui échouent à la collecte sous jsdom (8
+    // fichiers en erreur alors que tous les tests unitaires passaient).
+    include: ["src/**/*.{test,spec}.{ts,tsx}"],
     css: true,
     restoreMocks: true,
     clearMocks: true,
