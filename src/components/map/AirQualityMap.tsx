@@ -38,6 +38,7 @@ import {
 import { MAX_COMPARISON_STATIONS } from "../../constants/comparison";
 import CustomSearchControl from "../controls/CustomSearchControl";
 import MapControlRail from "./rail/MapControlRail";
+import { useMapControls } from "../../contexts/mapControlsContext";
 import ScaleControl from "../controls/ScaleControl";
 import NorthArrow from "../controls/NorthArrow";
 import Legend from "./Legend";
@@ -51,7 +52,6 @@ import MapPanelsContainer from "./MapPanelsContainer";
 import MapDataMarkers from "./MapDataMarkers";
 import MapOverlays from "./MapOverlays";
 import MapViewSyncHandler from "./MapViewSyncHandler";
-import SensorPromoCard from "./SensorPromoCard";
 import { AtmoRefService } from "../../services/AtmoRefService";
 import { AtmoMicroService } from "../../services/AtmoMicroService";
 import { NebuleAirService } from "../../services/NebuleAirService";
@@ -224,6 +224,9 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
   mapBounds,
 }) => {
   const { t } = useTranslation();
+  // AirQualityMap est rendu dans MapControlsProvider : il peut consommer le
+  // contexte pour transmettre les notices applicatives à la pile unique.
+  const mapControls = useMapControls();
   // Configuration du spiderfier
   const [spiderfyConfig, setSpiderfyConfig] = useState(defaultSpiderfyConfig);
   const [currentBaseLayer, setCurrentBaseLayer] =
@@ -945,6 +948,13 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
       >
         {/* Rail de contrôles : absolute dans cette colonne, donc il glisse
             quand un panneau latéral la pousse. */}
+        {/* Bande instrument : la rose des vents n'est plus un contrôle Leaflet,
+            elle s'adosse à --rail-inset comme l'échelle. */}
+        <NorthArrow
+          isSidePanelOpen={sidePanels.isSidePanelOpen}
+          panelSize={sidePanels.panelSize}
+        />
+
         {featureFlags.useControlRail && (
           <MapControlRail
             baseLayer={{
@@ -983,13 +993,6 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           }
         />
 
-        {featureFlags.useAdvertising && advertisingConfig.sensorShopUrl && (
-          <SensorPromoCard
-            shopUrl={advertisingConfig.sensorShopUrl}
-            hidden={isHistoricalDatePanelVisible}
-          />
-        )}
-
         <MapContainer
           center={center}
           zoom={zoom}
@@ -1026,11 +1029,6 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
             panelSize={sidePanels.panelSize}
           />
 
-          {/* Flèche du nord */}
-          <NorthArrow
-            isSidePanelOpen={sidePanels.isSidePanelOpen}
-            panelSize={sidePanels.panelSize}
-          />
 
           {/* Pinpoint de recherche (disparaît au clic sur la carte) */}
           {searchPinPosition && (
@@ -1115,6 +1113,15 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
 
         <MapOverlays
           signalAir={signalAir}
+          promo={
+            featureFlags.useAdvertising && advertisingConfig.sensorShopUrl
+              ? {
+                  shopUrl: advertisingConfig.sensorShopUrl,
+                  hidden: Boolean(isHistoricalDatePanelVisible),
+                }
+              : null
+          }
+          appNotices={mapControls.ui.notices}
           t={t}
           sidePanels={sidePanels}
           isEffisHotspotsEnabled={isEffisHotspotsEnabled}

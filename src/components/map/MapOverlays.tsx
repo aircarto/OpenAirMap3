@@ -1,5 +1,8 @@
-import React from "react";
+import React, { useMemo } from "react";
 import Legend from "./Legend";
+import SensorPromoCard from "./SensorPromoCard";
+import NotificationStack from "./notifications/NotificationStack";
+import { compactNotices, type Notice } from "./notifications/notice";
 import DeviceStatistics from "./DeviceStatistics";
 import OverlayLegendsCard, {
   OverlayLegendItem,
@@ -16,6 +19,10 @@ import {
 
 interface MapOverlaysProps {
   signalAir: any;
+  /** Notices de niveau application, à fusionner avec celles des couches */
+  appNotices: Notice[];
+  /** Encart promotionnel, ou null si la publicité est désactivée */
+  promo: { shopUrl: string; hidden: boolean } | null;
   t: (key: string, options?: Record<string, unknown>) => string;
   sidePanels: any;
   isEffisHotspotsEnabled: boolean;
@@ -43,6 +50,8 @@ interface MapOverlaysProps {
 
 const MapOverlays: React.FC<MapOverlaysProps> = ({
   signalAir,
+  appNotices,
+  promo,
   t,
   sidePanels,
   isEffisHotspotsEnabled,
@@ -126,41 +135,113 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
     !mapLayers.effisBurnedAreasError &&
     burnedAreasStats?.displayed === 0;
 
+  // Notices de couches, concaténées à celles de niveau application. Auparavant
+  // dix blocs absolus posés à la main sur top-24/32/36/40, dont trois
+  // partageaient top-32 et trois top-40 : ils se recouvraient dès que deux
+  // couches feux chargeaient ensemble.
+  const notices = useMemo<Notice[]>(
+    () =>
+      compactNotices([
+        ...appNotices,
+        signalAir.signalAirFeedback && {
+          id: "signalair-feedback",
+          tone: "info" as const,
+          message: signalAir.signalAirFeedback,
+          onDismiss: signalAir.handleDismissSignalAirFeedback,
+          dismissLabel: t("panels.closeSignalAirMessage"),
+        },
+        isWildfireVisible &&
+          wildfire.wildfireLoading &&
+          wildfire.wildfireReports.length === 0 && {
+            id: "wildfire-loading",
+            tone: "warn" as const,
+            busy: true,
+            message: t("panels.loadingFireReports"),
+          },
+        isWildfireVisible &&
+          wildfire.wildfireError && {
+            id: "wildfire-error",
+            tone: "error" as const,
+            message: wildfire.wildfireError,
+          },
+        isEffisHotspotsEnabled &&
+          mapLayers.isEffisHotspotsLoading && {
+            id: "effis-hotspots-loading",
+            tone: "warn" as const,
+            busy: true,
+            message: t("panels.loadingEffisHotspots"),
+          },
+        isEffisHotspotsEnabled &&
+          isHotspotsBeyondRetention && {
+            id: "effis-hotspots-retention",
+            tone: "warn" as const,
+            message: t("panels.effisHotspotsBeyondRetention"),
+          },
+        isEffisHotspotsEnabled &&
+          mapLayers.effisHotspotsError && {
+            id: "effis-hotspots-error",
+            tone: "error" as const,
+            message: t("panels.effisHotspotsError"),
+          },
+        showHotspotsEmpty && {
+          id: "effis-hotspots-empty",
+          tone: "neutral" as const,
+          message: t("panels.effisHotspotsEmpty", {
+            period: t(
+              effisHotspotsPeriod === "24h"
+                ? "baseLayer.firePeriod24h"
+                : "baseLayer.firePeriod7d"
+            ),
+          }),
+        },
+        isEffisBurnedAreasEnabled &&
+          mapLayers.isEffisBurnedAreasLoading && {
+            id: "effis-burned-loading",
+            tone: "warn" as const,
+            busy: true,
+            message: t("panels.loadingEffisBurnedAreas"),
+          },
+        isEffisBurnedAreasEnabled &&
+          mapLayers.effisBurnedAreasError && {
+            id: "effis-burned-error",
+            tone: "error" as const,
+            message: t("panels.effisBurnedAreasError"),
+          },
+        showBurnedAreasEmpty && {
+          id: "effis-burned-empty",
+          tone: "neutral" as const,
+          message: t("panels.effisBurnedAreasEmpty"),
+        },
+      ]),
+    [
+      appNotices,
+      signalAir.signalAirFeedback,
+      signalAir.handleDismissSignalAirFeedback,
+      isWildfireVisible,
+      wildfire.wildfireLoading,
+      wildfire.wildfireReports.length,
+      wildfire.wildfireError,
+      isEffisHotspotsEnabled,
+      mapLayers.isEffisHotspotsLoading,
+      mapLayers.effisHotspotsError,
+      isHotspotsBeyondRetention,
+      showHotspotsEmpty,
+      effisHotspotsPeriod,
+      isEffisBurnedAreasEnabled,
+      mapLayers.isEffisBurnedAreasLoading,
+      mapLayers.effisBurnedAreasError,
+      showBurnedAreasEmpty,
+      t,
+    ]
+  );
+
   return (
     <>
-      {signalAir.signalAirFeedback && (
-        <div className="absolute top-24 right-4 z-map-info max-w-sm bg-white border border-blue-200 text-blue-800 text-sm px-3 py-2 rounded-lg shadow-lg">
-          <div className="flex items-start space-x-2">
-            <svg
-              className="w-5 h-5 flex-shrink-0 mt-0.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <div className="flex-1">
-              <p>{signalAir.signalAirFeedback}</p>
-            </div>
-            <button
-              type="button"
-              onClick={signalAir.handleDismissSignalAirFeedback}
-              className="text-blue-600 hover:text-blue-800"
-              aria-label={t("panels.closeSignalAirMessage")}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
-
+      {/* Zone haut-droite : la pile de notices, sous le contrôle de recherche.
+          Le conteneur ne capte pas le pointeur, seules les notices le font. */}
+      <div className="pointer-events-none absolute right-3 top-[4.5rem] z-notify flex w-[min(22rem,calc(100%-6rem))] flex-col items-end gap-2">
+        <NotificationStack notices={notices} />
+      </div>
 
       {shouldShowStandardLegend && (
         <Legend
@@ -178,80 +259,21 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
         sidePanelOffset={sidePanelOffset}
       />
 
-      {isWildfireVisible &&
-        wildfire.wildfireLoading &&
-        wildfire.wildfireReports.length === 0 && (
-          <div className="absolute top-24 right-4 z-map-info max-w-xs bg-white border border-orange-200 text-orange-700 text-xs px-3 py-2 rounded-md shadow-lg">
-            {t("panels.loadingFireReports")}
-          </div>
-        )}
-
-      {isEffisHotspotsEnabled && mapLayers.isEffisHotspotsLoading && (
-        <div className="absolute top-32 right-4 z-map-info max-w-xs bg-white border border-orange-200 text-orange-700 text-xs px-3 py-2 rounded-md shadow-lg">
-          {t("panels.loadingEffisHotspots")}
-        </div>
-      )}
-
-      {isEffisBurnedAreasEnabled && mapLayers.isEffisBurnedAreasLoading && (
-        <div className="absolute top-40 right-4 z-map-info max-w-xs bg-white border border-orange-200 text-orange-700 text-xs px-3 py-2 rounded-md shadow-lg">
-          {t("panels.loadingEffisBurnedAreas")}
-        </div>
-      )}
-
-      {isWildfireVisible && wildfire.wildfireError && (
-        <div className="absolute top-36 right-4 z-map-info max-w-xs bg-white border border-red-200 text-red-700 text-xs px-3 py-2 rounded-md shadow-lg">
-          {wildfire.wildfireError}
-        </div>
-      )}
-
-      {isEffisHotspotsEnabled && isHotspotsBeyondRetention && (
-        <div className="absolute top-32 right-4 z-map-info max-w-xs bg-white border border-amber-200 text-amber-800 text-xs px-3 py-2 rounded-md shadow-lg">
-          {t("panels.effisHotspotsBeyondRetention")}
-        </div>
-      )}
-
-      {showHotspotsEmpty && (
-        <div className="absolute top-32 right-4 z-map-info max-w-xs bg-white border border-gray-200 text-gray-600 text-xs px-3 py-2 rounded-md shadow-lg">
-          {t("panels.effisHotspotsEmpty", {
-            period: t(
-              effisHotspotsPeriod === "24h"
-                ? "baseLayer.firePeriod24h"
-                : "baseLayer.firePeriod7d"
-            ),
-          })}
-        </div>
-      )}
-
-      {showBurnedAreasEmpty && (
-        <div className="absolute top-40 right-4 z-map-info max-w-xs bg-white border border-gray-200 text-gray-600 text-xs px-3 py-2 rounded-md shadow-lg">
-          {t("panels.effisBurnedAreasEmpty")}
-        </div>
-      )}
-
-      {isEffisHotspotsEnabled && mapLayers.effisHotspotsError && (
-        <div className="absolute top-32 right-4 z-map-info max-w-xs bg-white border border-red-200 text-red-700 text-xs px-3 py-2 rounded-md shadow-lg">
-          {t("panels.effisHotspotsError")}
-        </div>
-      )}
-
-      {isEffisBurnedAreasEnabled && mapLayers.effisBurnedAreasError && (
-        <div className="absolute top-40 right-4 z-map-info max-w-xs bg-white border border-red-200 text-red-700 text-xs px-3 py-2 rounded-md shadow-lg">
-          {t("panels.effisBurnedAreasError")}
-        </div>
-      )}
-
-      {/* Colonne droite desktop : légendes au-dessus des stats, sans chevauchement */}
+      {/* Colonne bas-droite : promo, légendes de couches, puis période et
+          compteurs. Une seule colonne flex à la place de trois ancrages absolus
+          qui se chevauchaient. */}
       <div
-        className={`absolute ${
-          sidePanelOffset ? "bottom-8 right-4" : "bottom-6 right-0"
-        } z-map-info hidden lg:flex flex-col gap-2 items-end max-h-[min(70vh,calc(100%-6rem))]`}
+        className="pointer-events-none absolute bottom-7 right-3 z-map-info hidden max-h-[calc(100%-9rem)] flex-col items-end gap-2 overflow-y-auto lg:flex"
       >
+        {promo && !promo.hidden && (
+          <SensorPromoCard shopUrl={promo.shopUrl} hidden={false} />
+        )}
         {overlayLegendItems.length > 0 && (
-          <div className="min-h-0 overflow-y-auto shrink">
+          <div className="pointer-events-auto min-h-0 shrink overflow-y-auto">
             <OverlayLegendsCard items={overlayLegendItems} />
           </div>
         )}
-        <div className="bg-white px-3 py-2 rounded-md shadow-lg shrink-0">
+        <div className="glass-3 pointer-events-auto shrink-0 rounded-[var(--r-md)] px-3 py-2">
           <DeviceStatistics
             visibleDevices={visibleDevices}
             visibleReports={visibleReports}

@@ -44,15 +44,18 @@ const SensorPromoCard: React.FC<SensorPromoCardProps> = ({
   return (
     <aside
       aria-label={t("promo.sensor.title")}
-      className="absolute z-panel top-14 right-4 max-w-[11rem] md:max-w-[13.5rem] overflow-hidden rounded-xl border border-white/60 bg-white/90 shadow-lg shadow-slate-900/5 backdrop-blur-sm"
+      // Persistante et non transitoire : le haut-droite est réservé à la recherche
+      // et aux notices, une promotion fermable va en bas-droite où elle ne
+      // concurrence rien.
+      className="glass-3 pointer-events-auto relative w-[11rem] shrink-0 overflow-hidden rounded-[var(--r-lg)] md:w-[13.5rem]"
     >
       <button
         type="button"
         onClick={dismiss}
-        className="absolute right-1.5 top-1.5 z-10 rounded-full bg-white/90 p-1 text-gray-500 shadow-sm transition-colors hover:bg-white hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#4271B3]/30"
+        className="absolute right-0.5 top-0.5 z-10 flex h-11 w-11 items-center justify-center rounded-full text-[color:var(--fg-muted)] transition-colors hover:bg-black/5 hover:text-[color:var(--fg)] focus:outline-none focus:ring-2 focus:ring-[#4271B3]/30"
         aria-label={t("promo.sensor.close")}
       >
-        <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"

@@ -73,10 +73,12 @@ const Legend: React.FC<LegendProps> = ({
 
   // Position fixe de la légende pour éviter les décalages
   const getLegendPosition = () => {
-    // Position fixe : mobile à droite au-dessus de l'encart d'attribution, desktop légèrement à gauche
-    // La légende ne bouge plus selon l'état du side panel
-    // La position est relative au conteneur de la carte, les panels en fullscreen passent par-dessus
-    return "absolute bottom-14 right-2 lg:bottom-0 lg:left-1/2 lg:right-auto lg:transform lg:-translate-x-1/2 lg:ml-[-20px]";
+    // Mobile : à droite, au-dessus de l'encart d'attribution.
+    // Desktop : centrée sur la partie de la carte réellement visible, c'est-à-dire
+    // en tenant compte de l'emprise du rail publiée en --rail-inset. Remplace un
+    // `ml-[-20px]` posé à la main, qui compensait approximativement les contrôles
+    // du bord gauche.
+    return "absolute bottom-3 right-2 lg:right-auto lg:left-[calc(50%+var(--rail-inset,0px)/2)] lg:-translate-x-1/2 lg:max-w-[calc(100%-26rem)]";
   };
 
   const visibilityClass =
@@ -91,7 +93,7 @@ const Legend: React.FC<LegendProps> = ({
       className={`${getLegendPosition()} z-map-info transition-all duration-300 ease-in-out max-w-[95vw] md:max-w-none ${visibilityClass}`}
       data-tour="global-legend"
     >
-      <div className="bg-white/90 backdrop-blur-sm rounded-md shadow-sm border border-gray-200/50 px-2 py-1.5 lg:px-3 lg:py-2">
+      <div className="glass-3 rounded-[var(--r-md)] px-2 py-1.5 lg:px-3 lg:py-2">
         {/* Grille des seuils - verticale sur mobile et petits écrans, horizontale sur grands écrans */}
         <div className="flex flex-col gap-1 lg:flex-row lg:flex-wrap lg:gap-2 lg:justify-center">
           {legendItems.map((item, index) => (
@@ -111,7 +113,7 @@ const Legend: React.FC<LegendProps> = ({
               />
 
               {/* Texte - RTL uniquement sur le texte */}
-              <span className="text-[10px] lg:text-xs text-gray-700 font-medium whitespace-nowrap" dir={isRtl ? "rtl" : "ltr"}>
+              <span className="text-[10px] lg:text-xs font-medium whitespace-nowrap text-[color:var(--fg)]" dir={isRtl ? "rtl" : "ltr"}>
                 <span className="lg:hidden">{item.shortLabel}</span>
                 <span className="hidden lg:inline">{item.label}</span>
               </span>

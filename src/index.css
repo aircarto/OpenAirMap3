@@ -211,10 +211,14 @@ html {
   .glass-3 {
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
     -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
-    /* isolation + contain : le flou ne coûte qu'une seule lecture de fond par
-       surface, et les enfants ne créent pas de couches supplémentaires. */
+    /* `isolation` suffit à créer le contexte d'empilement du flou.
+       PAS de `contain: paint` : il découpe les enfants aux limites de la surface,
+       ce qui rognait le panneau fait main du sélecteur de fond de carte rendu
+       dans le rail (les menus Radix y échappaient, eux, par portail). Un
+       conteneur qui découpe ses propres popovers est cassé ; le vrai levier de
+       performance est la coupure du flou pendant les déplacements de carte. */
     isolation: isolate;
-    contain: layout paint;
+    contain: layout;
     color: var(--fg);
   }
 
@@ -294,6 +298,14 @@ html {
 .leaflet-bottom.leaflet-left {
   margin-inline-start: var(--rail-inset, 0px);
   transition: margin-inline-start var(--dur-panel) var(--ease-out);
+}
+
+/* La rose des vents précède l'échelle dans la bande instrument : on réserve sa
+   largeur, mais seulement là où elle est affichée (elle disparaît sous md). */
+@media (min-width: 768px) {
+  .leaflet-bottom.leaflet-left {
+    margin-inline-start: calc(var(--rail-inset, 0px) + 3.75rem);
+  }
 }
 
 /* Fond de carte sombre : le chrome ne bascule pas de thème, c'est l'opacité
@@ -571,48 +583,43 @@ html {
   }
 }
 
-/* Styles pour l'échelle de la carte */
+/* ── Échelle de la carte ───────────────────────────────────────────────────
+   Reste un contrôle Leaflet : le calcul de la distance dépend du zoom et de la
+   latitude, le réimplémenter en React n'apporterait rien. Elle adopte en
+   revanche la surface glass-3 du reste du chrome, et s'adosse à --rail-inset
+   plus la largeur de la rose des vents pour former une bande continue. */
 .leaflet-control-scale {
-  background: rgba(255, 255, 255, 0.9) !important;
-  border: 2px solid #e5e7eb !important;
-  border-radius: 8px !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
-    sans-serif !important;
-  font-size: 12px !important;
+  background: rgb(var(--glass-tint) / var(--glass-3-alpha)) !important;
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)) !important;
+  border: none !important;
+  border-radius: var(--r-md) !important;
+  box-shadow: var(--edge-ring), var(--edge-hi), var(--shadow-2) !important;
+  font-size: 11px !important;
   font-weight: 500 !important;
-  color: #374151 !important;
-  padding: 8px 12px !important;
-  margin: 0 0 10px 10px !important;
-  transition: all 0.2s ease-in-out !important;
+  color: var(--fg) !important;
+  padding: 6px 10px !important;
+  /* décalage horizontal appliqué par .leaflet-bottom.leaflet-left */
+  margin: 0 0 12px 0 !important;
   z-index: var(--z-map-ambient) !important;
   position: relative !important;
 }
 
-/* Styles plus compacts pour mobile */
-@media (max-width: 768px) {
-  .leaflet-control-scale {
-    font-size: 10px !important;
-    padding: 4px 6px !important;
-    margin: 0 0 6px 6px !important;
-    border: 1px solid #e5e7eb !important;
-    border-radius: 6px !important;
+.leaflet-control-scale.oam-scale-panel-open {
+  display: none !important;
+}
+
+@media (min-width: 768px) {
+  .leaflet-control-scale.oam-scale-panel-open {
+    display: block !important;
   }
 }
 
-.leaflet-control-scale:hover {
-  background: rgba(255, 255, 255, 0.95) !important;
-  border-color: #3b82f6 !important;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-}
-
 .leaflet-control-scale-line {
-  border: 2px solid #3b82f6 !important;
+  border: 2px solid hsl(var(--brand-500)) !important;
   border-top: none !important;
   background: transparent !important;
-  color: #374151 !important;
+  color: var(--fg) !important;
   font-weight: 600 !important;
   text-align: center !important;
   line-height: 1.2 !important;
@@ -620,91 +627,16 @@ html {
   padding: 2px 4px !important;
 }
 
-/* Version compacte pour mobile */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
+  .leaflet-control-scale {
+    font-size: 10px !important;
+    padding: 4px 8px !important;
+  }
+
   .leaflet-control-scale-line {
-    border: 1px solid #3b82f6 !important;
+    border-width: 1px !important;
     padding: 1px 3px !important;
     font-size: 9px !important;
-  }
-}
-
-/* S'assurer que l'échelle est au-dessus de tous les autres contrôles */
-.leaflet-control-container .leaflet-control-scale {
-  z-index: var(--z-map-ambient) !important;
-  position: relative !important;
-}
-
-/* Styles pour la flèche du nord */
-.north-arrow-container {
-  background: rgba(255, 255, 255, 0.9) !important;
-  border: 2px solid #e5e7eb !important;
-  border-radius: 8px !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
-  padding: 8px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-  cursor: pointer !important;
-  transition: all 0.2s ease-in-out !important;
-  z-index: var(--z-map-ambient) !important;
-  position: relative !important;
-}
-
-/* Version compacte pour mobile */
-@media (max-width: 768px) {
-  .north-arrow-container {
-    padding: 5px !important;
-    border: 1px solid #e5e7eb !important;
-    border-radius: 6px !important;
-  }
-}
-
-.north-arrow-container:hover {
-  background: rgba(255, 255, 255, 0.95) !important;
-  border-color: #3b82f6 !important;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-  transform: translateY(-1px) !important;
-}
-
-.north-arrow {
-  color: #3b82f6 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  margin-bottom: 2px !important;
-}
-
-/* Version compacte pour mobile */
-@media (max-width: 768px) {
-  .north-arrow {
-    margin-bottom: 1px !important;
-  }
-
-  .north-arrow svg {
-    width: 18px !important;
-    height: 18px !important;
-  }
-}
-
-.north-arrow-text {
-  color: #374151 !important;
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
-    sans-serif !important;
-  font-size: 12px !important;
-  font-weight: 700 !important;
-  text-align: center !important;
-  line-height: 1 !important;
-  user-select: none !important;
-}
-
-/* Version compacte pour mobile */
-@media (max-width: 768px) {
-  .north-arrow-text {
-    font-size: 10px !important;
   }
 }
 
@@ -713,12 +645,14 @@ html {
   position: fixed !important;
   bottom: 0px !important;
   right: 0px !important;
-  background: rgba(255, 255, 255, 0.9) !important;
-  border: 1px solid rgba(0, 0, 0, 0.1) !important;
-  border-radius: 4px !important;
-  padding: 2px 6px !important;
+  background: rgb(var(--glass-tint) / var(--glass-3-alpha)) !important;
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)) !important;
+  border: none !important;
+  border-radius: var(--r-sm) 0 0 0 !important;
+  padding: 3px 7px !important;
   font-size: 11px !important;
-  color: #666 !important;
+  color: var(--fg-muted) !important;
   z-index: var(--z-map-ambient) !important;
   transition: none !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;

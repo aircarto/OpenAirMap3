@@ -6,6 +6,10 @@ import React, {
   useRef,
 } from "react";
 import AirQualityMap from "./components/map/AirQualityMap";
+import {
+  compactNotices,
+  type Notice,
+} from "./components/map/notifications/notice";
 import { MapControlsProvider } from "./contexts/MapControlsProvider";
 import type {
   MapControlsBrand,
@@ -720,13 +724,65 @@ const AppContent: React.FC = () => {
     ],
   );
 
+  const shouldShowAtmoMicroOutageBanner =
+    selectedSources.includes("atmoMicro") &&
+    atmoMicroOutage &&
+    atmoMicroMaintenanceBanner.enabled &&
+    !isAtmoMicroBannerDismissed;
+
+  // Notices de niveau application, transmises à la pile unique de la carte.
+  // Elles étaient auparavant trois blocs absolus distincts posés dans <main>,
+  // dont deux se superposaient à `top-4 right-4`.
+  const appNotices = useMemo<Notice[]>(
+    () =>
+      compactNotices([
+        shouldShowAtmoMicroOutageBanner && {
+          id: "atmomicro-maintenance",
+          tone: "warn" as const,
+          message: atmoMicroMaintenanceBanner.message,
+          onDismiss: () => setIsAtmoMicroBannerDismissed(true),
+          dismissLabel: t("common.close"),
+        },
+        loading && {
+          id: "loading",
+          tone: "info" as const,
+          busy: true,
+          message:
+            devices.length === 0 ? t("common.loadingData") : t("common.updating"),
+          detail:
+            loadingSources.length > 0
+              ? `${t("common.sourcesCount", {
+                  count: loadingSources.length,
+                })} (${loadingSources.slice(0, 2).join(", ")}${
+                  loadingSources.length > 2 ? "…" : ""
+                })`
+              : undefined,
+        },
+        error && {
+          id: "data-error",
+          tone: "error" as const,
+          message: `${t("common.error")} : ${error}`,
+        },
+      ]),
+    [
+      shouldShowAtmoMicroOutageBanner,
+      atmoMicroMaintenanceBanner.message,
+      loading,
+      devices.length,
+      loadingSources,
+      error,
+      t,
+    ]
+  );
+
   const uiValue = useMemo<MapControlsUi>(
     () => ({
       controlsLocked: headerDisabled,
       onOpenInfoModal: handleOpenInfoModal,
       onToast: addToast,
+      notices: appNotices,
     }),
-    [headerDisabled, handleOpenInfoModal, addToast],
+    [headerDisabled, handleOpenInfoModal, addToast, appNotices],
   );
 
   const mapControlsValue = useMemo<MapControlsValue>(
@@ -749,12 +805,6 @@ const AppContent: React.FC = () => {
       uiValue,
     ],
   );
-  const shouldShowAtmoMicroOutageBanner =
-    selectedSources.includes("atmoMicro") &&
-    atmoMicroOutage &&
-    atmoMicroMaintenanceBanner.enabled &&
-    !isAtmoMicroBannerDismissed;
-
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       {/* Lien d'évitement : premier élément focusable pour la navigation clavier et lecteurs d'écran */}
@@ -918,62 +968,6 @@ const AppContent: React.FC = () => {
 
       {/* Carte en plein écran */}
       <main id="main-content" className="flex-1 relative" tabIndex={-1}>
-        {shouldShowAtmoMicroOutageBanner && (
-          <div className="absolute top-4 left-4 right-4 z-panel">
-            <div className="relative mx-auto max-w-5xl rounded-lg border border-amber-300 bg-amber-50 px-10 py-3 shadow">
-              <p className="text-center text-sm font-medium text-amber-900">
-                {atmoMicroMaintenanceBanner.message}
-              </p>
-              <button
-                type="button"
-                onClick={() => setIsAtmoMicroBannerDismissed(true)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-amber-700 transition-colors hover:bg-amber-100 hover:text-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-400"
-                aria-label="Fermer le bandeau d'information"
-              >
-                ×
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Indicateur de chargement */}
-        {loading && (
-          <div className="absolute top-4 right-4 z-panel">
-            <div className="bg-white/90 backdrop-blur-sm px-3 py-2 rounded-lg shadow-lg border border-gray-200">
-              <div className="flex items-center space-x-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                <div className="flex flex-col">
-                  <span className="text-blue-600 text-sm font-medium">
-                    {devices.length === 0
-                      ? t("common.loadingData")
-                      : t("common.updating")}
-                  </span>
-                  {loadingSources.length > 0 && (
-                    <span className="text-xs text-gray-500">
-                      {t("common.sourcesCount", {
-                        count: loadingSources.length,
-                      })}
-                      {loadingSources.length > 0 && (
-                        <span className="ml-1">
-                          ({loadingSources.slice(0, 2).join(", ")}
-                          {loadingSources.length > 2 && "..."})
-                        </span>
-                      )}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {error && (
-          <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-2 rounded-md shadow-lg z-panel max-w-xs">
-            <p className="text-xs">
-              {t("common.error")}: {error}
-            </p>
-          </div>
-        )}
         {/* Carte */}
         {/* Le provider n'enveloppe que la carte : AirQualityMap ne gagne aucune
             prop, et le rail de contrôles qui vit dans sa colonne lit l'état

@@ -1,6 +1,7 @@
 import { createContext, useContext } from "react";
 import { ModelingLayerType } from "../constants/mapLayers";
 import { Toast } from "../components/ui/toast";
+import type { Notice } from "../components/map/notifications/notice";
 
 /**
  * Transport d'état pour les contrôles de carte — pas un propriétaire d'état.
@@ -72,6 +73,14 @@ export interface MapControlsUi {
   controlsLocked: boolean;
   onOpenInfoModal: () => void;
   onToast: (toast: Omit<Toast, "id">) => void;
+  /**
+   * Notices de niveau application (maintenance, chargement, erreur de données).
+   *
+   * Elles voyagent par contexte pour rejoindre la pile unique rendue dans la
+   * colonne carte, au lieu d'être posées séparément dans App.tsx où elles
+   * chevauchaient les notices de couches.
+   */
+  notices: Notice[];
 }
 
 export interface MapControlsValue {
