@@ -4,9 +4,8 @@ import { cn } from "../../../lib/utils";
 import { useMapControls } from "../../../contexts/mapControlsContext";
 import RailBrand from "./RailBrand";
 import RailFiltersSection from "./sections/RailFiltersSection";
-import RailLayersSection from "./sections/RailLayersSection";
 import RailBaseLayerSection from "./sections/RailBaseLayerSection";
-import RailTimeSection from "./sections/RailTimeSection";
+import RailModesSection from "./sections/RailModesSection";
 import RailShortcutsSection from "./sections/RailShortcutsSection";
 import RailFooter from "./sections/RailFooter";
 import { useRailRoving, type RailOrientation } from "./useRailRoving";
@@ -151,11 +150,7 @@ export const MapControlRail: React.FC<MapControlRailProps> = ({
             orientation={orientation}
             onItemFocus={onItemFocus}
           />
-          <RailLayersSection
-            orientation={orientation}
-            onItemFocus={onItemFocus}
-          />
-          <RailTimeSection orientation={orientation} onItemFocus={onItemFocus} />
+          <RailModesSection orientation={orientation} onItemFocus={onItemFocus} />
           <RailShortcutsSection
             orientation={orientation}
             shortcuts={shortcuts}

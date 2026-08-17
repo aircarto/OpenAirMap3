@@ -15,6 +15,13 @@ import type { CustomTriggerProps } from "./dropdownTriggerContract";
 import { cn } from "../../lib/utils";
 
 interface ModelingLayerControlProps extends CustomTriggerProps {
+  /**
+   * « inline » rend la seule liste d'options, sans déclencheur ni menu, pour
+   * être insérée dans le panneau de fond de carte. La logique de disponibilité
+   * selon le pas de temps et la désactivation automatique restent ici : ce
+   * composant en est le propriétaire, seule sa présentation change.
+   */
+  variant?: "dropdown" | "inline";
   currentModelingLayer: ModelingLayerType | null;
   onModelingLayerChange: (layerType: ModelingLayerType | null) => void;
   selectedPollutant?: string;
@@ -28,6 +35,7 @@ const ModelingLayerControl: React.FC<ModelingLayerControlProps> = ({
   onModelingLayerChange,
   selectedPollutant,
   selectedTimeStep = "heure",
+  variant = "dropdown",
   triggerId,
   renderTrigger,
   menuSide,
@@ -85,6 +93,67 @@ const ModelingLayerControl: React.FC<ModelingLayerControlProps> = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDisabled, currentModelingLayer]);
+
+  /** Liste d'options partagée par les deux présentations */
+  const renderOptions = (itemClassName?: string) =>
+    layerTypes.map((layerType) => {
+      const isSelected = currentModelingLayer === layerType;
+      const isItemDisabled = layerType === "pollutant" && !selectedPollutant;
+      return (
+        <button
+          key={layerType}
+          type="button"
+          disabled={isItemDisabled}
+          aria-pressed={isSelected}
+          onClick={() => {
+            // Bascule : recliquer l'option active la désélectionne
+            if (isSelected) {
+              onModelingLayerChange(null);
+            } else {
+              onModelingLayerChange(layerType);
+            }
+          }}
+          className={cn(
+            "flex w-full items-center gap-2 rounded px-2.5 py-1.5 text-xs transition-colors",
+            isSelected
+              ? "border border-[hsl(var(--brand-200))] bg-[hsl(var(--brand-100))] text-[hsl(var(--brand-800))]"
+              : "text-gray-700 hover:bg-gray-50/80",
+            isItemDisabled && "cursor-not-allowed opacity-50",
+            itemClassName
+          )}
+        >
+          <span
+            aria-hidden="true"
+            className={cn(
+              "flex h-3 w-3 shrink-0 items-center justify-center rounded-sm border",
+              isSelected
+                ? "border-[hsl(var(--brand-600))]"
+                : "border-gray-300/60"
+            )}
+          >
+            {isSelected && (
+              <span className="h-1.5 w-1.5 rounded-[1px] bg-[hsl(var(--brand-600))]" />
+            )}
+          </span>
+          <span className="truncate">{getDisplayLabel(layerType)}</span>
+        </button>
+      );
+    });
+
+  if (variant === "inline") {
+    if (isDisabled) {
+      return (
+        <p className="px-2.5 py-1.5 text-[11px] text-gray-500">
+          {t("controls.modelingUnavailable")}
+        </p>
+      );
+    }
+    return (
+      <div className="pl-4 pr-1" data-testid="modeling-inline">
+        {renderOptions()}
+      </div>
+    );
+  }
 
   return (
     <DropdownMenu>

@@ -719,7 +719,9 @@
     "fireLegendPowerUnit": "ميغاواط (مقياس لوغاريتمي)",
     "fireLegendMaskNote": "يتم استبعاد مصادر الحرارة الدائمة (الشعلات الصناعية، صناعة الصلب): {{count}} منطقة رُصدت في {{days}} أيام مختلفة على الأقل خلال 12 شهرًا.",
     "fireLegendBurnedArea": "المحيط المحروق",
-    "fireLegendBurnedNote": "محيطات مرسومة بواسطة MODIS. قد يستغرق ظهور حريق حديث عدة أيام."
+    "fireLegendBurnedNote": "محيطات مرسومة بواسطة MODIS. قد يستغرق ظهور حريق حديث عدة أيام.",
+    "groupModeling": "النمذجة",
+    "groupFire": "الحرائق"
   },
   "toast": {
     "sourceUnavailable": "{{name}} غير متاح",
@@ -810,6 +812,7 @@
       "historical": "تاريخ"
     },
     "groupUtilities": "أدوات",
-    "groupBaseLayer": "خلفية الخريطة"
+    "groupBaseLayer": "خلفية الخريطة",
+    "groupModes": "الأنماط"
   }
 }

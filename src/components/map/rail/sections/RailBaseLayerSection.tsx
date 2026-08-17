@@ -1,6 +1,8 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import BaseLayerControl from "../../../controls/BaseLayerControl";
+import ModelingLayerControl from "../../../controls/ModelingLayerControl";
+import { useMapControls } from "../../../../contexts/mapControlsContext";
 import RailItem from "../RailItem";
 import RailSection from "../RailSection";
 import { RAIL_FLYOUT_CLASS } from "../railFlyout";
@@ -17,6 +19,10 @@ export interface RailBaseLayerSectionProps {
 /**
  * Groupe « fond de carte », isolé en fin de zone défilante.
  *
+ * Son panneau porte deux sous-menus dépliables : « Modélisation » et
+ * « Incendie ». Tous trois touchent au SUPPORT ou aux surfaces peintes sur la
+ * carte, par opposition aux filtres de données du haut du rail.
+ *
  * Séparé du groupe « couches » : la modélisation et les sources spéciales
  * ajoutent de la donnée SUR la carte, tandis que le fond de carte change le
  * support lui-même. Ce sont deux natures de réglage différentes, et le placer
@@ -32,6 +38,7 @@ export const RailBaseLayerSection: React.FC<RailBaseLayerSectionProps> = ({
   baseLayer,
 }) => {
   const { t } = useTranslation();
+  const { filters, modeling } = useMapControls();
 
   return (
     <RailSection
@@ -43,6 +50,16 @@ export const RailBaseLayerSection: React.FC<RailBaseLayerSectionProps> = ({
         {...baseLayer}
         placement={orientation === "vertical" ? "right" : "top"}
         panelClassName={RAIL_FLYOUT_CLASS}
+        isModelingActive={Boolean(modeling.currentModelingLayer)}
+        modelingSlot={
+          <ModelingLayerControl
+            variant="inline"
+            currentModelingLayer={modeling.currentModelingLayer}
+            onModelingLayerChange={modeling.onModelingLayerChange}
+            selectedPollutant={filters.selectedPollutant}
+            selectedTimeStep={filters.selectedTimeStep}
+          />
+        }
         renderTrigger={({ isOpen, label }) => (
           <RailItem
             itemId="baselayer"

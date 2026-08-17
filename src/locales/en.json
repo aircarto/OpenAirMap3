@@ -703,7 +703,9 @@
     "fireLegendPowerUnit": "Megawatts (logarithmic scale)",
     "fireLegendMaskNote": "Permanent heat sources (industrial flares, steelworks) are excluded: {{count}} areas detected on at least {{days}} different days over 12 months.",
     "fireLegendBurnedArea": "Burned perimeter",
-    "fireLegendBurnedNote": "Perimeters mapped by MODIS. A recent fire may take several days to appear."
+    "fireLegendBurnedNote": "Perimeters mapped by MODIS. A recent fire may take several days to appear.",
+    "groupModeling": "Modelling",
+    "groupFire": "Fire"
   },
   "toast": {
     "sourceUnavailable": "{{name}} unavailable",
@@ -794,6 +796,7 @@
       "historical": "HIST"
     },
     "groupUtilities": "Utilities",
-    "groupBaseLayer": "Base map"
+    "groupBaseLayer": "Base map",
+    "groupModes": "Modes"
   }
 }

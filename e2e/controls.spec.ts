@@ -26,15 +26,12 @@ test.describe("Contrôles du rail de carte", () => {
     ["polluant", "rail-pollutant-trigger"],
     ["sources", "rail-sources-trigger"],
     ["pas de temps", "rail-timestep-trigger"],
-    ["modélisation", "rail-modeling-trigger"],
     ["sources spéciales", "rail-special-sources-trigger"],
   ] as const;
 
   for (const [label, testId] of menuTriggers) {
     test(`menu ${label} : ouverture et fermeture`, async ({ page }) => {
       const trigger = page.getByTestId(testId);
-      // La modélisation est désactivée pour certains pas de temps : dans ce cas
-      // le contrôle reste visible et annonce sa raison, mais n'ouvre pas de menu.
       if (await trigger.isDisabled()) {
         test.skip(true, `Contrôle ${label} indisponible pour cet état`);
       }
@@ -97,6 +94,50 @@ test.describe("Contrôles du rail de carte", () => {
     // Un calque n'est pas un choix exclusif : le panneau doit rester ouvert pour
     // permettre d'en activer plusieurs.
     await expect(panel).toBeVisible();
+  });
+
+  test("fond de carte : sous-menus modélisation et incendie", async ({ page }) => {
+    await page.getByTestId("rail-basemap-trigger").click();
+    const panel = page.locator("[data-radix-popper-content-wrapper]");
+    await expect(panel).toBeVisible({ timeout: 5000 });
+
+    // La modélisation n'est plus un item du rail : elle vit dans ce panneau.
+    await expect(page.getByTestId("rail-modeling-trigger")).toHaveCount(0);
+
+    const disclosures = panel.locator("button[aria-expanded]");
+    await expect(disclosures).toHaveCount(2);
+
+    // Replié par défaut, et chaque en-tête pilote une région identifiée
+    for (let i = 0; i < 2; i++) {
+      await expect(disclosures.nth(i)).toHaveAttribute("aria-expanded", "false");
+      await expect(disclosures.nth(i)).toHaveAttribute("aria-controls", /.+/);
+    }
+
+    // Modélisation : déplier, choisir une couche, le panneau reste ouvert
+    const modeling = disclosures.first();
+    await modeling.click();
+    await expect(modeling).toHaveAttribute("aria-expanded", "true");
+
+    const options = page.locator('[data-testid="modeling-inline"] button');
+    const count = await options.count();
+    if (count === 0) {
+      test.skip(true, "Modélisation indisponible pour ce pas de temps");
+    }
+    const wind = options.last();
+    await wind.click();
+    await expect(wind).toHaveAttribute("aria-pressed", "true");
+    await expect(panel).toBeVisible();
+
+    // Recliquer l'option active la désélectionne
+    await wind.click();
+    await expect(wind).toHaveAttribute("aria-pressed", "false");
+
+    // Incendie : déplier expose les couches EFFIS
+    await disclosures.nth(1).click();
+    await expect(disclosures.nth(1)).toHaveAttribute("aria-expanded", "true");
+    await expect(
+      panel.getByRole("button", { name: /hotspots|chaleur/i }).first()
+    ).toBeVisible();
   });
 
   test("mode historique : activation et panneau visible", async ({ page }) => {

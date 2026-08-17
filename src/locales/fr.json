@@ -703,7 +703,9 @@
     "overlayLegendsEffisHotspotsChip": "Points de chaleur",
     "overlayLegendsEffisBurnedChip": "Zones brûlées",
     "overlayLegendsLoading": "Chargement de la légende…",
-    "overlayLegendsError": "Légende indisponible"
+    "overlayLegendsError": "Légende indisponible",
+    "groupModeling": "Modélisation",
+    "groupFire": "Incendie"
   },
   "toast": {
     "sourceUnavailable": "{{name}} non disponible",
@@ -794,6 +796,7 @@
       "historical": "HIST"
     },
     "groupUtilities": "Utilitaires",
-    "groupBaseLayer": "Fond de carte"
+    "groupBaseLayer": "Fond de carte",
+    "groupModes": "Modes"
   }
 }

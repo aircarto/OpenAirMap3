@@ -703,7 +703,9 @@
     "fireLegendPowerUnit": "Megawatt (logarithmische Skala)",
     "fireLegendMaskNote": "Dauerhafte Wärmequellen (Industriefackeln, Stahlwerke) werden ausgeschlossen: {{count}} Gebiete an mindestens {{days}} verschiedenen Tagen in 12 Monaten erfasst.",
     "fireLegendBurnedArea": "Brandumriss",
-    "fireLegendBurnedNote": "Von MODIS kartierte Umrisse. Ein aktuelles Feuer kann mehrere Tage bis zur Anzeige benötigen."
+    "fireLegendBurnedNote": "Von MODIS kartierte Umrisse. Ein aktuelles Feuer kann mehrere Tage bis zur Anzeige benötigen.",
+    "groupModeling": "Modellierung",
+    "groupFire": "Brände"
   },
   "toast": {
     "sourceUnavailable": "{{name}} nicht verfügbar",
@@ -794,6 +796,7 @@
       "historical": "VERL"
     },
     "groupUtilities": "Extras",
-    "groupBaseLayer": "Kartenhintergrund"
+    "groupBaseLayer": "Kartenhintergrund",
+    "groupModes": "Modi"
   }
 }

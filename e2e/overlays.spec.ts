@@ -151,11 +151,16 @@ test.describe("Surfaces flottantes de la carte", () => {
     });
 
     await page.getByTestId("rail-basemap-trigger").click();
-    for (const name of [/hotspots/i, /burned/i]) {
-      const toggle = page
-        .locator("[data-radix-popper-content-wrapper]")
-        .getByText(name)
-        .first();
+    const panel = page.locator("[data-radix-popper-content-wrapper]");
+    await expect(panel).toBeVisible({ timeout: 5000 });
+
+    // Les couches feux vivent dans le sous-menu « Incendie », replié par défaut.
+    const fireGroup = panel.locator("button[aria-expanded]").nth(1);
+    await fireGroup.click();
+    await expect(fireGroup).toHaveAttribute("aria-expanded", "true");
+
+    for (const name of [/hotspots|chaleur/i, /burned|brûl/i]) {
+      const toggle = panel.getByRole("button", { name }).first();
       if (await toggle.count()) await toggle.click();
     }
     await page.keyboard.press("Escape");

@@ -703,7 +703,9 @@
     "fireLegendPowerUnit": "Megavatios (escala logarítmica)",
     "fireLegendMaskNote": "Se excluyen las fuentes de calor permanentes (antorchas industriales, siderurgia): {{count}} zonas detectadas al menos {{days}} días distintos en 12 meses.",
     "fireLegendBurnedArea": "Perímetro quemado",
-    "fireLegendBurnedNote": "Perímetros cartografiados por MODIS. Un incendio reciente puede tardar varios días en aparecer."
+    "fireLegendBurnedNote": "Perímetros cartografiados por MODIS. Un incendio reciente puede tardar varios días en aparecer.",
+    "groupModeling": "Modelización",
+    "groupFire": "Incendio"
   },
   "toast": {
     "sourceUnavailable": "{{name}} no disponible",
@@ -794,6 +796,7 @@
       "historical": "HIST"
     },
     "groupUtilities": "Utilidades",
-    "groupBaseLayer": "Mapa base"
+    "groupBaseLayer": "Mapa base",
+    "groupModes": "Modos"
   }
 }

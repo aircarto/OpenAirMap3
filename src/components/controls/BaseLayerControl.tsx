@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { BASE_LAYER_KEYS, BaseLayerKey } from "../../constants/mapLayers";
 import { featureFlags } from "../../config/featureFlags";
 import { cn } from "../../lib/utils";
+import LayerDisclosure from "./LayerDisclosure";
 import {
   Popover,
   PopoverContent,
@@ -116,6 +117,16 @@ interface BaseLayerControlProps {
   /** Surface du panneau, pour l'aligner sur celle des flyouts du rail */
   panelClassName?: string;
   /**
+   * Contenu du sous-menu « Modélisation ».
+   *
+   * Injecté par l'appelant plutôt qu'importé ici : ModelingLayerControl reste le
+   * propriétaire de sa logique de disponibilité, et BaseLayerControl n'a pas à en
+   * dépendre.
+   */
+  modelingSlot?: React.ReactNode;
+  /** Vrai si une couche de modélisation est active, pour la pastille du sous-menu */
+  isModelingActive?: boolean;
+  /**
    * Déclencheur fourni par l'appelant, rendu dans un `<PopoverTrigger asChild>`.
    *
    * Il doit donc diffuser ses props et sa ref, et NE PAS gérer l'ouverture
@@ -149,6 +160,8 @@ const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
   onWildfireLayerToggle,
   placement = "top",
   panelClassName,
+  modelingSlot,
+  isModelingActive = false,
   renderTrigger,
 }) => {
   const { t } = useTranslation();
@@ -322,7 +335,29 @@ const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
               <span>{t("baseLayer.communal")}</span>
             </button>
 
-            {/* Option points de chaleur EFFIS (overlay layer) */}
+            {/* Séparateur avant les sous-menus */}
+            <div className="my-1 border-t border-gray-200/50" />
+
+            {/* Sous-menu « Modélisation » */}
+            {modelingSlot && (
+              <LayerDisclosure
+                label={t("baseLayer.groupModeling")}
+                active={isModelingActive}
+              >
+                {modelingSlot}
+              </LayerDisclosure>
+            )}
+
+            {/* Sous-menu « Incendie » : points de chaleur, zones brûlées, feux en cours */}
+            <LayerDisclosure
+              label={t("baseLayer.groupFire")}
+              active={
+                isEffisHotspotsEnabled ||
+                isEffisBurnedAreasEnabled ||
+                isWildfireLayerEnabled
+              }
+            >
+              <div className="pl-4 pr-1">
             <button
               type="button"
               onClick={handleEffisHotspotsToggle}
@@ -446,6 +481,9 @@ const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
                 <span>{t("baseLayer.wildfire")}</span>
               </button>
             )}
+              </div>
+            </LayerDisclosure>
+
           </div>
       </PopoverContent>
     </Popover>
