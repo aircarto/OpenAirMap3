@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { MeasurementDevice, SignalAirReport } from "../../types";
 import { cn } from "../../lib/utils";
@@ -304,7 +305,19 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
 
   if (!isOpen) return null;
 
-  return (
+  /*
+   * Portalisé vers `document.body`.
+   *
+   * Ce panneau est en `position: fixed`, mais il était rendu depuis
+   * DeviceStatistics, c'est-à-dire À L'INTÉRIEUR de la colonne bas-droite de la
+   * carte. Or celle-ci porte `overflow-y: auto` et un `z-index`, et le conteneur
+   * intermédiaire en `glass-3` porte `isolation: isolate` : deux contextes
+   * d'empilement qui plafonnaient le z-index du panneau, et un overflow qui le
+   * rognait. Résultat : la feuille apparaissait coupée et sous la carte.
+   *
+   * Un élément `fixed` doit sortir de tout ancêtre défilant ou isolant.
+   */
+  return createPortal(
     <>
       {/* Overlay */}
       {isOpen && (
@@ -770,7 +783,8 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
           )}
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 };
 
