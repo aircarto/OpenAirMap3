@@ -431,6 +431,17 @@ html {
 .leaflet-container {
   height: 100%;
   width: 100%;
+  /* Confine les z-index internes de Leaflet.
+     Sans cela le conteneur vaut `z-index: auto` et n'est donc PAS un contexte
+     d'empilement : ses panneaux (carte 400, superpositions 400, marqueurs 600,
+     popups 700) concurrencent directement notre échelle nommée. La rose des
+     vents à `map-ambient` (400) se retrouvait peinte SOUS la couche de tuiles,
+     et la légende à `map-info` (500) passait sous le panneau des marqueurs —
+     l'ordre du DOM décidait seul, ce qui rendait l'échelle non fiable.
+     `z-index: 0` crée le contexte et enferme ces valeurs à l'intérieur. */
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
 }
 
 /* Marqueurs personnalisés */

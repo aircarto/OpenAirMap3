@@ -26,7 +26,7 @@ test.describe("Accessibilité (a11y)", () => {
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 15000 });
 
-    const infoButton = page.getByRole("button", { name: /about|informations|openairmap/i }).first();
+    const infoButton = page.getByTestId("rail-info-button");
     await infoButton.click();
 
     const dialog = page.getByRole("dialog").first();
@@ -99,6 +99,54 @@ test.describe("Accessibilité (a11y)", () => {
       critical,
       `Violations critiques axe (panel mode historique) : ${JSON.stringify(critical, null, 2)}`
     ).toEqual([]);
+  });
+
+  test("rail de contrôles : pas de violations axe critiques", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible({
+      timeout: 15000,
+    });
+    await expect(page.getByTestId("map-control-rail")).toBeVisible();
+
+    const results = await new AxeBuilder({ page })
+      .include('[data-testid="map-control-rail"]')
+      .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+      .analyze();
+
+    const critical = results.violations.filter((v) => v.impact === "critical");
+    expect(
+      critical,
+      `Violations critiques axe (rail) : ${JSON.stringify(critical, null, 2)}`
+    ).toEqual([]);
+  });
+
+  test("rail : chaque déclencheur a un nom accessible", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByTestId("map-control-rail")).toBeVisible({
+      timeout: 15000,
+    });
+
+    // Les items sont iconographiques : sans nom accessible ils sont muets.
+    const unnamed = await page
+      .locator("[data-rail-item]")
+      .evaluateAll((els) =>
+        els
+          .filter((el) => {
+            const byLabel = el.getAttribute("aria-label")?.trim();
+            const ids = (el.getAttribute("aria-labelledby") || "")
+              .split(/\s+/)
+              .filter(Boolean);
+            const byIds = ids
+              .map((id) => document.getElementById(id)?.textContent?.trim())
+              .filter(Boolean)
+              .join(" ");
+            return !byLabel && !byIds;
+          })
+          .map((el) => el.getAttribute("data-rail-item"))
+      );
+    expect(unnamed).toEqual([]);
   });
 
   test("tutoriel mode historique actif : pas de violations axe critiques", async ({

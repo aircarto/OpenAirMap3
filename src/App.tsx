@@ -44,15 +44,8 @@ import {
   AppUrlParams,
 } from "./utils/appUrlParams";
 import { useAppUrlSync } from "./hooks/useAppUrlSync";
-import PollutantDropdown from "./components/controls/PollutantDropdown";
-import SourceDropdown from "./components/controls/SourceDropdown";
-import TimeStepDropdown from "./components/controls/TimeStepDropdown";
-import HistoricalModeButton from "./components/controls/HistoricalModeButton";
 import HistoricalControlPanel from "./components/controls/HistoricalControlPanel";
 import HistoricalPlaybackControl from "./components/controls/HistoricalPlaybackControl";
-import MobileMenuBurger from "./components/controls/MobileMenuBurger";
-import ModelingLayerControl from "./components/controls/ModelingLayerControl";
-import SpecialSourceHeaderDropdown from "./components/controls/SpecialSourceHeaderDropdown";
 import InformationModal from "./components/modals/InformationModal";
 import AboutPanel from "./components/AboutPanel";
 import { ModelingLayerType } from "./constants/mapLayers";
@@ -60,7 +53,6 @@ import { useToast } from "./hooks/useToast";
 import { ToastContainer } from "./components/ui/toast";
 import { cn } from "./lib/utils";
 import { useTranslation } from "react-i18next";
-import LanguageSwitcher from "./components/controls/LanguageSwitcher";
 import {
   initAnalytics,
   trackEvent,
@@ -70,7 +62,6 @@ import {
 import { FeatureTourProvider } from "./components/tour/FeatureTourProvider";
 import HistoricalModeTourController from "./components/tour/HistoricalModeTourController";
 import GlobalAppTourController from "./components/tour/GlobalAppTourController";
-import TourReplayButton from "./components/tour/TourReplayButton";
 
 interface AtmoMicroMaintenanceBannerConfig {
   enabled: boolean;
@@ -748,7 +739,9 @@ const AppContent: React.FC = () => {
           tone: "info" as const,
           busy: true,
           message:
-            devices.length === 0 ? t("common.loadingData") : t("common.updating"),
+            devices.length === 0
+              ? t("common.loadingData")
+              : t("common.updating"),
           detail:
             loadingSources.length > 0
               ? `${t("common.sourcesCount", {
@@ -772,7 +765,7 @@ const AppContent: React.FC = () => {
       loadingSources,
       error,
       t,
-    ]
+    ],
   );
 
   const uiValue = useMemo<MapControlsUi>(
@@ -811,163 +804,14 @@ const AppContent: React.FC = () => {
       <a href="#main-content" className="skip-link" data-testid="skip-link">
         {t("app.skipToContent")}
       </a>
-      {/* Header : barre unique avec regroupement logique des contrôles */}
-      <header className="relative bg-white border-b border-gray-200/80 shadow-sm z-rail">
-        <div className="px-4 sm:px-5 py-2.5">
-          <div className="flex items-center justify-between gap-3 flex-nowrap">
-            {/* Marque : logo + titre */}
-            <div className="flex items-center gap-3 min-w-0 shrink-0">
-              <img
-                src={domainConfig.logo}
-                alt={t("app.logoAlt", {
-                  organization: domainConfig.organization,
-                })}
-                className="h-8 md:h-9 object-contain"
-              />
-              <h1 className="text-base md:text-lg font-semibold text-[#4271B3] leading-tight truncate">
-                {domainConfig.title}
-              </h1>
-            </div>
-
-            {/* Menu burger (langue intégrée dans le menu) — affiché sous xl pour éviter débordement toolbar */}
-            <div className="xl:hidden flex items-center shrink-0">
-              <MobileMenuBurger
-                selectedPollutant={selectedPollutant}
-                onPollutantChange={handlePollutantChange}
-                selectedSources={selectedSources}
-                onSourceChange={handleSourceChange}
-                selectedTimeStep={selectedTimeStep}
-                onTimeStepChange={handleTimeStepChange}
-                isHistoricalModeActive={isHistoricalModeActive}
-                onToggleHistoricalMode={handleHistoricalModeToggle}
-                isHistoricalModeAllowed={isHistoricalModeAllowed}
-                autoRefreshEnabled={autoRefreshEnabled}
-                onToggleAutoRefresh={handleAutoRefreshToggle}
-                lastRefresh={lastRefresh}
-                loading={loading}
-                currentModelingLayer={currentModelingLayer}
-                onModelingLayerChange={handleModelingLayerChange}
-                onToast={addToast}
-                onOpenSignalAirPanel={() => {
-                  setOpenSignalAirPanelRequest((r) => r + 1);
-                  handleSignalAirPanelOpen();
-                }}
-                onOpenMobileAirPanel={() => {
-                  setOpenMobileAirPanelRequest((r) => r + 1);
-                  handleMobileAirPanelOpen();
-                }}
-                isSignalAirVisible={isSignalAirVisible}
-                isMobileAirVisible={isMobileAirVisible}
-                onSignalAirToggle={handleSignalAirVisibilityToggle}
-                onMobileAirToggle={handleMobileAirVisibilityToggle}
-                hasSignalAirData={hasSignalAirData}
-                hasMobileAirData={hasMobileAirData}
-                onOpenInfoModal={() => setIsInfoModalOpen(true)}
-              />
-            </div>
-
-            {/* Barre d’outils — desktop */}
-            <div
-              className={cn(
-                "hidden xl:flex items-center justify-center gap-3 flex-1 min-w-0 flex-nowrap overflow-hidden",
-                headerDisabled && "opacity-50 pointer-events-none",
-              )}
-            >
-              {/* Filtres : polluant, sources, pas de temps */}
-              <div className="flex items-center gap-2 rounded-lg bg-gray-50/80 px-2 py-1.5 border border-gray-200/60 min-w-0 shrink">
-                <PollutantDropdown
-                  selectedPollutant={selectedPollutant}
-                  onPollutantChange={handlePollutantChange}
-                  selectedTimeStep={selectedTimeStep}
-                />
-                <SourceDropdown
-                  selectedSources={selectedSources}
-                  selectedTimeStep={selectedTimeStep}
-                  onSourceChange={handleSourceChange}
-                  onTimeStepChange={handleTimeStepChange}
-                  onToast={addToast}
-                  autoRefreshEnabled={
-                    autoRefreshEnabled && !isHistoricalModeActive
-                  }
-                  onToggleAutoRefresh={handleAutoRefreshToggle}
-                  loading={loading}
-                  isHistoricalModeActive={isHistoricalModeActive}
-                />
-                <TimeStepDropdown
-                  selectedTimeStep={selectedTimeStep}
-                  selectedSources={selectedSources}
-                  onTimeStepChange={handleTimeStepChange}
-                  onSourceChange={handleSourceChange}
-                  onToast={addToast}
-                />
-              </div>
-
-              {/* Modélisation */}
-              <div className="flex items-center gap-2 pl-1 border-l border-gray-200/80 min-w-0 shrink">
-                <ModelingLayerControl
-                  currentModelingLayer={currentModelingLayer}
-                  onModelingLayerChange={handleModelingLayerChange}
-                  selectedPollutant={selectedPollutant}
-                  selectedTimeStep={selectedTimeStep}
-                />
-              </div>
-
-              {/* Mode historique + Sources spéciales */}
-              <div className="flex items-center gap-2 pl-1 border-l border-gray-200/80 min-w-0 shrink">
-                <HistoricalModeButton
-                  isActive={isHistoricalModeActive}
-                  onToggle={handleHistoricalModeToggle}
-                  disabled={!isHistoricalModeAllowed}
-                />
-                <SpecialSourceHeaderDropdown
-                  onSignalAirClick={handleSignalAirHeaderClick}
-                  onMobileAirClick={handleMobileAirHeaderClick}
-                  isSignalAirVisible={isSignalAirVisible}
-                  isMobileAirVisible={isMobileAirVisible}
-                  onSignalAirToggle={handleSignalAirVisibilityToggle}
-                  onMobileAirToggle={handleMobileAirVisibilityToggle}
-                  hasSignalAirData={hasSignalAirData}
-                  hasMobileAirData={hasMobileAirData}
-                />
-              </div>
-            </div>
-
-            {/* Zone droite — utilitaires (desktop) */}
-            <div
-              className={cn(
-                "hidden xl:flex items-center gap-2 shrink-0",
-                headerDisabled && "opacity-50 pointer-events-none",
-              )}
-            >
-              <LanguageSwitcher />
-              <TourReplayButton tourId="app_overview" iconOnly />
-              <button
-                type="button"
-                onClick={() => setIsInfoModalOpen(true)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#325A96]/40 text-sm font-semibold text-[#325A96] transition-colors hover:bg-[#325A96]/10 focus:outline-none focus:ring-2 focus:ring-[#4271B3]/20"
-                aria-label={t("app.infoButton")}
-              >
-                i
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Barre de progression pour le chargement */}
-        {loading && (
-          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-100">
-            <div
-              className="h-full bg-[#4271B3] animate-pulse rounded-full"
-              style={{ width: "100%" }}
-            />
-          </div>
-        )}
-      </header>
 
       <AboutPanel domainConfig={domainConfig} />
 
       {/* Carte en plein écran */}
-      <main id="main-content" className="flex-1 relative" tabIndex={-1}>
+      {/* `id="main-content"` vit désormais sur la colonne carte, dans
+          AirQualityMap : le rail étant le premier élément de <main>, le lien
+          d'évitement aurait déposé l'utilisateur AVANT lui, sans rien sauter. */}
+      <main className="flex-1 relative">
         {/* Carte */}
         {/* Le provider n'enveloppe que la carte : AirQualityMap ne gagne aucune
             prop, et le rail de contrôles qui vit dans sa colonne lit l'état

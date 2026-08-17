@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useCallback, useRef, useMemo } from "react";
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
 import { useTranslation } from "react-i18next";
 import {
   MapContainer,
@@ -120,7 +126,7 @@ interface AirQualityMapProps {
   onSignalAirSourceDeselected?: () => void;
   onMobileAirSensorSelected?: (
     sensorId: string,
-    period: { startDate: string; endDate: string }
+    period: { startDate: string; endDate: string },
   ) => void;
   onMobileAirSourceDeselected?: () => void;
   isHistoricalModeActive?: boolean;
@@ -270,7 +276,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
    * que l'utilisateur prendrait pour une absence de feux.
    */
   const isHotspotsBeyondRetention = Boolean(
-    effisReferenceDate && !isWithinHotspotsRetention(effisReferenceDate)
+    effisReferenceDate && !isWithinHotspotsRetention(effisReferenceDate),
   );
   const [isWildfireLayerEnabledByControl, setIsWildfireLayerEnabledByControl] =
     useState(featureFlags.wildfireLayer);
@@ -312,7 +318,8 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
     selectedPollutant,
     currentModelingLayer,
     isCommunalLayerEnabled,
-    isEffisHotspotsEnabled: isEffisHotspotsEnabled && !isHotspotsBeyondRetention,
+    isEffisHotspotsEnabled:
+      isEffisHotspotsEnabled && !isHotspotsBeyondRetention,
     isEffisBurnedAreasEnabled,
     effisHotspotsPeriod,
     effisBurnedAreasPeriod,
@@ -430,7 +437,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
             {
               elapsed: `${elapsed}ms`,
               lastClicked: lastClickedDeviceIdRef.current,
-            }
+            },
           );
           isProcessingClickRef.current = false;
           lastClickedDeviceIdRef.current = null;
@@ -532,109 +539,125 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
 
   // Handlers pour la comparaison
   const handleLoadComparisonData = createLoadComparisonDataHandler(
-    sidePanels.setComparisonState
-  );
-  const removeStationFromComparisonBase = createRemoveStationFromComparisonHandler(
-    sidePanels.comparisonState,
     sidePanels.setComparisonState,
-    sidePanels.setIsSidePanelOpen,
-    sidePanels.setSelectedStation
   );
+  const removeStationFromComparisonBase =
+    createRemoveStationFromComparisonHandler(
+      sidePanels.comparisonState,
+      sidePanels.setComparisonState,
+      sidePanels.setIsSidePanelOpen,
+      sidePanels.setSelectedStation,
+    );
   const handleRemoveStationFromComparison = useCallback(
     (stationId: string) => {
       const removedStation = sidePanels.comparisonState.comparedStations.find(
-        (station) => station.id === stationId
+        (station) => station.id === stationId,
       );
       removeStationFromComparisonBase(stationId);
       trackEvent(
         "comparison",
         "remove_station",
-        removedStation?.source ?? "unknown"
+        removedStation?.source ?? "unknown",
       );
       trackFeatureUsage("comparison_station_removed", {
         source: removedStation?.source ?? "unknown",
         remainingStations: Math.max(
           sidePanels.comparisonState.comparedStations.length - 1,
-          0
+          0,
         ),
       });
     },
-    [sidePanels.comparisonState.comparedStations, removeStationFromComparisonBase]
+    [
+      sidePanels.comparisonState.comparedStations,
+      removeStationFromComparisonBase,
+    ],
   );
 
   // Handler pour ajouter une station à la comparaison
   // useCallback rend la fonction stable entre renders.
   // Cela évite que les callbacks dépendants se recréent inutilement.
-  const handleAddStationToComparison = useCallback(async (device: MeasurementDevice) => {
-    // Vérifier que la station n'est pas déjà dans la liste
-    const isAlreadyAdded = sidePanels.comparisonState.comparedStations.some(
-      (station) => station.id === device.id
-    );
+  const handleAddStationToComparison = useCallback(
+    async (device: MeasurementDevice) => {
+      // Vérifier que la station n'est pas déjà dans la liste
+      const isAlreadyAdded = sidePanels.comparisonState.comparedStations.some(
+        (station) => station.id === device.id,
+      );
 
-    // Si la station est déjà ajoutée, la retirer (désélection)
-    if (isAlreadyAdded) {
-      handleRemoveStationFromComparison(device.id);
-      return;
-    }
-
-    // Vérifier les limites (max N stations) seulement si on ajoute une nouvelle station
-    if (sidePanels.comparisonState.comparedStations.length >= MAX_COMPARISON_STATIONS) {
-      console.warn(`Maximum ${MAX_COMPARISON_STATIONS} stations autorisées en comparaison`);
-      return;
-    }
-
-    try {
-      let variables: Record<
-        string,
-        { label: string; code_iso: string; en_service: boolean }
-      > = {};
-
-      // Récupérer les informations détaillées selon la source
-      let sensorModel: string | undefined;
-      let lastSeenSec: number | undefined;
-
-      if (device.source === "atmoRef") {
-        const atmoRefService = DataServiceFactory.getService('atmoRef') as AtmoRefService;
-        variables = await atmoRefService.fetchStationVariables(device.id);
-      } else if (device.source === "atmoMicro") {
-        const atmoMicroService = DataServiceFactory.getService('atmoMicro') as AtmoMicroService;
-        const siteInfo = await atmoMicroService.fetchSiteVariables(device.id);
-        variables = siteInfo.variables;
-        sensorModel = siteInfo.sensorModel;
-      } else if (device.source === "nebuleair") {
-        const nebuleAirService = new NebuleAirService();
-        const siteInfo = await nebuleAirService.fetchSiteInfo(device.id);
-        variables = siteInfo.variables;
-        lastSeenSec = siteInfo.lastSeenSec;
+      // Si la station est déjà ajoutée, la retirer (désélection)
+      if (isAlreadyAdded) {
+        handleRemoveStationFromComparison(device.id);
+        return;
       }
 
-      const stationInfo: StationInfo = {
-        id: device.id,
-        name: device.name,
-        address: device.address || "",
-        departmentId: device.departmentId || "",
-        source: device.source,
-        variables,
-        sensorModel,
-        ...(lastSeenSec !== undefined && { lastSeenSec }),
-      };
+      // Vérifier les limites (max N stations) seulement si on ajoute une nouvelle station
+      if (
+        sidePanels.comparisonState.comparedStations.length >=
+        MAX_COMPARISON_STATIONS
+      ) {
+        console.warn(
+          `Maximum ${MAX_COMPARISON_STATIONS} stations autorisées en comparaison`,
+        );
+        return;
+      }
 
-      sidePanels.setComparisonState((prev) => ({
-        ...prev,
-        comparedStations: [...prev.comparedStations, stationInfo],
-      }));
-      trackEvent("comparison", "add_station", device.source);
-      trackFeatureUsage("comparison_station_added", {
-        source: device.source,
-        stationCount: sidePanels.comparisonState.comparedStations.length + 1,
-      });
-    } catch (error) {
-      console.error(
-        "Erreur lors de l'ajout de la station à la comparaison:",
-        error
-      );
-    }
-  }, [sidePanels, handleRemoveStationFromComparison]);
+      try {
+        let variables: Record<
+          string,
+          { label: string; code_iso: string; en_service: boolean }
+        > = {};
+
+        // Récupérer les informations détaillées selon la source
+        let sensorModel: string | undefined;
+        let lastSeenSec: number | undefined;
+
+        if (device.source === "atmoRef") {
+          const atmoRefService = DataServiceFactory.getService(
+            "atmoRef",
+          ) as AtmoRefService;
+          variables = await atmoRefService.fetchStationVariables(device.id);
+        } else if (device.source === "atmoMicro") {
+          const atmoMicroService = DataServiceFactory.getService(
+            "atmoMicro",
+          ) as AtmoMicroService;
+          const siteInfo = await atmoMicroService.fetchSiteVariables(device.id);
+          variables = siteInfo.variables;
+          sensorModel = siteInfo.sensorModel;
+        } else if (device.source === "nebuleair") {
+          const nebuleAirService = new NebuleAirService();
+          const siteInfo = await nebuleAirService.fetchSiteInfo(device.id);
+          variables = siteInfo.variables;
+          lastSeenSec = siteInfo.lastSeenSec;
+        }
+
+        const stationInfo: StationInfo = {
+          id: device.id,
+          name: device.name,
+          address: device.address || "",
+          departmentId: device.departmentId || "",
+          source: device.source,
+          variables,
+          sensorModel,
+          ...(lastSeenSec !== undefined && { lastSeenSec }),
+        };
+
+        sidePanels.setComparisonState((prev) => ({
+          ...prev,
+          comparedStations: [...prev.comparedStations, stationInfo],
+        }));
+        trackEvent("comparison", "add_station", device.source);
+        trackFeatureUsage("comparison_station_added", {
+          source: device.source,
+          stationCount: sidePanels.comparisonState.comparedStations.length + 1,
+        });
+      } catch (error) {
+        console.error(
+          "Erreur lors de l'ajout de la station à la comparaison:",
+          error,
+        );
+      }
+    },
+    [sidePanels, handleRemoveStationFromComparison],
+  );
 
   // Wrapper pour createCustomIcon avec les états du composant
   // Wrappers pour les fonctions utilitaires avec les états du composant
@@ -654,7 +677,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
     return createWildfireIcon(
       report,
       wildfire.wildfireLoading,
-      wildfire.wildfireReports.length
+      wildfire.wildfireReports.length,
     );
   };
 
@@ -662,7 +685,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
     return getMarkerKey(
       device,
       sidePanels.comparisonState,
-      sidePanels.selectedStation
+      sidePanels.selectedStation,
     );
   };
 
@@ -821,17 +844,23 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
         try {
           // Récupérer les informations détaillées selon la source
           if (device.source === "atmoRef") {
-            const atmoRefService = DataServiceFactory.getService('atmoRef') as AtmoRefService;
+            const atmoRefService = DataServiceFactory.getService(
+              "atmoRef",
+            ) as AtmoRefService;
             variables = await atmoRefService.fetchStationVariables(device.id);
           } else if (device.source === "atmoMicro") {
-            const atmoMicroService = DataServiceFactory.getService('atmoMicro') as AtmoMicroService;
+            const atmoMicroService = DataServiceFactory.getService(
+              "atmoMicro",
+            ) as AtmoMicroService;
             const siteInfo = await atmoMicroService.fetchSiteVariables(
-              device.id
+              device.id,
             );
             variables = siteInfo.variables;
             sensorModel = siteInfo.sensorModel;
           } else if (device.source === "nebuleair") {
-            const nebuleAirService = DataServiceFactory.getService('nebuleair') as NebuleAirService;
+            const nebuleAirService = DataServiceFactory.getService(
+              "nebuleair",
+            ) as NebuleAirService;
             const siteInfo = await nebuleAirService.fetchSiteInfo(device.id);
             variables = siteInfo.variables;
             lastSeenSec = siteInfo.lastSeenSec;
@@ -839,7 +868,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
         } catch (error) {
           console.error(
             `❌ [Map] Erreur lors de la récupération des informations de la station ${device.id}:`,
-            error
+            error,
           );
           // Continuer avec des variables vides - le sidepanel s'ouvrira quand même
         }
@@ -866,7 +895,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
       } catch (error) {
         console.error(
           `❌ [Map] Erreur lors du traitement du clic pour ${device.id}:`,
-          error
+          error,
         );
         // Même en cas d'erreur, réinitialiser le flag pour permettre de nouveaux clics
       } finally {
@@ -887,7 +916,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
         }, 300); // Délai réduit à 300ms pour une meilleure réactivité
       }
     },
-    [sidePanels, handleAddStationToComparison]
+    [sidePanels, handleAddStationToComparison],
   );
 
   // Callback pour la sélection d'un capteur depuis la recherche
@@ -901,7 +930,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           {
             animate: true,
             duration: 1.5,
-          }
+          },
         );
       }
 
@@ -909,7 +938,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
       handleMarkerClick(device);
     },
     // mapView.mapRef est utilisé dans le callback: on le déclare explicitement.
-    [handleMarkerClick, mapView.mapRef]
+    [handleMarkerClick, mapView.mapRef],
   );
 
   // Les handlers SignalAir et MobileAir sont maintenant dans leurs hooks respectifs
@@ -941,8 +970,13 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
       />
 
       {/* Conteneur de la carte */}
+      {/* Cible du lien d'évitement : la carte elle-même, et non <main> qui
+          englobe le rail. `tabIndex={-1}` rend l'ancre focalisable par script
+          sans l'ajouter à l'ordre de tabulation. */}
       <div
-        className="flex-1 relative"
+        id="main-content"
+        tabIndex={-1}
+        className="flex-1 relative focus:outline-none"
         role="region"
         aria-label={t("app.mapAriaLabel")}
       >
@@ -955,33 +989,31 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           panelSize={sidePanels.panelSize}
         />
 
-        {featureFlags.useControlRail && (
-          <MapControlRail
-            baseLayer={{
-              currentBaseLayer: currentBaseLayer as BaseLayerKey,
-              onBaseLayerChange: setCurrentBaseLayer,
-              isCommunalLayerEnabled,
-              onCommunalLayerToggle: setIsCommunalLayerEnabled,
-              isEffisHotspotsEnabled,
-              onEffisHotspotsToggle: setIsEffisHotspotsEnabled,
-              effisHotspotsPeriod,
-              onEffisHotspotsPeriodChange: setEffisHotspotsPeriod,
-              isEffisBurnedAreasEnabled,
-              onEffisBurnedAreasToggle: setIsEffisBurnedAreasEnabled,
-              effisBurnedAreasPeriod,
-              onEffisBurnedAreasPeriodChange: setEffisBurnedAreasPeriod,
-              isWildfireLayerEnabled: isWildfireVisible,
-              onWildfireLayerToggle: setIsWildfireLayerEnabledByControl,
-            }}
-            shortcuts={{
-              sidePanels,
-              signalAir,
-              mobileAir,
-              isComparisonPanelVisible,
-              selectedSources,
-            }}
-          />
-        )}
+        <MapControlRail
+          baseLayer={{
+            currentBaseLayer: currentBaseLayer as BaseLayerKey,
+            onBaseLayerChange: setCurrentBaseLayer,
+            isCommunalLayerEnabled,
+            onCommunalLayerToggle: setIsCommunalLayerEnabled,
+            isEffisHotspotsEnabled,
+            onEffisHotspotsToggle: setIsEffisHotspotsEnabled,
+            effisHotspotsPeriod,
+            onEffisHotspotsPeriodChange: setEffisHotspotsPeriod,
+            isEffisBurnedAreasEnabled,
+            onEffisBurnedAreasToggle: setIsEffisBurnedAreasEnabled,
+            effisBurnedAreasPeriod,
+            onEffisBurnedAreasPeriodChange: setEffisBurnedAreasPeriod,
+            isWildfireLayerEnabled: isWildfireVisible,
+            onWildfireLayerToggle: setIsWildfireLayerEnabledByControl,
+          }}
+          shortcuts={{
+            sidePanels,
+            signalAir,
+            mobileAir,
+            isComparisonPanelVisible,
+            selectedSources,
+          }}
+        />
 
         {/* Contrôle de recherche personnalisé */}
         <CustomSearchControl
@@ -1015,9 +1047,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           <AttributionControl position="bottomright" prefix={false} />
 
           {/* Gestionnaire d'événements pour les clics sur la carte */}
-          <MapClickHandler
-            onMapClick={() => setSearchPinPosition(null)}
-          />
+          <MapClickHandler onMapClick={() => setSearchPinPosition(null)} />
           <MapReadyNotifier onReady={handleMapReady} />
           {onMapViewChange && (
             <MapViewSyncHandler onViewChange={onMapViewChange} />
@@ -1028,7 +1058,6 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
             isSidePanelOpen={sidePanels.isSidePanelOpen}
             panelSize={sidePanels.panelSize}
           />
-
 
           {/* Pinpoint de recherche (disparaît au clic sur la carte) */}
           {searchPinPosition && (
@@ -1057,7 +1086,9 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
             isSignalAirVisible={isSignalAirVisible}
             reports={reports}
             createSignalIconWrapper={createSignalIconWrapper}
-            handleSignalAirMarkerClickWrapper={handleSignalAirMarkerClickWrapper}
+            handleSignalAirMarkerClickWrapper={
+              handleSignalAirMarkerClickWrapper
+            }
           />
 
           {/* Marqueurs pour les incendies en cours */}
@@ -1108,7 +1139,6 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
                 </Popup>
               </Marker>
             ))}
-
         </MapContainer>
 
         <MapOverlays
@@ -1146,7 +1176,6 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           sourceStatistics={sourceStatistics}
         />
       </div>
-
     </div>
   );
 };

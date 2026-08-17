@@ -1,31 +1,7 @@
 import type { DriveStep } from "driver.js";
 import type { TFunction } from "i18next";
 import { TOUR_SELECTORS } from "./types";
-
-const getVisibleTourElement = (selector: string): Element | undefined => {
-  const elements = document.querySelectorAll(selector);
-  for (const element of elements) {
-    if (!(element instanceof HTMLElement)) {
-      continue;
-    }
-
-    const isDisabled =
-      element.hasAttribute("disabled") ||
-      element.getAttribute("aria-disabled") === "true" ||
-      element.closest("[disabled]") !== null;
-
-    if (isDisabled) {
-      continue;
-    }
-
-    const rect = element.getBoundingClientRect();
-    if (rect.width > 0 && rect.height > 0) {
-      return element;
-    }
-  }
-
-  return elements[0] ?? undefined;
-};
+import { getVisibleTourElement } from "./tourDom";
 
 const waitForTourElement = (
   selector: string,
@@ -60,7 +36,7 @@ export const buildHistoricalModeTourSteps = (t: TFunction): DriveStep[] => [
     popover: {
       title: t("tour.historical.step1.title"),
       description: t("tour.historical.step1.description"),
-      side: "bottom",
+      side: "right",
       align: "start",
       showButtons: ["close"],
       popoverClass: "openairmap-tour-popover",
@@ -72,7 +48,7 @@ export const buildHistoricalModeTourSteps = (t: TFunction): DriveStep[] => [
     popover: {
       title: t("tour.historical.step2.title"),
       description: t("tour.historical.step2.description"),
-      side: "bottom",
+      side: "right",
       align: "start",
       showButtons: ["close"],
       popoverClass: "openairmap-tour-popover",

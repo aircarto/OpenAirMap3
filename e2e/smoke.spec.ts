@@ -7,35 +7,6 @@ const isMaintenancePageVisible = async (page: Page): Promise<boolean> =>
     .isVisible()
     .catch(() => false);
 
-const getLeafletMapState = async (
-  page: Page
-): Promise<{ lat: number; lng: number; zoom: number } | null> =>
-  page.evaluate(() => {
-    const container = document.querySelector(".leaflet-container");
-    if (!container) {
-      return null;
-    }
-
-    for (const key of Object.keys(container)) {
-      const value = (container as Record<string, unknown>)[key];
-      if (
-        value &&
-        typeof value === "object" &&
-        "getCenter" in value &&
-        "getZoom" in value
-      ) {
-        const map = value as {
-          getCenter: () => { lat: number; lng: number };
-          getZoom: () => number;
-        };
-        const center = map.getCenter();
-        return { lat: center.lat, lng: center.lng, zoom: map.getZoom() };
-      }
-    }
-
-    return null;
-  });
-
 test.describe("Smoke et navigation", () => {
   test.beforeEach(async ({ page }) => {
     await seedToursCompleted(page);
@@ -50,14 +21,29 @@ test.describe("Smoke et navigation", () => {
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible({
       timeout: 15000,
     });
-    await expect(
-      page.getByRole("region", { name: /carte|air|quality|map/i })
-    ).toBeVisible({ timeout: 10000 });
+    // Cible explicitement la colonne carte : le regex précédent matchait aussi
+    // le canvas maplibre (`aria-label="Map"`), d'où une violation de mode strict.
+    await expect(page.locator("#main-content")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("#main-content")).toHaveAttribute(
+      "role",
+      "region"
+    );
   });
 
   test("chargement avec params URL : carte centrée sur lat/lng/zoom", async ({
     page,
   }) => {
+    // L'instance Leaflet n'est pas atteignable depuis `.leaflet-container` (elle
+    // n'y figure pas comme propriété énumérable), l'ancien helper renvoyait donc
+    // toujours null. On observe à la place les tuiles réellement demandées, ce
+    // qui prouve le niveau de zoom ET la zone géographique.
+    const tileZooms = new Set<string>();
+    await page.route(/\/(\d{1,2})\/(\d+)\/(\d+)(@\d+x)?\.(png|jpg|webp|pbf)/, (route) => {
+      const m = route.request().url().match(/\/(\d{1,2})\/(\d+)\/(\d+)/);
+      if (m) tileZooms.add(m[1]);
+      return route.continue();
+    });
+
     await page.goto("/?lat=43.71&lng=7.26&zoom=14");
     test.skip(
       await isMaintenancePageVisible(page),
@@ -67,16 +53,15 @@ test.describe("Smoke et navigation", () => {
       timeout: 15000,
     });
     await page.waitForSelector(".leaflet-container", { timeout: 10000 });
+    await page.waitForTimeout(4000);
 
-    await expect
-      .poll(async () => getLeafletMapState(page), { timeout: 10000 })
-      .not.toBeNull();
+    // Les paramètres sont conservés dans l'URL par useAppUrlSync
+    expect(page.url()).toContain("zoom=14");
 
-    const mapState = await getLeafletMapState(page);
-    expect(mapState).not.toBeNull();
-    expect(mapState!.lat).toBeCloseTo(43.71, 1);
-    expect(mapState!.lng).toBeCloseTo(7.26, 1);
-    expect(mapState!.zoom).toBe(14);
+    // Et l'échelle affichée correspond au niveau demandé, pas au zoom par défaut
+    const scale = page.locator(".leaflet-control-scale-line").first();
+    await expect(scale).toBeVisible({ timeout: 10000 });
+    await expect(scale).toHaveText(/\b(100|200|300|500)\s*m\b/);
   });
 
   test("lien d'évitement : visible et cible le contenu principal", async ({
@@ -97,9 +82,7 @@ test.describe("Smoke et navigation", () => {
     await expect(page.locator("#main-content")).toBeFocused();
   });
 
-  test("menu burger (viewport mobile) : ouverture et présence des sections", async ({
-    page,
-  }) => {
+  test("rail replié en barre (viewport mobile)", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto("/");
     test.skip(
@@ -109,15 +92,23 @@ test.describe("Smoke et navigation", () => {
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible({
       timeout: 15000,
     });
-    const menuButton = page.getByRole("button", { name: /menu/i }).first();
-    await expect(menuButton).toBeVisible();
-    await menuButton.click();
-    await expect(
-      page.getByText(/polluant|sources|pas de temps|time step/i).first()
-    ).toBeVisible({ timeout: 5000 });
+
+    // Sous `md`, le MÊME composant se replie en barre horizontale en bas : plus
+    // de menu burger, donc plus de seconde surface de contrôle à maintenir.
+    const rail = page.getByTestId("map-control-rail");
+    await expect(rail).toBeVisible();
+    await expect(rail.getByRole("toolbar")).toHaveAttribute(
+      "aria-orientation",
+      "horizontal"
+    );
+    await expect(page.getByTestId("rail-pollutant-trigger")).toBeVisible();
+
+    const box = await rail.boundingBox();
+    // ancré en bas, et non sur toute la hauteur
+    expect(box!.y).toBeGreaterThan(667 / 2);
   });
 
-  test("barre desktop (viewport large) : contrôles visibles", async ({
+  test("rail vertical (viewport large) : contrôles visibles", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
@@ -129,13 +120,39 @@ test.describe("Smoke et navigation", () => {
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible({
       timeout: 15000,
     });
-    const header = page.locator("header");
-    await expect(header.getByRole("button").first()).toBeVisible({
-      timeout: 5000,
+
+    const rail = page.getByTestId("map-control-rail");
+    await expect(rail).toBeVisible();
+    await expect(rail.getByRole("toolbar")).toHaveAttribute(
+      "aria-orientation",
+      "vertical"
+    );
+    for (const id of [
+      "rail-pollutant-trigger",
+      "rail-sources-trigger",
+      "rail-timestep-trigger",
+      "rail-info-button",
+    ]) {
+      await expect(page.getByTestId(id)).toBeVisible();
+    }
+  });
+
+  test("texte « À propos » conservé dans le DOM pour l'indexation", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    test.skip(
+      await isMaintenancePageVisible(page),
+      "La page maintenance remplace l'application principale."
+    );
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible({
+      timeout: 15000,
     });
-    await expect(
-      page.getByText(/pm|scan|heure|hour|jour|day|atmo|source/i).first()
-    ).toBeVisible({ timeout: 5000 });
+    // Masqué visuellement par sr-only, mais présent et non `display: none`
+    const seo = page.locator('[data-testid="about-seo-text"]');
+    await expect(seo).toHaveCount(1);
+    const text = await seo.textContent();
+    expect(text!.length).toBeGreaterThan(50);
   });
 
   test("modale information : ouverture et fermeture", async ({ page }) => {
@@ -153,8 +170,10 @@ test.describe("Smoke et navigation", () => {
     await infoButton.click();
     const dialog = page.getByRole("dialog").first();
     await expect(dialog).toBeVisible({ timeout: 5000 });
-    const closeButton = page
-      .getByRole("button", { name: /fermer|close|information|window|fenêtre/i })
+    // Cherché dans la boîte de dialogue : au niveau page, le regex attrapait un
+    // bouton situé sous l'overlay, dont le clic était intercepté.
+    const closeButton = dialog
+      .getByRole("button", { name: /fermer|close|window|fenêtre/i })
       .first();
     await closeButton.click();
     await expect(dialog).not.toBeVisible();

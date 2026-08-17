@@ -1078,6 +1078,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
               onClick={() => handlePanelSizeChange("hidden")}
               className="p-1.5 sm:p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
               title={t("panels.collapsePanel")}
+              aria-label={t("panels.collapsePanel")}
             >
               <svg
                 className="w-3.5 h-3.5 sm:w-4 sm:h-4"

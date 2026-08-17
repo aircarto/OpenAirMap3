@@ -9,12 +9,14 @@ import RailTimeSection from "./sections/RailTimeSection";
 import RailShortcutsSection from "./sections/RailShortcutsSection";
 import RailFooter from "./sections/RailFooter";
 import { useRailRoving, type RailOrientation } from "./useRailRoving";
+import { useRailOrientation } from "./useRailBreakpoint";
 import type {
   BaseLayerControlBinding,
   RailShortcutsBinding,
 } from "./railBindings";
 
 export interface MapControlRailProps {
+  /** Forçage de l'orientation ; par défaut déduite de la largeur disponible */
   orientation?: RailOrientation;
   /** État local à la carte : voyage par props, pas par contexte */
   baseLayer: BaseLayerControlBinding;
@@ -34,10 +36,12 @@ export interface MapControlRailProps {
  * s'écarter — sans mesure JS et en suivant le décalage des panneaux.
  */
 export const MapControlRail: React.FC<MapControlRailProps> = ({
-  orientation = "vertical",
+  orientation: forcedOrientation,
   baseLayer,
   shortcuts,
 }) => {
+  const detectedOrientation = useRailOrientation();
+  const orientation = forcedOrientation ?? detectedOrientation;
   const { t } = useTranslation();
   const { ui } = useMapControls();
   const { containerRef, onKeyDownCapture, onItemFocus } =
@@ -70,6 +74,23 @@ export const MapControlRail: React.FC<MapControlRailProps> = ({
       column.style.removeProperty("--rail-inset");
     };
   }, [orientation]);
+
+  // Les tutoriels ciblent des items qui peuvent être hors de la zone visible du
+  // rail (défilement vertical, ou barre horizontale sur mobile). Un événement
+  // custom plutôt qu'un contexte : config/tours/* reste des données pures, sans
+  // couplage à l'arbre React.
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const selector = (event as CustomEvent<{ selector?: string }>).detail
+        ?.selector;
+      const target = selector
+        ? containerRef.current?.querySelector<HTMLElement>(selector)
+        : null;
+      target?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    };
+    window.addEventListener("openairmap:rail-reveal", handler);
+    return () => window.removeEventListener("openairmap:rail-reveal", handler);
+  }, [containerRef]);
 
   const isVertical = orientation === "vertical";
 

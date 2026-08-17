@@ -15,9 +15,7 @@ test.describe("Flux SignalAir et MobileAir", () => {
   test("ouvrir menu Sources spéciales puis panel SignalAir", async ({
     page,
   }) => {
-    const specialTrigger = page.getByRole("button", {
-      name: /sources spéciales|special sources|signalair|mobileair/i,
-    });
+    const specialTrigger = page.getByTestId("rail-special-sources-trigger");
     if (!(await specialTrigger.isVisible().catch(() => false))) {
       test.skip(true, "Bouton Sources spéciales non visible (layout ou viewport)");
     }
@@ -42,9 +40,7 @@ test.describe("Flux SignalAir et MobileAir", () => {
   test("panel SignalAir : sélection et bouton Charger visibles", async ({
     page,
   }) => {
-    const specialTrigger = page.getByRole("button", {
-      name: /sources spéciales|special sources|signalair|mobileair/i,
-    });
+    const specialTrigger = page.getByTestId("rail-special-sources-trigger");
     if (!(await specialTrigger.isVisible().catch(() => false))) {
       test.skip(true, "Bouton Sources spéciales non visible");
     }
@@ -67,9 +63,7 @@ test.describe("Flux SignalAir et MobileAir", () => {
   test("ouvrir menu Sources spéciales puis panel MobileAir", async ({
     page,
   }) => {
-    const specialTrigger = page.getByRole("button", {
-      name: /sources spéciales|special sources|signalair|mobileair/i,
-    });
+    const specialTrigger = page.getByTestId("rail-special-sources-trigger");
     if (!(await specialTrigger.isVisible().catch(() => false))) {
       test.skip(true, "Bouton Sources spéciales non visible");
     }
@@ -88,9 +82,7 @@ test.describe("Flux SignalAir et MobileAir", () => {
   test("panel MobileAir : contenu réagit (liste ou message)", async ({
     page,
   }) => {
-    const specialTrigger = page.getByRole("button", {
-      name: /sources spéciales|special sources|signalair|mobileair/i,
-    });
+    const specialTrigger = page.getByTestId("rail-special-sources-trigger");
     if (!(await specialTrigger.isVisible().catch(() => false))) {
       test.skip(true, "Bouton Sources spéciales non visible");
     }

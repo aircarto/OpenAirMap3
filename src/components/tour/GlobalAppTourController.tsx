@@ -1,8 +1,11 @@
 import { useEffect, useRef } from "react";
 import { useFeatureTourContext } from "./featureTourContext";
 
-// Doit correspondre au seuil `xl` de Tailwind utilisé par la barre d'outils desktop dans App.tsx
-const DESKTOP_MIN_WIDTH = 1280;
+// Le démarrage automatique est réservé aux largeurs où le rail est vertical et où
+// la légende — cible de la dernière étape — est affichée : celle-ci vit dans la
+// colonne bas-droite en `hidden lg:flex`, d'où le seuil `lg` et non `md`. Le tour
+// reste rejouable à la main sous ce seuil depuis le pied du rail.
+const DESKTOP_MIN_WIDTH = 1024;
 const AUTO_START_DELAY_MS = 900;
 
 const GlobalAppTourController: React.FC = () => {
