@@ -46,19 +46,57 @@ test.describe("Contrôles du rail de carte", () => {
     });
   }
 
-  test("fond de carte : ouverture du panneau de couches", async ({ page }) => {
-    await page.getByTestId("rail-basemap-trigger").click();
-    // Panneau fait main (pas un menu Radix) : on vérifie qu'il s'ouvre bien à
-    // droite du rail, et donc qu'il n'est pas rogné par celui-ci.
-    const rail = await page.getByTestId("map-control-rail").boundingBox();
-    const panel = page
-      .locator(".z-popover")
-      .filter({ hasText: /satellite|osm/i })
-      .first();
+  test("fond de carte : panneau ouvert, cliquable et fonctionnel", async ({
+    page,
+  }) => {
+    const trigger = page.getByTestId("rail-basemap-trigger");
+    await trigger.click();
+
+    const panel = page.locator("[data-radix-popper-content-wrapper]");
     await expect(panel).toBeVisible({ timeout: 5000 });
-    const box = await panel.boundingBox();
-    expect(box!.x).toBeGreaterThanOrEqual(rail!.x + rail!.width - 2);
-    expect(box!.width).toBeGreaterThan(200);
+
+    // `toBeVisible` ne détecte PAS le rognage par l'overflow d'un ancêtre : la
+    // première version de ce test passait alors que le panneau, rendu à
+    // l'intérieur de la zone défilante du rail, était entièrement invisible et
+    // recevait ses clics sur la carte. On vérifie donc le test de survol réel.
+    const hitsPanel = await panel.evaluate((el) => {
+      const inner = el.firstElementChild as HTMLElement;
+      const r = inner.getBoundingClientRect();
+      const hit = document.elementFromPoint(r.left + r.width / 2, r.top + 30);
+      return inner.contains(hit);
+    });
+    expect(hitsPanel).toBe(true);
+
+    // Et surtout : choisir un fond change effectivement le fond de carte.
+    const labelBefore = await trigger.getAttribute("aria-label");
+    await page.getByRole("button", { name: /satellite/i }).first().click();
+    await expect(trigger).not.toHaveAttribute("aria-label", labelBefore!);
+    await expect(panel).toHaveCount(0);
+
+    // Le chrome s'opacifie sur imagerie sombre, sans basculer de thème
+    await expect(page.locator("#main-content")).toHaveAttribute(
+      "data-basemap",
+      "satellite"
+    );
+  });
+
+  test("fond de carte : une bascule de calque garde le panneau ouvert", async ({
+    page,
+  }) => {
+    await page.getByTestId("rail-basemap-trigger").click();
+    const panel = page.locator("[data-radix-popper-content-wrapper]");
+    await expect(panel).toBeVisible({ timeout: 5000 });
+
+    const layerToggle = page
+      .getByRole("button", { name: /communal|découpage|boundaries/i })
+      .first();
+    if (!(await layerToggle.count())) {
+      test.skip(true, "Aucun calque optionnel disponible");
+    }
+    await layerToggle.click();
+    // Un calque n'est pas un choix exclusif : le panneau doit rester ouvert pour
+    // permettre d'en activer plusieurs.
+    await expect(panel).toBeVisible();
   });
 
   test("mode historique : activation et panneau visible", async ({ page }) => {

@@ -72,6 +72,7 @@ import { useSignalAir } from "./hooks/useSignalAir";
 import { useMobileAir } from "./hooks/useMobileAir";
 import { useMarkerTooltip } from "./hooks/useMarkerTooltip";
 import { useVisibleDevices } from "./hooks/useVisibleDevices";
+import { useMapSurfaceHints } from "./hooks/useMapSurfaceHints";
 
 // Utilitaires
 import {
@@ -233,6 +234,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
   // AirQualityMap est rendu dans MapControlsProvider : il peut consommer le
   // contexte pour transmettre les notices applicatives à la pile unique.
   const mapControls = useMapControls();
+  const mapColumnRef = useRef<HTMLDivElement | null>(null);
   // Configuration du spiderfier
   const [spiderfyConfig, setSpiderfyConfig] = useState(defaultSpiderfyConfig);
   const [currentBaseLayer, setCurrentBaseLayer] =
@@ -532,6 +534,14 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
     signalAir.isSignalAirDetailPanelOpen,
     isComparisonPanelVisible,
   ]);
+
+  // Indices de surface consommés par les classes .glass-* (voir index.css)
+  useMapSurfaceHints(
+    mapColumnRef,
+    mapView.mapRef,
+    currentBaseLayer as BaseLayerKey,
+    mapReadyVersion
+  );
 
   const handleBaseLayerChange = (layerKey: BaseLayerKey) => {
     setCurrentBaseLayer(layerKey);
@@ -974,6 +984,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           englobe le rail. `tabIndex={-1}` rend l'ancre focalisable par script
           sans l'ajouter à l'ordre de tabulation. */}
       <div
+        ref={mapColumnRef}
         id="main-content"
         tabIndex={-1}
         className="flex-1 relative focus:outline-none"

@@ -1,8 +1,13 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BASE_LAYER_KEYS, BaseLayerKey } from "../../constants/mapLayers";
 import { featureFlags } from "../../config/featureFlags";
 import { cn } from "../../lib/utils";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "../ui/popover";
 import {
   BurnedAreaPeriod,
   HotspotPeriod,
@@ -102,25 +107,28 @@ interface BaseLayerControlProps {
   isWildfireLayerEnabled: boolean;
   onWildfireLayerToggle: (enabled: boolean) => void;
   /**
-   * Placement du panneau. « top » correspond au site historique (bas-gauche de
-   * la carte, panneau qui s'ouvre vers le haut) ; « right » sert au rail.
+   * Côté d'ouverture du panneau. « right » pour le rail, « top » pour l'ancien
+   * site bas-gauche. Le contenu est portalisé vers `document.body` : la zone
+   * défilante du rail est en `overflow-x: hidden` et rognait auparavant le
+   * panneau entièrement — rendu, mais invisible et non cliquable.
    */
   placement?: "top" | "right";
   /** Surface du panneau, pour l'aligner sur celle des flyouts du rail */
   panelClassName?: string;
   /**
-   * Déclencheur fourni par l'appelant. Reçoit l'état d'ouverture pour renseigner
-   * `aria-expanded` et refléter l'état visuellement.
+   * Déclencheur fourni par l'appelant, rendu dans un `<PopoverTrigger asChild>`.
    *
-   * Ce composant conserve son panneau fait main : ses 400 lignes de sélecteurs
-   * de période imbriqués et sa gestion du clic extérieur fonctionnent, et les
-   * porter sur Radix serait un chantier distinct sans gain fonctionnel ici.
+   * Il doit donc diffuser ses props et sa ref, et NE PAS gérer l'ouverture
+   * lui-même : Radix compose son propre gestionnaire de clic, un second
+   * basculement dans l'enfant annulerait le premier.
+   *
+   * `isOpen` sert uniquement au rendu visuel — `aria-expanded` est déjà posé par
+   * Radix.
    */
   renderTrigger?: (context: {
     isOpen: boolean;
     label: string;
     icon: React.ReactNode;
-    toggle: () => void;
   }) => React.ReactNode;
 }
 
@@ -145,21 +153,6 @@ const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
 }) => {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const handleLayerSelect = (layerKey: BaseLayerKey) => {
     onBaseLayerChange(layerKey);
@@ -231,44 +224,40 @@ const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
     );
   };
 
-  const toggle = () => setIsOpen((open) => !open);
-
   return (
-    <div className="relative" ref={dropdownRef}>
-      {renderTrigger ? (
-        renderTrigger({
-          isOpen,
-          label: getLayerLabel(currentBaseLayer),
-          icon: getLayerIcon(currentBaseLayer),
-          toggle,
-        })
-      ) : (
-        <button
-          type="button"
-          onClick={toggle}
-          aria-expanded={isOpen}
-          className="bg-white/90 backdrop-blur-sm border border-gray-200/50 rounded-md p-2 text-center shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500/50 hover:border-gray-300/70 transition-colors"
-          title={`${t("baseLayer.title")}: ${getLayerLabel(currentBaseLayer)}`}
-        >
-          <div className="flex items-center justify-center">
-            <span className="text-gray-700">
-              {getLayerIcon(currentBaseLayer)}
-            </span>
-          </div>
-        </button>
-      )}
-
-      {isOpen && (
-        <div
-          className={cn(
-            "absolute z-popover w-auto min-w-full",
-            placement === "right"
-              ? "left-full top-0 ml-2.5 min-w-[248px]"
-              : "bottom-full mb-1",
-            panelClassName ??
-              "bg-white/95 backdrop-blur-sm border border-gray-200/50 rounded-md shadow-sm"
-          )}
-        >
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild>
+        {renderTrigger ? (
+          renderTrigger({
+            isOpen,
+            label: getLayerLabel(currentBaseLayer),
+            icon: getLayerIcon(currentBaseLayer),
+          })
+        ) : (
+          <button
+            type="button"
+            aria-expanded={isOpen}
+            className="bg-white/90 backdrop-blur-sm border border-gray-200/50 rounded-md p-2 text-center shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500/50 hover:border-gray-300/70 transition-colors"
+            title={`${t("baseLayer.title")}: ${getLayerLabel(currentBaseLayer)}`}
+          >
+            <div className="flex items-center justify-center">
+              <span className="text-gray-700">
+                {getLayerIcon(currentBaseLayer)}
+              </span>
+            </div>
+          </button>
+        )}
+      </PopoverTrigger>
+      <PopoverContent
+        side={placement === "right" ? "right" : "top"}
+        align="start"
+        aria-label={t("baseLayer.title")}
+        className={cn(
+          "w-auto min-w-[248px]",
+          panelClassName ??
+            "bg-white/95 backdrop-blur-sm border border-gray-200/50 rounded-md shadow-sm"
+        )}
+      >
           <div className="p-1">
             {BASE_LAYER_KEYS.map((layerKey) => (
               <button
@@ -458,9 +447,8 @@ const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
               </button>
             )}
           </div>
-        </div>
-      )}
-    </div>
+      </PopoverContent>
+    </Popover>
   );
 };
 

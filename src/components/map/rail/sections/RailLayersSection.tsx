@@ -101,16 +101,16 @@ export const RailLayersSection: React.FC<RailLayersSectionProps> = ({
         {...baseLayer}
         placement={orientation === "vertical" ? "right" : "top"}
         panelClassName={RAIL_FLYOUT_CLASS}
-        renderTrigger={({ isOpen, label, toggle }) => (
+        renderTrigger={({ isOpen, label }) => (
           <RailItem
             itemId="baselayer"
             data-testid="rail-basemap-trigger"
-            aria-expanded={isOpen}
-            aria-haspopup="dialog"
+            // Ni onClick ni aria-expanded ici : Radix PopoverTrigger les fournit
+            // via asChild, et un second basculement annulerait le premier.
             aria-label={`${t("baseLayer.title")} : ${label}`}
             title={`${t("baseLayer.title")} : ${label}`}
             onFocus={onItemFocus}
-            onClick={toggle}
+            active={isOpen}
             label={t("baseLayer.title")}
             icon={<IconBaseLayer />}
             caption={t("rail.caption.baseLayer")}
