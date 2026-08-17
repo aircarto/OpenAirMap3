@@ -770,5 +770,23 @@
         "description": "Passa il mouse sui diversi livelli di qualità per conoscere le concentrazioni associate"
       }
     }
+  },
+  "rail": {
+    "regionLabel": "Controlli della mappa",
+    "toolbarLabel": "Barra degli strumenti della mappa",
+    "groupData": "Dati",
+    "groupLayers": "Livelli",
+    "groupTime": "Tempo",
+    "groupPanels": "Pannelli",
+    "frozenDuringPlayback": "Controlli non disponibili durante la riproduzione storica",
+    "caption": {
+      "sources_one": "{{count}} font",
+      "sources_other": "{{count}} font",
+      "modeling": "MODEL",
+      "modelingOff": "—",
+      "baseLayer": "BASE",
+      "specialSources": "SPEC",
+      "historical": "STOR"
+    }
   }
 }

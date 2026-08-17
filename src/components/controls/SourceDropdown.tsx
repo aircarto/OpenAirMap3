@@ -11,6 +11,7 @@ import {
 } from "../ui/dropdown-menu";
 import { Checkbox } from "../ui/checkbox";
 import { DropdownButton } from "./DropdownButton";
+import type { CustomTriggerProps } from "./dropdownTriggerContract";
 import { cn } from "../../lib/utils";
 import {
   isSourceCompatibleWithTimeStep,
@@ -27,7 +28,7 @@ const COMMUNAUTAIRE_SOURCE_CODES = [
   "communautaire.purpleair",
 ] as const;
 
-interface SourceDropdownProps {
+interface SourceDropdownProps extends CustomTriggerProps {
   selectedSources: string[];
   selectedTimeStep?: string;
   onSourceChange: (sources: string[]) => void;
@@ -53,6 +54,11 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
   loading = false,
   isHistoricalModeActive = false,
   triggerId,
+  renderTrigger,
+  menuSide,
+  menuAlign,
+  menuSideOffset,
+  menuClassName,
 }) => {
   const { t } = useTranslation();
 
@@ -169,18 +175,30 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <DropdownButton
-          id={triggerId}
-          data-tour="global-sources"
-          className="min-w-[88px] max-w-[200px]"
-        >
-          <span className="block truncate pr-6">{getDisplayText()}</span>
-        </DropdownButton>
+        {renderTrigger ? (
+          renderTrigger({ displayText: getDisplayText() })
+        ) : (
+          <DropdownButton
+            id={triggerId}
+            data-tour="global-sources"
+            className="min-w-[88px] max-w-[200px]"
+          >
+            <span className="block truncate pr-6">{getDisplayText()}</span>
+          </DropdownButton>
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent
-        align="start"
+        side={menuSide}
+        align={menuAlign ?? "start"}
         alignOffset={0}
-        className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-[260px] sm:min-w-[300px] max-h-64 overflow-auto"
+        sideOffset={menuSideOffset}
+        className={cn(
+          "min-w-[260px] sm:min-w-[300px] overflow-auto",
+          // hauteur bornée pour ne jamais dépasser la carte sur un portable court
+          "max-h-[min(60vh,22rem)]",
+          !renderTrigger && "w-[var(--radix-dropdown-menu-trigger-width)]",
+          menuClassName
+        )}
       >
         {/* Actualisation auto — en tête mais visuellement discrète */}
         {typeof onToggleAutoRefresh === "function" && (

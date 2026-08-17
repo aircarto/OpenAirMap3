@@ -234,6 +234,61 @@ html {
   }
 }
 
+/* ──────────────────────────────────────────────────────────────────────────
+   Rail de contrôles
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Focus visible sur surface translucide : un anneau d'une seule couleur peut
+   disparaître sur un fond de carte arbitraire. L'anneau blanc intérieur garantit
+   le contraste contre le bleu, l'anneau coloré extérieur contre tout blanc. */
+.rail-item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px hsl(var(--brand-600)), var(--shadow-2);
+}
+
+@media (forced-colors: active) {
+  .rail-item:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+
+  .rail-item[aria-expanded="true"],
+  .rail-item[data-active="true"] {
+    background: Highlight;
+    color: HighlightText;
+  }
+}
+
+/* État gelé pendant la lecture historique : le verre s'embue. La trame dit
+   « pourquoi », là où un simple opacity-50 ne disait que « non ». */
+.rail-section-frozen {
+  filter: saturate(0.55);
+  transition: filter var(--dur-slow) var(--ease-out);
+}
+
+.rail-section-frozen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: var(--r-md);
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgb(16 32 56 / 0.04) 0 1px,
+    transparent 1px 5px
+  );
+}
+
+/* La colonne carte publie l'emprise du rail. Les contrôles Leaflet ancrés à
+   gauche et la légende centrée s'y adossent, sans mesure JS et en suivant
+   automatiquement le décalage quand un panneau latéral pousse la colonne. */
+.leaflet-top.leaflet-left,
+.leaflet-bottom.leaflet-left {
+  margin-inline-start: var(--rail-inset, 0px);
+  transition: margin-inline-start var(--dur-panel) var(--ease-out);
+}
+
 /* Fond de carte sombre : le chrome ne bascule pas de thème, c'est l'opacité
    qui compense. Un attribut sur la colonne carte, une règle, aucun état React. */
 [data-basemap="satellite"] {

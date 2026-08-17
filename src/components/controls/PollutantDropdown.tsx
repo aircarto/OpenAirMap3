@@ -13,9 +13,10 @@ import {
   DropdownMenuRadioItem,
 } from "../ui/dropdown-menu";
 import { DropdownButton } from "./DropdownButton";
+import type { CustomTriggerProps } from "./dropdownTriggerContract";
 import { cn } from "../../lib/utils";
 
-interface PollutantDropdownProps {
+interface PollutantDropdownProps extends CustomTriggerProps {
   selectedPollutant: string;
   onPollutantChange: (pollutant: string) => void;
   selectedTimeStep?: string;
@@ -28,6 +29,11 @@ const PollutantDropdown: React.FC<PollutantDropdownProps> = ({
   onPollutantChange,
   selectedTimeStep,
   triggerId,
+  renderTrigger,
+  menuSide,
+  menuAlign,
+  menuSideOffset,
+  menuClassName,
 }) => {
   const { t } = useTranslation();
   const availablePollutants = useMemo(
@@ -61,18 +67,27 @@ const PollutantDropdown: React.FC<PollutantDropdownProps> = ({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <DropdownButton
-          id={triggerId}
-          data-tour="global-pollutant"
-          className="min-w-[72px] max-w-[140px]"
-        >
-          <span className="block truncate pr-6">{getDisplayText()}</span>
-        </DropdownButton>
+        {renderTrigger ? (
+          renderTrigger({ displayText: getDisplayText() })
+        ) : (
+          <DropdownButton
+            id={triggerId}
+            data-tour="global-pollutant"
+            className="min-w-[72px] max-w-[140px]"
+          >
+            <span className="block truncate pr-6">{getDisplayText()}</span>
+          </DropdownButton>
+        )}
       </DropdownMenuTrigger>
-      <DropdownMenuContent 
-        align="start" 
+      <DropdownMenuContent
+        side={menuSide}
+        align={menuAlign ?? "start"}
         alignOffset={0}
-        className="w-[var(--radix-dropdown-menu-trigger-width)]"
+        sideOffset={menuSideOffset}
+        className={cn(
+          !renderTrigger && "w-[var(--radix-dropdown-menu-trigger-width)]",
+          menuClassName
+        )}
       >
         <DropdownMenuRadioGroup
           value={selectedPollutant}

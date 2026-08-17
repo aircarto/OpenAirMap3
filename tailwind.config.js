@@ -105,6 +105,11 @@ export default {
             transform: 'scale(0.95)',
           },
         },
+        // Entrée du rail de contrôles, jouée une seule fois au montage
+        'rail-in': {
+          '0%': { opacity: '0', transform: 'translateX(-8px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
+        },
       },
       animation: {
         'slide-in-left': 'slide-in-left 0.3s ease-out',
@@ -114,6 +119,7 @@ export default {
         'scale-in': 'scale-in 0.3s ease-out',
         'scale-out': 'scale-out 0.3s ease-in',
         'slide-in-left-delayed': 'slide-in-left 0.3s ease-out 0.1s both',
+        'rail-in': 'rail-in 0.26s cubic-bezier(0.22, 1.2, 0.36, 1) both',
       },
       colors: {
         border: "hsl(var(--border))",

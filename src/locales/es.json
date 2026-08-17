@@ -770,5 +770,23 @@
         "description": "Pase el ratón sobre los distintos calificativos para conocer las concentraciones asociadas"
       }
     }
+  },
+  "rail": {
+    "regionLabel": "Controles del mapa",
+    "toolbarLabel": "Barra de herramientas del mapa",
+    "groupData": "Datos",
+    "groupLayers": "Capas",
+    "groupTime": "Tiempo",
+    "groupPanels": "Paneles",
+    "frozenDuringPlayback": "Controles no disponibles durante la reproducción histórica",
+    "caption": {
+      "sources_one": "{{count}} fte",
+      "sources_other": "{{count}} ftes",
+      "modeling": "MODEL",
+      "modelingOff": "—",
+      "baseLayer": "BASE",
+      "specialSources": "ESP",
+      "historical": "HIST"
+    }
   }
 }

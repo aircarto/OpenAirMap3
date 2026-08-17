@@ -10,6 +10,7 @@ import {
   DropdownMenuRadioItem,
 } from "../ui/dropdown-menu";
 import { DropdownButton } from "./DropdownButton";
+import type { CustomTriggerProps } from "./dropdownTriggerContract";
 import { cn } from "../../lib/utils";
 import {
   isSourceCompatibleWithTimeStep,
@@ -18,7 +19,7 @@ import {
 } from "../../utils/sourceCompatibility";
 import { Toast } from "../ui/toast";
 
-interface TimeStepDropdownProps {
+interface TimeStepDropdownProps extends CustomTriggerProps {
   selectedTimeStep: string;
   selectedSources: string[];
   onTimeStepChange: (timeStep: string) => void;
@@ -35,6 +36,11 @@ const TimeStepDropdown: React.FC<TimeStepDropdownProps> = ({
   onSourceChange,
   onToast,
   triggerId,
+  renderTrigger,
+  menuSide,
+  menuAlign,
+  menuSideOffset,
+  menuClassName,
 }) => {
   const { t } = useTranslation();
   // Fonction pour obtenir les pas de temps supportés par les sources sélectionnées
@@ -193,18 +199,28 @@ const TimeStepDropdown: React.FC<TimeStepDropdownProps> = ({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <DropdownButton
-          id={triggerId}
-          data-tour="global-timestep"
-          className="min-w-[72px] max-w-[130px] rtl-on-ar"
-        >
-          <span className="block truncate pr-6">{getDisplayText()}</span>
-        </DropdownButton>
+        {renderTrigger ? (
+          renderTrigger({ displayText: getDisplayText() })
+        ) : (
+          <DropdownButton
+            id={triggerId}
+            data-tour="global-timestep"
+            className="min-w-[72px] max-w-[130px] rtl-on-ar"
+          >
+            <span className="block truncate pr-6">{getDisplayText()}</span>
+          </DropdownButton>
+        )}
       </DropdownMenuTrigger>
-      <DropdownMenuContent 
-        align="start" 
+      <DropdownMenuContent
+        side={menuSide}
+        align={menuAlign ?? "start"}
         alignOffset={0}
-        className="w-[var(--radix-dropdown-menu-trigger-width)] rtl-on-ar"
+        sideOffset={menuSideOffset}
+        className={cn(
+          "rtl-on-ar",
+          !renderTrigger && "w-[var(--radix-dropdown-menu-trigger-width)]",
+          menuClassName
+        )}
       >
         <DropdownMenuRadioGroup
           value={selectedTimeStep}

@@ -59,7 +59,9 @@
     "sources": "Sources de données",
     "timeStep": "Pas de temps",
     "modeling": "Carte de modélisation",
-    "modelingUnavailable": "Modélisation (indisponible)","modelingVent":"Vent","modelingPollutant":"Modélisation",
+    "modelingUnavailable": "Modélisation (indisponible)",
+    "modelingVent": "Vent",
+    "modelingPollutant": "Modélisation",
     "specialSources": "Sources spéciales",
     "specialSourcesAria": "Sources spéciales (SignalAir, MobileAir)",
     "specialSourcesMenuLabel": "Signalements & mobile",
@@ -286,10 +288,22 @@
       "reportsOnMap_other": "{{count}} signalements affichés sur la carte",
       "markerAlt": "Marqueur {{type}}",
       "types": {
-        "odeur": { "label": "Odeurs", "description": "Nuisances olfactives (odeurs persistantes, fumées...)" },
-        "bruit": { "label": "Bruits", "description": "Tapage nocturne, nuisances sonores ponctuelles ou continues" },
-        "brulage": { "label": "Brûlage", "description": "Brûlage à l'air libre, fumées d'incinération" },
-        "visuel": { "label": "Visuel", "description": "Brouillard, poussières, visibilité réduite" }
+        "odeur": {
+          "label": "Odeurs",
+          "description": "Nuisances olfactives (odeurs persistantes, fumées...)"
+        },
+        "bruit": {
+          "label": "Bruits",
+          "description": "Tapage nocturne, nuisances sonores ponctuelles ou continues"
+        },
+        "brulage": {
+          "label": "Brûlage",
+          "description": "Brûlage à l'air libre, fumées d'incinération"
+        },
+        "visuel": {
+          "label": "Visuel",
+          "description": "Brouillard, poussières, visibilité réduite"
+        }
       },
       "period": {
         "quickSelections": "Sélections rapides",
@@ -508,12 +522,36 @@
     "description": "Description",
     "source": "Source",
     "sources": {
-      "atmo-ref": { "title": "Stations de référence AtmoSud", "category": "station de mesure", "description": "Stations de référence installées dans le cadre de la mission de surveillance de la qualité de l'air d'AtmoSud." },
-      "atmo-micro": { "title": "Microcapteurs qualifiés AtmoSud", "category": "microcapteur", "description": "Microcapteurs déployés par AtmoSud. Les données horaires sont consolidées" },
-      "nebuleair": { "title": "Capteurs NebuleAir", "category": "microcapteur", "description": "Microcapteurs open source co-développés par AirCarto et AtmoSud." },
-      "sensor-community": { "title": "Capteurs Sensor.Community", "category": "microcapteur", "description": "Microcapteurs open source fabriqués par des citoyens bénévoles." },
-      "purpleair": { "title": "Capteurs PurpleAir", "category": "microcapteur", "description": "Microcapteurs commercialisés par l'entreprise américaine PurpleAir Inc." },
-      "modeling-pm": { "title": "Modélisation horaire par polluant AtmoSud", "category": "modélisation", "description": "Modélisation des particules fines à l'échelle horaire sur toute la région PACA." }
+      "atmo-ref": {
+        "title": "Stations de référence AtmoSud",
+        "category": "station de mesure",
+        "description": "Stations de référence installées dans le cadre de la mission de surveillance de la qualité de l'air d'AtmoSud."
+      },
+      "atmo-micro": {
+        "title": "Microcapteurs qualifiés AtmoSud",
+        "category": "microcapteur",
+        "description": "Microcapteurs déployés par AtmoSud. Les données horaires sont consolidées"
+      },
+      "nebuleair": {
+        "title": "Capteurs NebuleAir",
+        "category": "microcapteur",
+        "description": "Microcapteurs open source co-développés par AirCarto et AtmoSud."
+      },
+      "sensor-community": {
+        "title": "Capteurs Sensor.Community",
+        "category": "microcapteur",
+        "description": "Microcapteurs open source fabriqués par des citoyens bénévoles."
+      },
+      "purpleair": {
+        "title": "Capteurs PurpleAir",
+        "category": "microcapteur",
+        "description": "Microcapteurs commercialisés par l'entreprise américaine PurpleAir Inc."
+      },
+      "modeling-pm": {
+        "title": "Modélisation horaire par polluant AtmoSud",
+        "category": "modélisation",
+        "description": "Modélisation des particules fines à l'échelle horaire sur toute la région PACA."
+      }
     },
     "discoverHistorical": "Découvrir le mode historique",
     "discoverHistoricalText": "Le mode historique vous permet de rejouer la chronologie d'un épisode de pollution ou d'une journée type. Sélectionnez une date passée puis utilisez le curseur temporel pour faire défiler les mesures disponibles pas à pas. Les données se mettent à jour sur la carte ainsi que dans les panneaux associés afin de visualiser l'évolution du phénomène dans le temps.",
@@ -731,6 +769,24 @@
         "title": "Légende",
         "description": "Passez la souris sur les différents qualificatifs pour connaitre les concentrations associées"
       }
+    }
+  },
+  "rail": {
+    "regionLabel": "Contrôles de la carte",
+    "toolbarLabel": "Barre d'outils de la carte",
+    "groupData": "Données",
+    "groupLayers": "Couches",
+    "groupTime": "Temps",
+    "groupPanels": "Panneaux",
+    "frozenDuringPlayback": "Contrôles indisponibles pendant la lecture historique",
+    "caption": {
+      "sources_one": "{{count}} src",
+      "sources_other": "{{count}} src",
+      "modeling": "MOD",
+      "modelingOff": "—",
+      "baseLayer": "FOND",
+      "specialSources": "SPÉ",
+      "historical": "HIST"
     }
   }
 }

@@ -770,5 +770,23 @@
         "description": "Hover over the different quality levels to see their associated concentrations"
       }
     }
+  },
+  "rail": {
+    "regionLabel": "Map controls",
+    "toolbarLabel": "Map toolbar",
+    "groupData": "Data",
+    "groupLayers": "Layers",
+    "groupTime": "Time",
+    "groupPanels": "Panels",
+    "frozenDuringPlayback": "Controls unavailable during historical playback",
+    "caption": {
+      "sources_one": "{{count}} src",
+      "sources_other": "{{count}} src",
+      "modeling": "MODEL",
+      "modelingOff": "—",
+      "baseLayer": "BASE",
+      "specialSources": "SPEC",
+      "historical": "HIST"
+    }
   }
 }

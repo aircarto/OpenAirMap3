@@ -786,5 +786,23 @@
         "description": "مرر الفأرة فوق مختلف المستويات للتعرف على التركيزات المرتبطة بها"
       }
     }
+  },
+  "rail": {
+    "regionLabel": "عناصر التحكم بالخريطة",
+    "toolbarLabel": "شريط أدوات الخريطة",
+    "groupData": "البيانات",
+    "groupLayers": "الطبقات",
+    "groupTime": "الزمن",
+    "groupPanels": "اللوحات",
+    "frozenDuringPlayback": "عناصر التحكم غير متاحة أثناء التشغيل التاريخي",
+    "caption": {
+      "sources_one": "{{count}} مصدر",
+      "sources_other": "{{count}} مصادر",
+      "modeling": "نمذجة",
+      "modelingOff": "—",
+      "baseLayer": "خلفية",
+      "specialSources": "خاصة",
+      "historical": "تاريخ"
+    }
   }
 }

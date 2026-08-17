@@ -770,5 +770,23 @@
         "description": "Fahren Sie mit der Maus über die verschiedenen Qualitätsstufen, um die zugehörigen Konzentrationen zu erfahren"
       }
     }
+  },
+  "rail": {
+    "regionLabel": "Kartensteuerung",
+    "toolbarLabel": "Karten-Werkzeugleiste",
+    "groupData": "Daten",
+    "groupLayers": "Ebenen",
+    "groupTime": "Zeit",
+    "groupPanels": "Panels",
+    "frozenDuringPlayback": "Steuerung während der Verlaufswiedergabe nicht verfügbar",
+    "caption": {
+      "sources_one": "{{count}} Qu.",
+      "sources_other": "{{count}} Qu.",
+      "modeling": "MODEL",
+      "modelingOff": "—",
+      "baseLayer": "BASIS",
+      "specialSources": "SPEZ",
+      "historical": "VERL"
+    }
   }
 }
