@@ -169,6 +169,24 @@ test.describe("Contrôles du rail de carte", () => {
     await expect(pollutant).toBeFocused();
   });
 
+  test("ArrowRight ouvre aussi les flyouts portés par un Popover", async ({
+    page,
+  }) => {
+    // Non-régression : le rail ouvre les flyouts en émettant un keydown
+    // synthétique. Cela ne fonctionne que pour DropdownMenuTrigger, qui possède
+    // un onKeyDown explicite. PopoverTrigger n'a qu'un onClick, et l'activation
+    // native d'un <button> exige un événement de confiance — un keydown
+    // synthétique n'en est pas un. Le fond de carte est un Popover.
+    const basemap = page.getByTestId("rail-basemap-trigger");
+    await basemap.focus();
+    await page.keyboard.press("ArrowRight");
+    await expect(page.locator("[data-radix-popper-content-wrapper]")).toBeVisible(
+      { timeout: 3000 }
+    );
+    await page.keyboard.press("Escape");
+    await expect(basemap).toBeFocused();
+  });
+
   test("un seul arrêt de tabulation pour tout le rail", async ({ page }) => {
     const stops = await page
       .locator("[data-rail-item]")

@@ -133,6 +133,51 @@ describe("useRailRoving", () => {
     expect(screen.getByText("orphelin").tabIndex).toBe(0);
   });
 
+  it("ouvre selon la famille de déclencheur : click pour un dialog, keydown pour un menu", async () => {
+    // Les deux familles Radix ne s'ouvrent pas pareil. `PopoverTrigger` n'a
+    // qu'un `onClick` : un keydown synthétique, non fiable, ne déclenche pas
+    // l'activation native du <button>. `DropdownMenuTrigger` a un `onKeyDown`,
+    // qui lui répond au keydown synthétique.
+    const user = userEvent.setup();
+    const clicks: string[] = [];
+    const keydowns: string[] = [];
+
+    const Harness2: React.FC = () => {
+      const { containerRef, onKeyDownCapture } = useRailRoving("vertical");
+      return (
+        <div ref={containerRef} role="toolbar" onKeyDownCapture={onKeyDownCapture}>
+          <button
+            {...{ [RAIL_ITEM_ATTR]: "dialogTrigger" }}
+            aria-haspopup="dialog"
+            onClick={() => clicks.push("dialog")}
+            onKeyDown={(e) => e.key === "Enter" && keydowns.push("dialog")}
+          >
+            popover
+          </button>
+          <button
+            {...{ [RAIL_ITEM_ATTR]: "menuTrigger" }}
+            aria-haspopup="menu"
+            onClick={() => clicks.push("menu")}
+            onKeyDown={(e) => e.key === "Enter" && keydowns.push("menu")}
+          >
+            menu
+          </button>
+        </div>
+      );
+    };
+
+    render(<Harness2 />);
+
+    act(() => screen.getByText("popover").focus());
+    await user.keyboard("{ArrowRight}");
+    expect(clicks).toEqual(["dialog"]);
+    expect(keydowns).toEqual([]);
+
+    act(() => screen.getByText("menu").focus());
+    await user.keyboard("{ArrowRight}");
+    expect(keydowns).toEqual(["menu"]);
+  });
+
   it("Début et Fin atteignent les extrémités", async () => {
     const user = userEvent.setup();
     render(<Harness />);

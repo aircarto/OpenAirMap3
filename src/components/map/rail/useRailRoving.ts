@@ -84,17 +84,29 @@ export const useRailRoving = (orientation: RailOrientation) => {
         `[${RAIL_ITEM_ATTR}]`
       );
 
-      // Ouverture du menu sur l'axe transverse. Radix n'ouvre que sur Enter,
-      // Espace et ArrowDown, or ArrowDown nous sert à naviguer. Un `.click()`
-      // programmatique ne suffit pas : le déclencheur Radix réagit à
-      // `pointerdown`, que `click()` ne produit pas. On rejoue donc la touche
-      // sous la forme d'un Enter, que son gestionnaire de clavier prend en charge.
+      // Ouverture du flyout sur l'axe transverse. Radix n'ouvre que sur Enter,
+      // Espace et ArrowDown, or ArrowDown nous sert à naviguer.
+      //
+      // Les deux familles de déclencheurs Radix ne s'ouvrent PAS de la même façon :
+      // - `DropdownMenuTrigger` possède un `onKeyDown` explicite, qu'un keydown
+      //   synthétique déclenche correctement ;
+      // - `PopoverTrigger` n'expose qu'un `onClick`. L'activation par Enter passe
+      //   donc par le comportement natif du <button>, qui exige un événement de
+      //   confiance — un keydown synthétique a `isTrusted: false` et ne produit
+      //   aucun clic. Il faut appeler `click()` directement.
+      //
+      // On distingue par `aria-haspopup`, que Radix pose lui-même : « dialog »
+      // pour un Popover, « menu » pour un DropdownMenu.
       if (event.key === openKey) {
         if (!current) return;
         event.preventDefault();
-        current.dispatchEvent(
-          new KeyboardEvent("keydown", { key: "Enter", bubbles: true })
-        );
+        if (current.getAttribute("aria-haspopup") === "dialog") {
+          current.click();
+        } else {
+          current.dispatchEvent(
+            new KeyboardEvent("keydown", { key: "Enter", bubbles: true })
+          );
+        }
         return;
       }
 
