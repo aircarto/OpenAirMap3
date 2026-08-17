@@ -109,6 +109,39 @@ test.describe("Surfaces flottantes de la carte", () => {
     await assertEscapesClippingAncestors(panel);
   });
 
+  test("bande instrument : dans l'angle et jamais sous le rail", async ({
+    page,
+  }) => {
+    // Le rail n'occupe que le HAUT du bord gauche : la bande doit être dans
+    // l'angle, sans décalage horizontal inutile. C'est le rail qui réserve la
+    // place en bas via sa hauteur maximale.
+    for (const height of [900, 620]) {
+      await page.setViewportSize({ width: 1280, height });
+      await page.waitForTimeout(800);
+
+      const geo = await page.evaluate(() => {
+        const box = (sel: string) =>
+          document.querySelector(sel)?.getBoundingClientRect() ?? null;
+        return {
+          rail: box('[data-testid="map-control-rail"]'),
+          compass: box('[data-testid="north-arrow"]'),
+          scale: box(".leaflet-control-scale"),
+        };
+      });
+
+      expect(geo.compass, "rose des vents absente").not.toBeNull();
+      // dans l'angle : même bord gauche que le rail
+      expect(Math.round(geo.compass!.left)).toBe(Math.round(geo.rail!.left));
+      // le rail ne descend jamais jusqu'à la bande
+      expect(
+        geo.rail!.bottom,
+        `À ${height}px de haut, le rail atteint la bande instrument`
+      ).toBeLessThan(geo.compass!.top);
+      // échelle après la rose des vents, sans chevauchement
+      expect(geo.scale!.left).toBeGreaterThanOrEqual(geo.compass!.right);
+    }
+  });
+
   test("notices de carte : empilées sans chevauchement", async ({ page }) => {
     // Ralentit les requêtes de couches feux pour observer deux chargements
     // simultanés — le cas où les anciennes notices se superposaient sur top-32.

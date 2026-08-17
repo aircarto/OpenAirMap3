@@ -102,7 +102,10 @@ export const MapControlRail: React.FC<MapControlRailProps> = ({
       className={cn(
         "glass-1 absolute z-rail flex animate-rail-in",
         isVertical
-          ? "left-3 top-3 max-h-[calc(100%-1.5rem)] w-[max(3.75rem,60px)] flex-col items-center"
+          // Réserve 5rem en bas : la bande instrument (rose des vents et échelle)
+            // occupe l'angle bas-gauche, et sur un viewport court le rail
+            // l'atteindrait — mesuré à 620 px de haut.
+            ? "left-3 top-3 max-h-[calc(100%-5rem)] w-[max(3.75rem,60px)] flex-col items-center"
           : "bottom-2 left-2 right-2 flex-row items-center",
         "gap-1 p-1.5"
       )}

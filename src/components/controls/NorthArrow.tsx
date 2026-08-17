@@ -32,9 +32,11 @@ const NorthArrow: React.FC<NorthArrowProps> = ({
       className={cn(
         "glass-3 pointer-events-none absolute bottom-3 z-map-ambient",
         "hidden flex-col items-center justify-center gap-0.5 px-2 py-1.5",
-        "rounded-[var(--r-md)] transition-[left] duration-[var(--dur-panel)]",
-        // Le rail occupe le bord gauche : on s'adosse à l'emprise qu'il publie.
-        "left-[calc(var(--rail-inset,0px)+0.75rem)]",
+        "rounded-[var(--r-md)]",
+        // Dans l'angle, et non décalée derrière le rail : celui-ci n'occupe que
+        // le HAUT du bord gauche. C'est le rail qui réserve la place de cette
+        // bande en bas (voir sa max-height), pas la bande qui contourne le rail.
+        "left-3",
         hiddenWithPanel ? "md:hidden lg:flex" : "md:flex"
       )}
     >

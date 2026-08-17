@@ -74,11 +74,11 @@ const Legend: React.FC<LegendProps> = ({
   // Position fixe de la légende pour éviter les décalages
   const getLegendPosition = () => {
     // Mobile : à droite, au-dessus de l'encart d'attribution.
-    // Desktop : centrée sur la partie de la carte réellement visible, c'est-à-dire
-    // en tenant compte de l'emprise du rail publiée en --rail-inset. Remplace un
-    // `ml-[-20px]` posé à la main, qui compensait approximativement les contrôles
-    // du bord gauche.
-    return "absolute bottom-3 right-2 lg:right-auto lg:left-[calc(50%+var(--rail-inset,0px)/2)] lg:-translate-x-1/2 lg:max-w-[calc(100%-26rem)]";
+    // Desktop : réellement centrée sur la colonne carte. Le rail n'occupe que le
+    // haut du bord gauche, il n'y a donc rien à compenser en bas — ce que faisait
+    // approximativement le `ml-[-20px]` d'origine. La largeur maximale l'empêche
+    // de passer sous la bande instrument à gauche et la colonne de stats à droite.
+    return "absolute bottom-3 right-2 lg:right-auto lg:left-1/2 lg:-translate-x-1/2 lg:max-w-[calc(100%-26rem)]";
   };
 
   const visibilityClass =

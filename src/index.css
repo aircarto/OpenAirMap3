@@ -294,17 +294,24 @@ html {
 /* La colonne carte publie l'emprise du rail. Les contrôles Leaflet ancrés à
    gauche et la légende centrée s'y adossent, sans mesure JS et en suivant
    automatiquement le décalage quand un panneau latéral pousse la colonne. */
-.leaflet-top.leaflet-left,
-.leaflet-bottom.leaflet-left {
+/* Contrôles Leaflet ancrés en HAUT à gauche : ils devraient contourner le rail.
+   Aucun n'y est aujourd'hui, la règle prévient le cas où l'on en ajouterait. */
+.leaflet-top.leaflet-left {
   margin-inline-start: var(--rail-inset, 0px);
   transition: margin-inline-start var(--dur-panel) var(--ease-out);
 }
 
-/* La rose des vents précède l'échelle dans la bande instrument : on réserve sa
-   largeur, mais seulement là où elle est affichée (elle disparaît sous md). */
+/* En BAS à gauche, il n'y a pas de rail à contourner : il n'occupe que le haut du
+   bord gauche, et sa hauteur maximale réserve cette bande. L'échelle se place donc
+   dans l'angle, juste après la rose des vents — dont la largeur n'est réservée que
+   là où elle est affichée, puisqu'elle disparaît sous md. */
+.leaflet-bottom.leaflet-left {
+  margin-inline-start: 0;
+}
+
 @media (min-width: 768px) {
   .leaflet-bottom.leaflet-left {
-    margin-inline-start: calc(var(--rail-inset, 0px) + 3.75rem);
+    margin-inline-start: 3.75rem;
   }
 }
 
