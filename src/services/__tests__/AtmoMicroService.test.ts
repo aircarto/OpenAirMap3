@@ -173,6 +173,46 @@ describe("AtmoMicroService", () => {
     });
     expect(service.isMeasuresUnavailableIncident()).toBe(true);
   });
+
+  it("n'annonce aucune correction en infrahoraire (valeur corrigée absente de l'API)", async () => {
+    // En agrégation `brute` et `quart-horaire`, l'API renvoie toujours
+    // valeur: null et valeur_ref = valeur_brute.
+    vi.spyOn(service as any, "makeRequest")
+      .mockResolvedValueOnce([buildSite()])
+      .mockResolvedValueOnce([
+        buildMeasure({ valeur: null, valeur_ref: 14.2, valeur_brute: 14.2 }),
+      ]);
+
+    const result = await service.fetchData(baseParams);
+
+    expect(result[0]).toMatchObject({
+      value: 14.2,
+      has_correction: false,
+      raw_value: 14.2,
+    });
+    expect(result[0].corrected_value).toBeUndefined();
+  });
+
+  it("n'annonce pas de correction quand valeur_brute est absente de la réponse", () => {
+    // Les appels avec valeur_brute=false omettent le champ : `undefined !== null`
+    // faisait passer la mesure pour corrigée alors que rien ne l'atteste.
+    const resolve = (measure: any, aggregation: string) =>
+      (service as any).resolveMeasureValues(measure, aggregation);
+
+    expect(resolve({ valeur: null, valeur_ref: 9 }, "quart-horaire")).toEqual({
+      displayValue: 9,
+      correctedValue: undefined,
+      rawValue: undefined,
+      hasCorrection: false,
+    });
+
+    expect(resolve({ valeur: 7, valeur_ref: 7 }, "horaire")).toEqual({
+      displayValue: 7,
+      correctedValue: 7,
+      rawValue: undefined,
+      hasCorrection: true,
+    });
+  });
 });
 
 

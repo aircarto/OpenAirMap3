@@ -355,9 +355,9 @@ export interface AtmoMicroMeasure {
   lon: number;
   id_pas_de_temps: number;
   pas_de_temps: number;
-  valeur: number | null; // Valeur corrigée (peut être null)
-  valeur_ref: number | null; // Valeur de référence corrigée
-  valeur_brute: number; // Valeur brute
+  valeur: number | null; // Valeur corrigée (null hors agrégation horaire)
+  valeur_ref: number | null; // Meilleure valeur : corrigée si disponible, sinon brute
+  valeur_brute?: number; // Valeur brute (absente si valeur_brute=false dans la requête)
   marque_capteur: string;
   modele_capteur: string;
   coef_corr: number | null; // Coefficient de correction
