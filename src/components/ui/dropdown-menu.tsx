@@ -2,7 +2,19 @@ import * as React from "react"
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu"
 import { cn } from "../../lib/utils"
 
-const DropdownMenu = DropdownMenuPrimitive.Root
+/**
+ * `modal={false}` par défaut : en mode modal (défaut Radix), le clic hors menu
+ * est absorbé par la couche de fermeture — cliquer un autre déclencheur du rail
+ * ne fait que fermer le menu ouvert, sans ouvrir le suivant. En non-modal, le
+ * même clic ferme l'un et ouvre l'autre (comportement attendu d'une barre d'outils).
+ */
+const DropdownMenu = ({
+  modal = false,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Root>) => (
+  <DropdownMenuPrimitive.Root modal={modal} {...props} />
+)
+DropdownMenu.displayName = "DropdownMenu"
 
 const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger
 
