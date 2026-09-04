@@ -10,7 +10,6 @@ import {
 import { pollutants } from "../../constants/pollutants";
 import { MAX_COMPARISON_STATIONS } from "../../constants/comparison";
 import { AtmoRefService } from "../../services/AtmoRefService";
-import { AtmoMicroService } from "../../services/AtmoMicroService";
 import HistoricalChart from "../charts/HistoricalChart";
 import ChartLoadingOverlay from "../charts/ChartLoadingOverlay";
 import HistoricalTimeRangeSelector from "../controls/HistoricalTimeRangeSelector";

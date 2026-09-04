@@ -49,6 +49,19 @@ export const featureFlags = {
   ),
 
   /**
+   * Sert les microcapteurs AtmoSud depuis la nouvelle API microspot
+   * (api-export-prod.uspot.probesys.net/microspot) au lieu de l'ancienne
+   * (api.atmosud.org/observations/capteurs).
+   *
+   * Par défaut false : quelques campagnes ne sont pas encore exposées côté
+   * microspot, donc l'ancienne API reste le chemin de repli.
+   */
+  useMicrospotApi: parseBooleanFlag(
+    import.meta.env.VITE_USE_MICROSPOT_API as string | undefined,
+    false
+  ),
+
+  /**
    * Zoom minimum pour afficher le tooltip des marqueurs.
    * null = pas de restriction (tooltip à tous les niveaux de zoom).
    * number = tooltip uniquement quand zoom >= cette valeur.

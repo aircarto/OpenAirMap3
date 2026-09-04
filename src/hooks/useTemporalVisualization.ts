@@ -200,7 +200,8 @@ export const useTemporalVisualization = ({
 
       // DEBUG (VITE_HISTORICAL_MODE_LOGS): recherche de collision d'ID entre sources.
       // getMarkerKey (mapIconUtils.ts) utilise device.id brut, sans préfixe de source.
-      // AtmoRef utilise id_station, AtmoMicro utilise id_site.toString() : ce sont deux
+      // AtmoRef utilise id_station ; AtmoMicro utilise id_site.toString() sur l'ancienne
+      // API, et l'identifiant capteur (hexadécimal) sur microspot. Ce sont deux
       // espaces d'ID indépendants. Si un id_station == un id_site, la clé React du marqueur
       // entre en collision et un seul des deux marqueurs est réellement monté dans le DOM.
       if (featureFlags.historicalModeLogs) {

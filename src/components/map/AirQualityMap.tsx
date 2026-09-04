@@ -59,7 +59,7 @@ import MapDataMarkers from "./MapDataMarkers";
 import MapOverlays from "./MapOverlays";
 import MapViewSyncHandler from "./MapViewSyncHandler";
 import { AtmoRefService } from "../../services/AtmoRefService";
-import { AtmoMicroService } from "../../services/AtmoMicroService";
+import type { AtmoMicroLikeService } from "../../types";
 import { NebuleAirService } from "../../services/NebuleAirService";
 import { DataServiceFactory } from "../../services/DataServiceFactory";
 // Hooks personnalisés
@@ -628,7 +628,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
         } else if (device.source === "atmoMicro") {
           const atmoMicroService = DataServiceFactory.getService(
             "atmoMicro",
-          ) as AtmoMicroService;
+          ) as AtmoMicroLikeService;
           const siteInfo = await atmoMicroService.fetchSiteVariables(device.id);
           variables = siteInfo.variables;
           sensorModel = siteInfo.sensorModel;
@@ -861,7 +861,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           } else if (device.source === "atmoMicro") {
             const atmoMicroService = DataServiceFactory.getService(
               "atmoMicro",
-            ) as AtmoMicroService;
+            ) as AtmoMicroLikeService;
             const siteInfo = await atmoMicroService.fetchSiteVariables(
               device.id,
             );

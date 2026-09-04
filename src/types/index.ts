@@ -366,12 +366,139 @@ export interface AtmoMicroMeasure {
   code_etat: string;
 }
 
-export interface AtmoMicroSitesResponse {
-  sites: AtmoMicroSite[];
+// =====================================================
+// Types spécifiques pour l'API microspot (nouvelle API microcapteurs)
+//
+// Cette API remplace https://api.atmosud.org/observations/capteurs. Elle lit
+// directement la base du prestataire, là où l'ancienne passait par une base
+// intermédiaire — d'où des identifiants sans correspondance avec `id_site`,
+// qui n'était qu'un auto-incrément de cette base intermédiaire.
+//
+// Le modèle est le CAPTEUR (`id`), pas le site : un capteur déménage, un site
+// non. Le site est en colonne (`location_id`), et peut être absent.
+// =====================================================
+
+/** Une variable mesurée par un capteur, telle que listée par /lists/devices. */
+export interface MicrospotDeviceVariable {
+  variable_iso_code: string; // "24" = PM10, "39" = PM2.5, "68" = PM1, "03" = NO2, "08" = O3, "01" = SO2
+  variable_name: string;
+  /**
+   * Cadence de CETTE variable, en secondes. Renseignée sur une minorité de
+   * couples (capteur, variable) — préférer le `scan_interval` des observations
+   * (include=metadata), qui est la cadence du capteur et toujours renseignée.
+   */
+  scan_interval: number | null;
 }
 
-export interface AtmoMicroMeasuresResponse {
-  mesures: AtmoMicroMeasure[];
+/** Un capteur diffusé, tel que renvoyé par /lists/devices. */
+export interface MicrospotDevice {
+  id: string; // uid public du capteur — l'identifiant à utiliser
+  internal_id: number; // clé primaire interne, non exposée à l'UI
+  name: string | null; // null sur les capteurs installés sur un site nommé
+  brand: string | null;
+  model: string | null;
+  variables: MicrospotDeviceVariable[];
+  actual_location: string | null;
+  /**
+   * null quand la position courante du capteur relève d'une campagne non
+   * diffusable : le capteur reste listé, sans localisation. Sa donnée demeure
+   * interrogeable sur /observations pour les périodes où il était sur une
+   * campagne diffusable.
+   */
+  location_id: string | null;
+  lat: number | null;
+  lon: number | null;
+  alt: number | null;
+  last_measure?: string; // uniquement avec last_measure=true
+}
+
+export interface MicrospotCampaign {
+  campaign_id: number;
+  campaign_name: string;
+  start_date: string | null;
+  end_date: string | null;
+}
+
+/** Un site de mesure, tel que renvoyé par /lists/locations. */
+export interface MicrospotLocation {
+  id: string;
+  name: string;
+  typology: string | null;
+  influence: string | null;
+  lat: number;
+  lon: number;
+  alt: number | null;
+  start_date: string | null;
+  end_date: string | null;
+  campaigns: MicrospotCampaign[];
+}
+
+/** Une mesure, telle que renvoyée par /observations et /observations/latest. */
+export interface MicrospotObservation {
+  id: string; // le capteur
+  name: string | null;
+  location_id: string | null;
+  location_name: string | null;
+  variable_iso_code: string;
+  variable_name: string;
+  time: string; // ISO 8601 UTC, avec décalage explicite (+00:00)
+  lat: number;
+  lon: number;
+  /** Valeur corrigée, null quand aucune correction ne s'applique. */
+  value: number | null;
+  /** Meilleure valeur disponible : corrigée sinon brute. Jamais nulle quand une mesure existe. */
+  value_ref: number | null;
+  /** Valeur brute — uniquement avec include=raw_value. */
+  value_raw?: number | null;
+  unit: string;
+  /** Cadence du capteur en secondes — uniquement avec include=metadata. */
+  scan_interval?: number | null;
+  brand?: string; // include=device_model
+  model?: string; // include=device_model
+  manually_validated?: boolean; // include=manually_validated
+}
+
+/**
+ * Contrat commun aux deux implémentations AtmoMicro (ancienne API et microspot).
+ *
+ * Permet aux appelants de transtyper vers une interface plutôt que vers une
+ * classe concrète, et rend visible au compilateur `isMeasuresUnavailableIncident`,
+ * aujourd'hui appelée par duck-typing dans useAirQualityData.
+ */
+export interface AtmoMicroLikeService {
+  fetchData(params: DataFetchParams): Promise<MeasurementDevice[]>;
+
+  fetchSiteVariables(siteId: string): Promise<{
+    variables: Record<string, StationVariable>;
+    sensorModel?: string;
+  }>;
+
+  fetchSensorTimeStep(
+    siteId: string,
+    pollutant: string
+  ): Promise<number | null>;
+
+  fetchSiteCoordinates(
+    siteId: string
+  ): Promise<{ latitude: number; longitude: number } | null>;
+
+  fetchHistoricalData(params: {
+    siteId: string;
+    pollutant: string;
+    timeStep: string;
+    startDate: string;
+    endDate: string;
+  }): Promise<Array<{ timestamp: string; value: number; unit: string }>>;
+
+  fetchTemporalData(params: {
+    pollutant: string;
+    timeStep: string;
+    startDate: string;
+    endDate: string;
+    sites?: string[];
+  }): Promise<TemporalDataPoint[]>;
+
+  isMeasuresUnavailableIncident(): boolean;
 }
 
 // Types pour le clustering

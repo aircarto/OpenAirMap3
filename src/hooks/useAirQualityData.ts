@@ -1,5 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { MeasurementDevice, SignalAirReport } from "../types";
+import {
+  AtmoMicroLikeService,
+  MeasurementDevice,
+  SignalAirReport,
+} from "../types";
 import { DataServiceFactory } from "../services/DataServiceFactory";
 import { AtmoMicroMeasuresUnavailableError } from "../services/AtmoMicroService";
 import { pasDeTemps } from "../constants/timeSteps";
@@ -313,12 +317,13 @@ export const useAirQualityData = ({
             }
           }
 
-          if (
-            mappedSourceCode === "atmoMicro" &&
-            typeof (service as any).isMeasuresUnavailableIncident === "function"
-          ) {
+          if (mappedSourceCode === "atmoMicro") {
+            // Les deux implémentations AtmoMicro (ancienne API et microspot)
+            // exposent ce contrat, d'où le transtypage vers l'interface plutôt
+            // qu'un test d'existence de méthode.
+            const atmoMicroService = service as unknown as AtmoMicroLikeService;
             setAtmoMicroOutage(
-              (service as any).isMeasuresUnavailableIncident() === true
+              atmoMicroService.isMeasuresUnavailableIncident() === true
             );
           }
         } catch (err) {

@@ -77,6 +77,18 @@ VITE_MATOMO_SITE_ID=string|number
 
 
 # =====================================================
+# Sources de donnees
+# =====================================================
+
+# Sert les microcapteurs AtmoSud depuis la nouvelle API microspot
+# (api-export-prod.uspot.probesys.net/microspot) au lieu de l'ancienne
+# (api.atmosud.org/observations/capteurs).
+# false par defaut : quelques campagnes ne sont pas encore exposees cote
+# microspot, donc l'ancienne API reste le chemin de repli.
+VITE_USE_MICROSPOT_API=boolean
+
+
+# =====================================================
 # Debug / diagnostics
 # =====================================================
 
