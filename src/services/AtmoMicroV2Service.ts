@@ -285,7 +285,7 @@ export class AtmoMicroV2Service
 
     AtmoMicroV2Service.devicesFetchPromise = (async () => {
       try {
-        const url = `${this.BASE_URL}/lists/devices?active=2880`;
+        const url = `${this.BASE_URL}/lists/devices`;
         const response = await this.makeRequest(url);
         const devices: MicrospotDevice[] = Array.isArray(response)
           ? response
