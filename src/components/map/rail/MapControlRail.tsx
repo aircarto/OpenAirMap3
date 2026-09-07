@@ -18,6 +18,11 @@ import type {
 export interface MapControlRailProps {
   /** Forçage de l'orientation ; par défaut déduite de la largeur disponible */
   orientation?: RailOrientation;
+  /**
+   * Un panneau latéral occupe la colonne carte : le rail se resserre pour ne pas
+   * ajouter sa largeur à la compression. Sans effet en orientation horizontale.
+   */
+  compact?: boolean;
   /** État local à la carte : voyage par props, pas par contexte */
   baseLayer: BaseLayerControlBinding;
   shortcuts: RailShortcutsBinding;
@@ -34,9 +39,14 @@ export interface MapControlRailProps {
  * Il publie son emprise en `--rail-inset` sur la colonne carte, ce dont se
  * servent les contrôles Leaflet ancrés à gauche et la légende centrée pour
  * s'écarter — sans mesure JS et en suivant le décalage des panneaux.
+ *
+ * Deux largeurs en vertical : 72 px par défaut, 60 px quand `compact` dit qu'un
+ * panneau comprime déjà la colonne. La place ne manque que dans le second cas,
+ * il n'y a donc pas de raison d'y calibrer aussi le premier.
  */
 export const MapControlRail: React.FC<MapControlRailProps> = ({
   orientation: forcedOrientation,
+  compact = false,
   baseLayer,
   shortcuts,
 }) => {
@@ -105,14 +115,25 @@ export const MapControlRail: React.FC<MapControlRailProps> = ({
           // Réserve 5rem en bas : la bande instrument (rose des vents et échelle)
             // occupe l'angle bas-gauche, et sur un viewport court le rail
             // l'atteindrait — mesuré à 620 px de haut.
-            ? "left-3 top-3 max-h-[calc(100%-5rem)] w-[max(3.75rem,60px)] flex-col items-center"
+            ? "left-3 top-3 max-h-[calc(100%-5rem)] flex-col items-center"
           : "bottom-2 left-2 right-2 flex-row items-center",
+        // Les `max()` protègent d'une taille de police racine réduite.
+        isVertical &&
+          (compact ? "w-[max(3.75rem,60px)]" : "w-[max(4.5rem,72px)]"),
+        // Propriétés arbitraires plutôt que les raccourcis de durée et d'easing :
+        // ceux-ci sont ambigus pour Tailwind (transition- ou animation-) et sont
+        // alors purement et simplement omis de la feuille produite.
+        isVertical &&
+          "transition-[width] [transition-duration:var(--dur-panel)] [transition-timing-function:var(--ease-out)]",
         "gap-1 p-1.5"
       )}
       style={{
         borderRadius: isVertical ? "var(--r-xl)" : "var(--r-lg)",
+        // Consommée par .rail-item. Le défaut (48px) vit dans index.css : le rail
+        // horizontal et le mode compact n'ont donc rien à déclarer.
+        ...(isVertical && !compact ? { "--rail-item-w": "56px" } : null),
         paddingBottom: isVertical ? undefined : "calc(0.375rem + env(safe-area-inset-bottom))",
-      }}
+      } as React.CSSProperties}
     >
       <RailBrand onOpenAbout={ui.onOpenInfoModal} />
 

@@ -1,6 +1,7 @@
 import React from "react";
-
-type PanelSize = "normal" | "compact" | "fullscreen" | "hidden";
+// Type canonique : cette copie locale déclarait en plus un membre "compact" que
+// ni useSidePanels, ni useSignalAir, ni useMobileAir n'ont jamais produit.
+import type { PanelSize } from "../panels/SidePanelShell";
 
 export interface SidePanelsProps {
   isSidePanelOpen: boolean;

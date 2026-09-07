@@ -112,8 +112,12 @@ export default {
         },
       },
       animation: {
-        'slide-in-left': 'slide-in-left 0.3s ease-out',
-        'slide-out-left': 'slide-out-left-smooth 0.3s ease-in forwards',
+        // Entrée et sortie des panneaux latéraux : sur les tokens, pour que le
+        // timeout JS de SidePanelShell (PANEL_EXIT_MS) et l'animation CSS soient
+        // pilotés par la même valeur --dur-panel.
+        'slide-in-left': 'slide-in-left var(--dur-panel) var(--ease-out)',
+        'slide-out-left':
+          'slide-out-left-smooth var(--dur-panel) var(--ease-in) forwards',
         'fade-in': 'fade-in 0.3s ease-out',
         'fade-out': 'fade-out 0.3s ease-in',
         'scale-in': 'scale-in 0.3s ease-out',

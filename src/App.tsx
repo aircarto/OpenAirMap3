@@ -811,7 +811,12 @@ const AppContent: React.FC = () => {
       {/* `id="main-content"` vit désormais sur la colonne carte, dans
           AirQualityMap : le rail étant le premier élément de <main>, le lien
           d'évitement aurait déposé l'utilisateur AVANT lui, sans rien sauter. */}
-      <main className="flex-1 relative">
+      {/* `min-h-0` : sans lui, `flex-1` garde le `min-height: auto` par défaut
+          des éléments flex et <main> peut donc DÉPASSER sa part de la colonne
+          `h-screen`. Un panneau latéral plus haut que le viewport faisait alors
+          grandir <main>, rendant toute la page défilante au lieu de laisser le
+          panneau défiler dans sa propre zone. */}
+      <main className="flex-1 relative min-h-0">
         {/* Carte */}
         {/* Le provider n'enveloppe que la carte : AirQualityMap ne gagne aucune
             prop, et le rail de contrôles qui vit dans sa colonne lit l'état

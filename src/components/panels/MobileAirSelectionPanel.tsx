@@ -4,21 +4,21 @@ import { MobileAirSensor, MOBILEAIR_POLLUTANT_MAPPING } from "../../types";
 import { MobileAirService } from "../../services/MobileAirService";
 import HistoricalTimeRangeSelector from "../controls/HistoricalTimeRangeSelector";
 import { getCustomRangeISO, type TimeRange } from "../../utils/historicalTimeRange";
+import SidePanelShell, { type PanelSize } from "./SidePanelShell";
+import PanelReopenBadge from "./PanelReopenBadge";
 
 interface MobileAirSelectionPanelProps {
   isOpen: boolean;
   initialPollutant: string;
   onClose: () => void;
   onHidden?: () => void;
-  onSizeChange?: (size: "normal" | "fullscreen" | "hidden") => void;
+  onSizeChange: (size: PanelSize) => void;
   onSensorSelected?: (
     sensorId: string,
     period: { startDate: string; endDate: string }
   ) => void;
-  panelSize?: "normal" | "fullscreen" | "hidden";
+  panelSize: PanelSize;
 }
-
-type PanelSize = "normal" | "fullscreen" | "hidden";
 
 const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
   isOpen,
@@ -27,11 +27,9 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
   onHidden,
   onSizeChange,
   onSensorSelected,
-  panelSize: externalPanelSize,
+  panelSize,
 }) => {
   const { t } = useTranslation();
-  const [internalPanelSize, setInternalPanelSize] =
-    useState<PanelSize>("normal");
   const [sensors, setSensors] = useState<MobileAirSensor[]>([]);
   const [selectedSensor, setSelectedSensor] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState<TimeRange>({
@@ -42,9 +40,6 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
   const [error, setError] = useState<string | null>(null);
   const hasLoadedRef = useRef<boolean>(false);
   const initialPollutantRef = useRef<string>(initialPollutant);
-
-  // Utiliser la taille externe si fournie, sinon la taille interne
-  const currentPanelSize = externalPanelSize || internalPanelSize;
 
   const mobileAirService = useMemo(() => new MobileAirService(), []);
 
@@ -198,18 +193,6 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
     return { status: t("panels.mobileAirSelection.statusInactive"), color: "text-red-600" };
   };
 
-  const handlePanelSizeChange = (newSize: PanelSize) => {
-    if (onSizeChange) {
-      onSizeChange(newSize);
-    } else {
-      setInternalPanelSize(newSize);
-    }
-
-    if (newSize === "hidden" && onHidden) {
-      onHidden();
-    }
-  };
-
   if (!isOpen) {
     return null;
   }
@@ -219,117 +202,87 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
     MOBILEAIR_POLLUTANT_MAPPING
   ).includes(initialPollutant);
 
-  const getPanelClasses = () => {
-  const baseClasses =
-    "bg-white shadow-xl flex flex-col border-r border-gray-200 transition-all duration-300 h-full md:h-[calc(100vh-64px)] relative z-panel";
-
-    switch (currentPanelSize) {
-      case "fullscreen":
-        // En fullscreen, utiliser absolute pour ne pas affecter le layout de la carte
-        return `${baseClasses} absolute inset-0 w-full`;
-      case "hidden":
-        // Retirer complètement du flux pour éviter l'espace réservé
-        return `${baseClasses} hidden`;
-      case "normal":
-      default:
-        // Responsive: plein écran sur mobile, largeur réduite pour les petits écrans en paysage
-        return `${baseClasses} w-full sm:w-[350px] md:w-[450px] lg:w-[600px] xl:w-[650px]`;
-    }
-  };
-
   return (
-    <div className={getPanelClasses()} data-testid="mobileair-selection-panel">
-      {/* Header */}
-      <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 bg-gray-50">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
-              {t("panels.mobileAirSelection.title")}
-            </h2>
-            {/* Rappel visuel du bouton de réouverture */}
-            <div className="p-1 rounded bg-green-600 border border-green-600" title={t("panels.mobileAirSelection.reopenButtonTooltip")}>
-              <svg
-                className="w-3 h-3 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <rect
-                  x="5"
-                  y="4"
-                  width="14"
-                  height="16"
-                  rx="2"
-                  ry="2"
-                  strokeWidth={1.5}
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeWidth={1.5}
-                  d="M9 8h6M9 12h6M9 16h3"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M16 16c1.2-1 1.2-3 0-4"
-                />
-              </svg>
+    <SidePanelShell
+      isOpen={isOpen}
+      panelSize={panelSize}
+      onSizeChange={onSizeChange}
+      onHidden={onHidden}
+      width="compact"
+      testId="mobileair-selection-panel"
+      title={t("panels.mobileAirSelection.title")}
+      subtitle={t(`pollutants.${initialPollutant}`, {
+        defaultValue: initialPollutant,
+      })}
+      badge={
+        <PanelReopenBadge
+          label={t("panels.mobileAirSelection.reopenButtonTooltip")}
+          className="bg-green-600 text-white"
+          icon={
+            <>
+              <rect
+                x="5"
+                y="4"
+                width="14"
+                height="16"
+                rx="2"
+                ry="2"
+                strokeWidth={1.5}
+              />
+              <path
+                strokeLinecap="round"
+                strokeWidth={1.5}
+                d="M9 8h6M9 12h6M9 16h3"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M16 16c1.2-1 1.2-3 0-4"
+              />
+            </>
+          }
+        />
+      }
+    >
+      {/* Message informatif sur la limitation */}
+      <div className="bg-blue-50 border border-blue-200 rounded-[var(--r-md)] p-4">
+        <div className="flex items-start">
+          <svg
+            className="w-5 h-5 text-blue-400 mr-3 mt-0.5 flex-shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <div className="flex-1">
+            <h3 className="text-sm font-medium text-blue-800 mb-2">
+              {t("panels.mobileAirSelection.selectionLimitTitle")}
+            </h3>
+            <p className="text-sm text-blue-700 mb-3">
+              {t("panels.mobileAirSelection.selectionLimitDescription")}
+            </p>
+            <div className="bg-blue-100 rounded-[var(--r-sm)] p-3">
+              <p className="text-xs font-medium text-blue-800 mb-1">
+                💡 {t("panels.mobileAirSelection.selectionLimitTip")}
+              </p>
             </div>
           </div>
-          <p className="text-xs sm:text-sm text-gray-600 truncate">
-            {t(`pollutants.${initialPollutant}`, { defaultValue: initialPollutant })}
-          </p>
         </div>
+      </div>
 
-        {/* Contrôles unifiés du panel */}
-        <div className="flex items-center space-x-1 sm:space-x-2">
-          {/* Bouton agrandir/rétrécir */}
-          <button
-            onClick={() => 
-              handlePanelSizeChange(
-                currentPanelSize === "fullscreen" ? "normal" : "fullscreen"
-              )
-            }
-            className="p-1.5 sm:p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-            title={
-              currentPanelSize === "fullscreen"
-                ? t("panels.shrinkPanel")
-                : t("panels.expandPanel")
-            }
-          >
+      {/* Message d'erreur si polluant non supporté */}
+      {!isPollutantSupported && (
+        <div className="bg-red-50 border border-red-200 rounded-[var(--r-md)] p-4">
+          <div className="flex items-start">
             <svg
-              className="w-3.5 h-3.5 sm:w-4 sm:h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              {currentPanelSize === "fullscreen" ? (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
-              ) : (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              )}
-            </svg>
-          </button>
-
-          {/* Bouton fermer */}
-          <button
-            onClick={onClose}
-            className="p-1.5 sm:p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-            title={t("panels.closePanel")}
-          >
-            <svg
-              className="w-3.5 h-3.5 sm:w-4 sm:h-4"
+              className="w-5 h-5 text-red-400 mr-3 mt-0.5 flex-shrink-0"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -338,21 +291,79 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
               />
             </svg>
-          </button>
+            <div className="flex-1">
+              <h3 className="text-sm font-medium text-red-800 mb-2">
+                {t("panels.mobileAirSelection.pollutantNotSupportedTitle")}
+              </h3>
+              <p className="text-sm text-red-700 mb-3">
+                {t("panels.mobileAirSelection.pollutantNotSupportedDescription", {
+                  pollutant: t(`pollutants.${initialPollutant}`, { defaultValue: initialPollutant }),
+                })}
+              </p>
+              <div className="bg-red-100 rounded-[var(--r-sm)] p-3">
+                <p className="text-xs font-medium text-red-800 mb-1">
+                  {t("panels.mobileAirSelection.supportedPollutantsLabel")}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-200 text-red-800">
+                    {t("pollutants.pm1")}
+                  </span>
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-200 text-red-800">
+                    {t("pollutants.pm25")}
+                  </span>
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-200 text-red-800">
+                    {t("pollutants.pm10")}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Contenu */}
-      {currentPanelSize !== "hidden" && (
-        <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4 sm:space-y-6">
-          {/* Message informatif sur la limitation */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-start">
+      {/* Liste des capteurs */}
+      <div
+        className={`border border-[rgb(16_32_56_/_0.09)] rounded-[var(--r-md)] p-3 sm:p-4 ${
+          !isPollutantSupported ? "opacity-50 pointer-events-none" : ""
+        }`}
+      >
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-medium text-[color:var(--fg-muted)]">
+            {t("panels.mobileAirSelection.sensorsAvailable", { count: availableSensors.length })}
+          </h3>
+          <div className="flex space-x-2">
+            <button
+              onClick={handleSelectFirst}
+              className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+            >
+              {t("panels.selectFirst")}
+            </button>
+            <button
+              onClick={handleDeselectAll}
+              className="text-xs text-[color:var(--fg-muted)] hover:text-[color:var(--fg)] font-medium"
+            >
+              {t("panels.mobileAirSelection.deselect")}
+            </button>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="flex flex-col items-center space-y-2">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              <span className="text-sm text-[color:var(--fg-muted)]">
+                {t("panels.loadSensors")}
+              </span>
+            </div>
+          </div>
+        ) : error ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
               <svg
-                className="w-5 h-5 text-blue-400 mr-3 mt-0.5 flex-shrink-0"
+                className="w-6 h-6 text-red-400 mx-auto mb-2"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -361,221 +372,105 @@ const MobileAirSelectionPanel: React.FC<MobileAirSelectionPanelProps> = ({
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              <div className="flex-1">
-                <h3 className="text-sm font-medium text-blue-800 mb-2">
-                  {t("panels.mobileAirSelection.selectionLimitTitle")}
-                </h3>
-                <p className="text-sm text-blue-700 mb-3">
-                  {t("panels.mobileAirSelection.selectionLimitDescription")}
-                </p>
-                <div className="bg-blue-100 rounded-md p-3">
-                  <p className="text-xs font-medium text-blue-800 mb-1">
-                    💡 {t("panels.mobileAirSelection.selectionLimitTip")}
-                  </p>
-                </div>
-              </div>
+              <p className="text-sm text-red-600">{t(`panels.mobileAirSelection.${error}`)}</p>
             </div>
           </div>
+        ) : (
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {availableSensors.map((sensor) => {
+              const isSelected = selectedSensor === sensor.sensorId;
+              const status = getSensorStatus(sensor);
 
-          {/* Message d'erreur si polluant non supporté */}
-          {!isPollutantSupported && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="flex items-start">
-                <svg
-                  className="w-5 h-5 text-red-400 mr-3 mt-0.5 flex-shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+              return (
+                <button
+                  key={sensor.sensorId}
+                  onClick={() => handleSensorToggle(sensor.sensorId)}
+                  className={`w-full flex items-center p-3 rounded-[var(--r-md)] border transition-all duration-200 ${
+                    isSelected
+                      ? "bg-blue-50 border-blue-200"
+                      : "bg-white border-[rgb(16_32_56_/_0.09)] hover:bg-black/5"
+                  }`}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-                  />
-                </svg>
-                <div className="flex-1">
-                  <h3 className="text-sm font-medium text-red-800 mb-2">
-                    {t("panels.mobileAirSelection.pollutantNotSupportedTitle")}
-                  </h3>
-                  <p className="text-sm text-red-700 mb-3">
-                    {t("panels.mobileAirSelection.pollutantNotSupportedDescription", {
-                      pollutant: t(`pollutants.${initialPollutant}`, { defaultValue: initialPollutant }),
-                    })}
-                  </p>
-                  <div className="bg-red-100 rounded-md p-3">
-                    <p className="text-xs font-medium text-red-800 mb-1">
-                      {t("panels.mobileAirSelection.supportedPollutantsLabel")}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-200 text-red-800">
-                        {t("pollutants.pm1")}
-                      </span>
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-200 text-red-800">
-                        {t("pollutants.pm25")}
-                      </span>
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-200 text-red-800">
-                        {t("pollutants.pm10")}
+                  <div
+                    className={`w-4 h-4 rounded-full border mr-3 flex items-center justify-center transition-colors ${
+                      isSelected
+                        ? "bg-blue-600 border-blue-600"
+                        : "border-[rgb(16_32_56_/_0.14)]"
+                    }`}
+                  >
+                    {isSelected && (
+                      <div className="w-2 h-2 bg-white rounded-full"></div>
+                    )}
+                  </div>
+
+                  <div className="flex-1 text-left">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-medium text-[color:var(--fg)]">
+                        {sensor.sensorId}
+                      </h4>
+                      <span
+                        className={`text-xs font-medium ${status.color}`}
+                      >
+                        {status.status}
                       </span>
                     </div>
+                    <p className="text-xs text-[color:var(--fg-muted)] mt-1">
+                      {t("panels.mobileAirSelection.lastActivity", { value: formatLastSeen(sensor) })}
+                    </p>
+                    {sensor.wifi_signal && (
+                      <p className="text-xs text-[color:var(--fg-muted)]">
+                        {t("panels.mobileAirSelection.wifiSignal", { value: sensor.wifi_signal })}
+                      </p>
+                    )}
                   </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Liste des capteurs */}
-          <div
-            className={`border border-gray-200 rounded-lg p-3 sm:p-4 ${
-              !isPollutantSupported ? "opacity-50 pointer-events-none" : ""
-            }`}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-medium text-gray-700">
-                {t("panels.mobileAirSelection.sensorsAvailable", { count: availableSensors.length })}
-              </h3>
-              <div className="flex space-x-2">
-                <button
-                  onClick={handleSelectFirst}
-                  className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-                >
-                  {t("panels.selectFirst")}
                 </button>
-                <button
-                  onClick={handleDeselectAll}
-                  className="text-xs text-gray-600 hover:text-gray-800 font-medium"
-                >
-                  {t("panels.mobileAirSelection.deselect")}
-                </button>
-              </div>
-            </div>
-
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="flex flex-col items-center space-y-2">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                  <span className="text-sm text-gray-500">
-                    {t("panels.loadSensors")}
-                  </span>
-                </div>
-              </div>
-            ) : error ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="text-center">
-                  <svg
-                    className="w-6 h-6 text-red-400 mx-auto mb-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  <p className="text-sm text-red-600">{t(`panels.mobileAirSelection.${error}`)}</p>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {availableSensors.map((sensor) => {
-                  const isSelected = selectedSensor === sensor.sensorId;
-                  const status = getSensorStatus(sensor);
-
-                  return (
-                    <button
-                      key={sensor.sensorId}
-                      onClick={() => handleSensorToggle(sensor.sensorId)}
-                      className={`w-full flex items-center p-3 rounded-lg border transition-all duration-200 ${
-                        isSelected
-                          ? "bg-blue-50 border-blue-200"
-                          : "bg-white border-gray-200 hover:bg-gray-50"
-                      }`}
-                    >
-                      <div
-                        className={`w-4 h-4 rounded-full border mr-3 flex items-center justify-center transition-colors ${
-                          isSelected
-                            ? "bg-blue-600 border-blue-600"
-                            : "border-gray-300"
-                        }`}
-                      >
-                        {isSelected && (
-                          <div className="w-2 h-2 bg-white rounded-full"></div>
-                        )}
-                      </div>
-
-                      <div className="flex-1 text-left">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-sm font-medium text-gray-900">
-                            {sensor.sensorId}
-                          </h4>
-                          <span
-                            className={`text-xs font-medium ${status.color}`}
-                          >
-                            {status.status}
-                          </span>
-                        </div>
-                        <p className="text-xs text-gray-600 mt-1">
-                          {t("panels.mobileAirSelection.lastActivity", { value: formatLastSeen(sensor) })}
-                        </p>
-                        {sensor.wifi_signal && (
-                          <p className="text-xs text-gray-500">
-                            {t("panels.mobileAirSelection.wifiSignal", { value: sensor.wifi_signal })}
-                          </p>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+              );
+            })}
           </div>
+        )}
+      </div>
 
-          {/* Sélection de la période */}
-          <div
-            className={`border border-gray-200 rounded-lg p-3 sm:p-4 ${
-              !isPollutantSupported ? "opacity-50 pointer-events-none" : ""
-            }`}
-          >
-            <h3 className="text-sm font-medium text-gray-700 mb-3">
-              {t("panels.mobileAirSelection.periodTitle")}
-            </h3>
-            <HistoricalTimeRangeSelector
-              timeRange={timeRange}
-              onTimeRangeChange={handleTimeRangeChange}
-            />
-          </div>
+      {/* Sélection de la période */}
+      <div
+        className={`border border-[rgb(16_32_56_/_0.09)] rounded-[var(--r-md)] p-3 sm:p-4 ${
+          !isPollutantSupported ? "opacity-50 pointer-events-none" : ""
+        }`}
+      >
+        <h3 className="text-sm font-medium text-[color:var(--fg-muted)] mb-3">
+          {t("panels.mobileAirSelection.periodTitle")}
+        </h3>
+        <HistoricalTimeRangeSelector
+          timeRange={timeRange}
+          onTimeRangeChange={handleTimeRangeChange}
+        />
+      </div>
 
-          {/* Bouton de chargement des parcours */}
-          <div className="border border-gray-200 rounded-lg p-3 sm:p-4">
-            <button
-              onClick={handleLoadRoutes}
-              disabled={!selectedSensor || !isPollutantSupported}
-              className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
-                !selectedSensor || !isPollutantSupported
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
-              }`}
-            >
-              {!selectedSensor
-                ? t("panels.mobileAirSelection.selectSensor")
-                : t("panels.mobileAirSelection.loadSensorRoute", { sensorId: selectedSensor })}
-            </button>
+      {/* Bouton de chargement des parcours */}
+      <div className="border border-[rgb(16_32_56_/_0.09)] rounded-[var(--r-md)] p-3 sm:p-4">
+        <button
+          onClick={handleLoadRoutes}
+          disabled={!selectedSensor || !isPollutantSupported}
+          className={`w-full py-3 px-4 rounded-[var(--r-md)] font-medium transition-all duration-200 ${
+            !selectedSensor || !isPollutantSupported
+              ? "bg-[rgb(16_32_56_/_0.06)] text-[color:var(--fg-muted)] cursor-not-allowed"
+              : "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+          }`}
+        >
+          {!selectedSensor
+            ? t("panels.mobileAirSelection.selectSensor")
+            : t("panels.mobileAirSelection.loadSensorRoute", { sensorId: selectedSensor })}
+        </button>
 
-            {selectedSensor && (
-              <p className="text-xs text-gray-600 mt-2 text-center">
-                {t("panels.mobileAirSelection.sensorSelected", { sensorId: selectedSensor })}
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
+        {selectedSensor && (
+          <p className="text-xs text-[color:var(--fg-muted)] mt-2 text-center">
+            {t("panels.mobileAirSelection.sensorSelected", { sensorId: selectedSensor })}
+          </p>
+        )}
+      </div>
+    </SidePanelShell>
   );
 };
 

@@ -50,7 +50,7 @@ export const LayerDisclosure: React.FC<LayerDisclosureProps> = ({
       >
         <svg
           className={cn(
-            "h-3 w-3 shrink-0 transition-transform duration-[var(--dur-fast)]",
+            "h-3 w-3 shrink-0 transition-transform [transition-duration:var(--dur-fast)]",
             isOpen && "rotate-90"
           )}
           viewBox="0 0 24 24"

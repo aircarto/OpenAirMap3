@@ -165,6 +165,13 @@
   --r-xl: 20px;
   --r-pill: 999px;
 
+  /* ── Géométrie du rail ────────────────────────────────────────────────────
+     Largeur d'un item. Le rail vertical la relève à 56px quand aucun panneau
+     latéral ne comprime la colonne carte : la pile icône+caption récupère la
+     marge latérale qu'elle n'a pas dans une colonne étroite. Valeur par défaut
+     ici, donc ni le rail horizontal ni le mode compact n'ont à la déclarer.  */
+  --rail-item-w: 48px;
+
   /* ── Mouvement ────────────────────────────────────────────────────────── */
   --dur-fast: 120ms;
   --dur-base: 180ms;
@@ -242,16 +249,37 @@ html {
    Rail de contrôles
    ────────────────────────────────────────────────────────────────────────── */
 
+/* Transitions de l'item, en CSS et non en utilitaires Tailwind : il faut deux
+   durées distinctes selon la propriété — 120 ms sur la couleur pour un retour de
+   survol immédiat, 300 ms sur la largeur pour suivre le <nav> et le panneau
+   latéral dans un seul mouvement. `transition-colors` fixe transition-property
+   et écraserait la largeur, et aucun couple d'utilitaires ne sait exprimer deux
+   durées. prefers-reduced-motion neutralise déjà tout cela plus bas. */
+.rail-item {
+  transition: width var(--dur-panel) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+/* Boutons de taille des panneaux latéraux : même surface translucide que le
+   rail, donc même anneau de focus, mais pas de transition de largeur. */
+.panel-control {
+  transition: color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
 /* Focus visible sur surface translucide : un anneau d'une seule couleur peut
    disparaître sur un fond de carte arbitraire. L'anneau blanc intérieur garantit
    le contraste contre le bleu, l'anneau coloré extérieur contre tout blanc. */
-.rail-item:focus-visible {
+.rail-item:focus-visible,
+.panel-control:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px #fff, 0 0 0 4px hsl(var(--brand-600)), var(--shadow-2);
 }
 
 @media (forced-colors: active) {
-  .rail-item:focus-visible {
+  .rail-item:focus-visible,
+  .panel-control:focus-visible {
     outline: 2px solid Highlight;
     outline-offset: 2px;
     box-shadow: none;

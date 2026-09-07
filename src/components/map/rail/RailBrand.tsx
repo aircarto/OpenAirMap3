@@ -11,7 +11,7 @@ export interface RailBrandProps {
  *
  * Rend le mark CARRÉ (`domainConfig.markSquare`), jamais `logo` ni `logo2` :
  * ceux-ci sont horizontaux (2,5:1 et 4:1) et illisibles dans une colonne de
- * 60 px. Le logo horizontal complet reste utilisé là où il y a de la place —
+ * 60 à 72 px. Le logo horizontal complet reste utilisé là où il y a de la place —
  * panneau « À propos » et en-tête de la modale d'informations. Repli sur la
  * favicon, seule autre ressource carrée du dépôt, si aucun mark n'est fourni.
  *
@@ -38,7 +38,7 @@ export const RailBrand: React.FC<RailBrandProps> = ({ onOpenAbout }) => {
         aria-labelledby="rail-brand-h1"
         aria-haspopup="dialog"
         title={t("aboutPanel.summary")}
-        className="rail-item flex h-11 w-11 items-center justify-center rounded-[var(--r-md)] transition-colors duration-[var(--dur-fast)] hover:bg-white/50"
+        className="rail-item flex h-11 w-11 items-center justify-center rounded-[var(--r-md)] hover:bg-white/50"
       >
         {/* Pastille assumée : le mark fourni est opaque (RVB sans canal alpha),
             un rendu « à même le verre » donnerait un carré blanc involontaire.

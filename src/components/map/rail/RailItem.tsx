@@ -51,8 +51,13 @@ export const RailItem = React.forwardRef<HTMLButtonElement, RailItemProps>(
       type={type}
       {...{ [RAIL_ITEM_ATTR]: itemId }}
       className={cn(
-        "rail-item group relative flex h-12 w-12 shrink-0 flex-col items-center justify-center gap-0.5",
-        "rounded-[var(--r-md)] transition-colors duration-[var(--dur-fast)] ease-[var(--ease-out)]",
+        // La largeur vient de --rail-item-w (48px par défaut, 56px quand le rail
+        // vertical n'est pas comprimé par un panneau). La hauteur reste fixe : le
+        // gain de lisibilité est horizontal, et le rail est déjà sous
+        // max-h + défilement sur un viewport court.
+        "rail-item group relative flex h-12 w-[var(--rail-item-w)] shrink-0 flex-col items-center justify-center gap-0.5",
+        // transition: voir .rail-item dans index.css (deux durées par propriété)
+        "rounded-[var(--r-md)]",
         // Pas de transform au survol : un scale décale la mise en page voisine
         "hover:bg-white/50",
         "disabled:cursor-not-allowed disabled:opacity-55",
@@ -64,7 +69,7 @@ export const RailItem = React.forwardRef<HTMLButtonElement, RailItemProps>(
       <span
         aria-hidden="true"
         className={cn(
-          "pointer-events-none absolute inset-y-1.5 left-0 w-0.5 rounded-full transition-opacity duration-[var(--dur-base)]",
+          "pointer-events-none absolute inset-y-1.5 left-0 w-0.5 rounded-full transition-opacity [transition-duration:var(--dur-base)]",
           "opacity-0 group-aria-expanded:opacity-100",
           warning
             ? "bg-[color:var(--fg-warn)] opacity-100"
@@ -75,7 +80,7 @@ export const RailItem = React.forwardRef<HTMLButtonElement, RailItemProps>(
       <span
         aria-hidden="true"
         className={cn(
-          "flex h-[22px] w-[22px] items-center justify-center transition-colors duration-[var(--dur-base)]",
+          "flex h-[22px] w-[22px] items-center justify-center transition-colors [transition-duration:var(--dur-base)]",
           warning
             ? "text-[color:var(--fg-warn)]"
             : active
@@ -106,7 +111,7 @@ export const RailItem = React.forwardRef<HTMLButtonElement, RailItemProps>(
           aria-hidden="true"
           // Dans les limites du bouton, et non en débord type -top-1 -right-1 :
           // la pastille resterait lisible mais mordrait sur l'item voisin dans
-          // une colonne de 60 px.
+          // la colonne étroite (60 px quand un panneau comprime la carte).
           className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-[color:var(--fg-ok)] ring-2 ring-[rgb(var(--glass-tint))]"
         />
       )}

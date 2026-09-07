@@ -477,20 +477,29 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
     // avec leur état courant (règle exhaustive-deps).
   }, [isHistoricalModeActive, sidePanels, signalAir, mobileAir]);
 
+  /**
+   * Un panneau, quelle que soit sa famille, occupe de la largeur dans la colonne
+   * carte. « Occupe de la largeur » et non « est ouvert » : un panneau replié
+   * (`panelSize === "hidden"`) sort du flux flex et la carte reprend sa place.
+   *
+   * Six familles de panneaux, donc six clauses. Nommé et calculé une fois plutôt
+   * que réécrit à chaque consommateur — l'attribution Leaflet s'efface, et le
+   * rail se resserre, sur exactement la même condition.
+   */
+  const isMapColumnSqueezed =
+    (sidePanels.isSidePanelOpen && sidePanels.panelSize !== "hidden") ||
+    (isComparisonPanelVisible && sidePanels.panelSize !== "hidden") ||
+    (mobileAir.isMobileAirSelectionPanelOpen &&
+      mobileAir.mobileAirSelectionPanelSize !== "hidden") ||
+    (mobileAir.isMobileAirDetailPanelOpen &&
+      mobileAir.mobileAirDetailPanelSize !== "hidden") ||
+    (signalAir.isSignalAirPanelOpen &&
+      signalAir.signalAirPanelSize !== "hidden") ||
+    (signalAir.isSignalAirDetailPanelOpen &&
+      signalAir.signalAirDetailPanelSize !== "hidden");
+
   // Gestion de l'attribution Leaflet
-  useMapAttribution({
-    shouldHide:
-      (sidePanels.isSidePanelOpen && sidePanels.panelSize !== "hidden") ||
-      (isComparisonPanelVisible && sidePanels.panelSize !== "hidden") ||
-      (mobileAir.isMobileAirSelectionPanelOpen &&
-        mobileAir.mobileAirSelectionPanelSize !== "hidden") ||
-      (mobileAir.isMobileAirDetailPanelOpen &&
-        mobileAir.mobileAirDetailPanelSize !== "hidden") ||
-      (signalAir.isSignalAirPanelOpen &&
-        signalAir.signalAirPanelSize !== "hidden") ||
-      (signalAir.isSignalAirDetailPanelOpen &&
-        signalAir.signalAirDetailPanelSize !== "hidden"),
-  });
+  useMapAttribution({ shouldHide: isMapColumnSqueezed });
 
   // Effet pour redimensionner la carte quand les panneaux latéraux changent de taille
   useEffect(() => {
@@ -1001,6 +1010,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
         />
 
         <MapControlRail
+          compact={isMapColumnSqueezed}
           baseLayer={{
             currentBaseLayer: currentBaseLayer as BaseLayerKey,
             onBaseLayerChange: setCurrentBaseLayer,
