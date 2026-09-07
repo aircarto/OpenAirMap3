@@ -55,7 +55,10 @@ test.describe("Accessibilité (a11y)", () => {
     } catch {
       test.skip(true, "Aucun marqueur affiché (API vide ou lente)");
     }
-    await marker.click();
+    // `force` : l'icône Leaflet porte le handler, mais son enfant
+    // `.custom-marker-container` intercepte le pointeur, et Playwright refuse
+    // alors le clic après ses tentatives. Même motif que panel-scroll.spec.ts.
+    await marker.click({ force: true });
     const panelSelector =
       '[data-testid="station-side-panel"], [data-testid="micro-side-panel"], [data-testid="nebuleair-side-panel"], [data-testid="sensorcommunity-side-panel"], [data-testid="purpleair-side-panel"]';
     const panel = page.locator(panelSelector).first();
