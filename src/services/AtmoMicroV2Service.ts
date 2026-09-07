@@ -72,27 +72,36 @@ const MAX_LIMIT = 500000;
 /**
  * Taille de tranche temporelle, en jours, par agrégation.
  *
- * Ce n'est PLUS le plafond de `limit` qui dimensionne ces tranches — il est passé
- * à 500 000, bien au-delà de ce qu'une tranche produit. La contrainte est
- * désormais la taille de réponse : au-delà d'une vingtaine de mégaoctets, le
- * serveur coupe le flux HTTP/2 en cours de route tout en répondant 200, et le
- * corps JSON reçu est invalide (voir warnIfTruncated).
+ * Ce n'est pas `limit` qui dimensionne ces tranches — son plafond de 500 000 est
+ * bien au-delà de ce qu'une tranche produit. La contrainte est la **taille de
+ * réponse** : l'API plafonne `/observations` à 12 MiB et tronque au-delà.
  *
- * Mesuré le 2026-09-04 (PM2.5, tout le parc, `limit=500000`) :
- *   hourly 12 j          -> 33 597 lignes,  11 Mo, 34 s, 3/3 réponses valides
- *   quarter-hourly 3 j   -> 34 542 lignes,  11 Mo, 32 s, 3/3 valides
- *   scan 0,5 j           -> 43 900 lignes,  14 Mo, 49 s, 2/2 valides
- *   hourly 30 j          -> 84 742 annoncées, coupée entre 17 et 25 Mo, 0/4 valides
+ * Cette troncature est particulièrement traître pour un client web. Elle enlève
+ * des **capteurs**, pas du temps : sur une fenêtre de 30 jours en horaire, la
+ * réponse revient avec 62 capteurs au lieu de 125, sur toute la plage demandée.
+ * Le JSON est valide, la carte et le graphique se dessinent — simplement avec la
+ * moitié du parc en moins. Et l'en-tête `X-Truncated` qui la signale n'est pas
+ * exposé par CORS, donc illisible depuis le navigateur : rien ne permet de la
+ * détecter côté client. La seule parade est de rester franchement sous le cap.
  *
- * Les élargir échangerait donc un gain de requêtes contre un risque de corruption
- * et des temps de réponse déjà à la limite de l'acceptable côté navigateur.
+ * D'où ces valeurs, mesurées le 2026-09-04 (PM2.5, tout le parc, `limit=500000`),
+ * qui visent ~60 % du plafond :
+ *   scan 0,25 j          -> 22 218 lignes, 7,2 Mo (59 %), 21 s
+ *   quarter-hourly 2 j   -> 23 344 lignes, 7,6 Mo (63 %), 22 s
+ *   hourly 8 j           -> 22 722 lignes, 7,3 Mo (61 %), 21 s
+ *   daily 180 j          -> ~14 000 lignes, ~4,6 Mo (~38 %)
+ *
+ * Les valeurs précédentes (scan 0,5 j, quart-horaire 3 j, horaire 12 j, daily
+ * 365 j) tenaient entre 90 et 100 % du cap : `scan` était déjà tronqué, et les
+ * autres l'auraient été à la première croissance du parc. Elles étaient aussi
+ * deux fois plus lentes par requête (34 à 41 s contre 21 s).
  */
 const CHUNK_DAYS_BY_AGGREGATION: Record<TimeStepConfig["aggregation"], number> =
   {
-    scan: 0.5,
-    "quarter-hourly": 3,
-    hourly: 12,
-    daily: 365,
+    scan: 0.25,
+    "quarter-hourly": 2,
+    hourly: 8,
+    daily: 180,
   };
 
 /** Préfixe du placeholder interne que l'API laisse fuiter dans `location_name`. */
@@ -665,9 +674,14 @@ export class AtmoMicroV2Service
    *
    * Depuis le passage du plafond à 500 000, ce garde-fou ne devrait plus jamais
    * se déclencher aux tailles de tranche retenues : s'il parle, c'est que la
-   * volumétrie a explosé et que le découpage est à revoir. L'autre mode de perte
-   * de données — la coupure du flux au-delà d'une vingtaine de mégaoctets — ne
-   * passe pas par ici : elle fait échouer le parsing JSON, donc lever une erreur.
+   * volumétrie a explosé et que le découpage est à revoir.
+   *
+   * Attention, il ne couvre PAS l'autre mode de troncature, celui du cap de
+   * 12 MiB : la réponse est alors du JSON valide amputé de la moitié des
+   * capteurs, avec un nombre de lignes très inférieur à `limit`. Aucun signal
+   * exploitable côté navigateur tant que l'API n'expose pas `X-Truncated` via
+   * `Access-Control-Expose-Headers` — d'où le dimensionnement prudent de
+   * CHUNK_DAYS_BY_AGGREGATION, seule protection disponible.
    */
   private warnIfTruncated(
     rowCount: number,

@@ -842,7 +842,7 @@ describe("AtmoMicroV2Service", () => {
       );
     };
 
-    it("découpe en tranches de 12 jours maximum en horaire", async () => {
+    it("découpe en tranches de 8 jours maximum en horaire", async () => {
       const spy = mockRoutes(service, { observations: [] });
 
       await service.fetchTemporalData({
@@ -855,18 +855,19 @@ describe("AtmoMicroV2Service", () => {
       const urls = requestedUrls(spy).filter((url) =>
         url.includes("/observations?")
       );
-      // Une tranche unique de 30 jours dépasserait le plafond de 50 000 lignes
-      // de l'API, qui tronquerait en silence.
+      // Une tranche unique de 30 jours dépasserait le cap de 12 MiB de l'API,
+      // qui tronquerait la réponse en retirant la moitié des capteurs — sans que
+      // le navigateur puisse le détecter, X-Truncated n'étant pas exposé.
       expect(urls.length).toBeGreaterThan(1);
       urls.forEach((url) => {
-        expect(chunkWidthInDays(url)).toBeLessThanOrEqual(12);
+        expect(chunkWidthInDays(url)).toBeLessThanOrEqual(8);
         expect(url).toContain("aggregation=hourly");
         expect(url).toContain("limit=500000");
         expect(url).toContain("include=raw_value");
       });
     });
 
-    it("découpe plus fin en quart-horaire — 3 jours maximum par tranche", async () => {
+    it("découpe plus fin en quart-horaire — 2 jours maximum par tranche", async () => {
       const spy = mockRoutes(service, { observations: [] });
 
       await service.fetchTemporalData({
@@ -881,7 +882,7 @@ describe("AtmoMicroV2Service", () => {
       );
       expect(urls.length).toBeGreaterThan(1);
       urls.forEach((url) => {
-        expect(chunkWidthInDays(url)).toBeLessThanOrEqual(3);
+        expect(chunkWidthInDays(url)).toBeLessThanOrEqual(2);
         expect(url).toContain("aggregation=quarter-hourly");
       });
     });
@@ -900,7 +901,7 @@ describe("AtmoMicroV2Service", () => {
         url.includes("/observations?")
       );
       urls.forEach((url) => {
-        expect(chunkWidthInDays(url)).toBeLessThanOrEqual(0.5);
+        expect(chunkWidthInDays(url)).toBeLessThanOrEqual(0.25);
         expect(url).toContain("aggregation=scan");
       });
     });
