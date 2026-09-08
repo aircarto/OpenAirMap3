@@ -7,6 +7,16 @@ export interface LayerDisclosureProps {
   hint?: string;
   /** Marque le groupe comme contenant au moins un calque actif */
   active?: boolean;
+  /**
+   * Énoncé de l'état actif pour les lecteurs d'écran, rendu en `sr-only` dans le
+   * bouton.
+   *
+   * Sans lui, `active` est purement visuel : la pastille est `aria-hidden` et
+   * `hint` vit dans un `<span>` qui n'entre pas dans le nom accessible du
+   * bouton. Un utilisateur au lecteur d'écran n'a alors aucun moyen de savoir
+   * qu'un dépliant replié contient quelque chose d'allumé.
+   */
+  activeLabel?: string;
   defaultOpen?: boolean;
   children: React.ReactNode;
 }
@@ -28,6 +38,7 @@ export const LayerDisclosure: React.FC<LayerDisclosureProps> = ({
   label,
   hint,
   active = false,
+  activeLabel,
   defaultOpen = false,
   children,
 }) => {
@@ -70,10 +81,13 @@ export const LayerDisclosure: React.FC<LayerDisclosureProps> = ({
           </span>
         )}
         {active && (
-          <span
-            aria-hidden="true"
-            className="h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--fg-ok)]"
-          />
+          <>
+            <span
+              aria-hidden="true"
+              className="h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--fg-ok)]"
+            />
+            {activeLabel && <span className="sr-only">{activeLabel}</span>}
+          </>
         )}
       </button>
       {isOpen && (

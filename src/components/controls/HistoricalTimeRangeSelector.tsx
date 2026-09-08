@@ -1,4 +1,11 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useId,
+  useMemo,
+  useCallback,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { ToggleGroup, ToggleGroupItem } from "../ui/button-group";
 import { cn } from "../../lib/utils";
@@ -11,6 +18,22 @@ interface HistoricalTimeRangeSelectorProps {
   className?: string;
   timeStep?: string; // Pas de temps actuel pour valider les limites
   disabled?: boolean;
+  /**
+   * Rendu du bloc de période personnalisée.
+   *
+   * `"popover"` (défaut) le superpose en `absolute` sous son déclencheur, et
+   * arme un écouteur `mousedown` sur `document` pour le refermer au clic
+   * extérieur. C'est le comportement historique des cinq panneaux latéraux qui
+   * consomment ce composant.
+   *
+   * `"inline"` le rend dans le flux et n'arme aucun écouteur. Nécessaire dès que
+   * le composant vit dans un conteneur défilant : un enfant `absolute` y est
+   * rogné par l'`overflow`, et aucun `z-index` n'y change rien puisqu'il se
+   * résout dans le contexte d'empilement de l'ancêtre. L'écouteur `document`
+   * ferait par ailleurs doublon avec le `DismissableLayer` d'un popover Radix
+   * hôte.
+   */
+  customRangePresentation?: "popover" | "inline";
 }
 
 // Fonction pour calculer le nombre de jours entre deux dates
@@ -37,9 +60,18 @@ const getPresetDays = (preset: "3h" | "24h" | "7d" | "30d"): number => {
 
 const HistoricalTimeRangeSelector: React.FC<
   HistoricalTimeRangeSelectorProps
-> = ({ timeRange, onTimeRangeChange, className = "", timeStep, disabled = false }) => {
+> = ({
+  timeRange,
+  onTimeRangeChange,
+  className = "",
+  timeStep,
+  disabled = false,
+  customRangePresentation = "popover",
+}) => {
   const { t, i18n } = useTranslation();
   const [isCustomOpen, setIsCustomOpen] = useState(false);
+  const isInlineCustomRange = customRangePresentation === "inline";
+  const customRangeId = useId();
 
   const formatMaxDaysDisplay = useCallback(
     (maxDays: number): string =>
@@ -54,6 +86,44 @@ const HistoricalTimeRangeSelector: React.FC<
   const [customEndTime, setCustomEndTime] = useState("23:59");
   const [validationError, setValidationError] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * Effacement différé du message de validation.
+   *
+   * Un seul timer, mémorisé et annulé : les quatre `setTimeout` d'origine ne
+   * gardaient aucune poignée, et l'effet de validation qui en armait trois se
+   * réexécute à chaque changement de `timeRange` (un objet) — les timers
+   * s'empilaient donc, et le plus ancien pouvait effacer un message plus récent.
+   * Anodin dans un panneau qui vit longtemps, systématique dans un contenu
+   * monté et démonté à chaque ouverture d'un menu.
+   */
+  const errorTimerRef = useRef<number | null>(null);
+
+  const cancelErrorTimer = () => {
+    if (errorTimerRef.current !== null) {
+      window.clearTimeout(errorTimerRef.current);
+      errorTimerRef.current = null;
+    }
+  };
+
+  const clearValidationError = useCallback(() => {
+    cancelErrorTimer();
+    setValidationError(null);
+  }, []);
+
+  const flashValidationError = useCallback(
+    (message: string, delayMs: number) => {
+      cancelErrorTimer();
+      setValidationError(message);
+      errorTimerRef.current = window.setTimeout(() => {
+        errorTimerRef.current = null;
+        setValidationError(null);
+      }, delayMs);
+    },
+    []
+  );
+
+  useEffect(() => cancelErrorTimer, []);
 
   // Calculer la limite maximale selon le pas de temps
   const maxDays = useMemo(() => getMaxHistoryDays(timeStep), [timeStep]);
@@ -88,7 +158,7 @@ const HistoricalTimeRangeSelector: React.FC<
   // Vérifier si la période actuelle est valide quand le pas de temps change
   useEffect(() => {
     if (!maxDays) {
-      setValidationError(null);
+      clearValidationError();
       return;
     }
 
@@ -96,16 +166,16 @@ const HistoricalTimeRangeSelector: React.FC<
     if (timeRange.type === "preset" && timeRange.preset) {
       const presetDays = getPresetDays(timeRange.preset);
       if (presetDays > maxDays) {
-        setValidationError(
+        flashValidationError(
           t("historical.presetExceedsLimit", {
             preset: timeRange.preset,
             max: formatMaxDaysDisplay(maxDays),
             timeStep: timeStep ? t(`timeSteps.${timeStep}`) : timeStep,
-          })
+          }),
+          5000
         );
-        setTimeout(() => setValidationError(null), 5000);
       } else {
-        setValidationError(null);
+        clearValidationError();
       }
     } else if (timeRange.type === "custom" && timeRange.custom) {
       const daysDiff = getDaysDifference(
@@ -113,34 +183,49 @@ const HistoricalTimeRangeSelector: React.FC<
         timeRange.custom.endDate
       );
       if (daysDiff > maxDays) {
-        setValidationError(
+        flashValidationError(
           t("historical.customExceedsLimit", {
             days: daysDiff,
             max: formatMaxDaysDisplay(maxDays),
             timeStep: timeStep ? t(`timeSteps.${timeStep}`) : timeStep,
-          })
+          }),
+          5000
         );
-        setTimeout(() => setValidationError(null), 5000);
       } else {
         const now = new Date();
         const maxStartDate = new Date(now.getTime() - maxDays * 24 * 60 * 60 * 1000);
         const startDate = new Date(timeRange.custom.startDate);
         if (startDate < maxStartDate) {
-          setValidationError(
+          flashValidationError(
             t("historical.periodAdjustedTo", {
               max: formatMaxDaysDisplay(maxDays),
               timeStep: timeStep ? t(`timeSteps.${timeStep}`) : timeStep,
-            })
+            }),
+            5000
           );
-          setTimeout(() => setValidationError(null), 5000);
         } else {
-          setValidationError(null);
+          clearValidationError();
         }
       }
     }
-  }, [timeStep, maxDays, timeRange, t, formatMaxDaysDisplay]);
+  }, [
+    timeStep,
+    maxDays,
+    timeRange,
+    t,
+    formatMaxDaysDisplay,
+    flashValidationError,
+    clearValidationError,
+  ]);
 
+  // Fermeture au clic extérieur, réservée au rendu superposé. En `inline` le bloc
+  // est dans le flux : il ne masque rien, donc rien ne justifie de le refermer
+  // sur un clic ailleurs — et l'écouteur ferait doublon avec le
+  // `DismissableLayer` d'un popover Radix hôte, qui écoute lui aussi sur
+  // `document`.
   useEffect(() => {
+    if (isInlineCustomRange) return;
+
     const handleClickOutside = (event: MouseEvent) => {
       if (
         dropdownRef.current &&
@@ -152,7 +237,7 @@ const HistoricalTimeRangeSelector: React.FC<
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [isInlineCustomRange]);
 
   // Vérifier si un preset est valide selon la limite
   const isPresetValid = (preset: "3h" | "24h" | "7d" | "30d"): boolean => {
@@ -290,14 +375,15 @@ const HistoricalTimeRangeSelector: React.FC<
         const adjustedStartStr = formatDateForInput(adjustedStart);
         setCustomStartDate(adjustedStartStr);
         setCustomEndDate(endDateStr);
-        setValidationError(
+        flashValidationError(
           t("historical.periodAdjustedTo", {
             max: formatMaxDaysDisplay(maxDays),
             timeStep: timeStep ? t(`timeSteps.${timeStep}`) : timeStep,
-          })
+          }),
+          3000
         );
-        setTimeout(() => setValidationError(null), 3000);
-        
+
+
         onTimeRangeChange({
           type: "custom",
           custom: {
@@ -312,7 +398,7 @@ const HistoricalTimeRangeSelector: React.FC<
       }
     }
 
-    setValidationError(null);
+    clearValidationError();
     setCustomStartDate(startDateStr);
     setCustomEndDate(endDateStr);
     setCustomStartTime("00:00");
@@ -355,6 +441,19 @@ const HistoricalTimeRangeSelector: React.FC<
   };
 
   const isCustomSelected = timeRange.type === "custom";
+
+  // Rangée date + heure. En `inline` la largeur utile tombe à ~270 px : le champ
+  // `time` en `w-24` ne laisserait que ~168 px au champ date, sous la largeur
+  // intrinsèque d'un sélecteur de date natif. Un `flex-wrap` et une largeur
+  // plancher les empilent plutôt que de les écraser — et contrairement à un
+  // `sm:`, cela dépend de la place réelle et non de la taille de la fenêtre.
+  const dateTimeRowClass = isInlineCustomRange
+    ? "flex flex-wrap gap-2"
+    : "flex gap-2";
+  const dateFieldClass = cn(
+    "flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500",
+    isInlineCustomRange ? "min-w-[9.5rem]" : "min-w-0"
+  );
 
   return (
     <div className={`relative rtl-on-ar ${className}`} ref={dropdownRef}>
@@ -419,8 +518,11 @@ const HistoricalTimeRangeSelector: React.FC<
 
       {/* Bouton pour la sélection personnalisée */}
       <button
+        type="button"
         onClick={handleCustomToggle}
         disabled={disabled}
+        aria-expanded={isCustomOpen}
+        aria-controls={customRangeId}
         className={`w-full px-2.5 py-1.5 text-xs rounded-md transition-all duration-200 border ${
           isCustomSelected
             ? "bg-blue-50 text-blue-700 border-blue-200"
@@ -464,7 +566,18 @@ const HistoricalTimeRangeSelector: React.FC<
 
       {/* Dropdown pour la sélection personnalisée */}
       {isCustomOpen && (
-        <div className="absolute z-popover w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+        <div
+          id={customRangeId}
+          className={cn(
+            "mt-1 rounded-md border border-gray-300 bg-white",
+            isInlineCustomRange
+              ? // Dans le flux : la largeur vient du parent, et aucune ombre —
+                // un bloc dépliant n'a pas à se présenter comme une surface
+                // flottante au-dessus du reste.
+                "w-full"
+              : "absolute z-popover w-full shadow-lg"
+          )}
+        >
           <div className="p-3 space-y-3">
             <div>
               <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
@@ -520,7 +633,7 @@ const HistoricalTimeRangeSelector: React.FC<
                   <label className="block text-xs text-gray-600 mb-1">
                     {t("historical.startDate")}
                   </label>
-                  <div className="flex gap-2">
+                  <div className={dateTimeRowClass}>
                     <input
                       type="date"
                       value={customStartDate}
@@ -528,7 +641,7 @@ const HistoricalTimeRangeSelector: React.FC<
                         handleCustomDateChange("start", e.target.value)
                       }
                       disabled={disabled}
-                      className="flex-1 min-w-0 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                      className={dateFieldClass}
                       max={
                         customEndDate || new Date().toISOString().split("T")[0]
                       }
@@ -554,7 +667,7 @@ const HistoricalTimeRangeSelector: React.FC<
                   <label className="block text-xs text-gray-600 mb-1">
                     {t("historical.endDate")}
                   </label>
-                  <div className="flex gap-2">
+                  <div className={dateTimeRowClass}>
                     <input
                       type="date"
                       value={customEndDate}
@@ -562,7 +675,7 @@ const HistoricalTimeRangeSelector: React.FC<
                         handleCustomDateChange("end", e.target.value)
                       }
                       disabled={disabled}
-                      className="flex-1 min-w-0 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                      className={dateFieldClass}
                       min={customStartDate}
                       max={new Date().toISOString().split("T")[0]}
                     />

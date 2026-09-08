@@ -6,6 +6,21 @@ interface SignalAirPeriodSelectorProps {
   endDate: string;
   onPeriodChange: (startDate: string, endDate: string) => void;
   disabled?: boolean;
+  /**
+   * Mise en page des deux grilles.
+   *
+   * `"grid"` (défaut) garde les points d'arrêt de viewport historiques, pour un
+   * panneau latéral large. `"stacked"` empile les deux `input[type=date]` et fixe
+   * les plages rapides à deux colonnes : dans un conteneur étroit, un
+   * `sm:grid-cols-2` reste actif — c'est une media query de **fenêtre**, pas de
+   * conteneur — et ne laisse que ~142 px par champ, contre 155-165 px de largeur
+   * intrinsèque pour un sélecteur de date natif. Les boutons, eux, peuvent
+   * revenir à la ligne sans dommage.
+   *
+   * Les requêtes de conteneur seraient la bonne réponse, mais
+   * `@tailwindcss/container-queries` n'est pas installé et Tailwind est en v3.
+   */
+  layout?: "grid" | "stacked";
 }
 
 const QUICK_RANGE_KEYS: Array<{ key: string; days: number }> = [
@@ -33,8 +48,10 @@ const SignalAirPeriodSelector: React.FC<SignalAirPeriodSelectorProps> = ({
   endDate,
   onPeriodChange,
   disabled = false,
+  layout = "grid",
 }) => {
   const { t } = useTranslation();
+  const isStacked = layout === "stacked";
 
   const handleQuickSelect = (days: number) => {
     const end = normalizeEndDate(new Date());
@@ -78,7 +95,11 @@ const SignalAirPeriodSelector: React.FC<SignalAirPeriodSelectorProps> = ({
         <h4 className="text-sm font-medium text-gray-700 mb-2">
           {t("panels.signalAirSelection.period.quickSelections")}
         </h4>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div
+          className={`grid gap-2 ${
+            isStacked ? "grid-cols-2" : "grid-cols-1 sm:grid-cols-2"
+          }`}
+        >
           {QUICK_RANGE_KEYS.map((range) => (
             <button
               key={range.days}
@@ -96,7 +117,11 @@ const SignalAirPeriodSelector: React.FC<SignalAirPeriodSelectorProps> = ({
         <h4 className="text-sm font-medium text-gray-700 mb-2">
           {t("panels.signalAirSelection.period.customPeriod")}
         </h4>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div
+          className={`grid gap-3 ${
+            isStacked ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"
+          }`}
+        >
           <div className="flex flex-col space-y-1">
             <label className="text-xs font-medium text-gray-600">
               {t("panels.signalAirSelection.period.startDateLabel")}

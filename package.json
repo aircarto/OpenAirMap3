@@ -8,6 +8,7 @@
     "build": "vite build",
     "build:fire-mask": "node scripts/build-fire-mask.mjs",
     "lint": "eslint .",
+    "typecheck": "bash scripts/typecheck.sh",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
