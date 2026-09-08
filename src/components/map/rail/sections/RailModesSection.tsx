@@ -33,7 +33,7 @@ export const RailModesSection: React.FC<RailModesSectionProps> = ({
   orientation,
   onItemFocus,
 }) => {
-  const { historical, specialSources } = useMapControls();
+  const { historical, communitySources } = useMapControls();
   const { t } = useTranslation();
 
   const flyout = {
@@ -51,14 +51,14 @@ export const RailModesSection: React.FC<RailModesSectionProps> = ({
     >
       {/* Sources spéciales */}
       <SpecialSourceHeaderDropdown
-        onSignalAirClick={specialSources.onSignalAirClick}
-        onMobileAirClick={specialSources.onMobileAirClick}
-        isSignalAirVisible={specialSources.isSignalAirVisible}
-        isMobileAirVisible={specialSources.isMobileAirVisible}
-        onSignalAirToggle={specialSources.onSignalAirToggle}
-        onMobileAirToggle={specialSources.onMobileAirToggle}
-        hasSignalAirData={specialSources.hasSignalAirData}
-        hasMobileAirData={specialSources.hasMobileAirData}
+        onSignalAirClick={communitySources.onSignalAirClick}
+        onMobileAirClick={communitySources.onMobileAirClick}
+        isSignalAirVisible={communitySources.isSignalAirVisible}
+        isMobileAirVisible={communitySources.isMobileAirVisible}
+        onSignalAirToggle={communitySources.onSignalAirToggle}
+        onMobileAirToggle={communitySources.onMobileAirToggle}
+        hasSignalAirData={communitySources.hasSignalAirData}
+        hasMobileAirData={communitySources.hasMobileAirData}
         {...flyout}
         renderTrigger={() => (
           <RailItem
@@ -72,7 +72,7 @@ export const RailModesSection: React.FC<RailModesSectionProps> = ({
             icon={<IconSpecialSources />}
             caption={t("rail.caption.specialSources")}
             dot={
-              specialSources.hasSignalAirData || specialSources.hasMobileAirData
+              communitySources.hasSignalAirData || communitySources.hasMobileAirData
                 ? "ok"
                 : "none"
             }

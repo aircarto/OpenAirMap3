@@ -17,7 +17,7 @@ import type {
   MapControlsHistorical,
   MapControlsModeling,
   MapControlsRefresh,
-  MapControlsSpecialSources,
+  MapControlsCommunitySources,
   MapControlsUi,
   MapControlsValue,
 } from "./contexts/mapControlsContext";
@@ -243,18 +243,18 @@ const AppContent: React.FC = () => {
   }, []);
 
   // Fonction wrapper pour gérer le changement de période SignalAir
-  const handleSignalAirDraftPeriodChange = (
-    startDate: string,
-    endDate: string,
-  ) => {
-    setSignalAirDraftPeriod({ startDate, endDate });
-  };
+  const handleSignalAirDraftPeriodChange = useCallback(
+    (startDate: string, endDate: string) => {
+      setSignalAirDraftPeriod({ startDate, endDate });
+    },
+    [],
+  );
 
-  const handleSignalAirTypesChange = (types: string[]) => {
+  const handleSignalAirTypesChange = useCallback((types: string[]) => {
     setSignalAirSelectedTypes(types);
-  };
+  }, []);
 
-  const handleSignalAirLoadRequest = () => {
+  const handleSignalAirLoadRequest = useCallback(() => {
     if (signalAirSelectedTypes.length === 0) {
       return;
     }
@@ -268,7 +268,7 @@ const AppContent: React.FC = () => {
       startDate: signalAirDraftPeriod.startDate,
       endDate: signalAirDraftPeriod.endDate,
     });
-  };
+  }, [signalAirSelectedTypes, signalAirDraftPeriod]);
 
   // Fonction pour gérer la sélection d'un capteur MobileAir
   const handleMobileAirSensorSelected = (
@@ -285,30 +285,60 @@ const AppContent: React.FC = () => {
   };
 
   // Fonction pour désélectionner la source MobileAir
-  const handleMobileAirSourceDeselected = () => {
+  const handleMobileAirSourceDeselected = useCallback(() => {
     // Réinitialiser les états MobileAir
     setSelectedMobileAirSensor(null);
     setMobileAirPeriod(defaultSignalAirPeriod);
     setIsMobileAirEnabled(false);
     setIsMobileAirVisible(false);
-  };
+  }, [defaultSignalAirPeriod]);
 
-  const handleSignalAirSourceDeselected = () => {
+  const handleSignalAirSourceDeselected = useCallback(() => {
     resetSignalAirSettings();
     setIsSignalAirEnabled(false);
     setIsSignalAirVisible(false);
-  };
+  }, [resetSignalAirSettings]);
 
   // Gérer l'ouverture des panels
-  const handleSignalAirPanelOpen = () => {
+  const handleSignalAirPanelOpen = useCallback(() => {
     setIsSignalAirEnabled(true);
     trackFeatureUsage("signalair_panel_open");
-  };
+  }, []);
 
-  const handleMobileAirPanelOpen = () => {
+  const handleMobileAirPanelOpen = useCallback(() => {
     setIsMobileAirEnabled(true);
     trackFeatureUsage("mobileair_panel_open");
-  };
+  }, []);
+
+  /**
+   * Activation depuis le menu Sources, dans les deux sens.
+   *
+   * L'extinction passe par le désélecteur complet et non par un simple
+   * `setIsSignalAirEnabled(false)` : sans la réinitialisation, une réactivation
+   * ferait réapparaître les signalements de la session précédente. Même raison
+   * côté MobileAir pour les parcours.
+   */
+  const handleSignalAirEnabledChange = useCallback(
+    (enabled: boolean) => {
+      if (enabled) {
+        handleSignalAirPanelOpen();
+      } else {
+        handleSignalAirSourceDeselected();
+      }
+    },
+    [handleSignalAirPanelOpen, handleSignalAirSourceDeselected],
+  );
+
+  const handleMobileAirEnabledChange = useCallback(
+    (enabled: boolean) => {
+      if (enabled) {
+        handleMobileAirPanelOpen();
+      } else {
+        handleMobileAirSourceDeselected();
+      }
+    },
+    [handleMobileAirPanelOpen, handleMobileAirSourceDeselected],
+  );
 
   // Gérer le chargement des données SignalAir quand activé
   useEffect(() => {
@@ -518,9 +548,14 @@ const AppContent: React.FC = () => {
       hasHistoricalData &&
       temporalState.historicalSignalAirReports?.length > 0);
 
-  const hasSignalAirData =
-    hasSignalAirLoaded &&
-    reportsForMap.filter((r) => r.source === "signalair").length > 0;
+  // Un seul filtre pour les deux usages : le compte affiché dans l'interface de
+  // sélection et le drapeau `hasSignalAirData` en dérivaient séparément.
+  const signalAirReportsCount = useMemo(
+    () => reportsForMap.filter((r) => r.source === "signalair").length,
+    [reportsForMap],
+  );
+
+  const hasSignalAirData = hasSignalAirLoaded && signalAirReportsCount > 0;
   const hasMobileAirData = devices.some((d) => d.source === "mobileair");
 
   // Fonction pour gérer le chargement des données historiques
@@ -604,12 +639,12 @@ const AppContent: React.FC = () => {
   const handleSignalAirHeaderClick = useCallback(() => {
     setOpenSignalAirPanelRequest((r) => r + 1);
     handleSignalAirPanelOpen();
-  }, []);
+  }, [handleSignalAirPanelOpen]);
 
   const handleMobileAirHeaderClick = useCallback(() => {
     setOpenMobileAirPanelRequest((r) => r + 1);
     handleMobileAirPanelOpen();
-  }, []);
+  }, [handleMobileAirPanelOpen]);
 
   const handleOpenInfoModal = useCallback(() => setIsInfoModalOpen(true), []);
 
@@ -692,26 +727,50 @@ const AppContent: React.FC = () => {
     ],
   );
 
-  const specialSourcesValue = useMemo<MapControlsSpecialSources>(
+  const communitySourcesValue = useMemo<MapControlsCommunitySources>(
     () => ({
-      onSignalAirClick: handleSignalAirHeaderClick,
-      onMobileAirClick: handleMobileAirHeaderClick,
+      isSignalAirEnabled,
+      isMobileAirEnabled,
+      onSignalAirEnabledChange: handleSignalAirEnabledChange,
+      onMobileAirEnabledChange: handleMobileAirEnabledChange,
       isSignalAirVisible,
       isMobileAirVisible,
       onSignalAirToggle: handleSignalAirVisibilityToggle,
       onMobileAirToggle: handleMobileAirVisibilityToggle,
       hasSignalAirData,
       hasMobileAirData,
+      signalAirSelectedTypes,
+      onSignalAirTypesChange: handleSignalAirTypesChange,
+      signalAirDraftPeriod,
+      onSignalAirDraftPeriodChange: handleSignalAirDraftPeriodChange,
+      onSignalAirLoadRequest: handleSignalAirLoadRequest,
+      isSignalAirLoading,
+      signalAirHasLoaded: hasSignalAirLoaded,
+      signalAirReportsCount,
+      onSignalAirClick: handleSignalAirHeaderClick,
+      onMobileAirClick: handleMobileAirHeaderClick,
     }),
     [
-      handleSignalAirHeaderClick,
-      handleMobileAirHeaderClick,
+      isSignalAirEnabled,
+      isMobileAirEnabled,
+      handleSignalAirEnabledChange,
+      handleMobileAirEnabledChange,
       isSignalAirVisible,
       isMobileAirVisible,
       handleSignalAirVisibilityToggle,
       handleMobileAirVisibilityToggle,
       hasSignalAirData,
       hasMobileAirData,
+      signalAirSelectedTypes,
+      handleSignalAirTypesChange,
+      signalAirDraftPeriod,
+      handleSignalAirDraftPeriodChange,
+      handleSignalAirLoadRequest,
+      isSignalAirLoading,
+      hasSignalAirLoaded,
+      signalAirReportsCount,
+      handleSignalAirHeaderClick,
+      handleMobileAirHeaderClick,
     ],
   );
 
@@ -785,7 +844,7 @@ const AppContent: React.FC = () => {
       modeling: modelingValue,
       refresh: refreshValue,
       historical: historicalValue,
-      specialSources: specialSourcesValue,
+      communitySources: communitySourcesValue,
       ui: uiValue,
     }),
     [
@@ -794,7 +853,7 @@ const AppContent: React.FC = () => {
       modelingValue,
       refreshValue,
       historicalValue,
-      specialSourcesValue,
+      communitySourcesValue,
       uiValue,
     ],
   );
@@ -841,9 +900,7 @@ const AppContent: React.FC = () => {
             onSignalAirLoadRequest={handleSignalAirLoadRequest}
             isSignalAirLoading={isSignalAirLoading}
             signalAirHasLoaded={hasSignalAirLoaded}
-            signalAirReportsCount={
-              reportsForMap.filter((r) => r.source === "signalair").length
-            }
+            signalAirReportsCount={signalAirReportsCount}
             isHistoricalModeWithSignalAirData={
               isHistoricalModeActive &&
               hasHistoricalData &&

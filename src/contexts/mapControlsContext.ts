@@ -17,7 +17,14 @@ import type { Notice } from "../components/map/notifications/notice";
  *
  * Règle de partage, valable pour tout contrôle futur :
  *   l'état applicatif passe par le contexte, l'état local à la carte passe par
- *   les props (fond de carte, panneaux latéraux, SignalAir, MobileAir).
+ *   les props (fond de carte, panneaux latéraux).
+ *
+ * SignalAir et MobileAir étaient du second groupe tant que leur interface de
+ * sélection vivait dans des panneaux latéraux. Leur activation et leur brouillon
+ * de sélection appartiennent à App, et le menu qui les pilote vit dans le rail :
+ * ils passent donc par le contexte (voir `MapControlsCommunitySources`). Seul le
+ * chargement d'un parcours MobileAir reste en props, parce qu'il doit d'abord
+ * purger les parcours détenus par la carte.
  */
 
 export interface MapControlsBrand {
@@ -57,15 +64,54 @@ export interface MapControlsHistorical {
   onToggle: () => void;
 }
 
-export interface MapControlsSpecialSources {
-  onSignalAirClick: () => void;
-  onMobileAirClick: () => void;
+/**
+ * SignalAir et MobileAir — les deux sources communautaires qui ne passent pas
+ * par `selectedSources`.
+ *
+ * Elles ont leur propre couple activé/visible parce qu'activer ne suffit pas à
+ * afficher quoi que ce soit : il faut d'abord choisir des types de signalement
+ * ou un capteur, puis demander un chargement. `useAirQualityData` les traite
+ * d'ailleurs à part (`isSourceSelected` reçoit le booléen, pas l'appartenance à
+ * `selectedSources`).
+ *
+ * Nommé « community » et non « special » : c'est ce qu'elles sont — des données
+ * remontées par le public, à côté des capteurs communautaires du même menu.
+ */
+export interface MapControlsCommunitySources {
+  isSignalAirEnabled: boolean;
+  isMobileAirEnabled: boolean;
+  /**
+   * Bascule l'activation. `false` ne se contente pas d'éteindre : il réinitialise
+   * aussi la sélection, sans quoi une réactivation ferait réapparaître les
+   * signalements ou les parcours de la session précédente.
+   */
+  onSignalAirEnabledChange: (enabled: boolean) => void;
+  onMobileAirEnabledChange: (enabled: boolean) => void;
+  /** Affichage des marqueurs, indépendant de l'activation */
   isSignalAirVisible: boolean;
   isMobileAirVisible: boolean;
   onSignalAirToggle: (visible: boolean) => void;
   onMobileAirToggle: (visible: boolean) => void;
   hasSignalAirData: boolean;
   hasMobileAirData: boolean;
+
+  /**
+   * Brouillon de sélection SignalAir : modifié librement, puis validé par
+   * `onSignalAirLoadRequest`, qui seul déclenche une requête. Le découplage est
+   * volontaire — cocher un type ne doit pas relancer un chargement.
+   */
+  signalAirSelectedTypes: string[];
+  onSignalAirTypesChange: (types: string[]) => void;
+  signalAirDraftPeriod: { startDate: string; endDate: string };
+  onSignalAirDraftPeriodChange: (startDate: string, endDate: string) => void;
+  onSignalAirLoadRequest: () => void;
+  isSignalAirLoading: boolean;
+  signalAirHasLoaded: boolean;
+  signalAirReportsCount: number;
+
+  /** Ouvrent les panneaux latéraux de sélection — voués à disparaître */
+  onSignalAirClick: () => void;
+  onMobileAirClick: () => void;
 }
 
 export interface MapControlsUi {
@@ -89,7 +135,7 @@ export interface MapControlsValue {
   modeling: MapControlsModeling;
   refresh: MapControlsRefresh;
   historical: MapControlsHistorical;
-  specialSources: MapControlsSpecialSources;
+  communitySources: MapControlsCommunitySources;
   ui: MapControlsUi;
 }
 
