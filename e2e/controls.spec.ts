@@ -22,26 +22,101 @@ test.describe("Contrôles du rail de carte", () => {
     await expect(page.getByTestId("map-control-rail")).toBeVisible();
   });
 
+  /**
+   * Le rôle attendu fait partie du contrat : un choix simple est un `menu`, un
+   * panneau à contenu saisissable est un `dialog` (Radix Popover). Le menu
+   * Sources est passé au second parce qu'un `DropdownMenuCheckboxItem` ferme le
+   * menu à chaque cochage — inacceptable pour un choix multiple.
+   */
   const menuTriggers = [
-    ["polluant", "rail-pollutant-trigger"],
-    ["sources", "rail-sources-trigger"],
-    ["pas de temps", "rail-timestep-trigger"],
-    ["sources spéciales", "rail-special-sources-trigger"],
+    ["polluant", "rail-pollutant-trigger", "menu"],
+    ["sources", "rail-sources-trigger", "dialog"],
+    ["pas de temps", "rail-timestep-trigger", "menu"],
+    ["sources spéciales", "rail-special-sources-trigger", "menu"],
   ] as const;
 
-  for (const [label, testId] of menuTriggers) {
+  for (const [label, testId, role] of menuTriggers) {
     test(`menu ${label} : ouverture et fermeture`, async ({ page }) => {
       const trigger = page.getByTestId(testId);
       if (await trigger.isDisabled()) {
         test.skip(true, `Contrôle ${label} indisponible pour cet état`);
       }
+      // Le déclencheur doit annoncer le type de surface qu'il ouvre. Un
+      // `aria-haspopup` codé en dur côté rail écraserait la valeur posée par
+      // Radix, `RailItem` diffusant ses props en dernier.
+      await expect(trigger).toHaveAttribute("aria-haspopup", role);
+
       await trigger.click();
-      await expect(page.getByRole("menu")).toBeVisible({ timeout: 5000 });
+      await expect(page.getByRole(role)).toBeVisible({ timeout: 5000 });
       await page.keyboard.press("Escape");
-      await expect(page.getByRole("menu")).not.toBeVisible();
+      await expect(page.getByRole(role)).not.toBeVisible();
       await expect(trigger).toBeFocused();
     });
   }
+
+  test("menu sources : cocher deux sources sans que le menu se referme", async ({
+    page,
+  }) => {
+    await page.getByTestId("rail-sources-trigger").click();
+    const flyout = page.getByTestId("sources-flyout");
+    await expect(flyout).toBeVisible({ timeout: 5000 });
+
+    // AtmoRef et AtmoMicro sont compatibles avec le pas de temps par défaut :
+    // les décocher puis recocher exerce deux bascules effectives, là où une
+    // source incompatible serait refusée par la garde de compatibilité.
+    const atmoRef = flyout.getByTestId("source-atmoRef");
+    const atmoMicro = flyout.getByTestId("source-atmoMicro");
+
+    await atmoRef.click();
+    await expect(flyout).toBeVisible();
+    await expect(atmoRef).toHaveAttribute("aria-checked", "false");
+
+    await atmoMicro.click();
+    await expect(flyout).toBeVisible();
+    await expect(atmoMicro).toHaveAttribute("aria-checked", "false");
+
+    await atmoRef.click();
+    await expect(atmoRef).toHaveAttribute("aria-checked", "true");
+  });
+
+  test("menu sources : le groupe communautaire annonce son état mixte", async ({
+    page,
+  }) => {
+    await page.getByTestId("rail-sources-trigger").click();
+    const flyout = page.getByTestId("sources-flyout");
+    await expect(flyout).toBeVisible({ timeout: 5000 });
+
+    const groupAll = flyout.getByTestId("sources-group-communautaire-all");
+
+    // Par défaut seul NebuleAir est activé sur les trois du périmètre. L'ancienne
+    // implémentation posait `data-state="indeterminate"` en impératif tout en
+    // laissant `aria-checked="false"` : un lecteur d'écran annonçait « non
+    // coché » sur un groupe partiellement sélectionné.
+    await expect(groupAll).toHaveAttribute("aria-checked", "mixed");
+    await expect(groupAll).toHaveAttribute("data-state", "indeterminate");
+
+    await groupAll.click();
+    await expect(groupAll).toHaveAttribute("aria-checked", "true");
+
+    await groupAll.click();
+    await expect(groupAll).toHaveAttribute("aria-checked", "false");
+  });
+
+  test("menu sources : un seul arrêt de tabulation dans le flyout", async ({
+    page,
+  }) => {
+    await page.getByTestId("rail-sources-trigger").click();
+    const flyout = page.getByTestId("sources-flyout");
+    await expect(flyout).toBeVisible({ timeout: 5000 });
+
+    // Le tout-cocher était un `<div role="button" tabIndex={0}>` enveloppant un
+    // vrai `role="checkbox"` : deux éléments interactifs imbriqués. Il ne doit
+    // plus rester que des cases.
+    const nested = await flyout.evaluate(
+      (el) => el.querySelectorAll('[role="button"] [role="checkbox"]').length
+    );
+    expect(nested, "un role=checkbox imbriqué dans un role=button").toBe(0);
+  });
 
   test("fond de carte : panneau ouvert, cliquable et fonctionnel", async ({
     page,

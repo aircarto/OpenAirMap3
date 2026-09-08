@@ -1,16 +1,10 @@
-import React, { useMemo, useRef, useEffect } from "react";
+import React, { useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { sources } from "../../constants/sources";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuCheckboxItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
+import { COMMUNAUTAIRE_SOURCE_CODES } from "../../constants/sources";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Checkbox } from "../ui/checkbox";
 import { DropdownButton } from "./DropdownButton";
+import SourceGroupCheckbox from "./SourceGroupCheckbox";
 import type { CustomTriggerProps } from "./dropdownTriggerContract";
 import { cn } from "../../lib/utils";
 import {
@@ -22,11 +16,7 @@ import {
 import { Toast } from "../ui/toast";
 import AutoRefreshToggle from "./AutoRefreshToggle";
 
-const COMMUNAUTAIRE_SOURCE_CODES = [
-  "communautaire.nebuleair",
-  "communautaire.sensorCommunity",
-  "communautaire.purpleair",
-] as const;
+const MAIN_SOURCE_CODES = ["atmoRef", "atmoMicro"] as const;
 
 interface SourceDropdownProps extends CustomTriggerProps {
   selectedSources: string[];
@@ -42,6 +32,54 @@ interface SourceDropdownProps extends CustomTriggerProps {
   /** Id du trigger pour association avec un <label htmlFor> (accessibilité) */
   triggerId?: string;
 }
+
+/**
+ * Ligne de source cochable.
+ *
+ * Un `Checkbox` et une étiquette liée par `htmlFor`, et non un
+ * `DropdownMenuCheckboxItem` : celui-ci **ferme le menu à chaque cochage**.
+ * Vérifié dans `@radix-ui/react-menu` — `MenuItem.handleSelect` appelle
+ * `rootContext.onClose()` dès que l'événement de sélection n'est pas prévenu, et
+ * `MenuCheckboxItem` compose son `onSelect` sans le prévenir. Sur un menu à choix
+ * multiple, cocher deux sources demandait donc deux réouvertures ; et lorsque la
+ * source était incompatible avec le pas de temps courant, le clic fermait le
+ * menu, affichait un toast et ne changeait rien.
+ */
+const SourceCheckboxRow: React.FC<{
+  code: string;
+  label: string;
+  checked: boolean;
+  onToggle: () => void;
+  indented?: boolean;
+}> = ({ code, label, checked, onToggle, indented = false }) => {
+  const id = useId();
+
+  return (
+    <div
+      className={cn(
+        "flex w-full items-center gap-3 rounded-md px-2 py-2 transition-colors",
+        indented && "ml-4",
+        checked ? "bg-[#e7eef8]" : "hover:bg-black/[0.04]"
+      )}
+    >
+      <Checkbox
+        id={id}
+        data-testid={`source-${code}`}
+        checked={checked}
+        onCheckedChange={onToggle}
+      />
+      <label
+        htmlFor={id}
+        className={cn(
+          "flex-1 cursor-pointer text-sm",
+          checked ? "text-[#1f3c6d]" : "text-gray-700"
+        )}
+      >
+        {label}
+      </label>
+    </div>
+  );
+};
 
 const SourceDropdown: React.FC<SourceDropdownProps> = ({
   selectedSources,
@@ -61,26 +99,31 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
   menuClassName,
 }) => {
   const { t } = useTranslation();
+  const [isOpen, setIsOpen] = useState(false);
+  const mainLabelId = useId();
 
-  // Vérifier l'état des groupes
-  const allCommunautaireSelected = useMemo(
+  const communautaireSubSources = useMemo(
     () =>
-      COMMUNAUTAIRE_SOURCE_CODES.every((source) =>
+      COMMUNAUTAIRE_SOURCE_CODES.map((code) => ({
+        code,
+        label: getSourceDisplayName(code, t),
+      })),
+    [t]
+  );
+
+  const communautaireSelectedCount = useMemo(
+    () =>
+      COMMUNAUTAIRE_SOURCE_CODES.filter((source) =>
         selectedSources.includes(source)
-      ),
+      ).length,
     [selectedSources]
   );
-  const someCommunautaireSelected = useMemo(
-    () =>
-      COMMUNAUTAIRE_SOURCE_CODES.some((source) =>
-        selectedSources.includes(source)
-      ),
-    [selectedSources]
-  );
+  const allCommunautaireSelected =
+    communautaireSelectedCount === COMMUNAUTAIRE_SOURCE_CODES.length;
 
   const handleSourceToggle = (sourceCode: string) => {
     const isCurrentlySelected = selectedSources.includes(sourceCode);
-    
+
     // Si on essaie d'activer une source
     if (!isCurrentlySelected) {
       // Vérifier la compatibilité si le pas de temps est fourni
@@ -109,14 +152,11 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
               firstCompatibleStep && onTimeStepChange
                 ? {
                     label: t("toast.changeTo", {
-                      label: t(`timeSteps.${firstCompatibleStep}`),
+                      step: t(`timeSteps.${firstCompatibleStep}`),
                     }),
-                    onClick: () => {
-                      onTimeStepChange(firstCompatibleStep);
-                    },
+                    onClick: () => onTimeStepChange(firstCompatibleStep),
                   }
                 : undefined,
-            duration: 6000,
           });
 
           // Ne pas activer la source si elle n'est pas compatible
@@ -132,25 +172,30 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
     onSourceChange(newSources);
   };
 
-  const handleGroupToggle = (groupCode: string) => {
-    if (groupCode === "communautaire") {
-      if (allCommunautaireSelected) {
-        // Désélectionner toutes les sources communautaires
-        const newSources = selectedSources.filter(
+  /**
+   * Tout cocher / tout décocher le groupe communautaire.
+   *
+   * Sémantique inchangée, y compris le fait que ce chemin **contourne** la garde
+   * de compatibilité pas de temps appliquée aux cases individuelles : cocher le
+   * groupe peut donc sélectionner une source que le pas de temps courant ne sait
+   * pas servir. C'est une incohérence préexistante, laissée telle quelle ici
+   * pour ne pas mêler un changement de comportement à un portage de primitive.
+   */
+  const handleCommunautaireGroupToggle = () => {
+    if (allCommunautaireSelected) {
+      onSourceChange(
+        selectedSources.filter(
           (source) => !COMMUNAUTAIRE_SOURCE_CODES.includes(source)
-        );
-        onSourceChange(newSources);
-      } else {
-        // Sélectionner toutes les sources communautaires
-        const newSources = [...selectedSources];
-        COMMUNAUTAIRE_SOURCE_CODES.forEach((source) => {
-          if (!newSources.includes(source)) {
-            newSources.push(source);
-          }
-        });
-        onSourceChange(newSources);
-      }
+        )
+      );
+      return;
     }
+
+    const newSources = [...selectedSources];
+    COMMUNAUTAIRE_SOURCE_CODES.forEach((source) => {
+      if (!newSources.includes(source)) newSources.push(source);
+    });
+    onSourceChange(newSources);
   };
 
   const getDisplayText = () => {
@@ -158,23 +203,14 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
       return t("controls.chooseSources");
     }
     if (selectedSources.length === 1) {
-      const source = selectedSources[0];
-      if (source === "atmoRef") return t("controls.sourceAtmoRef");
-      if (source === "atmoMicro") return t("controls.sourceAtmoMicro");
-      if (source.includes("communautaire.")) {
-        const subSource = source.split(".")[1];
-        if (subSource === "nebuleair") return "NebuleAir";
-        if (subSource === "sensorCommunity") return "Sensor.Community";
-        if (subSource === "purpleair") return "PurpleAir";
-      }
-      return source;
+      return getSourceDisplayName(selectedSources[0], t);
     }
     return t("controls.sourcesSelected", { count: selectedSources.length });
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild>
         {renderTrigger ? (
           renderTrigger({ displayText: getDisplayText() })
         ) : (
@@ -186,29 +222,26 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
             <span className="block truncate pr-6">{getDisplayText()}</span>
           </DropdownButton>
         )}
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
+      </PopoverTrigger>
+      <PopoverContent
         side={menuSide}
         align={menuAlign ?? "start"}
-        alignOffset={0}
         sideOffset={menuSideOffset}
+        aria-label={t("controls.sources")}
+        data-testid="sources-flyout"
         className={cn(
-          "min-w-[260px] sm:min-w-[300px] overflow-auto",
-          // hauteur bornée pour ne jamais dépasser la carte sur un portable court
-          "max-h-[min(60vh,22rem)]",
-          !renderTrigger && "w-[var(--radix-dropdown-menu-trigger-width)]",
+          "flex flex-col",
+          // Hauteur bornée sur la place réellement disponible, et défilement
+          // délégué à la région interne : la racine doit rester non défilante
+          // pour qu'un futur en-tête collant tienne.
+          "max-h-[min(72vh,var(--radix-popover-content-available-height))]",
+          !renderTrigger && "w-[var(--radix-popover-trigger-width)]",
           menuClassName
         )}
       >
         {/* Actualisation auto — en tête mais visuellement discrète */}
         {typeof onToggleAutoRefresh === "function" && (
-          <div
-            className="px-3 pt-2 pb-1.5 border-b border-gray-100"
-            onPointerDown={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-          >
+          <div className="shrink-0 border-b border-black/[0.06] px-3 pt-2 pb-1.5">
             <AutoRefreshToggle
               enabled={autoRefreshEnabled}
               onToggle={onToggleAutoRefresh}
@@ -219,135 +252,58 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
           </div>
         )}
 
-        {/* Sources principales */}
-        <div className="p-1">
-          <DropdownMenuLabel className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 px-1">
-            {t("controls.mainSources")}
-          </DropdownMenuLabel>
+        <div className="min-h-0 flex-1 overflow-y-auto p-1.5">
+          {/* Sources principales */}
+          <div role="group" aria-labelledby={mainLabelId}>
+            <div
+              id={mainLabelId}
+              className="mb-1 px-2 text-xs font-medium uppercase tracking-wide text-gray-500"
+            >
+              {t("controls.mainSources")}
+            </div>
+            {MAIN_SOURCE_CODES.map((code) => (
+              <SourceCheckboxRow
+                key={code}
+                code={code}
+                label={getSourceDisplayName(code, t)}
+                checked={selectedSources.includes(code)}
+                onToggle={() => handleSourceToggle(code)}
+              />
+            ))}
+          </div>
 
-          {/* AtmoRef */}
-          <DropdownMenuCheckboxItem
-            checked={selectedSources.includes("atmoRef")}
-            onCheckedChange={() => handleSourceToggle("atmoRef")}
-            className={cn(
-              "py-2 pr-3 text-sm",
-              selectedSources.includes("atmoRef") &&
-                "bg-[#e7eef8] text-[#1f3c6d]"
-            )}
-          >
-            {t("controls.sourceAtmoRef")}
-          </DropdownMenuCheckboxItem>
-
-          {/* AtmoMicro */}
-          <DropdownMenuCheckboxItem
-            checked={selectedSources.includes("atmoMicro")}
-            onCheckedChange={() => handleSourceToggle("atmoMicro")}
-            className={cn(
-              "py-2 pr-3 text-sm",
-              selectedSources.includes("atmoMicro") &&
-                "bg-[#e7eef8] text-[#1f3c6d]"
-            )}
-          >
-            {t("controls.sourceAtmoMicro")}
-          </DropdownMenuCheckboxItem>
-        </div>
-
-        <DropdownMenuSeparator />
-
-        {/* Groupe communautaire */}
-        <div className="p-1">
-          <CommunautaireGroupCheckbox
-            allSelected={allCommunautaireSelected}
-            someSelected={someCommunautaireSelected}
-            onToggle={() => handleGroupToggle("communautaire")}
-            groupLabel={t("controls.sourceCommunautaire")}
+          <div
+            role="separator"
+            className="my-1.5 border-t border-black/[0.06]"
           />
 
-          {/* Sous-menu communautaire */}
-          <div className="ml-6 mt-1 space-y-1">
-            {[
-              { code: "communautaire.nebuleair", name: "NebuleAir" },
-              {
-                code: "communautaire.sensorCommunity",
-                name: "Sensor.Community",
-              },
-              { code: "communautaire.purpleair", name: "PurpleAir" },
-            ].map(({ code, name }) => (
-              <DropdownMenuCheckboxItem
+          {/* Groupe communautaire */}
+          <div role="group" aria-label={t("controls.sourceCommunautaire")}>
+            <SourceGroupCheckbox
+              testId="sources-group-communautaire-all"
+              label={t("controls.sourceCommunautaire")}
+              scope={COMMUNAUTAIRE_SOURCE_CODES}
+              selectedSources={selectedSources}
+              onToggle={handleCommunautaireGroupToggle}
+              hint={t("controls.sourceGroupCount", {
+                selected: communautaireSelectedCount,
+                total: COMMUNAUTAIRE_SOURCE_CODES.length,
+              })}
+            />
+            {communautaireSubSources.map(({ code, label }) => (
+              <SourceCheckboxRow
                 key={code}
+                code={code}
+                label={label}
                 checked={selectedSources.includes(code)}
-                onCheckedChange={() => handleSourceToggle(code)}
-                className={cn(
-                  "py-1.5 pr-3 text-sm",
-                  selectedSources.includes(code) &&
-                    "bg-[#e7eef8] text-[#1f3c6d]"
-                )}
-              >
-                {name}
-              </DropdownMenuCheckboxItem>
+                onToggle={() => handleSourceToggle(code)}
+                indented
+              />
             ))}
           </div>
         </div>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-};
-
-// Composant séparé pour gérer l'état indéterminé du checkbox du groupe communautaire
-const CommunautaireGroupCheckbox: React.FC<{
-  allSelected: boolean;
-  someSelected: boolean;
-  onToggle: () => void;
-  groupLabel: string;
-}> = ({ allSelected, someSelected, onToggle, groupLabel }) => {
-  const checkboxRef = useRef<HTMLButtonElement>(null);
-  const isIndeterminate = someSelected && !allSelected;
-
-  useEffect(() => {
-    if (checkboxRef.current) {
-      // Gérer l'état indéterminé pour Radix UI
-      if (isIndeterminate) {
-        checkboxRef.current.setAttribute("data-state", "indeterminate");
-      } else if (allSelected) {
-        checkboxRef.current.setAttribute("data-state", "checked");
-      } else {
-        checkboxRef.current.setAttribute("data-state", "unchecked");
-      }
-    }
-  }, [allSelected, isIndeterminate]);
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      onToggle();
-    }
-  };
-
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={onToggle}
-      onKeyDown={handleKeyDown}
-      className="w-full flex items-center pl-2 pr-3 py-2 rounded-md text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#4271B3]/20 focus:ring-offset-1"
-    >
-      <div className="flex items-center relative">
-        <div className="relative mr-3 flex-shrink-0">
-          <Checkbox
-            ref={checkboxRef}
-            checked={allSelected}
-            onCheckedChange={onToggle}
-          />
-          {/* Indicateur visuel pour l'état indéterminé - centré dans le checkbox */}
-          {isIndeterminate && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-2 h-0.5 bg-[#325a96] rounded" />
-            </div>
-          )}
-        </div>
-        <span className="font-medium">{groupLabel}</span>
-      </div>
-    </div>
+      </PopoverContent>
+    </Popover>
   );
 };
 

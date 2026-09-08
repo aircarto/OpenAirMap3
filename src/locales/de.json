@@ -79,6 +79,7 @@
     "sourceAtmoRef": "AtmoSud-Referenzstationen",
     "sourceAtmoMicro": "AtmoSud-qualifizierte Mikrosensoren",
     "sourceCommunautaire": "Weitere Community-Sensoren",
+    "sourceGroupCount": "{{selected}}/{{total}}",
     "historicalMode": "Historischer Modus",
     "historicalModeUnavailable": "Historischer Modus (nicht verfügbar)",
     "historicalModeActivate": "Historischen Modus aktivieren",

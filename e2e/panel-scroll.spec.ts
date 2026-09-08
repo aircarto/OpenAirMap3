@@ -56,14 +56,22 @@ for (const { name, width, height } of [
     } catch {
       test.skip(true, "Aucun marqueur affiché (API vide ou lente)");
     }
-    await marker.click({ force: true });
 
     const panel = page.locator(PANELS).first();
-    try {
-      await expect(panel).toBeVisible({ timeout: 15000 });
-    } catch {
-      test.skip(true, "Panel latéral non affiché après clic marqueur");
-    }
+
+    // Clic et ouverture réessayés ensemble : un poll de données re-rend les
+    // marqueurs, et le nôtre peut se détacher du DOM entre l'assertion de
+    // visibilité et le clic — « element was detached from the DOM, retrying »,
+    // puis échec sur le remplaçant pas encore visible. `force` n'y change rien,
+    // il ne lève que les vérifications d'actionnabilité. Réessayer l'ensemble
+    // jusqu'à ce que le panneau soit là est le seul point stable.
+    await expect(async () => {
+      await page.locator(".custom-marker-container").first().click({
+        force: true,
+      });
+      await expect(panel).toBeVisible({ timeout: 5000 });
+    }).toPass({ timeout: 40000 });
+
     await page.waitForTimeout(2500);
 
     const g = await geometry(page);

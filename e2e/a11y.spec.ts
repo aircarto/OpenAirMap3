@@ -55,18 +55,19 @@ test.describe("Accessibilité (a11y)", () => {
     } catch {
       test.skip(true, "Aucun marqueur affiché (API vide ou lente)");
     }
-    // `force` : l'icône Leaflet porte le handler, mais son enfant
-    // `.custom-marker-container` intercepte le pointeur, et Playwright refuse
-    // alors le clic après ses tentatives. Même motif que panel-scroll.spec.ts.
-    await marker.click({ force: true });
     const panelSelector =
       '[data-testid="station-side-panel"], [data-testid="micro-side-panel"], [data-testid="nebuleair-side-panel"], [data-testid="sensorcommunity-side-panel"], [data-testid="purpleair-side-panel"]';
     const panel = page.locator(panelSelector).first();
-    try {
-      await expect(panel).toBeVisible({ timeout: 15000 });
-    } catch {
-      test.skip(true, "Panel latéral non affiché après clic marqueur");
-    }
+
+    // `force` parce que l'icône Leaflet porte le handler mais que son enfant
+    // `.custom-marker-container` intercepte le pointeur ; et l'ensemble est
+    // réessayé parce qu'un poll de données re-rend les marqueurs et peut
+    // détacher le nôtre entre l'assertion de visibilité et le clic. Même motif
+    // que panel-scroll.spec.ts.
+    await expect(async () => {
+      await page.locator(".leaflet-marker-icon").first().click({ force: true });
+      await expect(panel).toBeVisible({ timeout: 5000 });
+    }).toPass({ timeout: 40000 });
 
     const results = await new AxeBuilder({ page })
       .include(panelSelector)

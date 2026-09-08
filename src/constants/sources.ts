@@ -78,6 +78,37 @@ export const sources: Sources = {
   }, // Capteurs SignalAir
 };
 
+/**
+ * Sous-sources communautaires que la case « tout cocher » du groupe NE pilote
+ * pas.
+ *
+ * MobileAir est déclaré ici comme les autres, mais il n'entre jamais dans
+ * `selectedSources` : son activation passe par un booléen propre, parce qu'elle
+ * n'affiche rien tant qu'un capteur et une période n'ont pas été choisis puis
+ * chargés. Le tout-cocher l'allumerait donc sans rien montrer, et le compte
+ * « n/total » mentirait.
+ *
+ * Ne pas « corriger » cette exclusion en ajoutant `mobileair` au périmètre : la
+ * régression serait silencieuse, d'où le test e2e dédié.
+ */
+export const EXCLUDED_FROM_GROUP_TOGGLE = ["mobileair"] as const;
+
+/**
+ * Codes pilotés par la case « tout cocher » du groupe communautaire, dérivés du
+ * référentiel ci-dessus.
+ *
+ * Dérivés et non listés à la main : la liste était auparavant écrite deux fois
+ * dans `SourceDropdown` — un tuple en tête de fichier et un littéral inline
+ * dans le rendu — qui pouvaient diverger sans que rien ne le signale.
+ */
+export const COMMUNAUTAIRE_SOURCE_CODES: string[] = Object.keys(
+  sources.communautaire.subSources ?? {}
+)
+  .filter(
+    (key) => !(EXCLUDED_FROM_GROUP_TOGGLE as readonly string[]).includes(key)
+  )
+  .map((key) => `communautaire.${key}`);
+
 // Fonction pour obtenir les sources activées par défaut
 export const getDefaultSources = (): string[] => {
   const defaultSources: string[] = [];

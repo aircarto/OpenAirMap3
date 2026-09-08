@@ -79,6 +79,7 @@
     "sourceAtmoRef": "Estaciones de referencia AtmoSud",
     "sourceAtmoMicro": "Microcaptadores cualificados AtmoSud",
     "sourceCommunautaire": "Otros sensores comunitarios",
+    "sourceGroupCount": "{{selected}}/{{total}}",
     "historicalMode": "Modo histórico",
     "historicalModeUnavailable": "Modo histórico (no disponible)",
     "historicalModeActivate": "Activar modo histórico",

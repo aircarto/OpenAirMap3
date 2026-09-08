@@ -79,6 +79,7 @@
     "sourceAtmoRef": "محطات مرجعية AtmoSud",
     "sourceAtmoMicro": "مقاييس AtmoSud المؤهلة",
     "sourceCommunautaire": "مقاييس مجتمعية أخرى",
+    "sourceGroupCount": "{{selected}}/{{total}}",
     "historicalMode": "الوضع التاريخي",
     "historicalModeUnavailable": "الوضع التاريخي (غير متاح)",
     "historicalModeActivate": "تفعيل الوضع التاريخي",

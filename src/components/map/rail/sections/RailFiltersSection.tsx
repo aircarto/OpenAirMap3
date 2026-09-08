@@ -9,6 +9,7 @@ import RailSection from "../RailSection";
 import {
   RAIL_FLYOUT_CLASS,
   RAIL_FLYOUT_SIDE_OFFSET,
+  railFlyoutClass,
   railFlyoutSide,
 } from "../railFlyout";
 import { IconPollutant, IconSources, IconTimeStep } from "../railIcons";
@@ -90,6 +91,7 @@ export const RailFiltersSection: React.FC<RailFiltersSectionProps> = ({
         loading={refresh.loading}
         isHistoricalModeActive={historical.isActive}
         {...flyout}
+        menuClassName={railFlyoutClass("wide")}
         renderTrigger={() => (
           <RailItem
             itemId="sources"
@@ -97,7 +99,11 @@ export const RailFiltersSection: React.FC<RailFiltersSectionProps> = ({
             data-testid="rail-sources-trigger"
             data-tour="global-sources"
             aria-labelledby="rail-sources-label rail-sources-value"
-            aria-haspopup="menu"
+            // Ni aria-haspopup ni aria-expanded ici : le menu Sources est un
+            // Popover, et Radix pose `aria-haspopup="dialog"` via asChild.
+            // `RailItem` spread ses props EN DERNIER, donc un `"menu"` codé en
+            // dur écraserait la valeur de Radix et annoncerait un menu qui
+            // n'existe pas — sans qu'aucune règle axe ne le signale.
             onFocus={onItemFocus}
             label={t("controls.sources")}
             icon={<IconSources />}
