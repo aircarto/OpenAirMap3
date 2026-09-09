@@ -7,6 +7,10 @@ import {
   resolveTimeRange,
   type TimeRange,
 } from "../../utils/historicalTimeRange";
+import {
+  getSensorAgeSeconds,
+  RECENT_ACTIVITY_MAX_SECONDS,
+} from "../../utils/sensorLastSeen";
 import { getSourceDisplayName } from "../../utils/sourceCompatibility";
 import { cn } from "../../lib/utils";
 import type { MapControlsCommunitySources } from "../../contexts/mapControlsContext";
@@ -46,6 +50,7 @@ export const MobileAirSourceDisclosure: React.FC<
   } = community;
 
   const [selectedSensor, setSelectedSensor] = useState<string | null>(null);
+  const [sensorQuery, setSensorQuery] = useState("");
   const [timeRange, setTimeRange] = useState<TimeRange>({
     type: "preset",
     preset: "7d",
@@ -53,7 +58,21 @@ export const MobileAirSourceDisclosure: React.FC<
 
   const { sensors, loading, error } = useMobileAirSensorCatalog();
   const availableSensors = sensors.filter((sensor) => sensor.displayMap);
+  // Filtre local : le catalogue est déjà en mémoire, pas de debounce réseau.
+  const normalizedQuery = sensorQuery.trim().toLowerCase();
+  const filteredSensors =
+    normalizedQuery.length === 0
+      ? availableSensors
+      : availableSensors.filter((sensor) =>
+          sensor.sensorId.toLowerCase().includes(normalizedQuery)
+        );
+  const selectedVisible = filteredSensors.some(
+    (sensor) => sensor.sensorId === selectedSensor
+  );
   const label = getSourceDisplayName("communautaire.mobileair", t);
+  // Un seul instant de référence par rendu, pour que la liste ne se contredise
+  // pas d'une ligne à l'autre.
+  const now = Date.now();
 
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -63,10 +82,10 @@ export const MobileAirSourceDisclosure: React.FC<
    * Un `radiogroup` ne compte que pour UN arrêt de tabulation : sans cela, le
    * catalogue — plusieurs dizaines de capteurs — obligerait à autant de `Tab`
    * pour traverser le menu. La sélection suit le focus, comme le veut le modèle
-   * ARIA pour des boutons radio.
+   * ARIA pour des boutons radio. Les indices portent sur la liste filtrée.
    */
   const selectSensorAt = (index: number) => {
-    const sensor = availableSensors[index];
+    const sensor = filteredSensors[index];
     if (!sensor) return;
     setSelectedSensor(sensor.sensorId);
     listRef.current
@@ -78,7 +97,7 @@ export const MobileAirSourceDisclosure: React.FC<
     event: React.KeyboardEvent<HTMLButtonElement>,
     current: number
   ) => {
-    const count = availableSensors.length;
+    const count = filteredSensors.length;
     if (count === 0) return;
 
     let next: number;
@@ -103,6 +122,53 @@ export const MobileAirSourceDisclosure: React.FC<
 
     event.preventDefault();
     selectSensorAt(next);
+  };
+
+  /**
+   * Ancienneté en clair. Les capteurs mobiles émettent par campagnes : sans
+   * cette ligne, un capteur muet depuis six mois est indiscernable d'un capteur
+   * arrêté ce matin, alors que seul le second promet un parcours à charger.
+   */
+  const formatLastSeen = (ageSeconds: number | null): string | null => {
+    if (ageSeconds === null) return null;
+
+    const minutes = Math.floor(ageSeconds / 60);
+    if (minutes < 1) return t("panels.mobileAirSelection.lastSeenNow");
+
+    const hours = Math.floor(minutes / 60);
+    if (hours < 1) {
+      return t("panels.mobileAirSelection.lastSeenMinutes", { count: minutes });
+    }
+
+    const days = Math.floor(hours / 24);
+    if (days < 1) {
+      return t("panels.mobileAirSelection.lastSeenHours", { count: hours });
+    }
+
+    return t("panels.mobileAirSelection.lastSeenDays", { count: days });
+  };
+
+  /** Trois états, comme l'ancien panneau : « inactif » seul rangeait à tort un capteur silencieux depuis une heure avec un capteur arrêté depuis un an. */
+  const getSensorStatus = (
+    connected: boolean,
+    ageSeconds: number | null
+  ): { label: string; tone: string } => {
+    if (connected) {
+      return {
+        label: t("panels.mobileAirSelection.statusConnected"),
+        tone: "text-emerald-600",
+      };
+    }
+    if (ageSeconds !== null && ageSeconds < RECENT_ACTIVITY_MAX_SECONDS) {
+      return {
+        label: t("panels.mobileAirSelection.statusRecent"),
+        tone: "text-amber-600",
+      };
+    }
+    return {
+      label: t("panels.mobileAirSelection.statusInactive"),
+      tone: "text-gray-400",
+    };
   };
 
   const handleLoad = () => {
@@ -161,64 +227,117 @@ export const MobileAirSourceDisclosure: React.FC<
         )}
 
         {!loading && !error && (
-          <div
-            ref={listRef}
-            role="radiogroup"
-            aria-label={t("panels.mobileAirSelection.sensorsAvailable", {
-              count: availableSensors.length,
-            })}
-            className="max-h-48 space-y-1 overflow-y-auto"
-          >
-            {availableSensors.map((sensor, index) => {
-              const checked = selectedSensor === sensor.sensorId;
-              return (
-                <button
-                  key={sensor.sensorId}
-                  type="button"
-                  role="radio"
-                  aria-checked={checked}
-                  // Un seul arrêt de tabulation : le capteur coché, ou le
-                  // premier de la liste tant que rien n'est choisi.
-                  tabIndex={checked || (selectedSensor === null && index === 0) ? 0 : -1}
-                  data-sensor-index={index}
-                  data-testid={`sources-mobileair-sensor-${sensor.sensorId}`}
-                  onClick={() => setSelectedSensor(sensor.sensorId)}
-                  onKeyDown={(event) => handleSensorKeyDown(event, index)}
-                  className={cn(
-                    "flex w-full items-center gap-2 rounded-md border px-2 py-1.5 text-left text-xs transition-colors",
-                    checked
-                      ? "border-blue-300 bg-blue-50 text-[#1f3c6d]"
-                      : "border-black/[0.09] bg-white text-gray-700 hover:bg-black/[0.04]"
+          <div className="space-y-1.5">
+            {availableSensors.length > 0 && (
+              <label className="block px-0.5">
+                <span className="sr-only">
+                  {t("panels.mobileAirSelection.searchPlaceholder")}
+                </span>
+                <input
+                  type="search"
+                  data-testid="sources-mobileair-search"
+                  value={sensorQuery}
+                  onChange={(event) => setSensorQuery(event.target.value)}
+                  // Empêche Radix/Popover de traiter les flèches et Escape
+                  // comme navigation du menu pendant qu'on tape.
+                  onKeyDown={(event) => event.stopPropagation()}
+                  placeholder={t(
+                    "panels.mobileAirSelection.searchPlaceholder"
                   )}
-                >
-                  <span
-                    aria-hidden="true"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  className="w-full rounded-md border border-black/[0.09] bg-white px-2 py-1.5 text-xs text-gray-700 placeholder:text-[color:var(--fg-muted)] outline-none transition-colors focus:border-blue-300 focus:ring-1 focus:ring-blue-300"
+                />
+              </label>
+            )}
+
+            <div
+              ref={listRef}
+              role="radiogroup"
+              aria-label={t("panels.mobileAirSelection.sensorsAvailable", {
+                count: filteredSensors.length,
+              })}
+              className="max-h-48 space-y-1 overflow-y-auto"
+            >
+              {filteredSensors.map((sensor, index) => {
+                const checked = selectedSensor === sensor.sensorId;
+                const ageSeconds = getSensorAgeSeconds(sensor, now);
+                const status = getSensorStatus(sensor.connected, ageSeconds);
+                const lastSeen = formatLastSeen(ageSeconds);
+                const lastActivity = lastSeen
+                  ? t("panels.mobileAirSelection.lastActivity", {
+                      value: lastSeen,
+                    })
+                  : null;
+                return (
+                  <button
+                    key={sensor.sensorId}
+                    type="button"
+                    role="radio"
+                    aria-checked={checked}
+                    // Le nom accessible reprend la date en toutes lettres, que
+                    // l'affichage abrège faute de place.
+                    aria-label={[sensor.sensorId, status.label, lastActivity]
+                      .filter(Boolean)
+                      .join(", ")}
+                    // Un seul arrêt de tabulation : le capteur coché s'il est
+                    // visible, sinon le premier de la liste filtrée.
+                    tabIndex={
+                      checked || (!selectedVisible && index === 0) ? 0 : -1
+                    }
+                    data-sensor-index={index}
+                    data-testid={`sources-mobileair-sensor-${sensor.sensorId}`}
+                    onClick={() => setSelectedSensor(sensor.sensorId)}
+                    onKeyDown={(event) => handleSensorKeyDown(event, index)}
                     className={cn(
-                      "h-2 w-2 shrink-0 rounded-full border",
+                      "flex w-full items-center gap-2 rounded-md border px-2 py-1.5 text-left text-xs transition-colors",
                       checked
-                        ? "border-blue-600 bg-blue-600"
-                        : "border-black/20"
-                    )}
-                  />
-                  <span className="flex-1 truncate">{sensor.sensorId}</span>
-                  <span
-                    className={cn(
-                      "shrink-0 text-[10px]",
-                      sensor.connected ? "text-emerald-600" : "text-gray-400"
+                        ? "border-blue-300 bg-blue-50 text-[#1f3c6d]"
+                        : "border-black/[0.09] bg-white text-gray-700 hover:bg-black/[0.04]"
                     )}
                   >
-                    {sensor.connected
-                      ? t("panels.mobileAirSelection.statusConnected")
-                      : t("panels.mobileAirSelection.statusInactive")}
-                  </span>
-                </button>
-              );
-            })}
-            {availableSensors.length === 0 && (
-              <p className="px-2 text-xs text-[color:var(--fg-muted)]">
-                {t("panels.mobileAirSelection.sensorsAvailable", { count: 0 })}
-              </p>
-            )}
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        "h-2 w-2 shrink-0 rounded-full border",
+                        checked
+                          ? "border-blue-600 bg-blue-600"
+                          : "border-black/20"
+                      )}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate">{sensor.sensorId}</span>
+                      {lastSeen && (
+                        <span className="block truncate text-[10px] text-[color:var(--fg-muted)]">
+                          {lastSeen}
+                        </span>
+                      )}
+                    </span>
+                    <span className={cn("shrink-0 text-[10px]", status.tone)}>
+                      {status.label}
+                    </span>
+                  </button>
+                );
+              })}
+              {availableSensors.length === 0 && (
+                <p className="px-2 text-xs text-[color:var(--fg-muted)]">
+                  {t("panels.mobileAirSelection.sensorsAvailable", {
+                    count: 0,
+                  })}
+                </p>
+              )}
+              {availableSensors.length > 0 && filteredSensors.length === 0 && (
+                <p
+                  data-testid="sources-mobileair-search-empty"
+                  className="px-2 text-xs text-[color:var(--fg-muted)]"
+                >
+                  {t("panels.mobileAirSelection.noSearchResults", {
+                    query: sensorQuery.trim(),
+                  })}
+                </p>
+              )}
+            </div>
           </div>
         )}
 

@@ -354,7 +354,18 @@
       "selectSensor": "Sensor auswählen",
       "loadSensorRoute": "Route des Sensors {{sensorId}} laden",
       "statusConnected": "Verbunden",
-      "statusInactive": "Inaktiv"
+      "statusInactive": "Inaktiv",
+      "lastActivity": "Letzte Aktivität: {{value}}",
+      "statusRecent": "Aktiv",
+      "lastSeenNow": "Gerade eben",
+      "lastSeenMinutes_one": "Vor {{count}} Minute",
+      "lastSeenMinutes_other": "Vor {{count}} Minuten",
+      "lastSeenHours_one": "Vor {{count}} Stunde",
+      "lastSeenHours_other": "Vor {{count}} Stunden",
+      "lastSeenDays_one": "Vor {{count}} Tag",
+      "lastSeenDays_other": "Vor {{count}} Tagen",
+      "searchPlaceholder": "Sensor suchen…",
+      "noSearchResults": "Kein Sensor entspricht „{{query}}“"
     },
     "mobileAirDetail": {
       "sessionTitle": "Sitzung {{sessionId}}",

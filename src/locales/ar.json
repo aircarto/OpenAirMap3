@@ -354,7 +354,18 @@
       "selectSensor": "اختر مقياساً",
       "loadSensorRoute": "تحميل مسار المقياس {{sensorId}}",
       "statusConnected": "متصل",
-      "statusInactive": "غير نشط"
+      "statusInactive": "غير نشط",
+      "lastActivity": "آخر نشاط: {{value}}",
+      "statusRecent": "حديث",
+      "lastSeenNow": "الآن",
+      "lastSeenMinutes_one": "منذ {{count}} دقيقة",
+      "lastSeenMinutes_other": "منذ {{count}} دقيقة",
+      "lastSeenHours_one": "منذ {{count}} ساعة",
+      "lastSeenHours_other": "منذ {{count}} ساعة",
+      "lastSeenDays_one": "منذ {{count}} يوم",
+      "lastSeenDays_other": "منذ {{count}} أيام",
+      "searchPlaceholder": "البحث عن مستشعر…",
+      "noSearchResults": "لا يوجد مستشعر يطابق « {{query}} »"
     },
     "mobileAirDetail": {
       "sessionTitle": "الجلسة {{sessionId}}",

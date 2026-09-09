@@ -141,6 +141,15 @@ test.describe("Dépliants SignalAir et MobileAir du menu Sources", () => {
     // mode historique.
     await expect(body.getByText(/^Historique$/).first()).toBeVisible();
 
+    // Le champ de recherche n'apparaît qu'une fois le catalogue non vide.
+    const search = page.getByTestId("sources-mobileair-search");
+    await expect(search).toBeVisible({ timeout: 20000 });
+    await search.fill("zzz-inexistant");
+    await expect(
+      page.getByTestId("sources-mobileair-search-empty")
+    ).toBeVisible();
+    await search.fill("");
+
     // Désactivé tant qu'aucun capteur n'est choisi : sa présence seule ne
     // dirait rien, son état dit que le dépliant attend une sélection.
     const loadBtn = page.getByTestId("sources-mobileair-load");

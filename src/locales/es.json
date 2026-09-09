@@ -354,7 +354,18 @@
       "selectSensor": "Seleccione un sensor",
       "loadSensorRoute": "Cargar el recorrido del sensor {{sensorId}}",
       "statusConnected": "Conectado",
-      "statusInactive": "Inactivo"
+      "statusInactive": "Inactivo",
+      "lastActivity": "Última actividad: {{value}}",
+      "statusRecent": "Reciente",
+      "lastSeenNow": "Ahora mismo",
+      "lastSeenMinutes_one": "Hace {{count}} minuto",
+      "lastSeenMinutes_other": "Hace {{count}} minutos",
+      "lastSeenHours_one": "Hace {{count}} hora",
+      "lastSeenHours_other": "Hace {{count}} horas",
+      "lastSeenDays_one": "Hace {{count}} día",
+      "lastSeenDays_other": "Hace {{count}} días",
+      "searchPlaceholder": "Buscar un sensor…",
+      "noSearchResults": "Ningún sensor coincide con « {{query}} »"
     },
     "mobileAirDetail": {
       "sessionTitle": "Sesión {{sessionId}}",
