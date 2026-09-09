@@ -56,5 +56,4 @@ export interface RailShortcutsBinding {
   signalAir: SignalAirProps;
   mobileAir: MobileAirProps;
   isComparisonPanelVisible: boolean;
-  selectedSources: string[];
 }

@@ -32,7 +32,6 @@ test.describe("Contrôles du rail de carte", () => {
     ["polluant", "rail-pollutant-trigger", "menu"],
     ["sources", "rail-sources-trigger", "dialog"],
     ["pas de temps", "rail-timestep-trigger", "menu"],
-    ["sources spéciales", "rail-special-sources-trigger", "menu"],
   ] as const;
 
   for (const [label, testId, role] of menuTriggers) {

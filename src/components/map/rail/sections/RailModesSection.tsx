@@ -1,16 +1,10 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import HistoricalModeButton from "../../../controls/HistoricalModeButton";
-import SpecialSourceHeaderDropdown from "../../../controls/SpecialSourceHeaderDropdown";
 import { useMapControls } from "../../../../contexts/mapControlsContext";
 import RailItem from "../RailItem";
 import RailSection from "../RailSection";
-import { IconHistorical, IconSpecialSources } from "../railIcons";
-import {
-  RAIL_FLYOUT_CLASS,
-  RAIL_FLYOUT_SIDE_OFFSET,
-  railFlyoutSide,
-} from "../railFlyout";
+import { IconHistorical } from "../railIcons";
 import type { RailOrientation } from "../useRailRoving";
 
 export interface RailModesSectionProps {
@@ -19,29 +13,21 @@ export interface RailModesSectionProps {
 }
 
 /**
- * Groupe « modes » : sources spéciales et mode historique.
+ * Groupe « modes », réduit au seul mode historique.
  *
- * Les deux relèvent du même registre — ils changent la NATURE de ce qui est
- * affiché, là où le groupe « données » ne fait que filtrer. La modélisation les a
- * quittés pour le sous-menu du fond de carte, laissant les sources spéciales
- * seules dans leur groupe : les réunir évite un séparateur pour un unique item.
- *
- * Ce groupe n'est JAMAIS gelé pendant la lecture : le mode historique est
- * précisément le contrôle dont l'utilisateur a besoin pour l'arrêter.
+ * Il a compté jusqu'à trois items : la modélisation est partie au sous-menu du
+ * fond de carte, les sources spéciales aux dépliants du menu Sources. Le groupe
+ * survit à un seul item pour une raison qui n'est pas décorative — il est le
+ * seul du rail à n'être JAMAIS gelé pendant la lecture, le mode historique
+ * étant précisément le contrôle dont l'utilisateur a besoin pour l'arrêter.
+ * Fondre ce bouton dans le groupe « données » le figerait avec lui.
  */
 export const RailModesSection: React.FC<RailModesSectionProps> = ({
   orientation,
   onItemFocus,
 }) => {
-  const { historical, communitySources } = useMapControls();
+  const { historical } = useMapControls();
   const { t } = useTranslation();
-
-  const flyout = {
-    menuSide: railFlyoutSide(orientation),
-    menuAlign: "start" as const,
-    menuSideOffset: RAIL_FLYOUT_SIDE_OFFSET,
-    menuClassName: RAIL_FLYOUT_CLASS,
-  };
 
   return (
     <RailSection
@@ -49,37 +35,6 @@ export const RailModesSection: React.FC<RailModesSectionProps> = ({
       orientation={orientation}
       separated
     >
-      {/* Sources spéciales */}
-      <SpecialSourceHeaderDropdown
-        onSignalAirClick={communitySources.onSignalAirClick}
-        onMobileAirClick={communitySources.onMobileAirClick}
-        isSignalAirVisible={communitySources.isSignalAirVisible}
-        isMobileAirVisible={communitySources.isMobileAirVisible}
-        onSignalAirToggle={communitySources.onSignalAirToggle}
-        onMobileAirToggle={communitySources.onMobileAirToggle}
-        hasSignalAirData={communitySources.hasSignalAirData}
-        hasMobileAirData={communitySources.hasMobileAirData}
-        {...flyout}
-        renderTrigger={() => (
-          <RailItem
-            itemId="special-sources"
-            data-testid="rail-special-sources-trigger"
-            // Nom accessible préservé : e2e/signalair-mobileair.spec.ts en dépend
-            aria-label={t("controls.specialSourcesAria")}
-            aria-haspopup="menu"
-            onFocus={onItemFocus}
-            label={t("controls.specialSources")}
-            icon={<IconSpecialSources />}
-            caption={t("rail.caption.specialSources")}
-            dot={
-              communitySources.hasSignalAirData || communitySources.hasMobileAirData
-                ? "ok"
-                : "none"
-            }
-          />
-        )}
-      />
-
       <HistoricalModeButton
         isActive={historical.isActive}
         onToggle={historical.onToggle}

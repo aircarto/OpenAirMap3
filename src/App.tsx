@@ -176,8 +176,6 @@ const AppContent: React.FC = () => {
     string | null
   >(null);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
-  const [openSignalAirPanelRequest, setOpenSignalAirPanelRequest] = useState(0);
-  const [openMobileAirPanelRequest, setOpenMobileAirPanelRequest] = useState(0);
 
   // États pour gérer SignalAir et MobileAir indépendamment du système de sources
   const [isSignalAirEnabled, setIsSignalAirEnabled] = useState(false);
@@ -299,13 +297,15 @@ const AppContent: React.FC = () => {
     setIsSignalAirVisible(false);
   }, [resetSignalAirSettings]);
 
-  // Gérer l'ouverture des panels
-  const handleSignalAirPanelOpen = useCallback(() => {
+  // Activation des deux sources. Les noms d'événement analytiques restent ceux
+  // de l'époque des panneaux latéraux : les renommer romprait les séries déjà
+  // collectées, alors que la mesure porte sur le même geste utilisateur.
+  const handleSignalAirEnable = useCallback(() => {
     setIsSignalAirEnabled(true);
     trackFeatureUsage("signalair_panel_open");
   }, []);
 
-  const handleMobileAirPanelOpen = useCallback(() => {
+  const handleMobileAirEnable = useCallback(() => {
     setIsMobileAirEnabled(true);
     trackFeatureUsage("mobileair_panel_open");
   }, []);
@@ -321,23 +321,23 @@ const AppContent: React.FC = () => {
   const handleSignalAirEnabledChange = useCallback(
     (enabled: boolean) => {
       if (enabled) {
-        handleSignalAirPanelOpen();
+        handleSignalAirEnable();
       } else {
         handleSignalAirSourceDeselected();
       }
     },
-    [handleSignalAirPanelOpen, handleSignalAirSourceDeselected],
+    [handleSignalAirEnable, handleSignalAirSourceDeselected],
   );
 
   const handleMobileAirEnabledChange = useCallback(
     (enabled: boolean) => {
       if (enabled) {
-        handleMobileAirPanelOpen();
+        handleMobileAirEnable();
       } else {
         handleMobileAirSourceDeselected();
       }
     },
-    [handleMobileAirPanelOpen, handleMobileAirSourceDeselected],
+    [handleMobileAirEnable, handleMobileAirSourceDeselected],
   );
 
   // Gérer le chargement des données SignalAir quand activé
@@ -636,16 +636,6 @@ const AppContent: React.FC = () => {
     [markMapViewTouched],
   );
 
-  const handleSignalAirHeaderClick = useCallback(() => {
-    setOpenSignalAirPanelRequest((r) => r + 1);
-    handleSignalAirPanelOpen();
-  }, [handleSignalAirPanelOpen]);
-
-  const handleMobileAirHeaderClick = useCallback(() => {
-    setOpenMobileAirPanelRequest((r) => r + 1);
-    handleMobileAirPanelOpen();
-  }, [handleMobileAirPanelOpen]);
-
   const handleOpenInfoModal = useCallback(() => setIsInfoModalOpen(true), []);
 
   const headerDisabled = isHistoricalModeActive && temporalState.isPlaying;
@@ -747,8 +737,6 @@ const AppContent: React.FC = () => {
       isSignalAirLoading,
       signalAirHasLoaded: hasSignalAirLoaded,
       signalAirReportsCount,
-      onSignalAirClick: handleSignalAirHeaderClick,
-      onMobileAirClick: handleMobileAirHeaderClick,
     }),
     [
       isSignalAirEnabled,
@@ -769,8 +757,6 @@ const AppContent: React.FC = () => {
       isSignalAirLoading,
       hasSignalAirLoaded,
       signalAirReportsCount,
-      handleSignalAirHeaderClick,
-      handleMobileAirHeaderClick,
     ],
   );
 
@@ -897,7 +883,6 @@ const AppContent: React.FC = () => {
             signalAirSelectedTypes={signalAirSelectedTypes}
             onSignalAirPeriodChange={handleSignalAirDraftPeriodChange}
             onSignalAirTypesChange={handleSignalAirTypesChange}
-            onSignalAirLoadRequest={handleSignalAirLoadRequest}
             isSignalAirLoading={isSignalAirLoading}
             signalAirHasLoaded={hasSignalAirLoaded}
             signalAirReportsCount={signalAirReportsCount}
@@ -916,10 +901,6 @@ const AppContent: React.FC = () => {
             isMobileAirVisible={isMobileAirVisible}
             onSignalAirToggle={handleSignalAirVisibilityToggle}
             onMobileAirToggle={handleMobileAirVisibilityToggle}
-            onSignalAirPanelOpen={handleSignalAirPanelOpen}
-            onMobileAirPanelOpen={handleMobileAirPanelOpen}
-            openSignalAirPanelRequest={openSignalAirPanelRequest}
-            openMobileAirPanelRequest={openMobileAirPanelRequest}
             historicalCurrentDate={
               isHistoricalModeActive && temporalState.isPlaying
                 ? temporalState.currentDate

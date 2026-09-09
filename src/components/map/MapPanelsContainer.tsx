@@ -11,9 +11,7 @@ import NebuleAirSidePanel from "../panels/NebuleAirSidePanel";
 import SensorCommunitySidePanel from "../panels/SensorCommunitySidePanel";
 import PurpleAirSidePanel from "../panels/PurpleAirSidePanel";
 import ComparisonSidePanel from "../panels/ComparisonSidePanel";
-import MobileAirSelectionPanel from "../panels/MobileAirSelectionPanel";
 import MobileAirDetailPanel from "../panels/MobileAirDetailPanel";
-import SignalAirSelectionPanel from "../panels/SignalAirSelectionPanel";
 import SignalAirDetailPanel from "../panels/SignalAirDetailPanel";
 import type { TimeRange } from "../../utils/historicalTimeRange";
 
@@ -22,13 +20,6 @@ interface MapPanelsContainerProps {
   signalAir: any;
   mobileAir: any;
   selectedPollutant: string;
-  signalAirSelectedTypes: string[];
-  signalAirPeriod: { startDate: string; endDate: string };
-  onSignalAirTypesChange: (types: string[]) => void;
-  onSignalAirPeriodChange: (startDate: string, endDate: string) => void;
-  isSignalAirLoading: boolean;
-  signalAirHasLoaded: boolean;
-  signalAirReportsCount: number;
   isComparisonPanelVisible: boolean;
   handleRemoveStationFromComparison: (stationId: string) => void;
   handleLoadComparisonData: (
@@ -62,13 +53,6 @@ const MapPanelsContainer: React.FC<MapPanelsContainerProps> = ({
   signalAir,
   mobileAir,
   selectedPollutant,
-  signalAirSelectedTypes,
-  signalAirPeriod,
-  onSignalAirTypesChange,
-  onSignalAirPeriodChange,
-  isSignalAirLoading,
-  signalAirHasLoaded,
-  signalAirReportsCount,
   isComparisonPanelVisible,
   handleRemoveStationFromComparison,
   handleLoadComparisonData,
@@ -201,33 +185,6 @@ const MapPanelsContainer: React.FC<MapPanelsContainerProps> = ({
         onSizeChange={signalAir.handleSignalAirDetailPanelSizeChange}
         panelSize={signalAir.signalAirDetailPanelSize}
         onCenterMap={signalAir.handleCenterOnSignalAirReport}
-      />
-
-      <SignalAirSelectionPanel
-        isOpen={signalAir.isSignalAirPanelOpen}
-        selectedPollutant={selectedPollutant}
-        selectedTypes={signalAirSelectedTypes}
-        period={signalAirPeriod}
-        onClose={signalAir.handleCloseSignalAirPanel}
-        onTypesChange={onSignalAirTypesChange}
-        onPeriodChange={onSignalAirPeriodChange}
-        onLoadReports={signalAir.handleSignalAirLoad}
-        onSizeChange={signalAir.handleSignalAirPanelSizeChange}
-        onHidden={signalAir.handleSignalAirPanelHidden}
-        panelSize={signalAir.signalAirPanelSize}
-        isLoading={isSignalAirLoading}
-        hasLoaded={signalAirHasLoaded}
-        reportsCount={signalAirReportsCount}
-      />
-
-      <MobileAirSelectionPanel
-        isOpen={mobileAir.isMobileAirSelectionPanelOpen}
-        initialPollutant={selectedPollutant}
-        onClose={mobileAir.handleCloseMobileAirSelectionPanel}
-        onHidden={() => mobileAir.handleMobileAirSelectionPanelSizeChange("hidden")}
-        onSizeChange={mobileAir.handleMobileAirSelectionPanelSizeChange}
-        panelSize={mobileAir.mobileAirSelectionPanelSize}
-        onSensorSelected={mobileAir.handleMobileAirSensorsSelected}
       />
 
       <MobileAirDetailPanel

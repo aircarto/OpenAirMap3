@@ -15,7 +15,5 @@ export { default as NebuleAirSidePanel } from "./NebuleAirSidePanel";
 export { default as PurpleAirSidePanel } from "./PurpleAirSidePanel";
 export { default as SensorCommunitySidePanel } from "./SensorCommunitySidePanel";
 export { default as MobileAirDetailPanel } from "./MobileAirDetailPanel";
-export { default as MobileAirSelectionPanel } from "./MobileAirSelectionPanel";
 export { default as SignalAirDetailPanel } from "./SignalAirDetailPanel";
-export { default as SignalAirSelectionPanel } from "./SignalAirSelectionPanel";
 

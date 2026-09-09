@@ -118,7 +118,6 @@ interface AirQualityMapProps {
   signalAirSelectedTypes: string[];
   onSignalAirPeriodChange: (startDate: string, endDate: string) => void;
   onSignalAirTypesChange: (types: string[]) => void;
-  onSignalAirLoadRequest: () => void;
   isSignalAirLoading?: boolean;
   signalAirHasLoaded?: boolean;
   signalAirReportsCount?: number;
@@ -138,12 +137,6 @@ interface AirQualityMapProps {
   isMobileAirVisible?: boolean;
   onSignalAirToggle?: (visible: boolean) => void;
   onMobileAirToggle?: (visible: boolean) => void;
-  onSignalAirPanelOpen?: () => void;
-  onMobileAirPanelOpen?: () => void;
-  /** Incrémenter pour demander l'ouverture du panel SignalAir (depuis le header) */
-  openSignalAirPanelRequest?: number;
-  /** Incrémenter pour demander l'ouverture du panel MobileAir (depuis le header) */
-  openMobileAirPanelRequest?: number;
   /** Date actuellement affichée en mode historique (pour la période dans DeviceStatistics) */
   historicalCurrentDate?: string;
   historicalStartDate?: string;
@@ -202,7 +195,6 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
   signalAirSelectedTypes,
   onSignalAirPeriodChange,
   onSignalAirTypesChange,
-  onSignalAirLoadRequest,
   isSignalAirLoading = false,
   signalAirHasLoaded = false,
   signalAirReportsCount = 0,
@@ -217,10 +209,6 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
   isMobileAirVisible = true,
   onSignalAirToggle,
   onMobileAirToggle,
-  onSignalAirPanelOpen,
-  onMobileAirPanelOpen,
-  openSignalAirPanelRequest = 0,
-  openMobileAirPanelRequest = 0,
   historicalCurrentDate,
   historicalStartDate,
   historicalEndDate,
@@ -342,7 +330,6 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
     isSignalAirLoading,
     reports,
     mapRef: mapView.mapRef,
-    onSignalAirLoadRequest,
     isEnabled: isSignalAirEnabled,
     isHistoricalModeWithSignalAirData,
   });
@@ -353,36 +340,6 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
     onMobileAirSensorSelected,
     isEnabled: isMobileAirEnabled,
   });
-
-  // Ouvrir les panels SignalAir / MobileAir quand le header demande (bouton "Sources spéciales")
-  useEffect(() => {
-    // Important: on ne traite qu'une nouvelle requête d'ouverture.
-    // Sans ce garde-fou, un rerender peut rouvrir le panneau juste
-    // après que l'utilisateur l'a fermé via la croix.
-    if (
-      openSignalAirPanelRequest > 0 &&
-      openSignalAirPanelRequest !== lastHandledSignalAirOpenRequestRef.current
-    ) {
-      signalAir.handleOpenSignalAirPanel();
-      lastHandledSignalAirOpenRequestRef.current = openSignalAirPanelRequest;
-    }
-    // Pourquoi cette dépendance ?
-    // React "capture" les valeurs au moment du render. En listant le handler,
-    // on garantit que l'effet utilisera toujours la version la plus récente.
-  }, [openSignalAirPanelRequest, signalAir]);
-
-  useEffect(() => {
-    // Même logique pour MobileAir: ignorer les rerenders et ne réagir
-    // qu'à un nouvel identifiant de requête d'ouverture.
-    if (
-      openMobileAirPanelRequest > 0 &&
-      openMobileAirPanelRequest !== lastHandledMobileAirOpenRequestRef.current
-    ) {
-      mobileAir.handleOpenMobileAirSelectionPanel();
-      lastHandledMobileAirOpenRequestRef.current = openMobileAirPanelRequest;
-    }
-    // Même principe ici : on évite un "stale closure" si le handler change.
-  }, [openMobileAirPanelRequest, mobileAir]);
 
   // Hook pour gérer le tooltip au hover sur les marqueurs (désactivé - on utilise les tooltips Leaflet natifs maintenant)
   // const { tooltip, showTooltip, hideTooltip, isHidden } = useMarkerTooltip({
@@ -416,10 +373,6 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
 
   // Référence pour suivre l'état précédent du mode historique
   const prevHistoricalModeRef = useRef(isHistoricalModeActive);
-  // Ces refs mémorisent la dernière requête d'ouverture déjà traitée.
-  // Elles évitent les réouvertures involontaires des panels lors des rerenders.
-  const lastHandledSignalAirOpenRequestRef = useRef(0);
-  const lastHandledMobileAirOpenRequestRef = useRef(0);
 
   // Refs pour empêcher les clics multiples rapides
   const isProcessingClickRef = useRef(false);
@@ -462,12 +415,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
       // Fermer complètement tous les side panels (pas juste rabattus)
       sidePanels.handleCloseSidePanel();
 
-      // Fermer les panels SignalAir
-      signalAir.handleCloseSignalAirPanel();
       signalAir.handleCloseSignalAirDetailPanel();
-
-      // Fermer les panels MobileAir
-      mobileAir.handleCloseMobileAirSelectionPanel();
       mobileAir.handleCloseMobileAirDetailPanel();
     }
 
@@ -482,19 +430,15 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
    * carte. « Occupe de la largeur » et non « est ouvert » : un panneau replié
    * (`panelSize === "hidden"`) sort du flux flex et la carte reprend sa place.
    *
-   * Six familles de panneaux, donc six clauses. Nommé et calculé une fois plutôt
-   * que réécrit à chaque consommateur — l'attribution Leaflet s'efface, et le
-   * rail se resserre, sur exactement la même condition.
+   * Quatre familles de panneaux, donc quatre clauses. Nommé et calculé une fois
+   * plutôt que réécrit à chaque consommateur — l'attribution Leaflet s'efface,
+   * et le rail se resserre, sur exactement la même condition.
    */
   const isMapColumnSqueezed =
     (sidePanels.isSidePanelOpen && sidePanels.panelSize !== "hidden") ||
     (isComparisonPanelVisible && sidePanels.panelSize !== "hidden") ||
-    (mobileAir.isMobileAirSelectionPanelOpen &&
-      mobileAir.mobileAirSelectionPanelSize !== "hidden") ||
     (mobileAir.isMobileAirDetailPanelOpen &&
       mobileAir.mobileAirDetailPanelSize !== "hidden") ||
-    (signalAir.isSignalAirPanelOpen &&
-      signalAir.signalAirPanelSize !== "hidden") ||
     (signalAir.isSignalAirDetailPanelOpen &&
       signalAir.signalAirDetailPanelSize !== "hidden");
 
@@ -533,12 +477,8 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
     mapView.mapRef,
     sidePanels.panelSize,
     sidePanels.isSidePanelOpen,
-    mobileAir.mobileAirSelectionPanelSize,
     mobileAir.mobileAirDetailPanelSize,
-    mobileAir.isMobileAirSelectionPanelOpen,
     mobileAir.isMobileAirDetailPanelOpen,
-    signalAir.signalAirPanelSize,
-    signalAir.isSignalAirPanelOpen,
     signalAir.signalAirDetailPanelSize,
     signalAir.isSignalAirDetailPanelOpen,
     isComparisonPanelVisible,
@@ -970,13 +910,6 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
         signalAir={signalAir}
         mobileAir={mobileAir}
         selectedPollutant={selectedPollutant}
-        signalAirSelectedTypes={signalAirSelectedTypes}
-        signalAirPeriod={signalAirPeriod}
-        onSignalAirTypesChange={onSignalAirTypesChange}
-        onSignalAirPeriodChange={onSignalAirPeriodChange}
-        isSignalAirLoading={isSignalAirLoading}
-        signalAirHasLoaded={signalAirHasLoaded}
-        signalAirReportsCount={signalAirReportsCount}
         isComparisonPanelVisible={isComparisonPanelVisible}
         handleRemoveStationFromComparison={handleRemoveStationFromComparison}
         handleLoadComparisonData={handleLoadComparisonData}
@@ -1032,7 +965,6 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
             signalAir,
             mobileAir,
             isComparisonPanelVisible,
-            selectedSources,
           }}
           communitySources={{
             onMobileAirLoadRoute: mobileAir.handleMobileAirSensorsSelected,

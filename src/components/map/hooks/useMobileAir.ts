@@ -25,10 +25,6 @@ export const useMobileAir = ({
   isEnabled = false,
 }: UseMobileAirProps) => {
   const [mobileAirRoutes, setMobileAirRoutes] = useState<MobileAirRoute[]>([]);
-  const [isMobileAirSelectionPanelOpen, setIsMobileAirSelectionPanelOpen] =
-    useState(false);
-  const [mobileAirSelectionPanelSize, setMobileAirSelectionPanelSize] =
-    useState<"normal" | "fullscreen" | "hidden">("normal");
   const [isMobileAirDetailPanelOpen, setIsMobileAirDetailPanelOpen] =
     useState(false);
   const [mobileAirDetailPanelSize, setMobileAirDetailPanelSize] = useState<
@@ -42,13 +38,9 @@ export const useMobileAir = ({
     useState<MobileAirDataPoint | null>(null);
   const [activeMobileAirRoute, setActiveMobileAirRoute] =
     useState<MobileAirRoute | null>(null);
-  const [userClosedSelectionPanel, setUserClosedSelectionPanel] =
-    useState(false);
   const [userClosedDetailPanel, setUserClosedDetailPanel] = useState(false);
   const [forceNewChoice, setForceNewChoice] = useState(false);
-  const prevSelectedSourcesRef = useRef<boolean>(false);
   const prevMobileAirRoutesLengthRef = useRef<number>(0);
-  const manuallyOpenedSelectionPanelRef = useRef<boolean>(false);
   const [routesJustLoaded, setRoutesJustLoaded] = useState<boolean>(false);
 
   // Effet pour extraire les routes MobileAir des devices
@@ -82,9 +74,7 @@ export const useMobileAir = ({
     // Si de nouvelles routes viennent d'être chargées, réinitialiser les flags
     // pour permettre le comportement automatique des panels
     if (routesJustLoaded) {
-      setUserClosedSelectionPanel(false);
       setUserClosedDetailPanel(false);
-      manuallyOpenedSelectionPanelRef.current = false;
       setRoutesJustLoaded(true);
     }
     // Ne pas mettre routesJustLoaded à false ici, il sera réinitialisé
@@ -135,69 +125,6 @@ export const useMobileAir = ({
     forceNewChoice,
     activeMobileAirRoute,
     selectedMobileAirRoute,
-  ]);
-
-  // Effet pour ouvrir automatiquement le side panel de sélection MobileAir
-  useEffect(() => {
-    const wasEnabled = prevSelectedSourcesRef.current;
-    const isNewlyEnabled = isEnabled && !wasEnabled;
-    const hasMobileAirRoutes = mobileAirRoutes.length > 0;
-
-    // Mettre à jour la référence pour la prochaine fois
-    prevSelectedSourcesRef.current = isEnabled;
-
-    // Si MobileAir vient d'être activé et qu'il n'y a pas encore de routes chargées,
-    // ouvrir le side panel de sélection (seulement si l'utilisateur ne l'a pas fermé manuellement
-    // ET que le panel n'est pas déjà caché)
-    if (
-      isNewlyEnabled &&
-      !hasMobileAirRoutes &&
-      !isMobileAirSelectionPanelOpen &&
-      !userClosedSelectionPanel &&
-      mobileAirSelectionPanelSize !== "hidden"
-    ) {
-      setIsMobileAirSelectionPanelOpen(true);
-    }
-
-    // Si MobileAir est activé ET qu'il y a des routes, s'assurer que le panel de sélection est fermé
-    // MAIS seulement si l'utilisateur n'a pas fermé manuellement le panel de sélection
-    // ET que l'utilisateur ne vient pas de l'ouvrir manuellement
-    if (
-      isEnabled &&
-      hasMobileAirRoutes &&
-      isMobileAirSelectionPanelOpen &&
-      !userClosedSelectionPanel &&
-      !manuallyOpenedSelectionPanelRef.current
-    ) {
-      setIsMobileAirSelectionPanelOpen(false);
-    }
-  }, [
-    isEnabled,
-    mobileAirRoutes.length,
-    isMobileAirSelectionPanelOpen,
-    userClosedSelectionPanel,
-    mobileAirSelectionPanelSize,
-  ]);
-
-  // Effet pour fermer automatiquement le side panel de sélection quand les routes sont chargées
-  useEffect(() => {
-    if (
-      isEnabled &&
-      mobileAirRoutes.length > 0 &&
-      isMobileAirSelectionPanelOpen &&
-      !userClosedSelectionPanel &&
-      !manuallyOpenedSelectionPanelRef.current
-    ) {
-      const timer = setTimeout(() => {
-        setIsMobileAirSelectionPanelOpen(false);
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [
-    isEnabled,
-    mobileAirRoutes.length,
-    isMobileAirSelectionPanelOpen,
-    userClosedSelectionPanel,
   ]);
 
   // Effet pour ouvrir automatiquement le side panel de détail quand les routes sont chargées
@@ -256,22 +183,15 @@ export const useMobileAir = ({
       setHoveredMobileAirPoint(null);
       setHighlightedMobileAirPoint(null);
       setMobileAirRoutes([]);
-      // Réinitialiser userClosedSelectionPanel seulement quand on désélectionne complètement
-      setUserClosedSelectionPanel(false);
       setUserClosedDetailPanel(false);
-      setIsMobileAirSelectionPanelOpen(false);
       setIsMobileAirDetailPanelOpen(false);
       prevMobileAirRoutesLengthRef.current = 0;
     } else {
       // Réinitialiser les états pour permettre à l'utilisateur de choisir à nouveau
-      // MAIS ne pas réinitialiser userClosedSelectionPanel si l'utilisateur a rabattu le panel
-      // On garde l'état "fermé" pour respecter le choix de l'utilisateur
       setActiveMobileAirRoute(null);
       setSelectedMobileAirRoute(null);
       setHoveredMobileAirPoint(null);
       setHighlightedMobileAirPoint(null);
-      // Ne PAS réinitialiser userClosedSelectionPanel ici pour respecter le choix de l'utilisateur
-      // L'utilisateur peut toujours rouvrir le panel manuellement via le bouton
       setUserClosedDetailPanel(false);
       setIsMobileAirDetailPanelOpen(false);
       setMobileAirRoutes([]);
@@ -302,12 +222,10 @@ export const useMobileAir = ({
     
     // Réinitialiser la référence pour détecter le prochain chargement de routes
     prevMobileAirRoutesLengthRef.current = 0;
-    
-    // Réinitialiser les flags pour permettre le comportement automatique des panels
-    // lors du chargement des nouvelles données
-    setUserClosedSelectionPanel(false);
+
+    // Réinitialiser les flags pour permettre l'ouverture automatique du panneau
+    // de détail lors du chargement des nouvelles données
     setUserClosedDetailPanel(false);
-    manuallyOpenedSelectionPanelRef.current = false;
     setRoutesJustLoaded(false);
 
     // Désactiver le flag de forçage de nouveau choix quand l'utilisateur fait un choix
@@ -315,24 +233,6 @@ export const useMobileAir = ({
 
     if (onMobileAirSensorSelected) {
       onMobileAirSensorSelected(sensorId, period);
-    }
-  };
-
-  const handleCloseMobileAirSelectionPanel = () => {
-    setUserClosedSelectionPanel(true);
-    setIsMobileAirSelectionPanelOpen(false);
-    setMobileAirSelectionPanelSize("normal");
-    manuallyOpenedSelectionPanelRef.current = false;
-  };
-
-  const handleMobileAirSelectionPanelSizeChange = (
-    newSize: "normal" | "fullscreen" | "hidden"
-  ) => {
-    setMobileAirSelectionPanelSize(newSize);
-
-    if (newSize === "hidden") {
-      setUserClosedSelectionPanel(true);
-      manuallyOpenedSelectionPanelRef.current = false;
     }
   };
 
@@ -406,21 +306,6 @@ export const useMobileAir = ({
     }
   };
 
-  const handleOpenMobileAirSelectionPanel = () => {
-    setIsMobileAirSelectionPanelOpen(true);
-    setMobileAirSelectionPanelSize("normal");
-    // Marquer que l'utilisateur a ouvert manuellement le panel
-    // pour empêcher la fermeture automatique immédiate
-    manuallyOpenedSelectionPanelRef.current = true;
-    setForceNewChoice(false);
-    
-    // Réinitialiser le flag après un court délai pour permettre
-    // la fermeture automatique lors du chargement de nouvelles données
-    setTimeout(() => {
-      manuallyOpenedSelectionPanelRef.current = false;
-    }, 500);
-  };
-
   const handleOpenMobileAirDetailPanel = () => {
     setUserClosedDetailPanel(false);
     setIsMobileAirDetailPanelOpen(true);
@@ -430,8 +315,6 @@ export const useMobileAir = ({
   return {
     // États
     mobileAirRoutes,
-    isMobileAirSelectionPanelOpen,
-    mobileAirSelectionPanelSize,
     isMobileAirDetailPanelOpen,
     mobileAirDetailPanelSize,
     selectedMobileAirRoute,
@@ -441,8 +324,6 @@ export const useMobileAir = ({
 
     // Handlers
     handleMobileAirSensorsSelected,
-    handleCloseMobileAirSelectionPanel,
-    handleMobileAirSelectionPanelSizeChange,
     handleCloseMobileAirDetailPanel,
     handleMobileAirDetailPanelSizeChange,
     openMobileAirDetailPanelForRoute,
@@ -450,7 +331,6 @@ export const useMobileAir = ({
     handleMobileAirPointHover,
     handleMobileAirPointHighlight,
     handleMobileAirRouteClick,
-    handleOpenMobileAirSelectionPanel,
     handleOpenMobileAirDetailPanel,
   };
 };

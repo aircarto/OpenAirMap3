@@ -75,14 +75,6 @@ export const IconBaseLayer: React.FC = () => (
   </svg>
 );
 
-/** Sources spéciales : signalement */
-export const IconSpecialSources: React.FC = () => (
-  <svg {...base} aria-hidden="true">
-    <path d="M6 21V4.5" />
-    <path d="M6 5.5h11l-2.25 3.5L17 12.5H6" />
-  </svg>
-);
-
 /** Mode historique : retour dans le temps */
 export const IconHistorical: React.FC = () => (
   <svg {...base} aria-hidden="true">

@@ -96,16 +96,17 @@ CI (GitHub Actions/GitLab CI) : jobs parallèles `lint`, `unit`, `e2e`. Utilise
 - ouverture/fermeture panels selon source.
 - activation couche icaireh/pollutant/vent (mock WMTS/wind JSON).
 - comparaison stations (ajout max 10, suppression -> sortie mode).
-- interactions MobileAir (auto ouverture panel, route active, highlight point).
+- interactions MobileAir (route active, highlight point).
+- Dépliants du menu Sources
+- `SignalAirSourceDisclosure` : replier, masquer, désactiver — trois actions distinctes.
+- `MobileAirSourceDisclosure` : sélection capteur -> chargement du parcours.
 - Panneaux
-- `SignalAirSelectionPanel` : validation boutons, chargements, communications parent.
-- `MobileAirSelectionPanel` : sélection capteur -> callback.
 - `MicroSidePanel` & `StationSidePanel` : chargement historique via services, affichage graphiques (mock data).
 
 ### 6.3 E2E Playwright
 - **Flux principal** : Chargement page -> sélection polluant -> activation auto-refresh -> affichage loader -> marqueurs visibles.
-- **SignalAir** : sélectionner source + type + période -> cliquer charger -> marqueurs `signalair` -> popup -> lien SignalAir.
-- **MobileAir** : activer source -> ouverture panel -> choisir capteur -> routes rendues -> ouvrir détails -> survol point -> centrage carte.
+- **SignalAir** : déplier SignalAir dans le menu Sources -> types + période -> cliquer charger -> marqueurs `signalair` -> popup -> lien SignalAir.
+- **MobileAir** : déplier MobileAir dans le menu Sources -> choisir capteur -> routes rendues -> ouvrir détails -> survol point -> centrage carte.
 - **Mode Historique** : activer bouton -> définir daterange -> `load data` -> vérifier slider/graph (selon UI) -> auto-refresh off.
 - **Modélisation** : activer couche vent -> icône vent visible, message d’erreur si fetch 404.
 - **Comparaison** : sélectionner deux stations -> activer mode comparaison -> vérifier panneau comparatif.
@@ -117,7 +118,7 @@ CI (GitHub Actions/GitLab CI) : jobs parallèles `lint`, `unit`, `e2e`. Utilise
 - `e2e/smoke.spec.ts` – smoke et navigation (chargement, lien d’évitement, menu burger, barre desktop, modale).
 - `e2e/controls.spec.ts` – contrôles header (dropdowns polluant/sources/pas de temps, mode historique, modélisation).
 - `e2e/map-and-panels.spec.ts` – carte et side panels (marqueurs, ouverture/fermeture panel station) ; `test.skip()` si aucun marqueur (API vide/lente).
-- `e2e/signalair-mobileair.spec.ts` – flux SignalAir et MobileAir (ouverture panels, bouton Charger) ; timeouts longs, assertions souples.
+- `e2e/signalair-mobileair.spec.ts` – dépliants SignalAir et MobileAir du menu Sources (dépliage, sélection par défaut, bouton Charger) ; timeouts longs, assertions souples.
 - `e2e/search.spec.ts` – recherche (ouverture, saisie, champ restant utilisable).
 - `e2e/errors.spec.ts` – (optionnel) simulation 500 sur une API, vérification bannière erreur.
 

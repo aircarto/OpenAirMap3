@@ -20,11 +20,12 @@ import type { Notice } from "../components/map/notifications/notice";
  *   les props (fond de carte, panneaux latéraux).
  *
  * SignalAir et MobileAir étaient du second groupe tant que leur interface de
- * sélection vivait dans des panneaux latéraux. Leur activation et leur brouillon
- * de sélection appartiennent à App, et le menu qui les pilote vit dans le rail :
- * ils passent donc par le contexte (voir `MapControlsCommunitySources`). Seul le
- * chargement d'un parcours MobileAir reste en props, parce qu'il doit d'abord
- * purger les parcours détenus par la carte.
+ * sélection vivait dans des panneaux latéraux. Depuis qu'elle tient dans deux
+ * dépliants du menu Sources, leur activation et leur brouillon de sélection
+ * appartiennent à App et le menu qui les pilote vit dans le rail : ils passent
+ * donc par le contexte (voir `MapControlsCommunitySources`). Seul le chargement
+ * d'un parcours MobileAir reste en props, parce qu'il doit d'abord purger les
+ * parcours détenus par la carte.
  */
 
 export interface MapControlsBrand {
@@ -108,10 +109,6 @@ export interface MapControlsCommunitySources {
   isSignalAirLoading: boolean;
   signalAirHasLoaded: boolean;
   signalAirReportsCount: number;
-
-  /** Ouvrent les panneaux latéraux de sélection — voués à disparaître */
-  onSignalAirClick: () => void;
-  onMobileAirClick: () => void;
 }
 
 export interface MapControlsUi {
