@@ -2,6 +2,8 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import PollutantDropdown from "../../../controls/PollutantDropdown";
 import SourceDropdown from "../../../controls/SourceDropdown";
+import MobileAirSourceDisclosure from "../../../controls/MobileAirSourceDisclosure";
+import SignalAirSourceDisclosure from "../../../controls/SignalAirSourceDisclosure";
 import TimeStepDropdown from "../../../controls/TimeStepDropdown";
 import { useMapControls } from "../../../../contexts/mapControlsContext";
 import RailItem from "../RailItem";
@@ -14,10 +16,12 @@ import {
 } from "../railFlyout";
 import { IconPollutant, IconSources, IconTimeStep } from "../railIcons";
 import type { RailOrientation } from "../useRailRoving";
+import type { CommunitySourcesBinding } from "../railBindings";
 
 export interface RailFiltersSectionProps {
   orientation: RailOrientation;
   onItemFocus: (event: React.FocusEvent<HTMLElement>) => void;
+  communitySources: CommunitySourcesBinding;
 }
 
 /**
@@ -30,8 +34,10 @@ export interface RailFiltersSectionProps {
 export const RailFiltersSection: React.FC<RailFiltersSectionProps> = ({
   orientation,
   onItemFocus,
+  communitySources,
 }) => {
-  const { filters, refresh, historical, ui } = useMapControls();
+  const { filters, refresh, historical, ui, communitySources: community } =
+    useMapControls();
   const { t } = useTranslation();
 
   const side = railFlyoutSide(orientation);
@@ -90,8 +96,19 @@ export const RailFiltersSection: React.FC<RailFiltersSectionProps> = ({
         onToggleAutoRefresh={refresh.onToggleAutoRefresh}
         loading={refresh.loading}
         isHistoricalModeActive={historical.isActive}
+        controlsLocked={ui.controlsLocked}
         {...flyout}
         menuClassName={railFlyoutClass("wide")}
+        mobileAirSlot={({ close }) => (
+          <MobileAirSourceDisclosure
+            community={community}
+            onLoadRoute={communitySources.onMobileAirLoadRoute}
+            onLoaded={close}
+          />
+        )}
+        signalAirSlot={({ close }) => (
+          <SignalAirSourceDisclosure community={community} onLoaded={close} />
+        )}
         renderTrigger={() => (
           <RailItem
             itemId="sources"

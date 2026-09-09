@@ -1034,6 +1034,9 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
             isComparisonPanelVisible,
             selectedSources,
           }}
+          communitySources={{
+            onMobileAirLoadRoute: mobileAir.handleMobileAirSensorsSelected,
+          }}
         />
 
         {/* Contrôle de recherche personnalisé */}

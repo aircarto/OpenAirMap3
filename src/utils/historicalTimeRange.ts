@@ -26,6 +26,38 @@ export const getCustomRangeISO = (
   };
 };
 
+const PRESET_HOURS: Record<NonNullable<TimeRange["preset"]>, number> = {
+  "3h": 3,
+  "24h": 24,
+  "7d": 7 * 24,
+  "30d": 30 * 24,
+};
+
+/**
+ * Convertit une `TimeRange` — preset ou plage personnalisée — en couple de
+ * dates ISO exploitable par une API.
+ *
+ * Extraite de `MobileAirSelectionPanel`, où elle vivait en fonction locale : le
+ * type appartient à ce module, la conversion aussi. Le repli sur `7d` reproduit
+ * le `default` de l'original, atteignable si `type` vaut `"preset"` sans
+ * `preset` — le type l'autorise.
+ */
+export const resolveTimeRange = (
+  timeRange: TimeRange
+): { startDate: string; endDate: string } => {
+  if (timeRange.type === 'custom' && timeRange.custom) {
+    return getCustomRangeISO(timeRange.custom);
+  }
+
+  const now = new Date();
+  const hours = PRESET_HOURS[timeRange.preset ?? '7d'];
+
+  return {
+    startDate: new Date(now.getTime() - hours * 60 * 60 * 1000).toISOString(),
+    endDate: now.toISOString(),
+  };
+};
+
 /**
  * Parse une date du mode historique pour l'axe X du graphique.
  * Aligné sur AtmoMicroService.formatDateForHistoricalMode :

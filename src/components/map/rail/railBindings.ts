@@ -34,6 +34,22 @@ export interface BaseLayerControlBinding {
   onWildfireLayerToggle: (enabled: boolean) => void;
 }
 
+/**
+ * Chargement d'un parcours MobileAir.
+ *
+ * Seul membre des sources communautaires à voyager par props plutôt que par le
+ * contexte `MapControls` : il purge d'abord les parcours détenus par la carte
+ * (`clearRoutes()` sur le singleton, `setMobileAirRoutes([])`, `forceNewChoice`)
+ * avant de déléguer à App. Le faire passer par le contexte obligerait App à
+ * connaître ce nettoyage, qui ne le concerne pas.
+ */
+export interface CommunitySourcesBinding {
+  onMobileAirLoadRoute: (
+    sensorId: string,
+    period: { startDate: string; endDate: string }
+  ) => void;
+}
+
 /** Raccourcis de réouverture des panneaux, ex-MapFloatingActions */
 export interface RailShortcutsBinding {
   sidePanels: SidePanelsProps;

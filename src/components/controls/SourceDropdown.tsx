@@ -1,4 +1,4 @@
-import React, { useId, useMemo, useState } from "react";
+import React, { useEffect, useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { COMMUNAUTAIRE_SOURCE_CODES } from "../../constants/sources";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
@@ -29,8 +29,39 @@ interface SourceDropdownProps extends CustomTriggerProps {
   onToggleAutoRefresh?: (enabled: boolean) => void;
   loading?: boolean;
   isHistoricalModeActive?: boolean;
+  /**
+   * Contrôles gelés pendant la lecture historique.
+   *
+   * Distinct de `isHistoricalModeActive` : le gel n'a lieu que lorsque la
+   * lecture est EN COURS, pas dès l'entrée en mode historique.
+   *
+   * Le rail pose un `inert` sur sa section, mais le contenu de ce menu est
+   * portalisé vers `document.body` : l'inert n'y arrive pas. Un menu déjà
+   * ouvert au démarrage de la lecture resterait donc pleinement actionnable.
+   * D'où une fermeture, plutôt qu'une désactivation de chaque contrôle.
+   */
+  controlsLocked?: boolean;
   /** Id du trigger pour association avec un <label htmlFor> (accessibilité) */
   triggerId?: string;
+  /**
+   * Dépliant MobileAir, rangé dans le groupe des capteurs communautaires.
+   *
+   * Injecté par l'appelant plutôt que construit ici, sur le motif du
+   * `modelingSlot` de `BaseLayerControl` : ce composant vit dans `controls/` et
+   * n'a aucune raison de connaître le contexte de la carte ni les hooks de
+   * MobileAir. Le couplage resterait sinon inversé.
+   *
+   * Fonction de rendu et non nœud : le flyout se referme après un chargement,
+   * et son état d'ouverture appartient à ce composant.
+   */
+  mobileAirSlot?: (api: SourceSlotApi) => React.ReactNode;
+  /** Dépliant SignalAir, qui forme à lui seul le groupe « signalements » */
+  signalAirSlot?: (api: SourceSlotApi) => React.ReactNode;
+}
+
+export interface SourceSlotApi {
+  /** Referme le flyout — l'utilisateur veut voir la carte après un chargement */
+  close: () => void;
 }
 
 /**
@@ -91,7 +122,10 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
   onToggleAutoRefresh,
   loading = false,
   isHistoricalModeActive = false,
+  controlsLocked = false,
   triggerId,
+  mobileAirSlot,
+  signalAirSlot,
   renderTrigger,
   menuSide,
   menuAlign,
@@ -101,6 +135,15 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const mainLabelId = useId();
+
+  const slotApi = useMemo<SourceSlotApi>(
+    () => ({ close: () => setIsOpen(false) }),
+    []
+  );
+
+  useEffect(() => {
+    if (controlsLocked) setIsOpen(false);
+  }, [controlsLocked]);
 
   const communautaireSubSources = useMemo(
     () =>
@@ -300,7 +343,39 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
                 indented
               />
             ))}
+
+            {mobileAirSlot && (
+              <>
+                {/* Filet fin : MobileAir est du groupe, mais hors du
+                    tout-cocher — sans cette césure, voir « tout coché » alors
+                    qu'il est éteint se lirait comme un bug. */}
+                <div
+                  aria-hidden="true"
+                  className="mx-2 my-1.5 border-t border-dashed border-black/[0.08]"
+                />
+                <div className="ml-4">{mobileAirSlot(slotApi)}</div>
+              </>
+            )}
           </div>
+
+          {signalAirSlot && (
+            <>
+              <div
+                role="separator"
+                className="my-1.5 border-t border-black/[0.06]"
+              />
+              <div
+                role="group"
+                aria-label={t("controls.sourceSignalements")}
+                data-testid="sources-group-signalements"
+              >
+                <div className="mb-1 px-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+                  {t("controls.sourceSignalements")}
+                </div>
+                <div className="ml-1">{signalAirSlot(slotApi)}</div>
+              </div>
+            </>
+          )}
         </div>
       </PopoverContent>
     </Popover>
