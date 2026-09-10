@@ -1005,8 +1005,9 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           minZoom={1}
           maxZoom={18}
         >
-          {/* Attribution sans le préfixe "Leaflet" pour laisser plus de place sur mobile */}
-          <AttributionControl position="bottomright" prefix={false} />
+          {/* Attribution en bas-gauche : laisse la légende en bas-droite sur mobile
+              (évite le chevauchement). Pas de position:fixed — voir index.css. */}
+          <AttributionControl position="bottomleft" prefix={false} />
 
           {/* Gestionnaire d'événements pour les clics sur la carte */}
           <MapClickHandler onMapClick={() => setSearchPinPosition(null)} />
