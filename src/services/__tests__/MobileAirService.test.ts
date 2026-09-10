@@ -85,6 +85,73 @@ describe("MobileAirService", () => {
     expect(fetchSensorsSpy).not.toHaveBeenCalled();
   });
 
+  describe("ensureSensorsLoaded", () => {
+    it("charge le catalogue même pour un polluant non supporté", async () => {
+      // fetchData() sort avant fetchSensors() si le polluant n'est pas supporté,
+      // ce qui laissait l'interface de sélection vide sans erreur ni explication.
+      const makeRequest = vi
+        .spyOn(service as any, "makeRequest")
+        .mockResolvedValue([buildSensor()]);
+
+      const sensors = await service.ensureSensorsLoaded();
+
+      expect(makeRequest).toHaveBeenCalledTimes(1);
+      expect(sensors).toHaveLength(1);
+      expect(service.getSensors()).toHaveLength(1);
+    });
+
+    it("ne recharge pas un catalogue déjà présent", async () => {
+      (service as any).sensors = [buildSensor()];
+      const makeRequest = vi.spyOn(service as any, "makeRequest");
+
+      await service.ensureSensorsLoaded();
+
+      expect(makeRequest).not.toHaveBeenCalled();
+    });
+
+    it("déduplique les appels concurrents", async () => {
+      // Un menu qui s'ouvre peut déclencher plusieurs appels dans le même tick.
+      const makeRequest = vi
+        .spyOn(service as any, "makeRequest")
+        .mockResolvedValue([buildSensor()]);
+
+      const [a, b, c] = await Promise.all([
+        service.ensureSensorsLoaded(),
+        service.ensureSensorsLoaded(),
+        service.ensureSensorsLoaded(),
+      ]);
+
+      expect(makeRequest).toHaveBeenCalledTimes(1);
+      expect(a).toBe(b);
+      expect(b).toBe(c);
+    });
+
+    it("réessaie après un échec au lieu de rester bloqué", async () => {
+      const makeRequest = vi
+        .spyOn(service as any, "makeRequest")
+        .mockRejectedValueOnce(new Error("réseau"))
+        .mockResolvedValueOnce([buildSensor()]);
+
+      await expect(service.ensureSensorsLoaded()).rejects.toThrow();
+      // La promesse en vol doit avoir été relâchée, sinon toute tentative
+      // ultérieure renverrait l'échec initial pour toujours.
+      await expect(service.ensureSensorsLoaded()).resolves.toHaveLength(1);
+      expect(makeRequest).toHaveBeenCalledTimes(2);
+    });
+
+    it("clearRoutes ne vide pas le catalogue de capteurs", async () => {
+      // Le menu lit le catalogue sur le MÊME singleton que celui dont
+      // handleMobileAirSensorsSelected nettoie les parcours.
+      (service as any).sensors = [buildSensor()];
+      (service as any).routes = [{ sensorId: "mob-001", points: [] }];
+
+      service.clearRoutes();
+
+      expect(service.getRoutes()).toEqual([]);
+      expect(service.getSensors()).toHaveLength(1);
+    });
+  });
+
   it("récupère les parcours et crée des devices pour les capteurs sélectionnés", async () => {
     (service as any).sensors = [buildSensor()];
 

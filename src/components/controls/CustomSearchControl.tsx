@@ -508,7 +508,11 @@ const CustomSearchControl: React.FC<CustomSearchControlProps> = ({
   };
 
   return (
-    <div className="absolute top-4 right-4 z-[800]" ref={containerRef}>
+    <div
+      className="absolute top-4 right-4 z-map-search"
+      ref={containerRef}
+      data-tour="global-search"
+    >
       <div className="relative">
         {/* Mode compact : juste la loupe */}
         {!isExpanded && (
@@ -617,7 +621,7 @@ const CustomSearchControl: React.FC<CustomSearchControlProps> = ({
         {isExpanded && isOpen && results.length > 0 && (
           <div
             ref={resultsRef}
-            className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-96 overflow-y-auto z-[801]"
+            className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-96 overflow-y-auto z-10"
           >
             {results.map((result, index) => (
               <div

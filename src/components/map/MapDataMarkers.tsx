@@ -8,10 +8,10 @@ import CustomSpiderfiedSignalAirMarkers from "./CustomSpiderfiedSignalAirMarkers
 interface MapDataMarkersProps {
   sortedDevices: any[];
   spiderfyConfig: { enabled: boolean; autoSpiderfyZoomThreshold: number };
-  createCustomIconWrapper: (device: any) => L.Icon;
+  createCustomIconWrapper: (device: any) => L.Icon | L.DivIcon;
   handleMarkerClick: (device: any) => void;
   getMarkerKeyWrapper: (device: any) => string;
-  mapRef: React.RefObject<L.Map>;
+  mapRef: React.RefObject<L.Map | null>;
   calculateZIndexOffset: (device: any) => number;
   isMobileAirVisible: boolean;
   mobileAir: any;
@@ -20,7 +20,7 @@ interface MapDataMarkersProps {
   handleMobileAirRouteClickWrapper: (route: any) => void;
   isSignalAirVisible: boolean;
   reports: any[];
-  createSignalIconWrapper: (report: any) => L.Icon;
+  createSignalIconWrapper: (report: any) => L.Icon | L.DivIcon;
   handleSignalAirMarkerClickWrapper: (report: any) => void;
 }
 

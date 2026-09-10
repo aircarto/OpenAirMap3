@@ -10,9 +10,18 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
 } from "../ui/dropdown-menu";
+import { DropdownButton } from "./DropdownButton";
+import type { CustomTriggerProps } from "./dropdownTriggerContract";
 import { cn } from "../../lib/utils";
 
-interface ModelingLayerControlProps {
+interface ModelingLayerControlProps extends CustomTriggerProps {
+  /**
+   * « inline » rend la seule liste d'options, sans déclencheur ni menu, pour
+   * être insérée dans le panneau de fond de carte. La logique de disponibilité
+   * selon le pas de temps et la désactivation automatique restent ici : ce
+   * composant en est le propriétaire, seule sa présentation change.
+   */
+  variant?: "dropdown" | "inline";
   currentModelingLayer: ModelingLayerType | null;
   onModelingLayerChange: (layerType: ModelingLayerType | null) => void;
   selectedPollutant?: string;
@@ -26,7 +35,13 @@ const ModelingLayerControl: React.FC<ModelingLayerControlProps> = ({
   onModelingLayerChange,
   selectedPollutant,
   selectedTimeStep = "heure",
+  variant = "dropdown",
   triggerId,
+  renderTrigger,
+  menuSide,
+  menuAlign,
+  menuSideOffset,
+  menuClassName,
 }) => {
   const { t } = useTranslation();
   const handleLayerSelect = (layerType: ModelingLayerType) => {
@@ -79,19 +94,84 @@ const ModelingLayerControl: React.FC<ModelingLayerControlProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDisabled, currentModelingLayer]);
 
+  /** Liste d'options partagée par les deux présentations */
+  const renderOptions = (itemClassName?: string) =>
+    layerTypes.map((layerType) => {
+      const isSelected = currentModelingLayer === layerType;
+      const isItemDisabled = layerType === "pollutant" && !selectedPollutant;
+      return (
+        <button
+          key={layerType}
+          type="button"
+          disabled={isItemDisabled}
+          aria-pressed={isSelected}
+          onClick={() => {
+            // Bascule : recliquer l'option active la désélectionne
+            if (isSelected) {
+              onModelingLayerChange(null);
+            } else {
+              onModelingLayerChange(layerType);
+            }
+          }}
+          className={cn(
+            "flex w-full items-center gap-2 rounded px-2.5 py-1.5 text-xs transition-colors",
+            isSelected
+              ? "border border-[hsl(var(--brand-200))] bg-[hsl(var(--brand-100))] text-[hsl(var(--brand-800))]"
+              : "text-gray-700 hover:bg-gray-50/80",
+            isItemDisabled && "cursor-not-allowed opacity-50",
+            itemClassName
+          )}
+        >
+          <span
+            aria-hidden="true"
+            className={cn(
+              "flex h-3 w-3 shrink-0 items-center justify-center rounded-sm border",
+              isSelected
+                ? "border-[hsl(var(--brand-600))]"
+                : "border-gray-300/60"
+            )}
+          >
+            {isSelected && (
+              <span className="h-1.5 w-1.5 rounded-[1px] bg-[hsl(var(--brand-600))]" />
+            )}
+          </span>
+          <span className="truncate">{getDisplayLabel(layerType)}</span>
+        </button>
+      );
+    });
+
+  if (variant === "inline") {
+    if (isDisabled) {
+      return (
+        <p className="px-2.5 py-1.5 text-[11px] text-gray-500">
+          {t("controls.modelingUnavailable")}
+        </p>
+      );
+    }
+    return (
+      <div className="pl-4 pr-1" data-testid="modeling-inline">
+        {renderOptions()}
+      </div>
+    );
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button
-          type="button"
+        {renderTrigger ? (
+          renderTrigger({
+            displayText: isDisabled
+              ? t("controls.modelingUnavailable")
+              : getDisplayText(),
+            disabled: isDisabled,
+          })
+        ) : (
+        <DropdownButton
           id={triggerId}
           disabled={isDisabled}
-          className={cn(
-            "relative border rounded-lg pl-3 pr-7 py-2 text-left text-sm font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-[#4271B3]/20 focus:border-[#4271B3] transition-all duration-200 min-w-[96px] max-w-[180px]",
-            isDisabled
-              ? "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed"
-              : "bg-gradient-to-br from-gray-50 to-white border-gray-200/60 text-gray-800 hover:from-gray-100 hover:to-gray-50 hover:border-gray-300 backdrop-blur-sm"
-          )}
+          variant={isDisabled ? "disabled" : "elegant"}
+          hideChevron={isDisabled}
+          className="min-w-[96px] max-w-[180px]"
           title={
             isDisabled
               ? t("controls.modelingUnavailable")
@@ -103,30 +183,19 @@ const ModelingLayerControl: React.FC<ModelingLayerControlProps> = ({
           <span className="block truncate pr-6">
             {isDisabled ? t("controls.modelingUnavailable") : getDisplayText()}
           </span>
-          {!isDisabled && (
-            <span className="absolute inset-y-0 right-0 flex items-center pr-2.5 pointer-events-none text-gray-600">
-              <svg
-                className="h-4 w-4 transition-transform duration-200"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </span>
-          )}
-        </button>
+        </DropdownButton>
+        )}
       </DropdownMenuTrigger>
       {!isDisabled && (
-        <DropdownMenuContent 
-          align="start" 
+        <DropdownMenuContent
+          side={menuSide}
+          align={menuAlign ?? "start"}
           alignOffset={0}
-          className="w-[var(--radix-dropdown-menu-trigger-width)]"
+          sideOffset={menuSideOffset}
+          className={cn(
+            !renderTrigger && "w-[var(--radix-dropdown-menu-trigger-width)]",
+            menuClassName
+          )}
         >
           <DropdownMenuRadioGroup
             value={currentModelingLayer || ""}

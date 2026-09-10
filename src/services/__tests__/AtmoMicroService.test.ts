@@ -1,8 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import {
-  AtmoMicroMeasuresUnavailableError,
-  AtmoMicroService,
-} from "../AtmoMicroService";
+import { AtmoMicroService } from "../AtmoMicroService";
 
 const baseParams = {
   pollutant: "pm25",
@@ -105,6 +102,7 @@ describe("AtmoMicroService", () => {
       raw_value: 14.2,
     });
     expect(device).toHaveProperty("qualityLevel", "moyen");
+    expect(service.isMeasuresUnavailableIncident()).toBe(false);
   });
 
   it("ajoute un device inactif lorsque le site n'a pas de mesure", async () => {
@@ -128,24 +126,92 @@ describe("AtmoMicroService", () => {
     });
   });
 
-  it("lève une erreur métier quand mesures/dernieres renvoie 204 (null)", async () => {
+  it("garde les sites en inactif et active l'incident quand mesures/dernieres renvoie 204 (null)", async () => {
     vi.spyOn(service as any, "makeRequest")
       .mockResolvedValueOnce([buildSite()])
       .mockResolvedValueOnce(null);
 
-    await expect(service.fetchData(baseParams)).rejects.toBeInstanceOf(
-      AtmoMicroMeasuresUnavailableError
-    );
+    const result = await service.fetchData(baseParams);
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      id: "101",
+      status: "inactive",
+      value: 0,
+      qualityLevel: "default",
+    });
+    expect(service.isMeasuresUnavailableIncident()).toBe(true);
   });
 
-  it("lève une erreur métier quand mesures/dernieres renvoie un tableau vide", async () => {
+  it("garde les sites en inactif et active l'incident quand mesures/dernieres renvoie un tableau vide", async () => {
     vi.spyOn(service as any, "makeRequest")
       .mockResolvedValueOnce([buildSite()])
       .mockResolvedValueOnce([]);
 
-    await expect(service.fetchData(baseParams)).rejects.toBeInstanceOf(
-      AtmoMicroMeasuresUnavailableError
-    );
+    const result = await service.fetchData(baseParams);
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      id: "101",
+      status: "inactive",
+      value: 0,
+      qualityLevel: "default",
+    });
+    expect(service.isMeasuresUnavailableIncident()).toBe(true);
+  });
+
+  it("garde les sites en inactif si mesures/dernieres echoue (ex: erreur HTTP)", async () => {
+    vi.spyOn(service as any, "makeRequest")
+      .mockResolvedValueOnce([buildSite()])
+      .mockRejectedValueOnce(new Error("HTTP error! status: 503"));
+
+    const result = await service.fetchData(baseParams);
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      id: "101",
+      status: "inactive",
+      value: 0,
+      qualityLevel: "default",
+    });
+    expect(service.isMeasuresUnavailableIncident()).toBe(true);
+  });
+
+  it("n'annonce aucune correction en infrahoraire (valeur corrigée absente de l'API)", async () => {
+    // En agrégation `brute` et `quart-horaire`, l'API renvoie toujours
+    // valeur: null et valeur_ref = valeur_brute.
+    vi.spyOn(service as any, "makeRequest")
+      .mockResolvedValueOnce([buildSite()])
+      .mockResolvedValueOnce([
+        buildMeasure({ valeur: null, valeur_ref: 14.2, valeur_brute: 14.2 }),
+      ]);
+
+    const result = await service.fetchData(baseParams);
+
+    expect(result[0]).toMatchObject({
+      value: 14.2,
+      has_correction: false,
+      raw_value: 14.2,
+    });
+    expect(result[0].corrected_value).toBeUndefined();
+  });
+
+  it("n'annonce pas de correction quand valeur_brute est absente de la réponse", () => {
+    // Les appels avec valeur_brute=false omettent le champ : `undefined !== null`
+    // faisait passer la mesure pour corrigée alors que rien ne l'atteste.
+    const resolve = (measure: any, aggregation: string) =>
+      (service as any).resolveMeasureValues(measure, aggregation);
+
+    expect(resolve({ valeur: null, valeur_ref: 9 }, "quart-horaire")).toEqual({
+      displayValue: 9,
+      correctedValue: undefined,
+      rawValue: undefined,
+      hasCorrection: false,
+    });
+
+    expect(resolve({ valeur: 7, valeur_ref: 7 }, "horaire")).toEqual({
+      displayValue: 7,
+      correctedValue: 7,
+      rawValue: undefined,
+      hasCorrection: true,
+    });
   });
 });
 

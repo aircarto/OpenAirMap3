@@ -20,6 +20,7 @@ export class AtmoMicroMeasuresUnavailableError extends Error {
 
 export class AtmoMicroService extends BaseDataService {
   private readonly BASE_URL = "https://api.atmosud.org/observations/capteurs";
+  private lastMeasuresUnavailable = false;
   
   // Cache STATIQUE partagé entre toutes les instances pour éviter les requêtes multiples
   // Les métadonnées (sites) changent rarement, donc cache long (30 minutes)
@@ -91,6 +92,12 @@ export class AtmoMicroService extends BaseDataService {
     super("atmoMicro");
   }
 
+  // Expose l'état incident pour permettre à l'UI d'afficher un bandeau,
+  // tout en conservant les marqueurs inactifs issus de capteurs/sites.
+  isMeasuresUnavailableIncident(): boolean {
+    return this.lastMeasuresUnavailable;
+  }
+
   async fetchData(params: {
     pollutant: string;
     timeStep: string;
@@ -117,14 +124,28 @@ export class AtmoMicroService extends BaseDataService {
         return [];
       }
 
-      // Faire les deux appels API en parallèle
+      this.lastMeasuresUnavailable = false;
+      // Faire les deux appels API en parallèle.
+      // En cas d'incident mesures/dernieres (204/vide), on continue avec [] pour
+      // garder les capteurs grisés (inactifs) issus de capteurs/sites.
       const [sitesResult, measuresResponse] = await Promise.all([
         this.fetchSites(atmoMicroVariable),
         this.fetchMeasures(
           atmoMicroVariable,
           timeStepConfig.aggregation,
           timeStepConfig.delais
-        ),
+        ).catch((error: unknown) => {
+          // Toute erreur sur mesures/dernieres : fallback sur capteurs/sites (marqueurs inactifs).
+          // (204, corps vide, reseau, HTTP, JSON invalide, etc.)
+          this.lastMeasuresUnavailable = true;
+          if (!(error instanceof AtmoMicroMeasuresUnavailableError)) {
+            console.warn(
+              "[AtmoMicro] mesures/dernieres indisponible, fallback sites uniquement:",
+              error
+            );
+          }
+          return [];
+        }),
       ]);
       const { filteredSites: sitesResponse, excludedSites } = sitesResult;
 
@@ -135,15 +156,24 @@ export class AtmoMicroService extends BaseDataService {
         atmoMicroVariable,
       });
 
-      // Vérifier si les réponses sont valides
-      if (!sitesResponse || !measuresResponse) {
-        console.warn("Aucune donnée reçue d'AtmoMicro");
+      if (!Array.isArray(sitesResponse)) {
+        console.warn("Réponse sites AtmoMicro invalide");
         return [];
+      }
+
+      const measuresList: AtmoMicroMeasure[] = Array.isArray(measuresResponse)
+        ? measuresResponse
+        : [];
+      if (!Array.isArray(measuresResponse)) {
+        this.lastMeasuresUnavailable = true;
+        console.warn(
+          "[AtmoMicro] Format mesures/dernieres inattendu, fallback sites uniquement"
+        );
       }
 
       // Créer un map des mesures par ID de site pour un accès rapide
       const measuresMap = new Map<number, AtmoMicroMeasure>();
-      measuresResponse.forEach((measure) => {
+      measuresList.forEach((measure) => {
         measuresMap.set(measure.id_site, measure);
       });
 
@@ -162,7 +192,7 @@ export class AtmoMicroService extends BaseDataService {
       }> = [];
 
       // 1. Traiter d'abord les sites avec des mesures récentes (coordonnées à jour)
-      for (const measure of measuresResponse) {
+      for (const measure of measuresList) {
         const site = sitesMap.get(measure.id_site);
 
         if (site) {
@@ -170,44 +200,16 @@ export class AtmoMicroService extends BaseDataService {
           const pollutant = pollutants[params.pollutant];
 
           // Déterminer quelle valeur utiliser
-          let displayValue: number;
-          let correctedValue: number | undefined;
-          let rawValue: number | undefined;
-          let hasCorrection = false;
-
-          if (timeStepConfig.aggregation === "quart-horaire") {
-            // Pour l'agrégation quart-horaire, utiliser valeur_ref (meilleure valeur)
-            displayValue =
-              (measure as any).valeur_ref ??
-              measure.valeur_brute ??
-              measure.valeur ??
-              0;
-            // Détecter si c'est une valeur corrigée
-            // Si valeur et valeur_brute existent toutes les deux, une correction a été appliquée
-            // même si les valeurs sont égales (correction appliquée mais résultat identique)
-            hasCorrection =
-              measure.valeur !== null && measure.valeur_brute !== null;
-            correctedValue =
-              hasCorrection && measure.valeur !== null
-                ? measure.valeur
-                : undefined;
-            rawValue =
-              measure.valeur_brute !== null ? measure.valeur_brute : undefined;
-          } else {
-            // Pour horaire et autres : utiliser valeur comme avant
-            // Si valeur et valeur_brute existent toutes les deux, une correction a été appliquée
-            // même si les valeurs sont égales (correction appliquée mais résultat identique)
-            hasCorrection =
-              measure.valeur !== null && measure.valeur_brute !== null;
-            displayValue =
-              measure.valeur !== null ? measure.valeur : measure.valeur_brute;
-            correctedValue =
-              hasCorrection && measure.valeur !== null
-                ? measure.valeur
-                : undefined;
-            rawValue =
-              measure.valeur_brute !== null ? measure.valeur_brute : undefined;
-          }
+          const {
+            displayValue: resolvedValue,
+            correctedValue,
+            rawValue,
+            hasCorrection,
+          } = this.resolveMeasureValues(
+            measure,
+            timeStepConfig.aggregation
+          );
+          const displayValue = resolvedValue ?? 0;
 
           const qualityLevel = getAirQualityLevel(
             displayValue,
@@ -361,6 +363,45 @@ export class AtmoMicroService extends BaseDataService {
     });
     
     return { filteredSites, excludedSites };
+  }
+
+  // `valeur` porte la valeur corrigée, `valeur_brute` la mesure du capteur.
+  // Deux pièges côté API : la correction n'est calculée qu'à l'agrégation
+  // `horaire` (`valeur` vaut toujours `null` en `brute` et `quart-horaire`), et
+  // `valeur_brute` n'est renvoyé que si la requête a passé `valeur_brute=true`.
+  // On se fie donc à la seule présence d'une valeur corrigée exploitable : tester
+  // `valeur_brute !== null` faisait passer un champ absent (`undefined`) pour une
+  // valeur brute et annonçait une correction inexistante.
+  private resolveMeasureValues(
+    measure: {
+      valeur?: number | null;
+      valeur_ref?: number | null;
+      valeur_brute?: number | null;
+    },
+    aggregation: string
+  ): {
+    displayValue: number | undefined;
+    correctedValue: number | undefined;
+    rawValue: number | undefined;
+    hasCorrection: boolean;
+  } {
+    const toFinite = (value: unknown): number | undefined =>
+      typeof value === "number" && Number.isFinite(value) ? value : undefined;
+
+    const correctedValue = toFinite(measure.valeur);
+    const rawValue = toFinite(measure.valeur_brute);
+    const refValue = toFinite(measure.valeur_ref);
+
+    return {
+      // En quart-horaire, `valeur_ref` porte la meilleure valeur disponible.
+      displayValue:
+        aggregation === "quart-horaire"
+          ? refValue ?? rawValue ?? correctedValue
+          : correctedValue ?? rawValue,
+      correctedValue,
+      rawValue,
+      hasCorrection: correctedValue !== undefined,
+    };
   }
 
   private async fetchMeasures(
@@ -650,32 +691,13 @@ export class AtmoMicroService extends BaseDataService {
 
       // Transformer les données historiques
       const historicalData = response.map((measure: any) => {
-        let value: number;
-        let correctedValue: number | undefined;
-        let rawValue: number | undefined;
-        let hasCorrection = false;
-
-        if (timeStepConfig.aggregation === "quart-horaire") {
-          // Pour l'agrégation quart-horaire, utiliser valeur_ref (meilleure valeur)
-          value =
-            measure.valeur_ref ?? measure.valeur_brute ?? measure.valeur ?? 0;
-          // Détecter si c'est une valeur corrigée
-          // Si valeur et valeur_brute existent toutes les deux, une correction a été appliquée
-          // même si les valeurs sont égales (correction appliquée mais résultat identique)
-          hasCorrection =
-            measure.valeur !== null && measure.valeur_brute !== null;
-          correctedValue = hasCorrection ? measure.valeur : undefined;
-          rawValue = measure.valeur_brute;
-        } else {
-          // Pour horaire et autres : utiliser valeur comme avant
-          // Si valeur et valeur_brute existent toutes les deux, une correction a été appliquée
-          // même si les valeurs sont égales (correction appliquée mais résultat identique)
-          hasCorrection =
-            measure.valeur !== null && measure.valeur_brute !== null;
-          correctedValue = hasCorrection ? measure.valeur : undefined;
-          rawValue = measure.valeur_brute;
-          value = hasCorrection ? measure.valeur! : measure.valeur_brute;
-        }
+        const {
+          displayValue,
+          correctedValue,
+          rawValue,
+          hasCorrection,
+        } = this.resolveMeasureValues(measure, timeStepConfig.aggregation);
+        const value = displayValue ?? 0;
 
         return {
           timestamp: measure.time,
@@ -706,30 +728,26 @@ export class AtmoMicroService extends BaseDataService {
     endDate: string;
     sites?: string[]; // Sites spécifiques si nécessaire
   }): Promise<TemporalDataPoint[]> {
-    try {
-      // Mapping du polluant vers le format AtmoMicro
-      const atmoMicroVariable = this.getAtmoMicroVariable(params.pollutant);
-      if (!atmoMicroVariable) return [];
+    // Mapping du polluant vers le format AtmoMicro
+    const atmoMicroVariable = this.getAtmoMicroVariable(params.pollutant);
+    if (!atmoMicroVariable) return [];
 
-      // Configuration du pas de temps
-      const timeStepConfig = this.getAtmoMicroTimeStepConfig(params.timeStep);
-      if (!timeStepConfig) return [];
+    // Configuration du pas de temps
+    const timeStepConfig = this.getAtmoMicroTimeStepConfig(params.timeStep);
+    if (!timeStepConfig) return [];
 
-      // OPTIMISATION : Récupérer directement toutes les mesures historiques
-      // sans passer par la récupération des sites
-      const temporalDataPoints = await this.fetchTemporalDataOptimized({
-        variable: atmoMicroVariable,
-        aggregation: timeStepConfig.aggregation,
-        startDate: params.startDate,
-        endDate: params.endDate,
-        pollutant: params.pollutant,
-        sites: params.sites,
-      });
+    // OPTIMISATION : Récupérer directement toutes les mesures historiques
+    // sans passer par la récupération des sites
+    const temporalDataPoints = await this.fetchTemporalDataOptimized({
+      variable: atmoMicroVariable,
+      aggregation: timeStepConfig.aggregation,
+      startDate: params.startDate,
+      endDate: params.endDate,
+      pollutant: params.pollutant,
+      sites: params.sites,
+    });
 
-      return temporalDataPoints;
-    } catch (error) {
-      throw error;
-    }
+    return temporalDataPoints;
   }
 
   // Fonction pour formater les dates selon les besoins du mode historique
@@ -880,34 +898,8 @@ export class AtmoMicroService extends BaseDataService {
           const qualityLevels: Record<string, number> = {};
 
           measures.forEach((measure: any) => {
-            // Pour l'agrégation quart-horaire, utiliser valeur_ref (meilleure valeur : corrigée ou brute)
-            // Pour les autres agrégations, utiliser valeur comme avant
-            let displayValue: number;
-            let correctedValue: number | undefined;
-            let rawValue: number | undefined;
-            let hasCorrection = false;
-
-            if (aggregation === "quart-horaire") {
-              // valeur_ref contient la meilleure valeur (corrigée si existe, sinon brute)
-              displayValue =
-                measure.valeur_ref ?? measure.valeur_brute ?? measure.valeur;
-              // Détecter si c'est une valeur corrigée
-              // Si valeur et valeur_brute existent toutes les deux, une correction a été appliquée
-              // même si les valeurs sont égales (correction appliquée mais résultat identique)
-              hasCorrection =
-                measure.valeur !== null && measure.valeur_brute !== null;
-              correctedValue = hasCorrection ? measure.valeur : undefined;
-              rawValue = measure.valeur_brute;
-            } else {
-              // Pour horaire et autres : utiliser valeur comme avant
-              // Si valeur et valeur_brute existent toutes les deux, une correction a été appliquée
-              // même si les valeurs sont égales (correction appliquée mais résultat identique)
-              displayValue = measure.valeur;
-              hasCorrection =
-                measure.valeur !== null && measure.valeur_brute !== null;
-              correctedValue = hasCorrection ? measure.valeur : undefined;
-              rawValue = measure.valeur_brute;
-            }
+            const { displayValue, correctedValue, rawValue, hasCorrection } =
+              this.resolveMeasureValues(measure, aggregation);
 
             // Ne créer le device que si la valeur est valide
             if (

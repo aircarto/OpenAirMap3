@@ -6,37 +6,74 @@ import React, {
   useRef,
 } from "react";
 import AirQualityMap from "./components/map/AirQualityMap";
+import {
+  compactNotices,
+  type Notice,
+} from "./components/map/notifications/notice";
+import { MapControlsProvider } from "./contexts/MapControlsProvider";
+import type {
+  MapControlsBrand,
+  MapControlsFilters,
+  MapControlsHistorical,
+  MapControlsModeling,
+  MapControlsAirCrowdWms,
+  MapControlsRefresh,
+  MapControlsCommunitySources,
+  MapControlsUi,
+  MapControlsValue,
+} from "./contexts/mapControlsContext";
 import { useAirQualityData } from "./hooks/useAirQualityData";
 import { useTemporalVisualization } from "./hooks/useTemporalVisualization";
 import { useDomainConfig } from "./hooks/useDomainConfig";
 import { useFavicon } from "./hooks/useFavicon";
 import { useDocumentTitle } from "./hooks/useDocumentTitle";
+import { useMetaDescription } from "./hooks/useMetaDescription";
+import { useCanonicalUrl } from "./hooks/useCanonicalUrl";
+import { useStructuredData } from "./hooks/useStructuredData";
 import {
-  pollutants,
-  getDefaultPollutant,
   isPollutantSupportedForTimeStep,
   getSupportedPollutantsForTimeStep,
 } from "./constants/pollutants";
-import { pasDeTemps, isHistoricalModeAllowedForTimeStep } from "./constants/timeSteps";
-import { getDefaultSources } from "./constants/sources";
-import PollutantDropdown from "./components/controls/PollutantDropdown";
-import SourceDropdown from "./components/controls/SourceDropdown";
-import TimeStepDropdown from "./components/controls/TimeStepDropdown";
-import HistoricalModeButton from "./components/controls/HistoricalModeButton";
+import {
+  pasDeTemps,
+  isHistoricalModeAllowedForTimeStep,
+} from "./constants/timeSteps";
+import { getConfigForDomain } from "./config/domainConfig";
+import {
+  AIRCROWD_WMS_DEFAULT_START_DATE,
+  AIRCROWD_WMS_DEMO_DATE,
+  AIRCROWD_WMS_DEMO_HOUR,
+  clampAirCrowdWmsDate,
+  getAirCrowdWmsToday,
+} from "./services/AirCrowdWmsLayerService";
+import {
+  buildAppUrlDefaults,
+  parseAppUrlParams,
+  AppUrlParams,
+} from "./utils/appUrlParams";
+import { useAppUrlSync } from "./hooks/useAppUrlSync";
 import HistoricalControlPanel from "./components/controls/HistoricalControlPanel";
 import HistoricalPlaybackControl from "./components/controls/HistoricalPlaybackControl";
-import MobileMenuBurger from "./components/controls/MobileMenuBurger";
-import ModelingLayerControl from "./components/controls/ModelingLayerControl";
-import ModelingTimeControl from "./components/controls/ModelingTimeControl";
-import SpecialSourceHeaderDropdown from "./components/controls/SpecialSourceHeaderDropdown";
 import InformationModal from "./components/modals/InformationModal";
+import AboutPanel from "./components/AboutPanel";
 import { ModelingLayerType } from "./constants/mapLayers";
-import { getModelingLayerHour, isModelingAvailable } from "./services/ModelingLayerService";
+import {
+  getModelingLayerHour,
+  isModelingAvailable,
+} from "./services/ModelingLayerService";
 import { useToast } from "./hooks/useToast";
 import { ToastContainer } from "./components/ui/toast";
 import { cn } from "./lib/utils";
 import { useTranslation } from "react-i18next";
-import LanguageSwitcher from "./components/controls/LanguageSwitcher";
+import {
+  initAnalytics,
+  trackEvent,
+  trackFeatureUsage,
+  trackPageView,
+} from "./services/analyticsService";
+import { FeatureTourProvider } from "./components/tour/FeatureTourProvider";
+import HistoricalModeTourController from "./components/tour/HistoricalModeTourController";
+import GlobalAppTourController from "./components/tour/GlobalAppTourController";
 
 interface AtmoMicroMaintenanceBannerConfig {
   enabled: boolean;
@@ -53,14 +90,36 @@ const DEFAULT_ATMOMICRO_MAINTENANCE_BANNER: AtmoMicroMaintenanceBannerConfig = {
     "Suite a un probleme technique, les donnees des capteurs qualifies ne sont plus accessibles. AtmoSud met tout en oeuvre pour le resoudre.",
 };
 
-const App: React.FC = () => {
+const getInitialAppUrlParams = (): AppUrlParams => {
+  const forcedDomain = import.meta.env.VITE_FORCE_DOMAIN_CONFIG?.trim();
+  const domainConfig = getConfigForDomain(
+    forcedDomain || window.location.hostname,
+  );
+  const defaults = buildAppUrlDefaults({
+    mapCenter: domainConfig.mapCenter,
+    mapZoom: domainConfig.mapZoom,
+  });
+  return parseAppUrlParams(window.location.search, defaults);
+};
+
+const INITIAL_APP_URL_PARAMS = getInitialAppUrlParams();
+
+const hadMapParamsInInitialUrl = ((): boolean => {
+  const params = new URLSearchParams(window.location.search);
+  return params.has("lat") || params.has("lng") || params.has("zoom");
+})();
+
+const AppContent: React.FC = () => {
   const { t, i18n } = useTranslation();
   // Configuration basée sur le domaine
   const domainConfig = useDomainConfig();
 
   // Gestion dynamique de la favicon et du titre
   useFavicon(domainConfig.favicon);
-  useDocumentTitle(domainConfig.title);
+  useDocumentTitle(domainConfig.seoTitle ?? domainConfig.title);
+  useMetaDescription(domainConfig.description);
+  useCanonicalUrl();
+  useStructuredData(domainConfig);
 
   // Hook pour les notifications toast
   const { toasts, addToast, removeToast } = useToast();
@@ -68,7 +127,7 @@ const App: React.FC = () => {
   // Trouver le pas de temps activé par défaut (calculé une seule fois)
   const defaultTimeStep = useMemo(() => {
     const defaultTimeStep = Object.entries(pasDeTemps).find(
-      ([_, timeStep]) => timeStep.activated
+      ([_, timeStep]) => timeStep.activated,
     );
     return defaultTimeStep ? defaultTimeStep[0] : "heure";
   }, []);
@@ -87,23 +146,24 @@ const App: React.FC = () => {
 
   const SIGNAL_AIR_DEFAULT_TYPES = useMemo(
     () => ["odeur", "bruit", "brulage", "visuel"],
-    []
+    [],
   );
 
   // États pour les contrôles avec polluant par défaut
   const [selectedPollutant, setSelectedPollutant] = useState<string>(
-    getDefaultPollutant()
+    INITIAL_APP_URL_PARAMS.pollutant,
   );
   const [selectedSources, setSelectedSources] = useState<string[]>(
-    getDefaultSources()
+    INITIAL_APP_URL_PARAMS.sources,
   );
-  const [selectedTimeStep, setSelectedTimeStep] =
-    useState<string>(defaultTimeStep);
+  const [selectedTimeStep, setSelectedTimeStep] = useState<string>(
+    INITIAL_APP_URL_PARAMS.timeStep,
+  );
   const [signalAirPeriod, setSignalAirPeriod] = useState(
-    defaultSignalAirPeriod
+    defaultSignalAirPeriod,
   );
   const [signalAirDraftPeriod, setSignalAirDraftPeriod] = useState(
-    defaultSignalAirPeriod
+    defaultSignalAirPeriod,
   );
   const [signalAirSelectedTypes, setSignalAirSelectedTypes] = useState<
     string[]
@@ -111,8 +171,21 @@ const App: React.FC = () => {
   const [signalAirLoadTrigger, setSignalAirLoadTrigger] = useState(0);
   const [currentModelingLayer, setCurrentModelingLayer] =
     useState<ModelingLayerType | null>(null);
-  const [modelingHourIndex, setModelingHourIndex] = useState<number | null>(null);
-  const [hasUserAdjustedModelingHour, setHasUserAdjustedModelingHour] = useState(false);
+  const [modelingHourIndex, setModelingHourIndex] = useState<number | null>(
+    null,
+  );
+  const [hasUserAdjustedModelingHour, setHasUserAdjustedModelingHour] =
+    useState(false);
+  const aircrowdWmsStartDate =
+    domainConfig.aircrowdWmsStartDate ?? AIRCROWD_WMS_DEFAULT_START_DATE;
+  const [aircrowdWmsEnabled, setAircrowdWmsEnabled] = useState(false);
+  // PoC : démarrer sur une carto connue (pas « aujourd’hui », souvent absente).
+  const [aircrowdWmsDate, setAircrowdWmsDate] = useState(() =>
+    clampAirCrowdWmsDate(AIRCROWD_WMS_DEMO_DATE, aircrowdWmsStartDate),
+  );
+  const [aircrowdWmsHour, setAircrowdWmsHour] = useState(
+    AIRCROWD_WMS_DEMO_HOUR,
+  );
 
   const resetSignalAirSettings = useCallback(() => {
     const resetPeriod = {
@@ -127,14 +200,12 @@ const App: React.FC = () => {
 
   // États pour MobileAir
   const [mobileAirPeriod, setMobileAirPeriod] = useState(
-    defaultSignalAirPeriod // Utiliser la même période par défaut
+    defaultSignalAirPeriod, // Utiliser la même période par défaut
   );
   const [selectedMobileAirSensor, setSelectedMobileAirSensor] = useState<
     string | null
   >(null);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
-  const [openSignalAirPanelRequest, setOpenSignalAirPanelRequest] = useState(0);
-  const [openMobileAirPanelRequest, setOpenMobileAirPanelRequest] = useState(0);
 
   // États pour gérer SignalAir et MobileAir indépendamment du système de sources
   const [isSignalAirEnabled, setIsSignalAirEnabled] = useState(false);
@@ -142,19 +213,122 @@ const App: React.FC = () => {
   const [isSignalAirVisible, setIsSignalAirVisible] = useState(true);
   const [isMobileAirVisible, setIsMobileAirVisible] = useState(true);
 
+  useEffect(() => {
+    initAnalytics();
+    trackPageView(domainConfig.title);
+  }, [domainConfig.title]);
+
+  const handlePollutantChange = useCallback((pollutant: string) => {
+    setSelectedPollutant(pollutant);
+    trackEvent("pollutant", "select", pollutant);
+  }, []);
+
+  const handleSourceChange = useCallback((sources: string[]) => {
+    setSelectedSources((previousSources) => {
+      const addedSources = sources.filter(
+        (source) => !previousSources.includes(source),
+      );
+      const removedSources = previousSources.filter(
+        (source) => !sources.includes(source),
+      );
+
+      trackFeatureUsage("sources_change", {
+        selectedCount: sources.length,
+        added: addedSources.join(",") || null,
+        removed: removedSources.join(",") || null,
+      });
+
+      return sources;
+    });
+  }, []);
+
+  const handleTimeStepChange = useCallback((timeStep: string) => {
+    setSelectedTimeStep(timeStep);
+    trackFeatureUsage("time_step_change", { timeStep });
+  }, []);
+
+  const handleModelingLayerChange = useCallback(
+    (layer: ModelingLayerType | null) => {
+      setCurrentModelingLayer(layer);
+      trackFeatureUsage("modeling_layer_change", { layer: layer ?? "none" });
+
+      if (layer) {
+        setAircrowdWmsEnabled(false);
+      }
+
+      if (layer !== "pollutant") {
+        setHasUserAdjustedModelingHour(false);
+        setModelingHourIndex(null);
+        return;
+      }
+
+      setHasUserAdjustedModelingHour(false);
+      if (!isModelingAvailable(selectedTimeStep)) {
+        setModelingHourIndex(null);
+        return;
+      }
+      const defaultHour = getModelingLayerHour(selectedTimeStep);
+      setModelingHourIndex(defaultHour >= 0 ? defaultHour : null);
+    },
+    [selectedTimeStep],
+  );
+
+  const handleModelingHourChange = useCallback((hour: number) => {
+    setHasUserAdjustedModelingHour(true);
+    setModelingHourIndex(hour);
+  }, []);
+
+  const handleAircrowdWmsEnabledChange = useCallback((enabled: boolean) => {
+    setAircrowdWmsEnabled(enabled);
+    if (enabled) {
+      setCurrentModelingLayer(null);
+      setHasUserAdjustedModelingHour(false);
+      setModelingHourIndex(null);
+    }
+    trackFeatureUsage("aircrowd_wms_toggle", { enabled });
+  }, []);
+
+  const handleAircrowdWmsDateChange = useCallback(
+    (date: string) => {
+      setAircrowdWmsDate(
+        clampAirCrowdWmsDate(date, aircrowdWmsStartDate, getAirCrowdWmsToday()),
+      );
+    },
+    [aircrowdWmsStartDate],
+  );
+
+  const handleAircrowdWmsHourChange = useCallback((hour: number) => {
+    setAircrowdWmsHour(Math.max(0, Math.min(23, Math.floor(hour))));
+  }, []);
+
+  const handleAutoRefreshToggle = useCallback((enabled: boolean) => {
+    setAutoRefreshEnabled(enabled);
+    trackFeatureUsage("auto_refresh_toggle", { enabled });
+  }, []);
+
+  const handleSignalAirVisibilityToggle = useCallback((visible: boolean) => {
+    setIsSignalAirVisible(visible);
+    trackFeatureUsage("signalair_visibility_toggle", { visible });
+  }, []);
+
+  const handleMobileAirVisibilityToggle = useCallback((visible: boolean) => {
+    setIsMobileAirVisible(visible);
+    trackFeatureUsage("mobileair_visibility_toggle", { visible });
+  }, []);
+
   // Fonction wrapper pour gérer le changement de période SignalAir
-  const handleSignalAirDraftPeriodChange = (
-    startDate: string,
-    endDate: string
-  ) => {
-    setSignalAirDraftPeriod({ startDate, endDate });
-  };
+  const handleSignalAirDraftPeriodChange = useCallback(
+    (startDate: string, endDate: string) => {
+      setSignalAirDraftPeriod({ startDate, endDate });
+    },
+    [],
+  );
 
-  const handleSignalAirTypesChange = (types: string[]) => {
+  const handleSignalAirTypesChange = useCallback((types: string[]) => {
     setSignalAirSelectedTypes(types);
-  };
+  }, []);
 
-  const handleSignalAirLoadRequest = () => {
+  const handleSignalAirLoadRequest = useCallback(() => {
     if (signalAirSelectedTypes.length === 0) {
       return;
     }
@@ -163,12 +337,17 @@ const App: React.FC = () => {
       endDate: signalAirDraftPeriod.endDate,
     });
     setSignalAirLoadTrigger((prev) => prev + 1);
-  };
+    trackFeatureUsage("signalair_load_request", {
+      selectedTypes: signalAirSelectedTypes.join(","),
+      startDate: signalAirDraftPeriod.startDate,
+      endDate: signalAirDraftPeriod.endDate,
+    });
+  }, [signalAirSelectedTypes, signalAirDraftPeriod]);
 
   // Fonction pour gérer la sélection d'un capteur MobileAir
   const handleMobileAirSensorSelected = (
     sensorId: string,
-    period: { startDate: string; endDate: string }
+    period: { startDate: string; endDate: string },
   ) => {
     // Toujours mettre à jour pour forcer le rechargement même si les valeurs sont identiques
     // Cela permet de recharger les données qui remplaceront celles existantes
@@ -180,28 +359,62 @@ const App: React.FC = () => {
   };
 
   // Fonction pour désélectionner la source MobileAir
-  const handleMobileAirSourceDeselected = () => {
+  const handleMobileAirSourceDeselected = useCallback(() => {
     // Réinitialiser les états MobileAir
     setSelectedMobileAirSensor(null);
     setMobileAirPeriod(defaultSignalAirPeriod);
     setIsMobileAirEnabled(false);
     setIsMobileAirVisible(false);
-  };
+  }, [defaultSignalAirPeriod]);
 
-  const handleSignalAirSourceDeselected = () => {
+  const handleSignalAirSourceDeselected = useCallback(() => {
     resetSignalAirSettings();
     setIsSignalAirEnabled(false);
     setIsSignalAirVisible(false);
-  };
+  }, [resetSignalAirSettings]);
 
-  // Gérer l'ouverture des panels
-  const handleSignalAirPanelOpen = () => {
+  // Activation des deux sources. Les noms d'événement analytiques restent ceux
+  // de l'époque des panneaux latéraux : les renommer romprait les séries déjà
+  // collectées, alors que la mesure porte sur le même geste utilisateur.
+  const handleSignalAirEnable = useCallback(() => {
     setIsSignalAirEnabled(true);
-  };
+    trackFeatureUsage("signalair_panel_open");
+  }, []);
 
-  const handleMobileAirPanelOpen = () => {
+  const handleMobileAirEnable = useCallback(() => {
     setIsMobileAirEnabled(true);
-  };
+    trackFeatureUsage("mobileair_panel_open");
+  }, []);
+
+  /**
+   * Activation depuis le menu Sources, dans les deux sens.
+   *
+   * L'extinction passe par le désélecteur complet et non par un simple
+   * `setIsSignalAirEnabled(false)` : sans la réinitialisation, une réactivation
+   * ferait réapparaître les signalements de la session précédente. Même raison
+   * côté MobileAir pour les parcours.
+   */
+  const handleSignalAirEnabledChange = useCallback(
+    (enabled: boolean) => {
+      if (enabled) {
+        handleSignalAirEnable();
+      } else {
+        handleSignalAirSourceDeselected();
+      }
+    },
+    [handleSignalAirEnable, handleSignalAirSourceDeselected],
+  );
+
+  const handleMobileAirEnabledChange = useCallback(
+    (enabled: boolean) => {
+      if (enabled) {
+        handleMobileAirEnable();
+      } else {
+        handleMobileAirSourceDeselected();
+      }
+    },
+    [handleMobileAirEnable, handleMobileAirSourceDeselected],
+  );
 
   // Gérer le chargement des données SignalAir quand activé
   useEffect(() => {
@@ -219,7 +432,7 @@ const App: React.FC = () => {
       loadTrigger: signalAirLoadTrigger,
       isSourceSelected: isSignalAirEnabled, // Utiliser isSignalAirEnabled au lieu de selectedSources
     }),
-    [signalAirSelectedTypes, signalAirLoadTrigger, isSignalAirEnabled]
+    [signalAirSelectedTypes, signalAirLoadTrigger, isSignalAirEnabled],
   );
 
   useEffect(() => {
@@ -230,7 +443,7 @@ const App: React.FC = () => {
         setSelectedPollutant((current) =>
           supportedPollutants.includes(current)
             ? current
-            : supportedPollutants[0]
+            : supportedPollutants[0],
         );
       }
     }
@@ -264,7 +477,15 @@ const App: React.FC = () => {
   });
 
   // Mode historique autorisé uniquement pour les pas 15 min, heure et jour
-  const isHistoricalModeAllowed = isHistoricalModeAllowedForTimeStep(selectedTimeStep);
+  const isHistoricalModeAllowed =
+    isHistoricalModeAllowedForTimeStep(selectedTimeStep);
+
+  const handleHistoricalModeToggle = useCallback(() => {
+    toggleHistoricalMode();
+    trackFeatureUsage("historical_mode_toggle", {
+      from: isHistoricalModeActive,
+    });
+  }, [toggleHistoricalMode, isHistoricalModeActive]);
 
   // Désactiver le mode historique si l'utilisateur passe sur Scan ou ≤2 min
   useEffect(() => {
@@ -326,7 +547,7 @@ const App: React.FC = () => {
   });
   const [atmoMicroMaintenanceBanner, setAtmoMicroMaintenanceBanner] =
     useState<AtmoMicroMaintenanceBannerConfig>(
-      DEFAULT_ATMOMICRO_MAINTENANCE_BANNER
+      DEFAULT_ATMOMICRO_MAINTENANCE_BANNER,
     );
   const [isAtmoMicroBannerDismissed, setIsAtmoMicroBannerDismissed] =
     useState(false);
@@ -378,9 +599,42 @@ const App: React.FC = () => {
   // Déterminer quelles données utiliser selon le mode
   const devices = isHistoricalModeActive ? getCurrentDevices() : normalDevices;
 
+  const isPollutantForecastMode = currentModelingLayer === "pollutant";
+  const defaultModelingHourIndexForMeasurements = useMemo(() => {
+    if (!isPollutantForecastMode) return null;
+    if (!isModelingAvailable(selectedTimeStep)) return null;
+    const hour = getModelingLayerHour(selectedTimeStep);
+    return hour >= 0 ? hour : null;
+  }, [isPollutantForecastMode, selectedTimeStep]);
+
+  const shouldHideMeasurementsInPollutantModeling =
+    isPollutantForecastMode &&
+    typeof modelingHourIndex === "number" &&
+    typeof defaultModelingHourIndexForMeasurements === "number" &&
+    modelingHourIndex !== defaultModelingHourIndexForMeasurements;
+
+  useEffect(() => {
+    if (!isPollutantForecastMode) {
+      setModelingHourIndex(null);
+      setHasUserAdjustedModelingHour(false);
+      return;
+    }
+
+    if (!isModelingAvailable(selectedTimeStep)) {
+      setModelingHourIndex(null);
+      setHasUserAdjustedModelingHour(false);
+      return;
+    }
+
+    if (!hasUserAdjustedModelingHour) {
+      const defaultHour = getModelingLayerHour(selectedTimeStep);
+      setModelingHourIndex(defaultHour >= 0 ? defaultHour : null);
+    }
+  }, [isPollutantForecastMode, selectedTimeStep, hasUserAdjustedModelingHour]);
+
   const signalAirReports = useMemo(
     () => reports.filter((report) => report.source === "signalair"),
-    [reports]
+    [reports],
   );
 
   // En mode historique avec données : afficher les signalements filtrés par fenêtre temporelle (période locale)
@@ -389,7 +643,12 @@ const App: React.FC = () => {
       return getCurrentSignalAirReports();
     }
     return reports;
-  }, [isHistoricalModeActive, hasHistoricalData, getCurrentSignalAirReports, reports]);
+  }, [
+    isHistoricalModeActive,
+    hasHistoricalData,
+    getCurrentSignalAirReports,
+    reports,
+  ]);
 
   const isSignalAirLoading = loadingSources.includes("signalair");
   // En mode historique : considérer "chargé" si des signalements ont été récupérés
@@ -399,9 +658,14 @@ const App: React.FC = () => {
       hasHistoricalData &&
       temporalState.historicalSignalAirReports?.length > 0);
 
-  const hasSignalAirData =
-    hasSignalAirLoaded &&
-    reportsForMap.filter((r) => r.source === "signalair").length > 0;
+  // Un seul filtre pour les deux usages : le compte affiché dans l'interface de
+  // sélection et le drapeau `hasSignalAirData` en dérivaient séparément.
+  const signalAirReportsCount = useMemo(
+    () => reportsForMap.filter((r) => r.source === "signalair").length,
+    [reportsForMap],
+  );
+
+  const hasSignalAirData = hasSignalAirLoaded && signalAirReportsCount > 0;
   const hasMobileAirData = devices.some((d) => d.source === "mobileair");
 
   // Fonction pour gérer le chargement des données historiques
@@ -430,367 +694,391 @@ const App: React.FC = () => {
     temporalState.data.length,
   ]);
 
-  // Configuration de la carte basée sur le domaine
-  const mapCenter = domainConfig.mapCenter;
-  const mapZoom = domainConfig.mapZoom;
-  const mapMinZoom = domainConfig.mapMinZoom;
-  const mapMaxZoom = domainConfig.mapMaxZoom;
-  const mapMaxBounds = domainConfig.mapMaxBounds;
+  // Configuration de la carte basée sur le domaine et l'URL
+  const [mapCenter, setMapCenter] = useState<[number, number]>([
+    INITIAL_APP_URL_PARAMS.lat,
+    INITIAL_APP_URL_PARAMS.lng,
+  ]);
+  const [mapZoom, setMapZoom] = useState<number>(INITIAL_APP_URL_PARAMS.zoom);
 
-  const isPollutantForecastMode = currentModelingLayer === "pollutant";
-  const defaultModelingHourIndexForMeasurements = useMemo(() => {
-    if (!isPollutantForecastMode) return null;
-    if (!isModelingAvailable(selectedTimeStep)) return null;
-    const hour = getModelingLayerHour(selectedTimeStep);
-    return hour >= 0 ? hour : null;
-  }, [isPollutantForecastMode, selectedTimeStep]);
+  const appUrlDefaults = useMemo(
+    () =>
+      buildAppUrlDefaults({
+        mapCenter: domainConfig.mapCenter,
+        mapZoom: domainConfig.mapZoom,
+      }),
+    [domainConfig.mapCenter, domainConfig.mapZoom],
+  );
 
-  const shouldHideMeasurementsInPollutantModeling =
-    isPollutantForecastMode &&
-    typeof modelingHourIndex === "number" &&
-    typeof defaultModelingHourIndexForMeasurements === "number" &&
-    modelingHourIndex !== defaultModelingHourIndexForMeasurements;
+  const appUrlState = useMemo(
+    () => ({
+      lat: mapCenter[0],
+      lng: mapCenter[1],
+      zoom: mapZoom,
+      pollutant: selectedPollutant,
+      timeStep: selectedTimeStep,
+      sources: selectedSources,
+    }),
+    [mapCenter, mapZoom, selectedPollutant, selectedTimeStep, selectedSources],
+  );
 
-  // Initialiser la valeur par défaut du slider au moment où la modélisation "polluant" est activée,
-  // en gardant exactement le comportement actuel (h23/h24 selon pas de temps).
-  useEffect(() => {
-    if (!isPollutantForecastMode) {
-      setModelingHourIndex(null);
-      setHasUserAdjustedModelingHour(false);
-      return;
-    }
-
-    if (!isModelingAvailable(selectedTimeStep)) {
-      setModelingHourIndex(null);
-      setHasUserAdjustedModelingHour(false);
-      return;
-    }
-
-    // Si l'utilisateur n'a pas encore touché le slider, on recolle à la logique existante.
-    if (!hasUserAdjustedModelingHour) {
-      const defaultHour = getModelingLayerHour(selectedTimeStep);
-      setModelingHourIndex(defaultHour >= 0 ? defaultHour : null);
-    }
-  }, [isPollutantForecastMode, selectedTimeStep, hasUserAdjustedModelingHour]);
-
-  const handleSignalAirHeaderClick = useCallback(() => {
-    setOpenSignalAirPanelRequest((r) => r + 1);
-    handleSignalAirPanelOpen();
+  const handlePopStateFromUrl = useCallback((params: AppUrlParams) => {
+    setMapCenter([params.lat, params.lng]);
+    setMapZoom(params.zoom);
+    setSelectedPollutant(params.pollutant);
+    setSelectedTimeStep(params.timeStep);
+    setSelectedSources(params.sources);
   }, []);
 
-  const handleMobileAirHeaderClick = useCallback(() => {
-    setOpenMobileAirPanelRequest((r) => r + 1);
-    handleMobileAirPanelOpen();
-  }, []);
+  const { markMapViewTouched } = useAppUrlSync({
+    state: appUrlState,
+    defaults: appUrlDefaults,
+    onPopState: handlePopStateFromUrl,
+    initialMapViewTouched: hadMapParamsInInitialUrl,
+  });
+
+  const handleMapViewChange = useCallback(
+    (center: [number, number], zoom: number) => {
+      markMapViewTouched();
+      setMapCenter(center);
+      setMapZoom(zoom);
+    },
+    [markMapViewTouched],
+  );
+
+  const handleOpenInfoModal = useCallback(() => setIsInfoModalOpen(true), []);
 
   const headerDisabled = isHistoricalModeActive && temporalState.isPlaying;
+
+  // ── Valeur du contexte de contrôles de carte ──────────────────────────────
+  // Mémoïsée par groupe, et non d'un bloc : hasSignalAirData / hasMobileAirData
+  // se recalculent à chaque rafraîchissement de données, et invalideraient
+  // sinon `filters` — donc le rail entier — à chaque poll.
+  const brandValue = useMemo<MapControlsBrand>(
+    () => ({
+      logo: domainConfig.logo,
+      markSquare: domainConfig.markSquare,
+      favicon: domainConfig.favicon,
+      title: domainConfig.title,
+      organization: domainConfig.organization,
+      logoHref: domainConfig.links.logo,
+    }),
+    [
+      domainConfig.logo,
+      domainConfig.markSquare,
+      domainConfig.favicon,
+      domainConfig.title,
+      domainConfig.organization,
+      domainConfig.links.logo,
+    ],
+  );
+
+  const filtersValue = useMemo<MapControlsFilters>(
+    () => ({
+      selectedPollutant,
+      selectedSources,
+      selectedTimeStep,
+      onPollutantChange: handlePollutantChange,
+      onSourceChange: handleSourceChange,
+      onTimeStepChange: handleTimeStepChange,
+    }),
+    [
+      selectedPollutant,
+      selectedSources,
+      selectedTimeStep,
+      handlePollutantChange,
+      handleSourceChange,
+      handleTimeStepChange,
+    ],
+  );
+
+  const modelingValue = useMemo<MapControlsModeling>(
+    () => ({
+      currentModelingLayer,
+      onModelingLayerChange: handleModelingLayerChange,
+      modelingHourIndex,
+      onModelingHourChange: handleModelingHourChange,
+      locale: i18n.language,
+    }),
+    [
+      currentModelingLayer,
+      handleModelingLayerChange,
+      modelingHourIndex,
+      handleModelingHourChange,
+      i18n.language,
+    ],
+  );
+
+  const airCrowdWmsValue = useMemo<MapControlsAirCrowdWms>(
+    () => ({
+      featureEnabled: Boolean(domainConfig.aircrowdWmsEnabled),
+      startDate: aircrowdWmsStartDate,
+      enabled: aircrowdWmsEnabled,
+      onEnabledChange: handleAircrowdWmsEnabledChange,
+      date: aircrowdWmsDate,
+      onDateChange: handleAircrowdWmsDateChange,
+      hour: aircrowdWmsHour,
+      onHourChange: handleAircrowdWmsHourChange,
+    }),
+    [
+      domainConfig.aircrowdWmsEnabled,
+      aircrowdWmsStartDate,
+      aircrowdWmsEnabled,
+      handleAircrowdWmsEnabledChange,
+      aircrowdWmsDate,
+      handleAircrowdWmsDateChange,
+      aircrowdWmsHour,
+      handleAircrowdWmsHourChange,
+    ],
+  );
+
+  const refreshValue = useMemo<MapControlsRefresh>(
+    () => ({
+      autoRefreshEnabled: autoRefreshEnabled && !isHistoricalModeActive,
+      onToggleAutoRefresh: handleAutoRefreshToggle,
+      loading,
+      lastRefresh,
+    }),
+    [
+      autoRefreshEnabled,
+      isHistoricalModeActive,
+      handleAutoRefreshToggle,
+      loading,
+      lastRefresh,
+    ],
+  );
+
+  const historicalValue = useMemo<MapControlsHistorical>(
+    () => ({
+      isActive: isHistoricalModeActive,
+      isAllowed: isHistoricalModeAllowed,
+      onToggle: handleHistoricalModeToggle,
+    }),
+    [
+      isHistoricalModeActive,
+      isHistoricalModeAllowed,
+      handleHistoricalModeToggle,
+    ],
+  );
+
+  const communitySourcesValue = useMemo<MapControlsCommunitySources>(
+    () => ({
+      isSignalAirEnabled,
+      isMobileAirEnabled,
+      onSignalAirEnabledChange: handleSignalAirEnabledChange,
+      onMobileAirEnabledChange: handleMobileAirEnabledChange,
+      isSignalAirVisible,
+      isMobileAirVisible,
+      onSignalAirToggle: handleSignalAirVisibilityToggle,
+      onMobileAirToggle: handleMobileAirVisibilityToggle,
+      hasSignalAirData,
+      hasMobileAirData,
+      signalAirSelectedTypes,
+      onSignalAirTypesChange: handleSignalAirTypesChange,
+      signalAirDraftPeriod,
+      onSignalAirDraftPeriodChange: handleSignalAirDraftPeriodChange,
+      onSignalAirLoadRequest: handleSignalAirLoadRequest,
+      isSignalAirLoading,
+      signalAirHasLoaded: hasSignalAirLoaded,
+      signalAirReportsCount,
+    }),
+    [
+      isSignalAirEnabled,
+      isMobileAirEnabled,
+      handleSignalAirEnabledChange,
+      handleMobileAirEnabledChange,
+      isSignalAirVisible,
+      isMobileAirVisible,
+      handleSignalAirVisibilityToggle,
+      handleMobileAirVisibilityToggle,
+      hasSignalAirData,
+      hasMobileAirData,
+      signalAirSelectedTypes,
+      handleSignalAirTypesChange,
+      signalAirDraftPeriod,
+      handleSignalAirDraftPeriodChange,
+      handleSignalAirLoadRequest,
+      isSignalAirLoading,
+      hasSignalAirLoaded,
+      signalAirReportsCount,
+    ],
+  );
+
   const shouldShowAtmoMicroOutageBanner =
     selectedSources.includes("atmoMicro") &&
     atmoMicroOutage &&
     atmoMicroMaintenanceBanner.enabled &&
     !isAtmoMicroBannerDismissed;
 
+  // Notices de niveau application, transmises à la pile unique de la carte.
+  // Elles étaient auparavant trois blocs absolus distincts posés dans <main>,
+  // dont deux se superposaient à `top-4 right-4`.
+  const appNotices = useMemo<Notice[]>(
+    () =>
+      compactNotices([
+        shouldShowAtmoMicroOutageBanner && {
+          id: "atmomicro-maintenance",
+          tone: "warn" as const,
+          message: atmoMicroMaintenanceBanner.message,
+          onDismiss: () => setIsAtmoMicroBannerDismissed(true),
+          dismissLabel: t("common.close"),
+        },
+        loading && {
+          id: "loading",
+          tone: "info" as const,
+          busy: true,
+          message:
+            devices.length === 0
+              ? t("common.loadingData")
+              : t("common.updating"),
+          detail:
+            loadingSources.length > 0
+              ? `${t("common.sourcesCount", {
+                  count: loadingSources.length,
+                })} (${loadingSources.slice(0, 2).join(", ")}${
+                  loadingSources.length > 2 ? "…" : ""
+                })`
+              : undefined,
+        },
+        error && {
+          id: "data-error",
+          tone: "error" as const,
+          message: `${t("common.error")} : ${error}`,
+        },
+      ]),
+    [
+      shouldShowAtmoMicroOutageBanner,
+      atmoMicroMaintenanceBanner.message,
+      loading,
+      devices.length,
+      loadingSources,
+      error,
+      t,
+    ],
+  );
+
+  const uiValue = useMemo<MapControlsUi>(
+    () => ({
+      controlsLocked: headerDisabled,
+      onOpenInfoModal: handleOpenInfoModal,
+      onToast: addToast,
+      notices: appNotices,
+    }),
+    [headerDisabled, handleOpenInfoModal, addToast, appNotices],
+  );
+
+  const mapControlsValue = useMemo<MapControlsValue>(
+    () => ({
+      brand: brandValue,
+      filters: filtersValue,
+      modeling: modelingValue,
+      airCrowdWms: airCrowdWmsValue,
+      refresh: refreshValue,
+      historical: historicalValue,
+      communitySources: communitySourcesValue,
+      ui: uiValue,
+    }),
+    [
+      brandValue,
+      filtersValue,
+      modelingValue,
+      airCrowdWmsValue,
+      refreshValue,
+      historicalValue,
+      communitySourcesValue,
+      uiValue,
+    ],
+  );
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
+    <div className="flex h-screen flex-col overflow-x-hidden bg-gray-50">
       {/* Lien d'évitement : premier élément focusable pour la navigation clavier et lecteurs d'écran */}
-      <a
-        href="#main-content"
-        className="skip-link"
-        data-testid="skip-link"
-      >
+      <a href="#main-content" className="skip-link" data-testid="skip-link">
         {t("app.skipToContent")}
       </a>
-      {/* Header : barre unique avec regroupement logique des contrôles */}
-      <header className="relative bg-white border-b border-gray-200/80 shadow-sm z-[2500]">
-        <div className="px-4 sm:px-5 py-2.5">
-          <div className="flex items-center justify-between gap-3 flex-nowrap">
-            {/* Marque : logo + titre */}
-            <div className="flex items-center gap-2.5 min-w-0 shrink-0">
-              <img
-                src={domainConfig.logo}
-                alt={t("app.logoAlt", { organization: domainConfig.organization })}
-                className={
-                  domainConfig.title === "AirCrowd"
-                    ? "h-7 md:h-8 object-contain opacity-90"
-                    : "h-8 md:h-9 object-contain"
-                }
-              />
-              {domainConfig.title === "AirCrowd" ? (
-                <img
-                  src="./branding/aircrowdLogo.svg"
-                  alt="AirCrowd"
-                  className="w-[110px] md:w-[128px] h-auto object-contain"
-                />
-              ) : (
-                <h1 className="text-base md:text-lg font-semibold text-[#4271B3] leading-tight truncate">
-                  {domainConfig.title}
-                </h1>
-              )}
-            </div>
 
-            {/* Menu burger (langue intégrée dans le menu) — affiché sous xl pour éviter débordement toolbar */}
-            <div className="xl:hidden flex items-center shrink-0">
-              <MobileMenuBurger
-                selectedPollutant={selectedPollutant}
-                onPollutantChange={setSelectedPollutant}
-                selectedSources={selectedSources}
-                onSourceChange={setSelectedSources}
-                selectedTimeStep={selectedTimeStep}
-                onTimeStepChange={setSelectedTimeStep}
-                isHistoricalModeActive={isHistoricalModeActive}
-                onToggleHistoricalMode={toggleHistoricalMode}
-                isHistoricalModeAllowed={isHistoricalModeAllowed}
-                autoRefreshEnabled={autoRefreshEnabled}
-                onToggleAutoRefresh={setAutoRefreshEnabled}
-                lastRefresh={lastRefresh}
-                loading={loading}
-                currentModelingLayer={currentModelingLayer}
-                onModelingLayerChange={setCurrentModelingLayer}
-                modelingHourIndex={modelingHourIndex}
-                onModelingHourIndexChange={(hour) => setModelingHourIndex(hour)}
-                onModelingHourUserAdjusted={() => setHasUserAdjustedModelingHour(true)}
-                onToast={addToast}
-                onOpenSignalAirPanel={() => {
-                  setOpenSignalAirPanelRequest((r) => r + 1);
-                  handleSignalAirPanelOpen();
-                }}
-                onOpenMobileAirPanel={() => {
-                  setOpenMobileAirPanelRequest((r) => r + 1);
-                  handleMobileAirPanelOpen();
-                }}
-                isSignalAirVisible={isSignalAirVisible}
-                isMobileAirVisible={isMobileAirVisible}
-                onSignalAirToggle={setIsSignalAirVisible}
-                onMobileAirToggle={setIsMobileAirVisible}
-                hasSignalAirData={hasSignalAirData}
-                hasMobileAirData={hasMobileAirData}
-              />
-            </div>
-
-            {/* Barre d’outils — desktop */}
-            <div
-              className={cn(
-                "hidden xl:flex items-center justify-center gap-3 flex-1 min-w-0 flex-nowrap overflow-hidden",
-                headerDisabled && "opacity-50 pointer-events-none"
-              )}
-            >
-              {/* Filtres : polluant, sources, pas de temps */}
-              <div className="flex items-center gap-2 rounded-lg bg-gray-50/80 px-2 py-1.5 border border-gray-200/60 min-w-0 shrink">
-                <PollutantDropdown
-                  selectedPollutant={selectedPollutant}
-                  onPollutantChange={setSelectedPollutant}
-                  selectedTimeStep={selectedTimeStep}
-                />
-                <SourceDropdown
-                  selectedSources={selectedSources}
-                  selectedTimeStep={selectedTimeStep}
-                  onSourceChange={setSelectedSources}
-                  onTimeStepChange={setSelectedTimeStep}
-                  onToast={addToast}
-                  autoRefreshEnabled={autoRefreshEnabled && !isHistoricalModeActive}
-                  onToggleAutoRefresh={setAutoRefreshEnabled}
-                  loading={loading}
-                  isHistoricalModeActive={isHistoricalModeActive}
-                />
-                <TimeStepDropdown
-                  selectedTimeStep={selectedTimeStep}
-                  selectedSources={selectedSources}
-                  onTimeStepChange={setSelectedTimeStep}
-                  onSourceChange={setSelectedSources}
-                  onToast={addToast}
-                />
-              </div>
-
-              {/* Modélisation */}
-              <div className="flex items-center gap-2 pl-1 border-l border-gray-200/80 min-w-0 shrink">
-                <ModelingLayerControl
-                  currentModelingLayer={currentModelingLayer}
-                  onModelingLayerChange={(next) => {
-                    setCurrentModelingLayer(next);
-                    if (next !== "pollutant") {
-                      setHasUserAdjustedModelingHour(false);
-                      setModelingHourIndex(null);
-                      return;
-                    }
-                    setHasUserAdjustedModelingHour(false);
-                    if (!isModelingAvailable(selectedTimeStep)) {
-                      setModelingHourIndex(null);
-                      return;
-                    }
-                    const defaultHour = getModelingLayerHour(selectedTimeStep);
-                    setModelingHourIndex(defaultHour >= 0 ? defaultHour : null);
-                  }}
-                  selectedPollutant={selectedPollutant}
-                  selectedTimeStep={selectedTimeStep}
-                />
-                {isPollutantForecastMode &&
-                  isModelingAvailable(selectedTimeStep) &&
-                  typeof modelingHourIndex === "number" && (
-                    <ModelingTimeControl
-                      value={modelingHourIndex}
-                      locale={i18n.language}
-                      onChange={(nextHour) => {
-                        setHasUserAdjustedModelingHour(true);
-                        setModelingHourIndex(nextHour);
-                      }}
-                    />
-                  )}
-              </div>
-
-              {/* Mode historique + Sources spéciales */}
-              <div className="flex items-center gap-2 pl-1 border-l border-gray-200/80 min-w-0 shrink">
-                <HistoricalModeButton
-                  isActive={isHistoricalModeActive}
-                  onToggle={toggleHistoricalMode}
-                  disabled={!isHistoricalModeAllowed}
-                />
-                <SpecialSourceHeaderDropdown
-                  onSignalAirClick={handleSignalAirHeaderClick}
-                  onMobileAirClick={handleMobileAirHeaderClick}
-                  isSignalAirVisible={isSignalAirVisible}
-                  isMobileAirVisible={isMobileAirVisible}
-                  onSignalAirToggle={setIsSignalAirVisible}
-                  onMobileAirToggle={setIsMobileAirVisible}
-                  hasSignalAirData={hasSignalAirData}
-                  hasMobileAirData={hasMobileAirData}
-                />
-              </div>
-            </div>
-
-            {/* Zone droite — utilitaires (desktop) */}
-            <div
-              className={cn(
-                "hidden xl:flex items-center gap-2 shrink-0",
-                headerDisabled && "opacity-50 pointer-events-none"
-              )}
-            >
-              <LanguageSwitcher />
-              <button
-                type="button"
-                onClick={() => setIsInfoModalOpen(true)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#325A96]/40 text-sm font-semibold text-[#325A96] transition-colors hover:bg-[#325A96]/10 focus:outline-none focus:ring-2 focus:ring-[#4271B3]/20"
-                aria-label={t("app.infoButton")}
-              >
-                i
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Barre de progression pour le chargement */}
-        {loading && (
-          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-100">
-            <div
-              className="h-full bg-[#4271B3] animate-pulse rounded-full"
-              style={{ width: "100%" }}
-            />
-          </div>
-        )}
-      </header>
+      <AboutPanel domainConfig={domainConfig} />
 
       {/* Carte en plein écran */}
-      <main id="main-content" className="flex-1 relative" tabIndex={-1}>
-        {shouldShowAtmoMicroOutageBanner && (
-          <div className="absolute top-4 left-4 right-4 z-[1500]">
-            <div className="relative mx-auto max-w-5xl rounded-lg border border-amber-300 bg-amber-50 px-10 py-3 shadow">
-              <p className="text-center text-sm font-medium text-amber-900">
-                {atmoMicroMaintenanceBanner.message}
-              </p>
-              <button
-                type="button"
-                onClick={() => setIsAtmoMicroBannerDismissed(true)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-amber-700 transition-colors hover:bg-amber-100 hover:text-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-400"
-                aria-label="Fermer le bandeau d'information"
-              >
-                ×
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Indicateur de chargement */}
-        {loading && (
-          <div className="absolute top-4 right-4 z-[1500]">
-            <div className="bg-white/90 backdrop-blur-sm px-3 py-2 rounded-lg shadow-lg border border-gray-200">
-              <div className="flex items-center space-x-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                <div className="flex flex-col">
-                  <span className="text-blue-600 text-sm font-medium">
-                    {devices.length === 0
-                      ? t("common.loadingData")
-                      : t("common.updating")}
-                  </span>
-                  {loadingSources.length > 0 && (
-                    <span className="text-xs text-gray-500">
-                      {t("common.sourcesCount", { count: loadingSources.length })}
-                      {loadingSources.length > 0 && (
-                        <span className="ml-1">
-                          ({loadingSources.slice(0, 2).join(", ")}
-                          {loadingSources.length > 2 && "..."})
-                        </span>
-                      )}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {error && (
-          <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-2 rounded-md shadow-lg z-[1500] max-w-xs">
-            <p className="text-xs">{t("common.error")}: {error}</p>
-          </div>
-        )}
+      {/* `id="main-content"` vit désormais sur la colonne carte, dans
+          AirQualityMap : le rail étant le premier élément de <main>, le lien
+          d'évitement aurait déposé l'utilisateur AVANT lui, sans rien sauter. */}
+      {/* `min-h-0` : sans lui, `flex-1` garde le `min-height: auto` par défaut
+          des éléments flex et <main> peut donc DÉPASSER sa part de la colonne
+          `h-screen`. Un panneau latéral plus haut que le viewport faisait alors
+          grandir <main>, rendant toute la page défilante au lieu de laisser le
+          panneau défiler dans sa propre zone. */}
+      <main className="relative min-h-0 min-w-0 flex-1 overflow-x-hidden">
         {/* Carte */}
-        <AirQualityMap
-          devices={shouldHideMeasurementsInPollutantModeling ? [] : devices}
-          reports={reportsForMap}
-          center={mapCenter}
-          zoom={mapZoom}
-          minZoom={mapMinZoom}
-          maxZoom={mapMaxZoom}
-          maxBounds={mapMaxBounds}
-          selectedPollutant={selectedPollutant}
-          selectedSources={selectedSources}
-          selectedTimeStep={selectedTimeStep}
-          currentModelingLayer={currentModelingLayer}
-          modelingHourIndex={modelingHourIndex}
-          shouldOverrideDisplayedPeriod={shouldHideMeasurementsInPollutantModeling}
-          loading={loading || temporalState.loading}
-          signalAirPeriod={signalAirDraftPeriod}
-          signalAirSelectedTypes={signalAirSelectedTypes}
-          onSignalAirPeriodChange={handleSignalAirDraftPeriodChange}
-          onSignalAirTypesChange={handleSignalAirTypesChange}
-          onSignalAirLoadRequest={handleSignalAirLoadRequest}
-          isSignalAirLoading={isSignalAirLoading}
-          signalAirHasLoaded={hasSignalAirLoaded}
-          signalAirReportsCount={reportsForMap.filter((r) => r.source === "signalair").length}
-          isHistoricalModeWithSignalAirData={
-            isHistoricalModeActive &&
-            hasHistoricalData &&
-            (temporalState.historicalSignalAirReports?.length ?? 0) > 0
-          }
-          onSignalAirSourceDeselected={handleSignalAirSourceDeselected}
-          onMobileAirSensorSelected={handleMobileAirSensorSelected}
-          onMobileAirSourceDeselected={handleMobileAirSourceDeselected}
-          isHistoricalModeActive={isHistoricalModeActive}
-          isSignalAirEnabled={isSignalAirEnabled}
-          isMobileAirEnabled={isMobileAirEnabled}
-          isSignalAirVisible={isSignalAirVisible}
-          isMobileAirVisible={isMobileAirVisible}
-          onSignalAirToggle={setIsSignalAirVisible}
-          onMobileAirToggle={setIsMobileAirVisible}
-          onSignalAirPanelOpen={handleSignalAirPanelOpen}
-          onMobileAirPanelOpen={handleMobileAirPanelOpen}
-          openSignalAirPanelRequest={openSignalAirPanelRequest}
-          openMobileAirPanelRequest={openMobileAirPanelRequest}
-          historicalCurrentDate={
-            isHistoricalModeActive && temporalState.isPlaying
-              ? temporalState.currentDate
-              : undefined
-          }
-        />
+        {/* Le provider n'enveloppe que la carte : AirQualityMap ne gagne aucune
+            prop, et le rail de contrôles qui vit dans sa colonne lit l'état
+            applicatif par contexte au lieu d'un troisième chemin de props. */}
+        <MapControlsProvider value={mapControlsValue}>
+          <AirQualityMap
+            devices={shouldHideMeasurementsInPollutantModeling ? [] : devices}
+            reports={reportsForMap}
+            center={mapCenter}
+            zoom={mapZoom}
+            minZoom={domainConfig.mapMinZoom}
+            maxZoom={domainConfig.mapMaxZoom}
+            maxBounds={domainConfig.mapMaxBounds}
+            mapBounds={domainConfig.mapBounds}
+            onMapViewChange={handleMapViewChange}
+            selectedPollutant={selectedPollutant}
+            selectedSources={selectedSources}
+            selectedTimeStep={selectedTimeStep}
+            currentModelingLayer={currentModelingLayer}
+            modelingHourIndex={modelingHourIndex}
+            aircrowdWmsEnabled={aircrowdWmsEnabled}
+            aircrowdWmsDate={aircrowdWmsDate}
+            aircrowdWmsHour={aircrowdWmsHour}
+            shouldOverrideDisplayedPeriod={
+              shouldHideMeasurementsInPollutantModeling
+            }
+            loading={loading || temporalState.loading}
+            signalAirPeriod={signalAirDraftPeriod}
+            signalAirSelectedTypes={signalAirSelectedTypes}
+            onSignalAirPeriodChange={handleSignalAirDraftPeriodChange}
+            onSignalAirTypesChange={handleSignalAirTypesChange}
+            isSignalAirLoading={isSignalAirLoading}
+            signalAirHasLoaded={hasSignalAirLoaded}
+            signalAirReportsCount={signalAirReportsCount}
+            isHistoricalModeWithSignalAirData={
+              isHistoricalModeActive &&
+              hasHistoricalData &&
+              (temporalState.historicalSignalAirReports?.length ?? 0) > 0
+            }
+            onSignalAirSourceDeselected={handleSignalAirSourceDeselected}
+            onMobileAirSensorSelected={handleMobileAirSensorSelected}
+            onMobileAirSourceDeselected={handleMobileAirSourceDeselected}
+            isHistoricalModeActive={isHistoricalModeActive}
+            isSignalAirEnabled={isSignalAirEnabled}
+            isMobileAirEnabled={isMobileAirEnabled}
+            isSignalAirVisible={isSignalAirVisible}
+            isMobileAirVisible={isMobileAirVisible}
+            onSignalAirToggle={handleSignalAirVisibilityToggle}
+            onMobileAirToggle={handleMobileAirVisibilityToggle}
+            historicalCurrentDate={
+              isHistoricalModeActive && temporalState.isPlaying
+                ? temporalState.currentDate
+                : undefined
+            }
+            historicalStartDate={
+              isHistoricalModeActive ? temporalState.startDate : undefined
+            }
+            historicalEndDate={
+              isHistoricalModeActive ? temporalState.endDate : undefined
+            }
+            historicalTimeStep={
+              isHistoricalModeActive ? temporalState.timeStep : undefined
+            }
+            historicalPlaybackDate={
+              isHistoricalModeActive ? temporalState.currentDate : undefined
+            }
+            isHistoricalDatePanelVisible={
+              isHistoricalModeActive && isDatePanelVisible
+            }
+          />
+        </MapControlsProvider>
 
         {/* Panel de contrôle historique (sélection de date) - Visible si mode historique actif ET panel de date visible */}
         <HistoricalControlPanel
@@ -849,8 +1137,22 @@ const App: React.FC = () => {
 
       {/* Conteneur de notifications toast */}
       <ToastContainer toasts={toasts} onClose={removeToast} />
+
+      <HistoricalModeTourController
+        isHistoricalModeAllowed={isHistoricalModeAllowed}
+        isHistoricalModeActive={isHistoricalModeActive}
+        hasHistoricalData={hasHistoricalData}
+        isDatePanelVisible={isDatePanelVisible}
+      />
+      <GlobalAppTourController />
     </div>
   );
 };
+
+const App: React.FC = () => (
+  <FeatureTourProvider>
+    <AppContent />
+  </FeatureTourProvider>
+);
 
 export default App;

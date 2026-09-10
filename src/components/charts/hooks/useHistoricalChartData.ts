@@ -285,6 +285,7 @@ export const useHistoricalChartData = ({
     timeStep,
     chartData,
     t,
+    localeForDate,
   ]);
 
   // Détecter si des données corrigées sont disponibles (pour AtmoMicro ou en mode comparaison avec stations atmoMicro)
@@ -362,7 +363,6 @@ export const useHistoricalChartData = ({
         }
       }
 
-      // Préserver toutes les propriétés du point, y compris les valeurs null
       return {
         ...point,
         timestamp, // S'assurer que timestamp est toujours un nombre

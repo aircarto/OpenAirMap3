@@ -6,7 +6,6 @@
  */
 
 import React, { useEffect, useRef } from "react";
-import i18n from "i18next";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
@@ -394,7 +393,7 @@ const AmChartsLineChart: React.FC<AmChartsLineChartProps> = ({
     if (onChartReady) {
       onChartReady(chart, root);
     }
-  }, []); // Création initiale uniquement - dépendances vides pour éviter les recréations
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- création unique du graphique ; mises à jour via effets séparés
 
   // Mettre à jour le label de l'axe Y gauche au changement de langue ou de yAxes
   useEffect(() => {
@@ -407,7 +406,7 @@ const AmChartsLineChart: React.FC<AmChartsLineChartProps> = ({
       const text = leftAxisConfig.label + (leftAxisConfig.unit ? ` (${leftAxisConfig.unit})` : "");
       (leftLabel as any).set("text", text);
     }
-  }, [i18n.language, yAxes]);
+  }, [yAxes]);
 
   // Nettoyage au démontage
   useEffect(() => {

@@ -249,7 +249,9 @@ const MarkerTooltip: React.FC<MarkerTooltipProps> = ({
         MozUserSelect: "none",
         msUserSelect: "none",
         display: device && !isHidden ? "block" : "none", // Masquer complètement pendant un clic
-        zIndex: 9999, // Z-index élevé pour être visible
+        // Style inline : impossible d'utiliser la classe utilitaire. Aligné sur
+        // le token `toast` de l'échelle (--z-toast dans index.css).
+        zIndex: "var(--z-toast)",
         position: "fixed",
         touchAction: "none",
       }}

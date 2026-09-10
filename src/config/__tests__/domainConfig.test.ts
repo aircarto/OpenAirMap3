@@ -1,0 +1,103 @@
+import { describe, it, expect } from "vitest";
+import { getConfigForDomain, DOMAIN_CONFIG } from "../domainConfig";
+
+describe("getConfigForDomain", () => {
+  it("retourne la config atmosud pour le domaine de production", () => {
+    expect(getConfigForDomain("openairmap.atmosud.org")).toBe(
+      DOMAIN_CONFIG.atmosud
+    );
+  });
+
+  it("retourne la config atmosud pour un sous-domaine atmosud.org (ex: preprod)", () => {
+    expect(getConfigForDomain("preprod-openairmap.atmosud.org")).toBe(
+      DOMAIN_CONFIG.atmosud
+    );
+  });
+
+  it("retourne la config par defaut pour un domaine non-atmosud", () => {
+    expect(getConfigForDomain("openairmap.fr")).toBe(DOMAIN_CONFIG.default);
+  });
+
+  it("retourne la config par defaut pour localhost", () => {
+    expect(getConfigForDomain("localhost")).toBe(DOMAIN_CONFIG.default);
+  });
+
+  it("differencie le seoTitle et la description entre atmosud et default (le title affiche en navbar reste identique)", () => {
+    expect(DOMAIN_CONFIG.atmosud.seoTitle).toBeDefined();
+    expect(DOMAIN_CONFIG.atmosud.seoTitle).not.toBe(DOMAIN_CONFIG.default.title);
+    expect(DOMAIN_CONFIG.atmosud.description).not.toBe(
+      DOMAIN_CONFIG.default.description
+    );
+  });
+
+  it("ne renseigne les mentions legales AtmoSud que pour la config atmosud (default garde les champs vides)", () => {
+    const defaultLegal = DOMAIN_CONFIG.default.legal;
+    expect(defaultLegal).toBeDefined();
+    expect(defaultLegal?.siret).toBe("");
+    expect(defaultLegal?.legalForm).toBe("");
+    expect(defaultLegal?.address).toBe("");
+    expect(defaultLegal?.legalRepresentative).toBe("");
+    expect(defaultLegal?.publicationDirector).toBe("");
+    expect(defaultLegal?.hosting).toBe("");
+    expect(defaultLegal?.dpo).toBe("");
+    expect(defaultLegal?.vatNumber).toBe("");
+    expect(defaultLegal?.privacyPolicyUrl).toBe("");
+    expect(defaultLegal?.hostingProvider?.siret).toBe("");
+
+    const atmosudLegal = DOMAIN_CONFIG.atmosud.legal;
+    expect(atmosudLegal?.siret).not.toBe("");
+    expect(atmosudLegal?.address).not.toBe("");
+  });
+
+  it("differencie la zone geographique : default = France, atmosud = region Sud", () => {
+    expect(DOMAIN_CONFIG.default.mapBounds).not.toEqual(
+      DOMAIN_CONFIG.atmosud.mapBounds
+    );
+    expect(DOMAIN_CONFIG.default.mapCenter).not.toEqual(
+      DOMAIN_CONFIG.atmosud.mapCenter
+    );
+
+    // Bounds region Sud contenues dans les bounds France (sanity check des valeurs)
+    const [[defaultSouth, defaultWest], [defaultNorth, defaultEast]] =
+      DOMAIN_CONFIG.default.mapBounds;
+    const [[atmosudSouth, atmosudWest], [atmosudNorth, atmosudEast]] =
+      DOMAIN_CONFIG.atmosud.mapBounds;
+
+    expect(atmosudSouth).toBeGreaterThanOrEqual(defaultSouth);
+    expect(atmosudWest).toBeGreaterThanOrEqual(defaultWest);
+    expect(atmosudNorth).toBeLessThanOrEqual(defaultNorth);
+    expect(atmosudEast).toBeLessThanOrEqual(defaultEast);
+  });
+
+  it("differencie organization : atmosud seul vs AtmoSud et AirCarto pour default", () => {
+    expect(DOMAIN_CONFIG.atmosud.organization).toBe("AtmoSud");
+    expect(DOMAIN_CONFIG.default.organization).toBe("AtmoSud et AirCarto");
+    expect(DOMAIN_CONFIG.atmosud.organization).not.toBe(
+      DOMAIN_CONFIG.default.organization
+    );
+  });
+
+  it("expose un lien logo uniquement pour atmosud (default garde la modale infos)", () => {
+    expect(DOMAIN_CONFIG.default.links.logo).toBeUndefined();
+    expect(DOMAIN_CONFIG.atmosud.links.logo).toBe("https://www.atmosud.org/");
+  });
+
+  it("résout aircrowd.atmosud.org avec zone Gardanne/Meyreuil et whitelist AtmoMicro", () => {
+    const config = getConfigForDomain("aircrowd.atmosud.org");
+    expect(config).toBe(DOMAIN_CONFIG["aircrowd.atmosud.org"]);
+    expect(config.title).toBe("AirCrowd");
+    expect(config.mapMinZoom).toBe(12);
+    expect(config.mapMaxZoom).toBe(18);
+    expect(config.mapBounds).toEqual(config.mapMaxBounds);
+    expect(config.mapCenter).toEqual([43.494, 5.492]);
+    expect(config.atmoMicroAllowedSiteIds?.length).toBeGreaterThan(0);
+    // Microspot : IDs hexadécimaux de capteurs (pas les anciens id_site)
+    expect(config.atmoMicroAllowedSiteIds).toEqual(
+      expect.arrayContaining(["05C1A382", "D0001CA0", 1358])
+    );
+    expect(config.aircrowdWmsEnabled).toBe(true);
+    expect(config.aircrowdWmsStartDate).toBe("2026-09-02");
+    expect(config.markSquare).toBe(DOMAIN_CONFIG.atmosud.markSquare);
+    expect(config.logo).toBe(DOMAIN_CONFIG.atmosud.logo);
+  });
+});

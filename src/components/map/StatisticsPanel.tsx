@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { MeasurementDevice, SignalAirReport } from "../../types";
 import { cn } from "../../lib/utils";
@@ -304,27 +305,43 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
 
   if (!isOpen) return null;
 
-  return (
+  /*
+   * Portalisé vers `document.body`.
+   *
+   * Ce panneau est en `position: fixed`, mais il était rendu depuis
+   * DeviceStatistics, c'est-à-dire À L'INTÉRIEUR de la colonne bas-droite de la
+   * carte. Or celle-ci porte `overflow-y: auto` et un `z-index`, et le conteneur
+   * intermédiaire en `glass-3` porte `isolation: isolate` : deux contextes
+   * d'empilement qui plafonnaient le z-index du panneau, et un overflow qui le
+   * rognait. Résultat : la feuille apparaissait coupée et sous la carte.
+   *
+   * Un élément `fixed` doit sortir de tout ancêtre défilant ou isolant.
+   */
+  return createPortal(
     <>
       {/* Overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/20 z-[1600] transition-opacity"
+          className="fixed inset-0 bg-black/20 z-panel-raised transition-opacity"
           onClick={onClose}
           aria-hidden="true"
         />
       )}
 
-      {/* Panel */}
+      {/* Panel : bottom sheet sous md, carte flottante au-delà */}
       <div
         className={cn(
-          "fixed bottom-6 right-4 z-[1601] w-[420px] max-h-[80vh]",
-          "bg-white rounded-lg border border-gray-200 shadow-xl",
-          "flex flex-col transition-all duration-300",
+          "fixed z-panel-sheet flex flex-col bg-white shadow-xl transition-all duration-300",
+          "inset-x-0 bottom-0 max-h-[min(80vh,100dvh)] w-full rounded-t-2xl border border-gray-200 border-b-0",
+          "pb-[env(safe-area-inset-bottom,0px)]",
+          "md:inset-x-auto md:bottom-6 md:right-4 md:w-[420px] md:max-h-[80vh] md:rounded-lg md:border-b md:pb-0",
           isOpen
             ? "opacity-100 translate-y-0"
-            : "opacity-0 translate-y-4 pointer-events-none"
+            : "pointer-events-none translate-y-4 opacity-0"
         )}
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("statistics.title")}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
@@ -362,7 +379,7 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
         </div>
 
         {/* Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-6">
           {visibleDevices.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <svg
@@ -770,7 +787,8 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
           )}
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 };
 

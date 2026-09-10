@@ -3,18 +3,23 @@ import { useTranslation } from "react-i18next";
 import {
   pollutants,
   isPollutantSupportedForTimeStep,
+  POLLUTANT_CATEGORY_ORDER,
 } from "../../constants/pollutants";
+import type { Pollutant, PollutantCategory } from "../../types";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuTrigger,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
+  DropdownMenuSeparator,
 } from "../ui/dropdown-menu";
+import { DropdownButton } from "./DropdownButton";
+import type { CustomTriggerProps } from "./dropdownTriggerContract";
 import { cn } from "../../lib/utils";
 
-interface PollutantDropdownProps {
+interface PollutantDropdownProps extends CustomTriggerProps {
   selectedPollutant: string;
   onPollutantChange: (pollutant: string) => void;
   selectedTimeStep?: string;
@@ -27,6 +32,11 @@ const PollutantDropdown: React.FC<PollutantDropdownProps> = ({
   onPollutantChange,
   selectedTimeStep,
   triggerId,
+  renderTrigger,
+  menuSide,
+  menuAlign,
+  menuSideOffset,
+  menuClassName,
 }) => {
   const { t } = useTranslation();
   const availablePollutants = useMemo(
@@ -38,6 +48,22 @@ const PollutantDropdown: React.FC<PollutantDropdownProps> = ({
       ),
     [selectedTimeStep]
   );
+
+  const pollutantsByCategory = useMemo(() => {
+    const groups = new Map<PollutantCategory, Array<[string, Pollutant]>>();
+    for (const entry of availablePollutants) {
+      const category = entry[1].category;
+      const list = groups.get(category);
+      if (list) list.push(entry);
+      else groups.set(category, [entry]);
+    }
+    return POLLUTANT_CATEGORY_ORDER.filter((category) =>
+      groups.has(category)
+    ).map((category) => ({
+      category,
+      items: groups.get(category)!,
+    }));
+  }, [availablePollutants]);
 
   const getDisplayText = () => {
     const pollutant = pollutants[selectedPollutant];
@@ -60,50 +86,52 @@ const PollutantDropdown: React.FC<PollutantDropdownProps> = ({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          id={triggerId}
-          className="relative bg-gradient-to-br from-gray-50 to-white border border-gray-200/60 text-gray-800 hover:from-gray-100 hover:to-gray-50 hover:border-gray-300 shadow-sm backdrop-blur-sm rounded-lg pl-3 pr-7 py-2 text-left text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#4271B3]/20 focus:border-[#4271B3] min-w-[72px] max-w-[140px]"
-        >
-          <span className="block truncate pr-6">{getDisplayText()}</span>
-          <span className="absolute inset-y-0 right-0 flex items-center pr-2.5 pointer-events-none text-gray-600">
-            <svg
-              className="h-4 w-4 transition-transform duration-200"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
-          </span>
-        </button>
+        {renderTrigger ? (
+          renderTrigger({ displayText: getDisplayText() })
+        ) : (
+          <DropdownButton
+            id={triggerId}
+            data-tour="global-pollutant"
+            className="min-w-[72px] max-w-[140px]"
+          >
+            <span className="block truncate pr-6">{getDisplayText()}</span>
+          </DropdownButton>
+        )}
       </DropdownMenuTrigger>
-      <DropdownMenuContent 
-        align="start" 
+      <DropdownMenuContent
+        side={menuSide}
+        align={menuAlign ?? "start"}
         alignOffset={0}
-        className="w-[var(--radix-dropdown-menu-trigger-width)]"
+        sideOffset={menuSideOffset}
+        className={cn(
+          !renderTrigger && "w-[var(--radix-dropdown-menu-trigger-width)]",
+          menuClassName
+        )}
       >
         <DropdownMenuRadioGroup
           value={selectedPollutant}
           onValueChange={onPollutantChange}
         >
-          {availablePollutants.map(([code, pollutant]) => (
-            <DropdownMenuRadioItem
-              key={code}
-              value={code}
-              className={cn(
-                "py-2 pr-3 text-sm",
-                selectedPollutant === code &&
-                  "bg-[#e7eef8] text-[#1f3c6d]"
-              )}
-            >
-              {t(`pollutants.${code}`)}
-            </DropdownMenuRadioItem>
+          {pollutantsByCategory.map(({ category, items }, sectionIndex) => (
+            <div key={category} role="group">
+              {sectionIndex > 0 && <DropdownMenuSeparator />}
+              <DropdownMenuLabel className="px-2 py-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                {t(`pollutants.categories.${category}`)}
+              </DropdownMenuLabel>
+              {items.map(([code]) => (
+                <DropdownMenuRadioItem
+                  key={code}
+                  value={code}
+                  className={cn(
+                    "py-2 pr-3 text-sm",
+                    selectedPollutant === code &&
+                      "bg-[#e7eef8] text-[#1f3c6d]"
+                  )}
+                >
+                  {t(`pollutants.${code}`)}
+                </DropdownMenuRadioItem>
+              ))}
+            </div>
           ))}
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>

@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import L from "leaflet";
-import { baseLayers, BaseLayerKey, ModelingLayerType } from "../../../constants/mapLayers";
+import {
+  BaseLayerKey,
+  ModelingLayerType,
+  createBaseLayer,
+  getBaseLayerMaxZoom,
+} from "../../../constants/mapLayers";
 import {
   getModelingLayerHour,
   formatHourLayerName,
@@ -11,30 +16,77 @@ import {
   isModelingAvailable,
   loadWindFromAtmoSud,
 } from "../../../services/ModelingLayerService";
+import {
+  buildAirCrowdLayerName,
+  createAirCrowdWMSLayer,
+  getAirCrowdWmsLegendUrl,
+  isAirCrowdWmsPollutantSupported,
+} from "../../../services/AirCrowdWmsLayerService";
 import { createCommunalGeoJSONLayer } from "../../../services/CommunalLayerService";
+import {
+  createEffisHotspotsGeoJSONLayer,
+  createEffisBurnedAreasGeoJSONLayer,
+  BurnedAreaPeriod,
+  EffisBurnedAreaStats,
+  EffisHotspotStats,
+  HotspotPeriod,
+} from "../../../services/EffisLayerService";
+import { DomainConfig } from "../../../config/domainConfig";
+
+const EFFIS_REDRAW_INTERVAL_MS = 10 * 60 * 1000; // 10 min : fenêtre glissante
 
 interface UseMapLayersProps {
   mapRef: React.RefObject<L.Map | null>;
+  /** Incrémente quand la carte Leaflet est prête (évite course au montage) */
+  mapReadyVersion: number;
   currentBaseLayer: BaseLayerKey;
   selectedTimeStep: string;
   selectedPollutant: string;
   currentModelingLayer: ModelingLayerType | null;
   modelingHourIndex?: number | null;
+  /** PoC WMS AirCrowd */
+  aircrowdWmsEnabled?: boolean;
+  aircrowdWmsDate?: string;
+  aircrowdWmsHour?: number;
   isCommunalLayerEnabled: boolean;
+  isEffisHotspotsEnabled: boolean;
+  isEffisBurnedAreasEnabled: boolean;
+  /** Fenêtre des points de chaleur : 24 h ou 7 jours */
+  effisHotspotsPeriod: HotspotPeriod;
+  /** Fenêtre des zones brûlées : jour, semaine ou saison */
+  effisBurnedAreasPeriod: BurnedAreaPeriod;
+  /**
+   * Date rejouée en mode historique. Absente = temps réel.
+   * Les couches feux affichent alors une fenêtre glissante de 24 h fermée à cette date.
+   */
+  effisReferenceDate?: Date;
+  /** Emprise de l'instance courante (voir DomainConfig.mapBounds) — les couches EFFIS s'y limitent */
+  mapBounds: DomainConfig["mapBounds"];
 }
 
 export const useMapLayers = ({
   mapRef,
+  mapReadyVersion,
   currentBaseLayer,
   selectedTimeStep,
   selectedPollutant,
   currentModelingLayer,
   modelingHourIndex,
+  aircrowdWmsEnabled = false,
+  aircrowdWmsDate,
+  aircrowdWmsHour = 0,
   isCommunalLayerEnabled,
+  isEffisHotspotsEnabled,
+  isEffisBurnedAreasEnabled,
+  effisHotspotsPeriod,
+  effisBurnedAreasPeriod,
+  effisReferenceDate,
+  mapBounds,
 }: UseMapLayersProps) => {
-  const [currentTileLayer, setCurrentTileLayer] = useState<L.TileLayer | null>(
+  const [currentTileLayer, setCurrentTileLayer] = useState<L.Layer | null>(
     null
   );
+  const baseLayerRef = useRef<L.Layer | null>(null);
   const [currentModelingWMTSLayer, setCurrentModelingWMTSLayer] =
     useState<L.TileLayer | null>(null);
   const [currentModelingLegendUrl, setCurrentModelingLegendUrl] = useState<
@@ -43,11 +95,35 @@ export const useMapLayers = ({
   const [currentModelingLegendTitle, setCurrentModelingLegendTitle] = useState<
     string | null
   >(null);
+  const [isEffisHotspotsLoading, setIsEffisHotspotsLoading] = useState(false);
+  const [isEffisBurnedAreasLoading, setIsEffisBurnedAreasLoading] = useState(false);
+  const [effisHotspotsStats, setEffisHotspotsStats] =
+    useState<EffisHotspotStats | null>(null);
+  const [effisBurnedAreasStats, setEffisBurnedAreasStats] =
+    useState<EffisBurnedAreaStats | null>(null);
+  const [effisHotspotsError, setEffisHotspotsError] = useState<string | null>(
+    null
+  );
+  const [effisBurnedAreasError, setEffisBurnedAreasError] = useState<
+    string | null
+  >(null);
 
   const modelingLayerRef = useRef<L.TileLayer | null>(null);
+  const aircrowdWmsLayerRef = useRef<L.TileLayer.WMS | null>(null);
   const windLayerRef = useRef<L.Layer | null>(null);
   const windLayerGroupRef = useRef<L.LayerGroup | null>(null);
   const communalLayerRef = useRef<L.LayerGroup | null>(null);
+  const effisHotspotsLayerRef = useRef<L.GeoJSON | null>(null);
+  const effisBurnedAreasLayerRef = useRef<L.GeoJSON | null>(null);
+  /**
+   * Renderer canvas partagé par tous les points de chaleur. L'emprise France remonte
+   * ~1700 points affichés sur 7 jours : en SVG (défaut Leaflet) chaque cercle serait
+   * un nœud du DOM, ce qui alourdit nettement le zoom et le déplacement.
+   */
+  const hotspotsRendererRef = useRef<L.Renderer | null>(null);
+  if (!hotspotsRendererRef.current) {
+    hotspotsRendererRef.current = L.canvas({ padding: 0.5 });
+  }
 
   // Fonction pour charger la modélisation de vent
   const loadWindModeling = useCallback(async () => {
@@ -112,37 +188,39 @@ export const useMapLayers = ({
     }
   }, [mapRef]);
 
-  // Effet pour mettre à jour le fond de carte et le maxZoom
+  // Effet pour mettre à jour le fond de carte et le maxZoom (tous les fonds, y compris Positron)
   useEffect(() => {
-    if (mapRef.current) {
-      // Supprimer l'ancien fond de carte s'il existe
-      if (currentTileLayer) {
-        mapRef.current.removeLayer(currentTileLayer);
-      }
+    const map = mapRef.current;
+    if (!map || mapReadyVersion < 1) return;
 
-      // Ajouter le nouveau fond de carte seulement si ce n'est pas la carte standard
-      if (currentBaseLayer !== "Carte standard") {
-        const newTileLayer = baseLayers[currentBaseLayer];
-        newTileLayer.addTo(mapRef.current);
-        setCurrentTileLayer(newTileLayer);
-      } else {
-        setCurrentTileLayer(null);
-      }
-
-      // Ajuster le maxZoom en fonction de la couche active
-      const layerConfig = baseLayers[currentBaseLayer];
-      const maxZoom = layerConfig.options.maxZoom || 18;
-      mapRef.current.setMaxZoom(maxZoom);
+    if (baseLayerRef.current) {
+      map.removeLayer(baseLayerRef.current);
+      baseLayerRef.current = null;
     }
-  }, [currentBaseLayer, currentTileLayer, mapRef]);
+
+    const newBaseLayer = createBaseLayer(currentBaseLayer);
+    newBaseLayer.addTo(map);
+    baseLayerRef.current = newBaseLayer;
+    setCurrentTileLayer(newBaseLayer);
+
+    map.setMaxZoom(getBaseLayerMaxZoom(currentBaseLayer));
+
+    return () => {
+      if (baseLayerRef.current && map) {
+        map.removeLayer(baseLayerRef.current);
+        baseLayerRef.current = null;
+      }
+    };
+  }, [currentBaseLayer, mapReadyVersion, mapRef]);
 
   // Effet pour gérer les layers de modélisation WMTS
   useEffect(() => {
     if (!mapRef.current) return;
+    const map = mapRef.current;
 
     // Cleanup: retirer l'ancien layer de modélisation s'il existe
-    if (modelingLayerRef.current && mapRef.current) {
-      mapRef.current.removeLayer(modelingLayerRef.current);
+    if (modelingLayerRef.current && map) {
+      map.removeLayer(modelingLayerRef.current);
       modelingLayerRef.current = null;
       setCurrentModelingWMTSLayer(null);
     }
@@ -152,8 +230,8 @@ export const useMapLayers = ({
     setCurrentModelingLegendTitle(null);
 
     // Cleanup: retirer l'ancien layer de vent s'il existe
-    if (windLayerGroupRef.current && mapRef.current) {
-      mapRef.current.removeLayer(windLayerGroupRef.current);
+    if (windLayerGroupRef.current && map) {
+      map.removeLayer(windLayerGroupRef.current);
       windLayerGroupRef.current = null;
       windLayerRef.current = null;
     }
@@ -197,8 +275,8 @@ export const useMapLayers = ({
 
         // Créer et ajouter le layer WMTS
         const wmtsLayer = createModelingWMTSLayer(layerName);
-        if (mapRef.current) {
-          wmtsLayer.addTo(mapRef.current);
+        if (map) {
+          wmtsLayer.addTo(map);
           modelingLayerRef.current = wmtsLayer;
           setCurrentModelingWMTSLayer(wmtsLayer);
           setCurrentModelingLegendUrl(getModelingLegendUrl(layerName));
@@ -214,13 +292,13 @@ export const useMapLayers = ({
 
     // Cleanup function pour retirer les layers lors du démontage ou changement
     return () => {
-      if (mapRef.current) {
+      if (map) {
         if (modelingLayerRef.current) {
-          mapRef.current.removeLayer(modelingLayerRef.current);
+          map.removeLayer(modelingLayerRef.current);
           modelingLayerRef.current = null;
         }
         if (windLayerGroupRef.current) {
-          mapRef.current.removeLayer(windLayerGroupRef.current);
+          map.removeLayer(windLayerGroupRef.current);
           windLayerGroupRef.current = null;
           windLayerRef.current = null;
         }
@@ -238,24 +316,86 @@ export const useMapLayers = ({
     mapRef,
   ]);
 
+  // PoC : couche WMS AirCrowd (date + heure calendaires)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || mapReadyVersion < 1) return;
+
+    if (aircrowdWmsLayerRef.current) {
+      map.removeLayer(aircrowdWmsLayerRef.current);
+      aircrowdWmsLayerRef.current = null;
+    }
+
+    if (!aircrowdWmsEnabled || !aircrowdWmsDate) {
+      return;
+    }
+
+    if (!isAirCrowdWmsPollutantSupported(selectedPollutant)) {
+      return;
+    }
+
+    try {
+      const layerName = buildAirCrowdLayerName(
+        selectedPollutant,
+        aircrowdWmsDate,
+        aircrowdWmsHour
+      );
+      const wmsLayer = createAirCrowdWMSLayer(layerName);
+      wmsLayer.on("tileerror", (event) => {
+        console.warn("❌ [AIRCROWD WMS] Tuile en erreur:", {
+          layerName,
+          url: (event as { tile?: HTMLImageElement }).tile?.src,
+        });
+      });
+      wmsLayer.addTo(map);
+      aircrowdWmsLayerRef.current = wmsLayer;
+      setCurrentModelingLegendUrl(getAirCrowdWmsLegendUrl(layerName));
+      setCurrentModelingLegendTitle(`AirCrowd — ${layerName}`);
+    } catch (error) {
+      console.error(
+        "❌ [AIRCROWD WMS] Erreur lors du chargement du layer:",
+        error
+      );
+      setCurrentModelingLegendUrl(null);
+      setCurrentModelingLegendTitle(null);
+    }
+
+    return () => {
+      if (aircrowdWmsLayerRef.current && map) {
+        map.removeLayer(aircrowdWmsLayerRef.current);
+        aircrowdWmsLayerRef.current = null;
+      }
+      setCurrentModelingLegendUrl(null);
+      setCurrentModelingLegendTitle(null);
+    };
+  }, [
+    aircrowdWmsEnabled,
+    aircrowdWmsDate,
+    aircrowdWmsHour,
+    selectedPollutant,
+    mapReadyVersion,
+    mapRef,
+  ]);
+
   // Effet pour gérer la couche communale (utilise GeoJSON pour un contrôle total du style)
   useEffect(() => {
     if (!mapRef.current) return;
+    const map = mapRef.current;
 
     let isCancelled = false;
 
     // Supprimer l'ancienne couche si elle existe
-    if (communalLayerRef.current && mapRef.current) {
-      mapRef.current.removeLayer(communalLayerRef.current);
+    if (communalLayerRef.current && map) {
+      map.removeLayer(communalLayerRef.current);
       communalLayerRef.current = null;
     }
 
     // Charger et ajouter la couche si elle est activée
-    if (isCommunalLayerEnabled && mapRef.current) {
-      createCommunalGeoJSONLayer(mapRef.current)
+    if (isCommunalLayerEnabled && map) {
+      createCommunalGeoJSONLayer(map)
         .then((layerGroup) => {
-          if (!isCancelled && mapRef.current) {
-            layerGroup.addTo(mapRef.current);
+          if (!isCancelled && map) {
+            layerGroup.addTo(map);
             communalLayerRef.current = layerGroup;
           }
         })
@@ -267,17 +407,161 @@ export const useMapLayers = ({
     // Cleanup
     return () => {
       isCancelled = true;
-      if (mapRef.current && communalLayerRef.current) {
-        mapRef.current.removeLayer(communalLayerRef.current);
+      if (map && communalLayerRef.current) {
+        map.removeLayer(communalLayerRef.current);
         communalLayerRef.current = null;
       }
     };
   }, [isCommunalLayerEnabled, mapRef]);
+
+  // Effet pour gérer la couche EFFIS points de chaleur (WFS GeoJSON)
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const map = mapRef.current;
+
+    let isCancelled = false;
+    let refreshInterval: ReturnType<typeof setInterval> | null = null;
+    const abortController = new AbortController();
+
+    const removeHotspotsLayer = () => {
+      if (effisHotspotsLayerRef.current && map) {
+        map.removeLayer(effisHotspotsLayerRef.current);
+        effisHotspotsLayerRef.current = null;
+      }
+    };
+
+    const loadHotspots = async () => {
+      setIsEffisHotspotsLoading(true);
+      setEffisHotspotsError(null);
+      try {
+        const { layer, stats } = await createEffisHotspotsGeoJSONLayer(
+          mapBounds,
+          effisHotspotsPeriod,
+          {
+            renderer: hotspotsRendererRef.current ?? undefined,
+            referenceDate: effisReferenceDate,
+            signal: abortController.signal,
+          }
+        );
+        if (isCancelled || !map) return;
+        removeHotspotsLayer();
+        layer.addTo(map);
+        effisHotspotsLayerRef.current = layer;
+        setEffisHotspotsStats(stats);
+      } catch (error) {
+        if (isCancelled || abortController.signal.aborted) return;
+        console.error('Erreur WFS EFFIS points de chaleur:', error);
+        setEffisHotspotsError(
+          error instanceof Error ? error.message : String(error)
+        );
+        setEffisHotspotsStats(null);
+      } finally {
+        if (!isCancelled) {
+          setIsEffisHotspotsLoading(false);
+        }
+      }
+    };
+
+    removeHotspotsLayer();
+    setEffisHotspotsStats(null);
+
+    if (isEffisHotspotsEnabled) {
+      loadHotspots();
+
+      // Inutile de rafraîchir une date passée : elle ne bouge plus.
+      if (!effisReferenceDate) {
+        refreshInterval = setInterval(loadHotspots, EFFIS_REDRAW_INTERVAL_MS);
+      }
+    }
+
+    return () => {
+      isCancelled = true;
+      abortController.abort();
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+      removeHotspotsLayer();
+      setEffisHotspotsStats(null);
+    };
+  }, [
+    isEffisHotspotsEnabled,
+    effisHotspotsPeriod,
+    effisReferenceDate,
+    mapRef,
+    mapBounds,
+  ]);
+
+  // Effet pour gérer la couche EFFIS zones brûlées (WFS GeoJSON)
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const map = mapRef.current;
+
+    let isCancelled = false;
+    const abortController = new AbortController();
+
+    const removeBurnedAreasLayer = () => {
+      if (effisBurnedAreasLayerRef.current && map) {
+        map.removeLayer(effisBurnedAreasLayerRef.current);
+        effisBurnedAreasLayerRef.current = null;
+      }
+    };
+
+    removeBurnedAreasLayer();
+    setEffisBurnedAreasStats(null);
+
+    if (isEffisBurnedAreasEnabled) {
+      setIsEffisBurnedAreasLoading(true);
+      setEffisBurnedAreasError(null);
+      createEffisBurnedAreasGeoJSONLayer(mapBounds, effisBurnedAreasPeriod, {
+        referenceDate: effisReferenceDate,
+        signal: abortController.signal,
+      })
+        .then(({ layer, stats }) => {
+          if (isCancelled || !map) return;
+          removeBurnedAreasLayer();
+          layer.addTo(map);
+          effisBurnedAreasLayerRef.current = layer;
+          setEffisBurnedAreasStats(stats);
+        })
+        .catch((error) => {
+          if (isCancelled || abortController.signal.aborted) return;
+          console.error('Erreur WFS EFFIS zones brûlées:', error);
+          setEffisBurnedAreasError(
+            error instanceof Error ? error.message : String(error)
+          );
+          setEffisBurnedAreasStats(null);
+        })
+        .finally(() => {
+          if (!isCancelled) {
+            setIsEffisBurnedAreasLoading(false);
+          }
+        });
+    }
+
+    return () => {
+      isCancelled = true;
+      abortController.abort();
+      removeBurnedAreasLayer();
+      setEffisBurnedAreasStats(null);
+    };
+  }, [
+    isEffisBurnedAreasEnabled,
+    effisBurnedAreasPeriod,
+    effisReferenceDate,
+    mapRef,
+    mapBounds,
+  ]);
 
   return {
     currentTileLayer,
     currentModelingWMTSLayer,
     currentModelingLegendUrl,
     currentModelingLegendTitle,
+    isEffisHotspotsLoading,
+    isEffisBurnedAreasLoading,
+    effisHotspotsStats,
+    effisBurnedAreasStats,
+    effisHotspotsError,
+    effisBurnedAreasError,
   };
 };

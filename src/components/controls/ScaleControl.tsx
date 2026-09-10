@@ -36,30 +36,16 @@ const ScaleControl: React.FC<ScaleControlProps> = ({
     };
   }, [map]);
 
-  // Effet pour gérer la visibilité selon l'état du side panel
+  // Visibilité pilotée par une classe sur le conteneur Leaflet, à la place d'un
+  // setTimeout qui ajoutait des classes après coup — la fenêtre de 100 ms
+  // laissait passer des états incohérents au montage.
   useEffect(() => {
-    // Attendre que le contrôle soit ajouté au DOM
-    setTimeout(() => {
-      const scaleElement = document.querySelector(".leaflet-control-scale");
-      if (scaleElement) {
-        // Sur mobile, cacher l'échelle quand le side panel est ouvert
-        if (isSidePanelOpen && panelSize !== "hidden") {
-          scaleElement.classList.add("hidden", "md:block");
-        } else {
-          scaleElement.classList.remove("hidden", "md:block");
-        }
-
-        // Appliquer des styles personnalisés pour réduire la taille
-        const scaleLine = scaleElement.querySelector(
-          ".leaflet-control-scale-line"
-        );
-        if (scaleLine) {
-          (scaleLine as HTMLElement).style.fontSize = "10px";
-          (scaleLine as HTMLElement).style.lineHeight = "1.2";
-          (scaleLine as HTMLElement).style.padding = "2px 4px";
-        }
-      }
-    }, 100);
+    const element = document.querySelector(".leaflet-control-scale");
+    if (!element) return;
+    element.classList.toggle(
+      "oam-scale-panel-open",
+      isSidePanelOpen && panelSize !== "hidden"
+    );
   }, [isSidePanelOpen, panelSize]);
 
   // Ce composant ne rend rien directement

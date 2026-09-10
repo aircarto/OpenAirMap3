@@ -1,6 +1,408 @@
+@import "driver.js/dist/driver.css";
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Polices auto-hébergées (OFL 1.1 — licences dans public/fonts/OFL-*.txt).
+   Servies depuis notre origine : pas de requête vers un CDN tiers, donc pas
+   de transfert d'adresses IP de visiteurs à un sous-traitant hors UE.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Instrument Sans — police d'interface, variable 400→700 */
+@font-face {
+  font-family: "Instrument Sans";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/instrument-sans-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Instrument Sans";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/instrument-sans-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF,
+    U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* Instrument Serif — display, réservé aux titres du panneau À propos et de la modale */
+@font-face {
+  font-family: "Instrument Serif";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/instrument-serif-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* IBM Plex Sans Arabic — chargée uniquement pour les lecteurs arabophones
+   grâce à unicode-range : aucun octet transféré pour les autres locales. */
+@font-face {
+  font-family: "IBM Plex Sans Arabic";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/ibm-plex-sans-arabic-400.woff2") format("woff2");
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891,
+    U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41,
+    U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
+}
+@font-face {
+  font-family: "IBM Plex Sans Arabic";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/ibm-plex-sans-arabic-600.woff2") format("woff2");
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891,
+    U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41,
+    U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Tokens de conception — « Instrument de verre »
+   ...........................................................................
+   ATTENTION : les variables consommées par tailwind.config.js (--primary,
+   --background, --border, --radius…) doivent rester des triplets HSL NUS,
+   sans fonction hsl(). Tailwind les enveloppe lui-même. Les tokens de verre
+   ne peuvent donc pas passer par ce canal : ce sont des couleurs complètes,
+   consommées par les classes .glass-* définies plus bas.
+   ────────────────────────────────────────────────────────────────────────── */
+:root {
+  /* ── Familles ─────────────────────────────────────────────────────────── */
+  --font-ui: "Instrument Sans", "IBM Plex Sans Arabic", system-ui,
+    -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Instrument Serif", Georgia, "Times New Roman", serif;
+
+  /* ── Rampe de marque, teinte verrouillée sur #4271B3 ──────────────────────
+     Quatre paliers sont épinglés sur les hex déjà utilisés dans le code pour
+     que la migration ne déplace aucune couleur existante :
+     brand-100 = #e7eef8, brand-500 = #4271B3, brand-600 = #325A96,
+     brand-800 = #1f3c6d. Les autres sont interpolés.                       */
+  --brand-50: 213 52% 96%;
+  --brand-100: 215 55% 94%;
+  --brand-200: 215 52% 86%;
+  --brand-300: 215 50% 76%;
+  --brand-400: 215 47% 62%;
+  --brand-500: 215 46% 48%;
+  --brand-600: 216 50% 39%;
+  --brand-700: 216 52% 31%;
+  --brand-800: 218 56% 27%;
+  --brand-900: 217 56% 18%;
+
+  /* ── Canal shadcn (consommé par tailwind.config.js) ───────────────────── */
+  --background: 210 20% 98%;
+  --foreground: 214 31% 15%;
+  --card: 0 0% 100%;
+  --card-foreground: 214 31% 15%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 214 31% 15%;
+  --primary: 215 46% 48%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 215 55% 94%;
+  --secondary-foreground: 218 56% 27%;
+  --muted: 214 20% 95%;
+  --muted-foreground: 214 20% 26%;
+  --accent: 215 55% 94%;
+  --accent-foreground: 218 56% 27%;
+  --destructive: 0 65% 42%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 214 20% 88%;
+  --input: 214 20% 88%;
+  --ring: 216 50% 39%;
+  /* Était absente : `borderRadius` est surchargé par var(--radius) dans
+     tailwind.config.js, donc les 255 `rounded-lg/md/sm` du code produisaient
+     un border-radius invalide, c'est-à-dire des coins carrés. On restitue
+     0.5rem, la valeur par défaut de Tailwind pour `rounded-lg` — soit ce que
+     le code visait en écrivant ces classes, plutôt qu'un nouveau parti pris.
+     Les rayons plus généreux du rail passent par --r-lg / --r-xl. */
+  --radius: 0.5rem;
+
+  /* ── Texte sur verre ──────────────────────────────────────────────────────
+     Valeurs contraintes par le pire cas de contraste : surface à 72 % d'opacité
+     au-dessus d'une imagerie satellite noire, soit une luminance composée de
+     0,466. Ratios garantis : --fg 7,46:1 · --fg-muted 4,97:1 · --fg-warn 4,8:1
+     · --fg-danger 5,37:1. RÈGLE : aucun texte sur verre plus clair que
+     --fg-muted (slate-600 tombe à 3,59:1, amber-700 à 2,47:1).              */
+  --fg: #1b2733;
+  --fg-muted: #364350;
+  --fg-warn: #6b2e08;
+  --fg-danger: #7a1410;
+  --fg-ok: #0f5132;
+
+  /* ── Échelle de verre — trois niveaux, pas un de plus ─────────────────── */
+  --glass-tint: 250 251 255; /* blanc froid, jamais blanc pur */
+  --glass-1-alpha: 0.72; /* rail, chrome de carte */
+  --glass-2-alpha: 0.88; /* flyouts et panneaux : portent du texte dense */
+  --glass-3-alpha: 0.62; /* ambiant : échelle, boussole, notices */
+  --glass-blur: 20px;
+  --glass-sat: 160%;
+
+  /* ── Arêtes : le « ménisque », lumière prise sur le rebord de la plaque ── */
+  --edge-hi: inset 0 1px 0 rgb(255 255 255 / 0.72);
+  --edge-lo: inset 0 -1px 0 rgb(16 32 56 / 0.05);
+  --edge-ring: 0 0 0 1px rgb(16 32 56 / 0.09);
+
+  /* ── Ombres teintées froid : de la lumière dans de la brume, pas du noir ── */
+  --shadow-1: 0 1px 2px rgb(16 32 56 / 0.06), 0 1px 1px rgb(16 32 56 / 0.04);
+  --shadow-2: 0 2px 6px -1px rgb(16 32 56 / 0.1), 0 1px 3px rgb(16 32 56 / 0.06);
+  --shadow-3: 0 8px 24px -6px rgb(16 32 56 / 0.16), 0 2px 6px rgb(16 32 56 / 0.07);
+  --shadow-4: 0 20px 48px -12px rgb(16 32 56 / 0.24), 0 4px 12px rgb(16 32 56 / 0.1);
+
+  /* ── Rayons ───────────────────────────────────────────────────────────── */
+  --r-xs: 6px;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 20px;
+  --r-pill: 999px;
+
+  /* ── Géométrie du rail ────────────────────────────────────────────────────
+     Largeur d'un item. Le rail vertical la relève à 56px quand aucun panneau
+     latéral ne comprime la colonne carte : la pile icône+caption récupère la
+     marge latérale qu'elle n'a pas dans une colonne étroite. Valeur par défaut
+     ici, donc ni le rail horizontal ni le mode compact n'ont à la déclarer.  */
+  --rail-item-w: 48px;
+
+  /* ── Mouvement ────────────────────────────────────────────────────────── */
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+  --dur-slow: 260ms;
+  --dur-panel: 300ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.25, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-spring: cubic-bezier(0.22, 1.2, 0.36, 1);
+
+  /* ── Échelle de z-index ───────────────────────────────────────────────────
+     Miroir des clés `zIndex` de tailwind.config.js, pour les quelques règles
+     CSS en !important qui ne peuvent pas utiliser une classe utilitaire.    */
+  --z-map-ambient: 400;
+  --z-map-info: 500;
+  --z-map-tooltip: 510;
+  --z-map-search: 600;
+  --z-notify: 700;
+  --z-panel: 800;
+  --z-panel-raised: 810;
+  --z-panel-sheet: 820;
+  --z-rail: 900;
+  --z-floating: 1000;
+  --z-popover: 1100;
+  --z-tour-overlay: 1200;
+  --z-tour-popover: 1210;
+  --z-modal: 1300;
+  --z-toast: 1400;
+}
+
+/* Police d'interface appliquée globalement ; la locale arabe bascule sur
+   IBM Plex Sans Arabic par le seul jeu des unicode-range. */
+html {
+  font-family: var(--font-ui);
+}
+
+@layer components {
+  /* ────────────────────────────────────────────────────────────────────────
+     Les trois surfaces de verre. Mécanisme anti-dérive : plus aucun
+     `bg-white/xx backdrop-blur-xx` bricolé dans l'UI carte — toute surface
+     flottante passe par .glass-1, .glass-2 ou .glass-3.
+     ──────────────────────────────────────────────────────────────────────── */
+  .glass-1,
+  .glass-2,
+  .glass-3 {
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+    /* `isolation` suffit à créer le contexte d'empilement du flou.
+       PAS de `contain: paint` : il découpe les enfants aux limites de la surface,
+       ce qui rognait le panneau fait main du sélecteur de fond de carte rendu
+       dans le rail (les menus Radix y échappaient, eux, par portail). Un
+       conteneur qui découpe ses propres popovers est cassé ; le vrai levier de
+       performance est la coupure du flou pendant les déplacements de carte. */
+    isolation: isolate;
+    contain: layout;
+    color: var(--fg);
+  }
+
+  .glass-1 {
+    background: rgb(var(--glass-tint) / var(--glass-1-alpha));
+    box-shadow: var(--edge-ring), var(--edge-hi), var(--edge-lo), var(--shadow-3);
+  }
+
+  .glass-2 {
+    background: rgb(var(--glass-tint) / var(--glass-2-alpha));
+    box-shadow: var(--edge-ring), var(--edge-hi), var(--shadow-4);
+  }
+
+  .glass-3 {
+    background: rgb(var(--glass-tint) / var(--glass-3-alpha));
+    box-shadow: var(--edge-ring), var(--edge-hi), var(--shadow-2);
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Rail de contrôles
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Transitions de l'item, en CSS et non en utilitaires Tailwind : il faut deux
+   durées distinctes selon la propriété — 120 ms sur la couleur pour un retour de
+   survol immédiat, 300 ms sur la largeur pour suivre le <nav> et le panneau
+   latéral dans un seul mouvement. `transition-colors` fixe transition-property
+   et écraserait la largeur, et aucun couple d'utilitaires ne sait exprimer deux
+   durées. prefers-reduced-motion neutralise déjà tout cela plus bas. */
+.rail-item {
+  transition: width var(--dur-panel) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+/* Boutons de taille des panneaux latéraux : même surface translucide que le
+   rail, donc même anneau de focus, mais pas de transition de largeur. */
+.panel-control {
+  transition: color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+/* Focus visible sur surface translucide : un anneau d'une seule couleur peut
+   disparaître sur un fond de carte arbitraire. L'anneau blanc intérieur garantit
+   le contraste contre le bleu, l'anneau coloré extérieur contre tout blanc. */
+.rail-item:focus-visible,
+.panel-control:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px hsl(var(--brand-600)), var(--shadow-2);
+}
+
+@media (forced-colors: active) {
+  .rail-item:focus-visible,
+  .panel-control:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+
+  .rail-item[aria-expanded="true"],
+  .rail-item[data-active="true"] {
+    background: Highlight;
+    color: HighlightText;
+  }
+}
+
+/* La section des raccourcis de panneaux se monte et se démonte selon l'état des
+   panneaux : quand elle ne rend aucun bouton, le groupe et son filet de
+   séparation disparaissent ensemble. */
+.rail-section:empty {
+  display: none;
+}
+
+/* État gelé pendant la lecture historique : le verre s'embue. La trame dit
+   « pourquoi », là où un simple opacity-50 ne disait que « non ». */
+.rail-section-frozen {
+  filter: saturate(0.55);
+  transition: filter var(--dur-slow) var(--ease-out);
+}
+
+.rail-section-frozen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: var(--r-md);
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgb(16 32 56 / 0.04) 0 1px,
+    transparent 1px 5px
+  );
+}
+
+/* La colonne carte publie l'emprise du rail. Les contrôles Leaflet ancrés à
+   gauche et la légende centrée s'y adossent, sans mesure JS et en suivant
+   automatiquement le décalage quand un panneau latéral pousse la colonne. */
+/* Contrôles Leaflet ancrés en HAUT à gauche : ils devraient contourner le rail.
+   Aucun n'y est aujourd'hui, la règle prévient le cas où l'on en ajouterait. */
+.leaflet-top.leaflet-left {
+  margin-inline-start: var(--rail-inset, 0px);
+  transition: margin-inline-start var(--dur-panel) var(--ease-out);
+}
+
+/* En BAS à gauche, il n'y a pas de rail à contourner : il n'occupe que le haut du
+   bord gauche, et sa hauteur maximale réserve cette bande. L'échelle se place donc
+   dans l'angle, juste après la rose des vents — dont la largeur n'est réservée que
+   là où elle est affichée, puisqu'elle disparaît sous md. */
+.leaflet-bottom.leaflet-left {
+  margin-inline-start: 0;
+}
+
+@media (min-width: 768px) {
+  .leaflet-bottom.leaflet-left {
+    margin-inline-start: 3.75rem;
+  }
+}
+
+/* Fond de carte sombre : le chrome ne bascule pas de thème, c'est l'opacité
+   qui compense. Un attribut sur la colonne carte, une règle, aucun état React. */
+[data-basemap="satellite"] {
+  --glass-1-alpha: 0.84;
+  --glass-3-alpha: 0.76;
+  --glass-sat: 130%;
+}
+
+/* Pendant un déplacement de carte, le fond change à chaque frame : couper le
+   flou supprime la relecture par frame. Invisible, car la surface s'opacifie
+   simultanément. C'est la mitigation de performance à plus fort rendement. */
+[data-map-moving="true"] {
+  --glass-blur: 0px;
+  --glass-1-alpha: 0.92;
+  --glass-2-alpha: 0.96;
+  --glass-3-alpha: 0.88;
+}
+
+/* Repli sans backdrop-filter (Firefox < 103, Safari anciens, compositing GPU
+   désactivé). Les valeurs par défaut sont déjà lisibles ; on ne fait que les
+   opacifier — le sens du @supports existant plus bas est conservé. */
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  :root {
+    --glass-1-alpha: 0.96;
+    --glass-2-alpha: 0.98;
+    --glass-3-alpha: 0.94;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --glass-1-alpha: 1;
+    --glass-2-alpha: 1;
+    --glass-3-alpha: 1;
+    --glass-blur: 0px;
+  }
+
+  .glass-1,
+  .glass-2,
+  .glass-3 {
+    border: 1px solid var(--fg-muted);
+    box-shadow: var(--shadow-2);
+  }
+}
+
+@media (forced-colors: active) {
+  .glass-1,
+  .glass-2,
+  .glass-3 {
+    background: Canvas;
+    color: CanvasText;
+    border: 1px solid CanvasText;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
+    forced-color-adjust: none;
+  }
+}
 
 /* Lien d'évitement : masqué visuellement, visible au focus (accessibilité) */
 .skip-link {
@@ -13,7 +415,7 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
-  z-index: 9999;
+  z-index: var(--z-toast);
 }
 .skip-link:focus {
   position: fixed;
@@ -44,6 +446,14 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    /* Sans cela, un décalage d'apparition échelonné laisse les éléments
+       invisibles pendant toute la durée du delay, y compris pour qui a
+       justement demandé l'absence de mouvement. */
+    animation-delay: 0.01ms !important;
+  }
+
+  html {
+    scroll-behavior: auto !important;
   }
 }
 
@@ -56,6 +466,17 @@
 .leaflet-container {
   height: 100%;
   width: 100%;
+  /* Confine les z-index internes de Leaflet.
+     Sans cela le conteneur vaut `z-index: auto` et n'est donc PAS un contexte
+     d'empilement : ses panneaux (carte 400, superpositions 400, marqueurs 600,
+     popups 700) concurrencent directement notre échelle nommée. La rose des
+     vents à `map-ambient` (400) se retrouvait peinte SOUS la couche de tuiles,
+     et la légende à `map-info` (500) passait sous le panneau des marqueurs —
+     l'ordre du DOM décidait seul, ce qui rendait l'échelle non fiable.
+     `z-index: 0` crée le contexte et enferme ces valeurs à l'intérieur. */
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
 }
 
 /* Marqueurs personnalisés */
@@ -208,48 +629,43 @@
   }
 }
 
-/* Styles pour l'échelle de la carte */
+/* ── Échelle de la carte ───────────────────────────────────────────────────
+   Reste un contrôle Leaflet : le calcul de la distance dépend du zoom et de la
+   latitude, le réimplémenter en React n'apporterait rien. Elle adopte en
+   revanche la surface glass-3 du reste du chrome, et s'adosse à --rail-inset
+   plus la largeur de la rose des vents pour former une bande continue. */
 .leaflet-control-scale {
-  background: rgba(255, 255, 255, 0.9) !important;
-  border: 2px solid #e5e7eb !important;
-  border-radius: 8px !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
-    sans-serif !important;
-  font-size: 12px !important;
+  background: rgb(var(--glass-tint) / var(--glass-3-alpha)) !important;
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)) !important;
+  border: none !important;
+  border-radius: var(--r-md) !important;
+  box-shadow: var(--edge-ring), var(--edge-hi), var(--shadow-2) !important;
+  font-size: 11px !important;
   font-weight: 500 !important;
-  color: #374151 !important;
-  padding: 8px 12px !important;
-  margin: 0 0 10px 10px !important;
-  transition: all 0.2s ease-in-out !important;
-  z-index: 3000 !important; /* Au-dessus de tous les autres contrôles */
+  color: var(--fg) !important;
+  padding: 6px 10px !important;
+  /* décalage horizontal appliqué par .leaflet-bottom.leaflet-left */
+  margin: 0 0 12px 0 !important;
+  z-index: var(--z-map-ambient) !important;
   position: relative !important;
 }
 
-/* Styles plus compacts pour mobile */
-@media (max-width: 768px) {
-  .leaflet-control-scale {
-    font-size: 10px !important;
-    padding: 4px 6px !important;
-    margin: 0 0 6px 6px !important;
-    border: 1px solid #e5e7eb !important;
-    border-radius: 6px !important;
+.leaflet-control-scale.oam-scale-panel-open {
+  display: none !important;
+}
+
+@media (min-width: 768px) {
+  .leaflet-control-scale.oam-scale-panel-open {
+    display: block !important;
   }
 }
 
-.leaflet-control-scale:hover {
-  background: rgba(255, 255, 255, 0.95) !important;
-  border-color: #3b82f6 !important;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-}
-
 .leaflet-control-scale-line {
-  border: 2px solid #3b82f6 !important;
+  border: 2px solid hsl(var(--brand-500)) !important;
   border-top: none !important;
   background: transparent !important;
-  color: #374151 !important;
+  color: var(--fg) !important;
   font-weight: 600 !important;
   text-align: center !important;
   line-height: 1.2 !important;
@@ -257,138 +673,73 @@
   padding: 2px 4px !important;
 }
 
-/* Version compacte pour mobile */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
+  .leaflet-control-scale {
+    font-size: 10px !important;
+    padding: 4px 8px !important;
+  }
+
   .leaflet-control-scale-line {
-    border: 1px solid #3b82f6 !important;
+    border-width: 1px !important;
     padding: 1px 3px !important;
     font-size: 9px !important;
   }
 }
 
-/* S'assurer que l'échelle est au-dessus de tous les autres contrôles */
-.leaflet-control-container .leaflet-control-scale {
-  z-index: 3000 !important;
-  position: relative !important;
-}
-
-/* Styles pour la flèche du nord */
-.north-arrow-container {
-  background: rgba(255, 255, 255, 0.9) !important;
-  border: 2px solid #e5e7eb !important;
-  border-radius: 8px !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
-  padding: 8px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-  cursor: pointer !important;
-  transition: all 0.2s ease-in-out !important;
-  z-index: 2500 !important;
-  position: relative !important;
-}
-
-/* Version compacte pour mobile */
-@media (max-width: 768px) {
-  .north-arrow-container {
-    padding: 5px !important;
-    border: 1px solid #e5e7eb !important;
-    border-radius: 6px !important;
-  }
-}
-
-.north-arrow-container:hover {
-  background: rgba(255, 255, 255, 0.95) !important;
-  border-color: #3b82f6 !important;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-  transform: translateY(-1px) !important;
-}
-
-.north-arrow {
-  color: #3b82f6 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  margin-bottom: 2px !important;
-}
-
-/* Version compacte pour mobile */
-@media (max-width: 768px) {
-  .north-arrow {
-    margin-bottom: 1px !important;
-  }
-
-  .north-arrow svg {
-    width: 18px !important;
-    height: 18px !important;
-  }
-}
-
-.north-arrow-text {
-  color: #374151 !important;
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
-    sans-serif !important;
-  font-size: 12px !important;
-  font-weight: 700 !important;
-  text-align: center !important;
-  line-height: 1 !important;
-  user-select: none !important;
-}
-
-/* Version compacte pour mobile */
-@media (max-width: 768px) {
-  .north-arrow-text {
-    font-size: 10px !important;
-  }
-}
-
-/* Styles pour l'encart d'attribution de Leaflet */
+/* Styles pour l'encart d'attribution de Leaflet.
+   Pas de `position: fixed` : sur iOS Safari ça ancre mal (encart « au milieu »
+   de la carte). On reste dans le flux `.leaflet-bottom` de Leaflet. */
 .leaflet-control-attribution {
-  position: fixed !important;
-  bottom: 0px !important;
-  right: 0px !important;
-  background: rgba(255, 255, 255, 0.9) !important;
-  border: 1px solid rgba(0, 0, 0, 0.1) !important;
-  border-radius: 4px !important;
-  padding: 2px 6px !important;
+  background: rgb(var(--glass-tint) / var(--glass-3-alpha)) !important;
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)) !important;
+  border: none !important;
+  border-radius: var(--r-sm) !important;
+  padding: 3px 7px !important;
   font-size: 11px !important;
-  color: #666 !important;
-  z-index: 1000 !important;
+  color: var(--fg-muted) !important;
+  z-index: var(--z-map-ambient) !important;
   transition: none !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  max-width: min(240px, 70vw) !important;
+  white-space: normal !important;
+  line-height: 1.3 !important;
 }
 
 .leaflet-control-attribution.oam-attribution-hidden {
   display: none !important;
 }
 
-/* Ajustement pour les petits écrans en mode paysage */
-@media (max-width: 1024px) and (orientation: landscape) {
+/* Sous lg : remonter tout le coin bas de Leaflet au-dessus du rail horizontal,
+   et ancrer la légende à droite avec safe-area (barre Safari). */
+@media (max-width: 1023px) {
+  .leaflet-bottom {
+    bottom: calc(
+      var(--rail-bottom-inset, 0px) + env(safe-area-inset-bottom, 0px)
+    ) !important;
+  }
+
   .leaflet-control-attribution {
-    bottom: 2px !important;
-    right: 2px !important;
     font-size: 10px !important;
     padding: 1px 4px !important;
+    margin: 0 0 2px 2px !important;
   }
-}
 
-/* Version compacte pour mobile */
-@media (max-width: 768px) {
-  .leaflet-control-attribution {
-    bottom: 2px !important;
-    right: 2px !important;
-    font-size: 10px !important;
-    padding: 1px 4px !important;
+  [data-tour="global-legend"] {
+    right: 0.5rem !important;
+    bottom: calc(
+      var(--rail-bottom-inset, 0px) + env(safe-area-inset-bottom, 0px) + 0.5rem
+    ) !important;
+    left: auto !important;
+    transform: none !important;
   }
-}
 
-/* S'assurer que l'attribution reste fixe même avec les side panels */
-.leaflet-control-attribution:hover {
-  background: rgba(255, 255, 255, 0.95) !important;
-  border-color: rgba(0, 0, 0, 0.2) !important;
+  [data-tour="overlay-legends-mobile"] {
+    right: 0.5rem !important;
+    bottom: calc(
+      var(--rail-bottom-inset, 0px) + env(safe-area-inset-bottom, 0px) + 9rem
+    ) !important;
+  }
 }
 
 /* Styles par défaut pour les boutons de pas de temps */
@@ -424,4 +775,61 @@
   .time-step-button-short {
     display: inline !important;
   }
+}
+
+/* Tutoriels guidés (driver.js) — aligné sur la charte OpenAirMap */
+.driver-popover.openairmap-tour-popover {
+  z-index: var(--z-tour-popover) !important;
+  max-width: min(360px, calc(100vw - 2rem));
+  border-radius: 0.75rem;
+  border: 1px solid rgba(50, 90, 150, 0.25);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
+  font-family: inherit;
+}
+
+.driver-popover.openairmap-tour-popover .driver-popover-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e3a5f;
+}
+
+.driver-popover.openairmap-tour-popover .driver-popover-description {
+  font-size: 0.875rem;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.driver-popover.openairmap-tour-popover .driver-popover-progress-text {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.driver-popover.openairmap-tour-popover .driver-popover-next-btn,
+.driver-popover.openairmap-tour-popover .driver-popover-prev-btn,
+.driver-popover.openairmap-tour-popover .driver-popover-close-btn {
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-shadow: none;
+}
+
+.driver-popover.openairmap-tour-popover .driver-popover-next-btn,
+.driver-popover.openairmap-tour-popover .driver-popover-done-btn {
+  background-color: #4271b3;
+  color: #fff;
+  border: none;
+}
+
+.driver-popover.openairmap-tour-popover .driver-popover-next-btn:hover,
+.driver-popover.openairmap-tour-popover .driver-popover-done-btn:hover {
+  background-color: #325a96;
+}
+
+.driver-popover.openairmap-tour-popover .driver-popover-close-btn {
+  color: #6b7280;
+}
+
+.driver-active-element,
+.driver-overlay {
+  z-index: var(--z-tour-overlay) !important;
 }

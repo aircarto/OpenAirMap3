@@ -29,6 +29,9 @@ interface HistoricalChartProps {
   sensorTimeStep?: number | null; // Pas de temps du capteur en secondes (pour le mode instantane)
   modelingData?: Record<string, HistoricalDataPoint[]>; // Données de modélisation
   hideThresholdBackgroundForColorblind?: boolean; // Masque le fond coloré par seuil (mode daltoniens)
+  playbackMarkerDate?: string;
+  xAxisMin?: string;
+  xAxisMax?: string;
 }
 
 const HistoricalChart: React.FC<HistoricalChartProps> = ({
@@ -43,6 +46,9 @@ const HistoricalChart: React.FC<HistoricalChartProps> = ({
   sensorTimeStep,
   modelingData,
   hideThresholdBackgroundForColorblind = false,
+  playbackMarkerDate,
+  xAxisMin,
+  xAxisMax,
 }) => {
   // État pour détecter le mode paysage sur mobile
   const [isLandscapeMobile, setIsLandscapeMobile] = useState(false);
@@ -148,6 +154,12 @@ const HistoricalChart: React.FC<HistoricalChartProps> = ({
     isLandscapeMobile,
     stationInfo,
     timeStep,
+    xAxisMin,
+    xAxisMax,
+    playbackMarkerDate,
+    source,
+    selectedPollutants,
+    showRawData,
   });
 
   // Notifier le composant parent si des données corrigées sont disponibles
@@ -230,14 +242,18 @@ const HistoricalChart: React.FC<HistoricalChartProps> = ({
 
   return (
     <div className="flex flex-col h-full relative">
-      {/* Bouton burger et menu d'export en haut à droite */}
-      <ExportMenu
-        hasData={chartData.length > 0}
-        onExportPNG={handleExportPNG}
-        onExportCSV={handleExportCSV}
-      />
+      <div
+        className="absolute top-2 right-2 z-10"
+        data-export-ignore="true"
+      >
+        <ExportMenu
+          hasData={chartData.length > 0}
+          onExportPNG={handleExportPNG}
+          onExportCSV={handleExportCSV}
+        />
+      </div>
 
-      {/* Graphique (zoom/pan axe Y via scrollbar Y native amCharts) */}
+      {/* Graphique (zoom Y via rail fin à gauche de l'axe) */}
       <div className="flex-1 min-h-0">
         <div
           ref={containerRef}

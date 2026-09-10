@@ -1,6 +1,8 @@
 import { DataService } from "../types";
+import { featureFlags } from "../config/featureFlags";
 import { AtmoRefService } from "./AtmoRefService";
 import { AtmoMicroService } from "./AtmoMicroService";
+import { AtmoMicroV2Service } from "./AtmoMicroV2Service";
 import { NebuleAirService } from "./NebuleAirService";
 import { SignalAirService } from "./SignalAirService";
 import { MobileAirService } from "./MobileAirService";
@@ -14,7 +16,12 @@ export class DataServiceFactory {
     new () => DataService
   > = {
     atmoRef: AtmoRefService,
-    atmoMicro: AtmoMicroService,
+    // Les microcapteurs ont deux implémentations : la nouvelle API microspot,
+    // et l'ancienne (api.atmosud.org/observations/capteurs) qui reste le chemin
+    // de repli tant que le périmètre de diffusion microspot n'est pas complet.
+    atmoMicro: featureFlags.useMicrospotApi
+      ? AtmoMicroV2Service
+      : AtmoMicroService,
     nebuleair: NebuleAirService,
     signalair: SignalAirService,
     mobileair: MobileAirService,

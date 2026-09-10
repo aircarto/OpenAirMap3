@@ -3,11 +3,12 @@ import { WildfireReport } from "../../../types";
 import { FeuxDeForetService } from "../../../services/FeuxDeForetService";
 import { featureFlags } from "../../../config/featureFlags";
 
-export const useWildfireLayer = () => {
+export const useWildfireLayer = (isEnabledByControl = true) => {
   const [wildfireReports, setWildfireReports] = useState<WildfireReport[]>([]);
   const [wildfireLoading, setWildfireLoading] = useState(false);
   const [wildfireError, setWildfireError] = useState<string | null>(null);
-  const isWildfireLayerEnabled = featureFlags.wildfireLayer;
+  const isWildfireLayerEnabled =
+    featureFlags.wildfireLayer && isEnabledByControl;
 
   useEffect(() => {
     if (!isWildfireLayerEnabled) {

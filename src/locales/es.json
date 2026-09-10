@@ -19,6 +19,15 @@
     "skipToContent": "Ir al contenido principal",
     "mapAriaLabel": "Mapa de calidad del aire"
   },
+  "aircrowdWms": {
+    "title": "AirCrowd cartography",
+    "date": "Day",
+    "hour": "Hour",
+    "unsupportedPollutant": "Available only for PM₁₀ and PM₂.₅",
+    "layerMissing": "No map published for this slot (pick a listed hour).",
+    "availableHours": "Available hours: {{hours}}",
+    "capabilitiesError": "GeoServer catalog unavailable — limited to PoC slots."
+  },
   "timeSteps": {
     "instantane": "Escaneo",
     "deuxMin": "≤ 2 min",
@@ -35,7 +44,12 @@
     "so2": "SO₂",
     "o3": "O₃",
     "bruit": "Ruido",
-    "noAvailable": "Ningún contaminante disponible"
+    "noAvailable": "Ningún contaminante disponible",
+    "categories": {
+      "polluant": "Contaminante",
+      "bruit": "Ruido",
+      "chaleur": "Calor"
+    }
   },
   "quality": {
     "noData": "Sin datos",
@@ -62,9 +76,6 @@
     "modelingUnavailable": "Modelización (no disponible)",
     "modelingVent": "Viento",
     "modelingPollutant": "Modelización",
-    "specialSources": "Fuentes especiales",
-    "specialSourcesAria": "Fuentes especiales (SignalAir, MobileAir)",
-    "specialSourcesMenuLabel": "Informes y móvil",
     "openSignalAir": "Abrir SignalAir",
     "openMobileAir": "Abrir MobileAir",
     "mode": "Modo",
@@ -79,6 +90,10 @@
     "sourceAtmoRef": "Estaciones de referencia AtmoSud",
     "sourceAtmoMicro": "Microcaptadores cualificados AtmoSud",
     "sourceCommunautaire": "Otros sensores comunitarios",
+    "sourceGroupCount": "{{selected}}/{{total}}",
+    "sourceSignalements": "Informes comunitarios",
+    "disableSignalAir": "Desactivar SignalAir",
+    "disableMobileAir": "Desactivar MobileAir",
     "historicalMode": "Modo histórico",
     "historicalModeUnavailable": "Modo histórico (no disponible)",
     "historicalModeActivate": "Activar modo histórico",
@@ -93,7 +108,12 @@
     "rawData": "Datos brutos",
     "rawDataDescription": "Mostrar los datos no corregidos en el gráfico",
     "thresholdBackgroundDisabled": "Umbrales desactivados",
-    "thresholdBackgroundDisabledDescription": "Oculta el fondo coloreado por umbral (recomendado para daltónicos)"
+    "thresholdBackgroundDisabledDescription": "Oculta el fondo coloreado por umbral (recomendado para daltónicos)",
+    "specialSourcesActive": "Al menos una fuente activa",
+    "visibleOnMap": "Visible en el mapa",
+    "hiddenOnMap": "Oculto en el mapa",
+    "active": "Activo",
+    "inactive": "Inactivo"
   },
   "historical": {
     "periodLabel": "Histórico",
@@ -134,6 +154,9 @@
     "pointsCount": "{{count}} puntos temporales",
     "startDate": "Fecha de inicio",
     "endDate": "Fecha de fin",
+    "startTime": "Hora de inicio",
+    "endTime": "Hora de fin",
+    "localTimeHint": "Las horas son en hora local",
     "periodSelectedDays": "Período seleccionado: {{days}} día(s)",
     "maxPeriodDays": "Duración máxima del período: {{days}} días",
     "validationEndAfterStart": "La fecha de fin debe ser posterior a la de inicio",
@@ -176,6 +199,8 @@
     "loadingData": "Cargando datos...",
     "loadingInProgress": "Cargando...",
     "loadingFireReports": "Cargando reportes de incendios…",
+    "loadingEffisHotspots": "Cargando puntos de calor EFFIS…",
+    "loadingEffisBurnedAreas": "Cargando zonas quemadas EFFIS…",
     "noReportFound": "Ningún reporte encontrado para el período seleccionado.",
     "noDataLoaded": "Sin datos cargados",
     "noDataAvailable": "Sin datos disponibles",
@@ -193,9 +218,7 @@
     "showStats": "Ver estadísticas detalladas",
     "closeSignalAirMessage": "Cerrar mensaje SignalAir",
     "openSignalAirPanel": "Reabrir panel SignalAir",
-    "openSignalAirSelection": "Reabrir panel de selección SignalAir",
     "openMobileAirPanel": "Reabrir panel MobileAir (detalle)",
-    "openMobileAirSelection": "Reabrir panel de selección MobileAir",
     "hideSignalAir": "Ocultar datos SignalAir",
     "showSignalAir": "Mostrar datos SignalAir",
     "hideMobileAir": "Ocultar datos MobileAir",
@@ -245,7 +268,8 @@
       "sensorFallback": "Microsensor AtmoSud",
       "sensorAlt": "Sensor {{model}}",
       "infoCardTitle": "Información",
-      "infoCardComingSoon": "Información adicional próximamente"
+      "infoCardComingSoon": "Equipa un microsensor y únete a la red de monitorización participativa.",
+      "buttonDiscover": "Descubrir"
     },
     "nebuleAirSidePanel": {
       "sourceLabel": "NebuleAir AirCarto",
@@ -270,17 +294,25 @@
       "typesTitle": "Tipos de informes ({{selected}}/{{total}})",
       "selectAll": "Seleccionar todo",
       "deselectAll": "Deseleccionar todo",
-      "periodTitle": "Período de análisis",
       "loadReports": "Cargar informes",
       "selectAtLeastOne": "Seleccione al menos un tipo de informe para cargar.",
-      "reportsOnMap_one": "{{count}} informe mostrado en el mapa",
-      "reportsOnMap_other": "{{count}} informes mostrados en el mapa",
-      "markerAlt": "Marcador {{type}}",
       "types": {
-        "odeur": { "label": "Olores", "description": "Molestias olfativas (olores persistentes, humos...)" },
-        "bruit": { "label": "Ruidos", "description": "Alboroto nocturno, molestias sonoras puntuales o continuas" },
-        "brulage": { "label": "Quema", "description": "Quema al aire libre, humos de incineración" },
-        "visuel": { "label": "Visual", "description": "Niebla, polvo, visibilidad reducida" }
+        "odeur": {
+          "label": "Olores",
+          "description": "Molestias olfativas (olores persistentes, humos...)"
+        },
+        "bruit": {
+          "label": "Ruidos",
+          "description": "Alboroto nocturno, molestias sonoras puntuales o continuas"
+        },
+        "brulage": {
+          "label": "Quema",
+          "description": "Quema al aire libre, humos de incineración"
+        },
+        "visuel": {
+          "label": "Visual",
+          "description": "Niebla, polvo, visibilidad reducida"
+        }
       },
       "period": {
         "quickSelections": "Selecciones rápidas",
@@ -329,32 +361,25 @@
     "mobileAirSelection": {
       "title": "Selección MobileAir",
       "reopenButtonTooltip": "Botón verde para reabrir el panel",
-      "selectionLimitTitle": "Limitación de selección",
       "selectionLimitDescription": "Para proteger la API de Air Carto, solo puede seleccionar un sensor MobileAir a la vez.",
-      "selectionLimitTip": "Consejo: Seleccione un sensor, analice sus datos y cambie de sensor si es necesario.",
-      "pollutantNotSupportedTitle": "Contaminante no soportado por MobileAir",
-      "pollutantNotSupportedDescription": "El contaminante {{pollutant}} no puede analizarse con los sensores MobileAir.",
-      "supportedPollutantsLabel": "Contaminantes soportados por MobileAir:",
-      "periodTitle": "Período de análisis",
       "sensorsAvailable": "Sensores disponibles ({{count}})",
       "deselect": "Deseleccionar",
       "loadError": "Error al cargar los sensores",
-      "selectSensorRequired": "Por favor seleccione un sensor",
-      "lastActivity": "Última actividad: {{value}}",
-      "wifiSignal": "Señal WiFi: {{value}} dBm",
       "selectSensor": "Seleccione un sensor",
       "loadSensorRoute": "Cargar el recorrido del sensor {{sensorId}}",
-      "sensorSelected": "Sensor {{sensorId}} seleccionado",
       "statusConnected": "Conectado",
-      "statusRecent": "Reciente",
       "statusInactive": "Inactivo",
-      "lastSeenDays_one": "Hace {{count}} día",
-      "lastSeenDays_other": "Hace {{count}} días",
-      "lastSeenHours_one": "Hace {{count}} hora",
-      "lastSeenHours_other": "Hace {{count}} horas",
+      "lastActivity": "Última actividad: {{value}}",
+      "statusRecent": "Reciente",
+      "lastSeenNow": "Ahora mismo",
       "lastSeenMinutes_one": "Hace {{count}} minuto",
       "lastSeenMinutes_other": "Hace {{count}} minutos",
-      "lastSeenNow": "Ahora mismo"
+      "lastSeenHours_one": "Hace {{count}} hora",
+      "lastSeenHours_other": "Hace {{count}} horas",
+      "lastSeenDays_one": "Hace {{count}} día",
+      "lastSeenDays_other": "Hace {{count}} días",
+      "searchPlaceholder": "Buscar un sensor…",
+      "noSearchResults": "Ningún sensor coincide con « {{query}} »"
     },
     "mobileAirDetail": {
       "sessionTitle": "Sesión {{sessionId}}",
@@ -447,6 +472,25 @@
       "sixMonths": "6 meses",
       "limitationLabel": "Limitación:",
       "timeStepLabelsSeparator": " y "
+    },
+    "effisHotspotsEmpty": "Ningún foco de calor detectado en {{period}} en esta zona.",
+    "effisBurnedAreasEmpty": "Ninguna área quemada cartografiada en este periodo.",
+    "effisHotspotsError": "Focos de calor EFFIS no disponibles.",
+    "effisBurnedAreasError": "Áreas quemadas EFFIS no disponibles.",
+    "effisHotspotsBeyondRetention": "Los focos de calor solo están disponibles para los últimos 365 días (límite de Copernicus EFFIS)."
+  },
+  "promo": {
+    "sensor": {
+      "title": "Pasa a la acción",
+      "description": "Compra un sensor para contribuir a las mediciones locales",
+      "cta": "Comprar un sensor",
+      "close": "Cerrar el cartel promocional",
+      "sensors": {
+        "nebuleair": "NebuleAir",
+        "nebuleairAlt": "Sensor de calidad del aire NebuleAir",
+        "nebuleairPro": "NebuleAir Pro",
+        "nebuleairProAlt": "Sensor NebuleAir Pro de calidad del aire y ruido"
+      }
     }
   },
   "search": {
@@ -471,6 +515,9 @@
     "episodesCount_other": "{{count}} episodios de contaminación encontrados para este contaminante",
     "loadError": "No se pueden cargar los episodios de contaminación"
   },
+  "aboutPanel": {
+    "summary": "Acerca de este mapa"
+  },
   "infoModal": {
     "consolidatedData": "Datos consolidados",
     "welcome": "Bienvenido a OpenAirMap",
@@ -482,12 +529,36 @@
     "description": "Descripción",
     "source": "Fuente",
     "sources": {
-      "atmo-ref": { "title": "Estaciones de referencia AtmoSud", "category": "estación de medida", "description": "Estaciones de referencia instaladas en el marco de la misión de vigilancia de la calidad del aire de AtmoSud." },
-      "atmo-micro": { "title": "Microsensores cualificados AtmoSud", "category": "microsensor", "description": "Microsensores desplegados por AtmoSud. Los datos horarios están consolidados" },
-      "nebuleair": { "title": "Sensores NebuleAir", "category": "microsensor", "description": "Microsensores open source codesarrollados por AirCarto y AtmoSud." },
-      "sensor-community": { "title": "Sensores Sensor.Community", "category": "microsensor", "description": "Microsensores open source fabricados por ciudadanos voluntarios." },
-      "purpleair": { "title": "Sensores PurpleAir", "category": "microsensor", "description": "Microsensores comercializados por la empresa estadounidense PurpleAir Inc." },
-      "modeling-pm": { "title": "Modelización horaria por contaminante AtmoSud", "category": "modelización", "description": "Modelización de partículas finas a escala horaria en la región PACA." }
+      "atmo-ref": {
+        "title": "Estaciones de referencia AtmoSud",
+        "category": "estación de medida",
+        "description": "Estaciones de referencia instaladas en el marco de la misión de vigilancia de la calidad del aire de AtmoSud."
+      },
+      "atmo-micro": {
+        "title": "Microsensores cualificados AtmoSud",
+        "category": "microsensor",
+        "description": "Microsensores desplegados por AtmoSud. Los datos horarios están consolidados"
+      },
+      "nebuleair": {
+        "title": "Sensores NebuleAir",
+        "category": "microsensor",
+        "description": "Microsensores open source codesarrollados por AirCarto y AtmoSud."
+      },
+      "sensor-community": {
+        "title": "Sensores Sensor.Community",
+        "category": "microsensor",
+        "description": "Microsensores open source fabricados por ciudadanos voluntarios."
+      },
+      "purpleair": {
+        "title": "Sensores PurpleAir",
+        "category": "microsensor",
+        "description": "Microsensores comercializados por la empresa estadounidense PurpleAir Inc."
+      },
+      "modeling-pm": {
+        "title": "Modelización horaria por contaminante AtmoSud",
+        "category": "modelización",
+        "description": "Modelización de partículas finas a escala horaria en la región PACA."
+      }
     },
     "discoverHistorical": "Descubrir el modo histórico",
     "discoverHistoricalText": "El modo histórico permite reproducir la cronología de un episodio de contaminación o de un día tipo. Seleccione una fecha pasada y use el cursor temporal para recorrer las mediciones disponibles. Los datos se actualizan en el mapa y en los paneles asociados para visualizar la evolución en el tiempo.",
@@ -503,7 +574,38 @@
     "footer": "OpenAirMap mejora continuamente. Comparta sus comentarios a través de nuestro sitio",
     "understood": "Entendido",
     "iconAlt": "Icono {{source}}",
-    "logoAirCarto": "Logo AirCarto"
+    "logoAirCarto": "Logo AirCarto",
+    "legal": {
+      "link": "Aviso legal",
+      "back": "Volver a la información",
+      "title": "Aviso legal",
+      "intro": "Información legal relativa a la aplicación {{app}}.",
+      "editorTitle": "Editor",
+      "editorText": "La aplicación {{app}} es editada por {{organization}}, observatorio regional de la calidad del aire de la Región Sur Provenza-Alpes-Costa Azul, acreditado por el Ministerio francés de la Transición Ecológica.",
+      "legalFormLabel": "Forma jurídica",
+      "siretLabel": "SIRET",
+      "vatLabel": "N.º de IVA",
+      "addressLabel": "Domicilio social",
+      "representativeLabel": "Representante legal",
+      "contactLabel": "Contacto",
+      "publicationTitle": "Director de la publicación",
+      "hostingTitle": "Alojamiento",
+      "hostingText": "El sitio está alojado por {{organization}} en Cloud XPR de Free Pro.",
+      "rcsLabel": "Inscrito en el RCS de",
+      "shareCapitalLabel": "Capital social",
+      "phoneLabel": "Tel.",
+      "emailLabel": "Correo",
+      "websiteLabel": "Sitio web",
+      "dpoTitle": "Delegado de protección de datos (DPO)",
+      "dpoTextBefore": "Nuestro referente RGPD es contactable por correo en",
+      "openSourceTitle": "Propiedad intelectual y código abierto",
+      "openSourceText": "OpenAirMap es un proyecto de código abierto impulsado por AirCarto y AtmoSud. El código fuente puede consultarse y reutilizarse según los términos de su licencia. Los datos mostrados en el mapa siguen siendo propiedad de sus respectivos proveedores y están sujetos a sus condiciones de uso.",
+      "personalDataTitle": "Datos personales",
+      "personalDataText": "OpenAirMap no ofrece cuentas de usuario. Pueden utilizarse cookies o rastreadores técnicos (en particular para la medición de audiencia mediante Matomo) a fin de garantizar el buen funcionamiento y la mejora del servicio.",
+      "privacyPolicyLink": "Política de privacidad de AtmoSud"
+    },
+    "tourTitle": "Primeros pasos",
+    "tourText": "Vuelva a lanzar el tutorial guiado para descubrir los controles del mapa, las fuentes de datos y el modo histórico."
   },
   "tooltip": {
     "model": "Modelo:",
@@ -533,6 +635,7 @@
     "reportsVisible_one": "{{count}} reporte visible",
     "reportsVisible_other": "{{count}} reportes visibles",
     "ofTotal": "/ {{total}} en total",
+    "periodAria": "Período: {{period}}",
     "zoomHint": "Zoom o mueva el mapa para ver dispositivos",
     "globalTitle": "Estadísticas globales",
     "average": "Media",
@@ -564,14 +667,50 @@
       "purpleair": "PurpleAir",
       "mobileair": "MobileAir",
       "signalair": "SignalAir"
-    }
+    },
+    "effisHotspots_one": "{{count}} foco de calor",
+    "effisHotspots_other": "{{count}} focos de calor",
+    "effisMaxPower": "máx. {{frp}} MW",
+    "effisBurnedAreas_one": "{{count}} área quemada",
+    "effisBurnedAreas_other": "{{count}} áreas quemadas",
+    "effisBurnedTotal": "{{hectares}} ha"
   },
   "baseLayer": {
     "title": "Mapa base",
     "standard": "Mapa estándar",
     "osm": "Mapa OSM",
     "satelliteIgn": "Satélite IGN",
-    "communal": "Límites comunales"
+    "communal": "Límites comunales",
+    "effisHotspots": "Focos de calor (EFFIS)",
+    "effisHotspotsLegendTitle": "Focos de calor (Copernicus EFFIS)",
+    "effisBurnedAreas": "Áreas quemadas (EFFIS)",
+    "effisBurnedAreasLegendTitle": "Áreas quemadas (Copernicus EFFIS)",
+    "wildfire": "Incendios activos",
+    "overlayLegendsTitle": "Leyendas de capas",
+    "overlayLegendsOpen": "Abrir leyendas de capas",
+    "overlayLegendsClose": "Cerrar leyendas de capas",
+    "overlayLegendsModelingChip": "Modelización",
+    "overlayLegendsEffisHotspotsChip": "Focos",
+    "overlayLegendsEffisBurnedChip": "Áreas quemadas",
+    "overlayLegendsLoading": "Cargando leyenda…",
+    "overlayLegendsError": "Leyenda no disponible",
+    "firePeriod24h": "24 h",
+    "firePeriod7d": "7 días",
+    "firePeriodDay": "Día",
+    "firePeriodWeek": "Semana",
+    "firePeriodSeason": "Temporada",
+    "firePeriodHotspotsAria": "Periodo de los focos de calor",
+    "firePeriodBurnedAria": "Periodo de las áreas quemadas",
+    "fireLegendFreshness": "Actualidad",
+    "fireLegendLast24h": "Menos de 24 h",
+    "fireLegendOlder": "Más antiguo",
+    "fireLegendPower": "Potencia radiativa",
+    "fireLegendPowerUnit": "Megavatios (escala logarítmica)",
+    "fireLegendMaskNote": "Se excluyen las fuentes de calor permanentes (antorchas industriales, siderurgia): {{count}} zonas detectadas al menos {{days}} días distintos en 12 meses.",
+    "fireLegendBurnedArea": "Perímetro quemado",
+    "fireLegendBurnedNote": "Perímetros cartografiados por MODIS. Un incendio reciente puede tardar varios días en aparecer.",
+    "groupModeling": "Modelización",
+    "groupFire": "Incendio"
   },
   "toast": {
     "sourceUnavailable": "{{name}} no disponible",
@@ -585,5 +724,84 @@
     "disableIncompatibleSources": "Desactivar fuentes incompatibles",
     "sourceUnavailableShort": "Fuente no disponible",
     "changeTimeStep": "Cambiar paso temporal"
+  },
+  "tour": {
+    "common": {
+      "skip": "Omitir tutorial",
+      "next": "Siguiente",
+      "previous": "Anterior",
+      "done": "Finalizar",
+      "replay": "Repetir tutorial",
+      "progress": "{{current}} de {{total}}"
+    },
+    "historical": {
+      "step1": {
+        "title": "Descubrir el modo histórico",
+        "description": "Este modo permite reproducir la calidad del aire en un período pasado. Solo está disponible en pasos de 15 min, hora y día."
+      },
+      "step2": {
+        "title": "Activar el modo histórico",
+        "description": "Haga clic en este botón para activar el modo. Los marcadores actuales serán reemplazados por los datos del período seleccionado."
+      },
+      "step3": {
+        "title": "Elegir un período",
+        "description": "Seleccione una fecha de inicio y fin. Se admiten las fuentes AtmoRef, AtmoMicro y NebuleAir. La duración máxima depende del paso temporal (7 días en 15 min, 30 días por hora)."
+      },
+      "step4": {
+        "title": "Cargar datos",
+        "description": "Una vez elegido el período, haga clic aquí para cargar las mediciones históricas en el mapa."
+      },
+      "step5": {
+        "title": "Controles de reproducción",
+        "description": "Use reproducción/pausa, la línea de tiempo y la velocidad para navegar en el tiempo. Este panel es movible; reabra el calendario con el icono superior derecho."
+      }
+    },
+    "global": {
+      "welcome": {
+        "title": "¡Bienvenido a OpenAirMap!",
+        "description": "La aplicación de código abierto desarrollada por AtmoSud y AirCarto para visualizar las mediciones de calidad del aire en tiempo real."
+      },
+      "pollutant": {
+        "title": "Seleccione un contaminante",
+        "description": "Elija el contaminante que desea mostrar en el mapa"
+      },
+      "sources": {
+        "title": "Elija las fuentes",
+        "description": "Seleccione el o los dispositivos que servirán de fuente"
+      },
+      "timeStep": {
+        "title": "Defina el paso de tiempo",
+        "description": "Elija el intervalo de tiempo entre dos mediciones"
+      },
+      "search": {
+        "title": "Busque una dirección o una estación/sensor",
+        "description": "Encuentre rápidamente una dirección o un dispositivo de medición"
+      },
+      "legend": {
+        "title": "Leyenda",
+        "description": "Pase el ratón sobre los distintos calificativos para conocer las concentraciones asociadas"
+      }
+    }
+  },
+  "rail": {
+    "regionLabel": "Controles del mapa",
+    "toolbarLabel": "Barra de herramientas del mapa",
+    "groupData": "Datos",
+    "groupLayers": "Capas",
+    "groupTime": "Tiempo",
+    "groupPanels": "Paneles",
+    "frozenDuringPlayback": "Controles no disponibles durante la reproducción histórica",
+    "caption": {
+      "sources_one": "{{count}} fte",
+      "sources_other": "{{count}} ftes",
+      "modeling": "MODEL",
+      "modelingOff": "—",
+      "baseLayer": "BASE",
+      "historical": "HIST"
+    },
+    "groupUtilities": "Utilidades",
+    "groupBaseLayer": "Mapa base",
+    "groupModes": "Modos",
+    "brandWebsite": "Sitio de {{organization}}"
   }
 }

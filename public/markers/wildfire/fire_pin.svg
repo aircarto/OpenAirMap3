@@ -1,30 +1,11 @@
-<svg width="48" height="60" viewBox="0 0 48 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="flameOuter" x1="24" y1="6" x2="24" y2="44" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#FDBA74"/>
-      <stop offset="45%" stop-color="#F97316"/>
-      <stop offset="100%" stop-color="#B91C1C"/>
-    </linearGradient>
-    <radialGradient id="flameInner" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(26 22) rotate(90) scale(14 12)">
-      <stop offset="0%" stop-color="#FFF7ED"/>
-      <stop offset="65%" stop-color="#FDBA74"/>
-      <stop offset="100%" stop-color="#EA580C"/>
-    </radialGradient>
-  </defs>
-  <path d="M24 0C14.0589 0 6 8.16344 6 18.2308C6 32.0769 24 60 24 60C24 60 42 32.0769 42 18.2308C42 8.16344 33.9411 0 24 0Z" fill="#1C1917"/>
-  <path d="M24 4C16.268 4 10 10.421 10 18.2308C10 30.1026 24 52 24 52C24 52 38 30.1026 38 18.2308C38 10.421 31.732 4 24 4Z" fill="url(#flameOuter)"/>
-  <path d="M24.5 11C19.253 11 15 16.0003 15 21.8462C15 30.1795 24.5 44 24.5 44C24.5 44 34 30.1795 34 21.8462C34 16.0003 29.747 11 24.5 11Z" fill="url(#flameInner)"/>
-  <path d="M23 20C23 16 27 14 27 18C27 19.6 25.5 21 26.5 23C28 26 23 27 21 25C20.5 24 20 22.5 20 21C20 18 21 16 22 15C23 14 24 16 24 17.5C24 19 23 20 23 20Z" fill="#EA580C"/>
+<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="14" cy="14" r="13" fill="#FFF7ED" stroke="#EA580C" stroke-width="1.5"/>
+  <path
+    d="M14.2 7.2c.1 1.6 1.5 2.5 2.4 3.6.9 1.1 1.4 2.3 1.4 3.6 0 2.3-1.8 4.1-4 4.1s-4-1.8-4-4.1c0-1.1.4-2.1 1-2.9.4 1.1 1.2 1.7 1.2 1.7s-.5-2.1.4-4.1c.3-.7.9-1.3 1.6-1.9z"
+    fill="#F97316"
+  />
+  <path
+    d="M13.8 12.1c.4 1 .2 1.7-.3 2.4-.4.6-.5 1.1-.5 1.6 0 1.1.8 1.9 1.8 1.9 1.1 0 1.9-.9 1.9-2 0-.7-.3-1.4-.8-2-.5-.6-.9-1.2-1.1-1.9-.2.3-.5.7-.9 1z"
+    fill="#FED7AA"
+  />
 </svg>
-
-
-
-
-
-
-
-
-
-
-
-

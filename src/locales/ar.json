@@ -19,6 +19,15 @@
     "skipToContent": "الانتقال إلى المحتوى الرئيسي",
     "mapAriaLabel": "خريطة جودة الهواء"
   },
+  "aircrowdWms": {
+    "title": "AirCrowd cartography",
+    "date": "Day",
+    "hour": "Hour",
+    "unsupportedPollutant": "Available only for PM₁₀ and PM₂.₅",
+    "layerMissing": "No map published for this slot (pick a listed hour).",
+    "availableHours": "Available hours: {{hours}}",
+    "capabilitiesError": "GeoServer catalog unavailable — limited to PoC slots."
+  },
   "timeSteps": {
     "instantane": "مسح",
     "deuxMin": "≤ 2 دقيقة",
@@ -35,7 +44,12 @@
     "so2": "SO₂",
     "o3": "O₃",
     "bruit": "الضجيج",
-    "noAvailable": "لا يوجد ملوث متاح"
+    "noAvailable": "لا يوجد ملوث متاح",
+    "categories": {
+      "polluant": "ملوث",
+      "bruit": "ضجيج",
+      "chaleur": "حرارة"
+    }
   },
   "quality": {
     "noData": "لا توجد بيانات",
@@ -62,9 +76,6 @@
     "modelingUnavailable": "النمذجة (غير متاحة)",
     "modelingVent": "الرياح",
     "modelingPollutant": "النمذجة",
-    "specialSources": "مصادر خاصة",
-    "specialSourcesAria": "مصادر خاصة (SignalAir، MobileAir)",
-    "specialSourcesMenuLabel": "الإبلاغات والجوال",
     "openSignalAir": "فتح SignalAir",
     "openMobileAir": "فتح MobileAir",
     "mode": "الوضع",
@@ -79,6 +90,10 @@
     "sourceAtmoRef": "محطات مرجعية AtmoSud",
     "sourceAtmoMicro": "مقاييس AtmoSud المؤهلة",
     "sourceCommunautaire": "مقاييس مجتمعية أخرى",
+    "sourceGroupCount": "{{selected}}/{{total}}",
+    "sourceSignalements": "تقارير المجتمع",
+    "disableSignalAir": "تعطيل SignalAir",
+    "disableMobileAir": "تعطيل MobileAir",
     "historicalMode": "الوضع التاريخي",
     "historicalModeUnavailable": "الوضع التاريخي (غير متاح)",
     "historicalModeActivate": "تفعيل الوضع التاريخي",
@@ -93,7 +108,12 @@
     "rawData": "البيانات الخام",
     "rawDataDescription": "عرض البيانات غير المصححة على الرسم البياني",
     "thresholdBackgroundDisabled": "العتبات معطلة",
-    "thresholdBackgroundDisabledDescription": "إخفاء الخلفية الملونة حسب العتبة (موصى به للمصابين بعمى الألوان)"
+    "thresholdBackgroundDisabledDescription": "إخفاء الخلفية الملونة حسب العتبة (موصى به للمصابين بعمى الألوان)",
+    "specialSourcesActive": "مصدر واحد نشط على الأقل",
+    "visibleOnMap": "مرئي على الخريطة",
+    "hiddenOnMap": "مخفي على الخريطة",
+    "active": "نشط",
+    "inactive": "غير نشط"
   },
   "historical": {
     "periodLabel": "تاريخي",
@@ -134,6 +154,9 @@
     "pointsCount": "{{count}} نقطة زمنية",
     "startDate": "تاريخ البداية",
     "endDate": "تاريخ النهاية",
+    "startTime": "وقت البداية",
+    "endTime": "وقت النهاية",
+    "localTimeHint": "الأوقات بالتوقيت المحلي",
     "periodSelectedDays": "الفترة المحددة: {{days}} يوم/أيام",
     "maxPeriodDays": "الحد الأقصى للمدة: {{days}} أيام",
     "validationEndAfterStart": "يجب أن يكون تاريخ النهاية بعد تاريخ البداية",
@@ -176,6 +199,8 @@
     "loadingData": "جاري تحميل البيانات...",
     "loadingInProgress": "جاري التحميل...",
     "loadingFireReports": "جاري تحميل تقارير الحرائق…",
+    "loadingEffisHotspots": "جاري تحميل نقاط الحرارة EFFIS…",
+    "loadingEffisBurnedAreas": "جاري تحميل المناطق المحروقة EFFIS…",
     "noReportFound": "لم يتم العثور على تقرير للفترة المحددة.",
     "noDataLoaded": "لم يتم تحميل بيانات",
     "noDataAvailable": "لا توجد بيانات متاحة",
@@ -193,9 +218,7 @@
     "showStats": "عرض إحصائيات مفصلة",
     "closeSignalAirMessage": "إغلاق رسالة SignalAir",
     "openSignalAirPanel": "إعادة فتح لوحة SignalAir",
-    "openSignalAirSelection": "إعادة فتح لوحة اختيار SignalAir",
     "openMobileAirPanel": "إعادة فتح لوحة MobileAir (التفاصيل)",
-    "openMobileAirSelection": "إعادة فتح لوحة اختيار MobileAir",
     "hideSignalAir": "إخفاء بيانات SignalAir",
     "showSignalAir": "عرض بيانات SignalAir",
     "hideMobileAir": "إخفاء بيانات MobileAir",
@@ -245,7 +268,8 @@
       "sensorFallback": "مقياس مصغر AtmoSud",
       "sensorAlt": "مقياس {{model}}",
       "infoCardTitle": "معلومات",
-      "infoCardComingSoon": "معلومات إضافية قريباً"
+      "infoCardComingSoon": "قم بتجهيز نفسك بجهاز قياس مصغر وانضم إلى شبكة المراقبة التشاركية.",
+      "buttonDiscover": "اكتشف"
     },
     "nebuleAirSidePanel": {
       "sourceLabel": "NebuleAir AirCarto",
@@ -270,17 +294,25 @@
       "typesTitle": "أنواع التقارير ({{selected}}/{{total}})",
       "selectAll": "تحديد الكل",
       "deselectAll": "إلغاء تحديد الكل",
-      "periodTitle": "فترة التحليل",
       "loadReports": "تحميل التقارير",
       "selectAtLeastOne": "حدد نوع تقرير واحد على الأقل للتحميل.",
-      "reportsOnMap_one": "{{count}} تقرير معروض على الخريطة",
-      "reportsOnMap_other": "{{count}} تقارير معروضة على الخريطة",
-      "markerAlt": "علامة {{type}}",
       "types": {
-        "odeur": { "label": "الروائح", "description": "إزعاج رائحي (روائح دائمة، دخان...)" },
-        "bruit": { "label": "الضجيج", "description": "إزعاج ليلي، ضجيج عرضي أو مستمر" },
-        "brulage": { "label": "الحرق", "description": "الحرق في الهواء الطلق، دخان الحرق" },
-        "visuel": { "label": "بصري", "description": "ضباب، غبار، انخفاض الرؤية" }
+        "odeur": {
+          "label": "الروائح",
+          "description": "إزعاج رائحي (روائح دائمة، دخان...)"
+        },
+        "bruit": {
+          "label": "الضجيج",
+          "description": "إزعاج ليلي، ضجيج عرضي أو مستمر"
+        },
+        "brulage": {
+          "label": "الحرق",
+          "description": "الحرق في الهواء الطلق، دخان الحرق"
+        },
+        "visuel": {
+          "label": "بصري",
+          "description": "ضباب، غبار، انخفاض الرؤية"
+        }
       },
       "period": {
         "quickSelections": "اختيارات سريعة",
@@ -329,32 +361,25 @@
     "mobileAirSelection": {
       "title": "اختيار MobileAir",
       "reopenButtonTooltip": "الزر الأخضر لإعادة فتح اللوحة",
-      "selectionLimitTitle": "حد الاختيار",
       "selectionLimitDescription": "لحماية واجهة Air Carto، يمكنك اختيار مقياس MobileAir واحد فقط في كل مرة.",
-      "selectionLimitTip": "نصيحة: اختر مقياساً، حلل بياناته، ثم غيّر المقياس عند الحاجة.",
-      "pollutantNotSupportedTitle": "الملوث غير مدعوم من MobileAir",
-      "pollutantNotSupportedDescription": "الملوث {{pollutant}} لا يمكن تحليله بمقاييس MobileAir.",
-      "supportedPollutantsLabel": "الملوثات المدعومة من MobileAir:",
-      "periodTitle": "فترة التحليل",
       "sensorsAvailable": "المقاييس المتاحة ({{count}})",
       "deselect": "إلغاء التحديد",
       "loadError": "خطأ في تحميل المقاييس",
-      "selectSensorRequired": "يرجى اختيار مقياس",
-      "lastActivity": "آخر نشاط: {{value}}",
-      "wifiSignal": "إشارة الواي فاي: {{value}} dBm",
       "selectSensor": "اختر مقياساً",
       "loadSensorRoute": "تحميل مسار المقياس {{sensorId}}",
-      "sensorSelected": "المقياس {{sensorId}} محدد",
       "statusConnected": "متصل",
-      "statusRecent": "حديث",
       "statusInactive": "غير نشط",
-      "lastSeenDays_one": "منذ {{count}} يوم",
-      "lastSeenDays_other": "منذ {{count}} أيام",
-      "lastSeenHours_one": "منذ {{count}} ساعة",
-      "lastSeenHours_other": "منذ {{count}} ساعة",
+      "lastActivity": "آخر نشاط: {{value}}",
+      "statusRecent": "حديث",
+      "lastSeenNow": "الآن",
       "lastSeenMinutes_one": "منذ {{count}} دقيقة",
       "lastSeenMinutes_other": "منذ {{count}} دقيقة",
-      "lastSeenNow": "الآن"
+      "lastSeenHours_one": "منذ {{count}} ساعة",
+      "lastSeenHours_other": "منذ {{count}} ساعة",
+      "lastSeenDays_one": "منذ {{count}} يوم",
+      "lastSeenDays_other": "منذ {{count}} أيام",
+      "searchPlaceholder": "البحث عن مستشعر…",
+      "noSearchResults": "لا يوجد مستشعر يطابق « {{query}} »"
     },
     "mobileAirDetail": {
       "sessionTitle": "الجلسة {{sessionId}}",
@@ -447,6 +472,25 @@
       "sixMonths": "6 أشهر",
       "limitationLabel": "الحد:",
       "timeStepLabelsSeparator": " و "
+    },
+    "effisHotspotsEmpty": "لم يتم رصد أي بؤرة حرارية خلال {{period}} في هذه المنطقة.",
+    "effisBurnedAreasEmpty": "لا توجد منطقة محروقة مرسومة لهذه الفترة.",
+    "effisHotspotsError": "بؤر الحرائق EFFIS غير متاحة.",
+    "effisBurnedAreasError": "المناطق المحروقة EFFIS غير متاحة.",
+    "effisHotspotsBeyondRetention": "بؤر الحرائق متاحة فقط لآخر 365 يومًا (حد Copernicus EFFIS)."
+  },
+  "promo": {
+    "sensor": {
+      "title": "تحرك للعمل",
+      "description": "اشترِ مستشعرًا للمساهمة في القياسات المحلية",
+      "cta": "شراء مستشعر",
+      "close": "إغلاق اللافتة الترويجية",
+      "sensors": {
+        "nebuleair": "NebuleAir",
+        "nebuleairAlt": "مستشعر جودة الهواء NebuleAir",
+        "nebuleairPro": "NebuleAir Pro",
+        "nebuleairProAlt": "مستشعر NebuleAir Pro لجودة الهواء والضوضاء"
+      }
     }
   },
   "search": {
@@ -471,6 +515,9 @@
     "episodesCount_other": "تم العثور على {{count}} حلقات تلوث لهذا الملوث",
     "loadError": "تعذر تحميل حلقات التلوث"
   },
+  "aboutPanel": {
+    "summary": "حول هذه الخريطة"
+  },
   "infoModal": {
     "consolidatedData": "البيانات الموحدة",
     "welcome": "مرحباً بك في OpenAirMap",
@@ -482,12 +529,36 @@
     "description": "الوصف",
     "source": "المصدر",
     "sources": {
-      "atmo-ref": { "title": "محطات مرجعية AtmoSud", "category": "محطة مراقبة", "description": "محطات مرجعية مثبتة في إطار مهمة مراقبة جودة الهواء لـ AtmoSud." },
-      "atmo-micro": { "title": "مقاييس مصغرة مؤهلة AtmoSud", "category": "مقياس مصغر", "description": "مقاييس مصغرة منشورة من AtmoSud. البيانات الساعية موحدة." },
-      "nebuleair": { "title": "مقاييس NebuleAir", "category": "مقياس مصغر", "description": "مقاييس مصغرة مفتوحة المصدر طوّرها AirCarto وAtmoSud بالتعاون." },
-      "sensor-community": { "title": "مقاييس Sensor.Community", "category": "مقياس مصغر", "description": "مقاييس مصغرة مفتوحة المصدر بناها مواطنون متطوعون." },
-      "purpleair": { "title": "مقاييس PurpleAir", "category": "مقياس مصغر", "description": "مقاييس مصغرة تباع من الشركة الأمريكية PurpleAir Inc." },
-      "modeling-pm": { "title": "نموذج الملوثات الساعية AtmoSud", "category": "نموذج", "description": "نموذج الجسيمات الدقيقة الساعية على منطقة PACA." }
+      "atmo-ref": {
+        "title": "محطات مرجعية AtmoSud",
+        "category": "محطة مراقبة",
+        "description": "محطات مرجعية مثبتة في إطار مهمة مراقبة جودة الهواء لـ AtmoSud."
+      },
+      "atmo-micro": {
+        "title": "مقاييس مصغرة مؤهلة AtmoSud",
+        "category": "مقياس مصغر",
+        "description": "مقاييس مصغرة منشورة من AtmoSud. البيانات الساعية موحدة."
+      },
+      "nebuleair": {
+        "title": "مقاييس NebuleAir",
+        "category": "مقياس مصغر",
+        "description": "مقاييس مصغرة مفتوحة المصدر طوّرها AirCarto وAtmoSud بالتعاون."
+      },
+      "sensor-community": {
+        "title": "مقاييس Sensor.Community",
+        "category": "مقياس مصغر",
+        "description": "مقاييس مصغرة مفتوحة المصدر بناها مواطنون متطوعون."
+      },
+      "purpleair": {
+        "title": "مقاييس PurpleAir",
+        "category": "مقياس مصغر",
+        "description": "مقاييس مصغرة تباع من الشركة الأمريكية PurpleAir Inc."
+      },
+      "modeling-pm": {
+        "title": "نموذج الملوثات الساعية AtmoSud",
+        "category": "نموذج",
+        "description": "نموذج الجسيمات الدقيقة الساعية على منطقة PACA."
+      }
     },
     "discoverHistorical": "اكتشف الوضع التاريخي",
     "discoverHistoricalText": "الوضع التاريخي يتيح لك إعادة تشغيل حلقة تلوث أو يوم نموذجي. اختر تاريخاً سابقاً ثم استخدم شريط الوقت للتنقل بين القياسات المتاحة. تتحدث البيانات على الخريطة وفي اللوحات المرتبطة لترى كيف تطورت الحالة مع الزمن.",
@@ -503,7 +574,38 @@
     "footer": "OpenAirMap في تحسن مستمر. شاركنا ملاحظاتك عبر موقعنا",
     "understood": "فهمت",
     "iconAlt": "أيقونة {{source}}",
-    "logoAirCarto": "شعار AirCarto"
+    "logoAirCarto": "شعار AirCarto",
+    "legal": {
+      "link": "الإشعارات القانونية",
+      "back": "العودة إلى المعلومات",
+      "title": "الإشعارات القانونية",
+      "intro": "معلومات قانونية تتعلق بتطبيق {{app}}.",
+      "editorTitle": "الناشر",
+      "editorText": "تطبيق {{app}} تصدره {{organization}}، المرصد الإقليمي لجودة الهواء في منطقة جنوب بروفانس-ألب-كوت دازور، المعتمد من وزارة التحول البيئي الفرنسية.",
+      "legalFormLabel": "الشكل القانوني",
+      "siretLabel": "SIRET",
+      "vatLabel": "رقم ضريبة القيمة المضافة",
+      "addressLabel": "عنوان المقر الرئيسي",
+      "representativeLabel": "الممثل القانوني",
+      "contactLabel": "جهة الاتصال",
+      "publicationTitle": "مدير النشر",
+      "hostingTitle": "الاستضافة",
+      "hostingText": "يُستضاف الموقع بواسطة {{organization}} على Cloud XPR من Free Pro.",
+      "rcsLabel": "مسجّل في RCS في",
+      "shareCapitalLabel": "رأس المال",
+      "phoneLabel": "الهاتف",
+      "emailLabel": "البريد الإلكتروني",
+      "websiteLabel": "الموقع",
+      "dpoTitle": "مسؤول حماية البيانات (DPO)",
+      "dpoTextBefore": "يمكن التواصل مع مرجعنا للائحة حماية البيانات عبر البريد الإلكتروني على",
+      "openSourceTitle": "الملكية الفكرية والمصدر المفتوح",
+      "openSourceText": "OpenAirMap مشروع مفتوح المصدر من AirCarto وAtmoSud. يمكن الاطلاع على الشيفرة المصدرية وإعادة استخدامها وفق شروط ترخيصها. تبقى البيانات المعروضة على الخريطة ملكاً لمزوّديها وتخضع لشروط استخدامهم.",
+      "personalDataTitle": "البيانات الشخصية",
+      "personalDataText": "لا يوفّر OpenAirMap حسابات مستخدمين. قد تُستخدم ملفات تعريف ارتباط أو أدوات تتبع تقنية (لا سيما لقياس الجمهور عبر Matomo) لضمان حسن التشغيل وتحسين الخدمة.",
+      "privacyPolicyLink": "سياسة الخصوصية لدى AtmoSud"
+    },
+    "tourTitle": "البدء",
+    "tourText": "أعد تشغيل الجولة الإرشادية لاكتشاف عناصر التحكم في الخريطة ومصادر البيانات والوضع التاريخي."
   },
   "tooltip": {
     "model": "النموذج:",
@@ -541,6 +643,7 @@
     "reportsVisible_many": "{{count}} تقارير ظاهرة",
     "reportsVisible_other": "{{count}} تقارير ظاهرة",
     "ofTotal": "/ {{total}} الإجمالي",
+    "periodAria": "الفترة: {{period}}",
     "zoomHint": "كبّر أو حرّك الخريطة لرؤية الأجهزة",
     "globalTitle": "إحصائيات عامة",
     "average": "المتوسط",
@@ -572,14 +675,58 @@
       "purpleair": "PurpleAir",
       "mobileair": "MobileAir",
       "signalair": "SignalAir"
-    }
+    },
+    "effisHotspots_zero": "لا توجد بؤر حرارية",
+    "effisHotspots_one": "بؤرة حرارية واحدة",
+    "effisHotspots_two": "بؤرتان حراريتان",
+    "effisHotspots_few": "{{count}} بؤر حرارية",
+    "effisHotspots_many": "{{count}} بؤرة حرارية",
+    "effisHotspots_other": "{{count}} بؤرة حرارية",
+    "effisMaxPower": "بحد أقصى {{frp}} ميغاواط",
+    "effisBurnedAreas_zero": "لا توجد مناطق محروقة",
+    "effisBurnedAreas_one": "منطقة محروقة واحدة",
+    "effisBurnedAreas_two": "منطقتان محروقتان",
+    "effisBurnedAreas_few": "{{count}} مناطق محروقة",
+    "effisBurnedAreas_many": "{{count}} منطقة محروقة",
+    "effisBurnedAreas_other": "{{count}} منطقة محروقة",
+    "effisBurnedTotal": "{{hectares}} هكتار"
   },
   "baseLayer": {
     "title": "الخريطة الأساسية",
     "standard": "خريطة قياسية",
     "osm": "خريطة OSM",
     "satelliteIgn": "قمر IGN",
-    "communal": "الحدود البلدية"
+    "communal": "الحدود البلدية",
+    "effisHotspots": "بؤر الحرائق (EFFIS)",
+    "effisHotspotsLegendTitle": "بؤر الحرائق (Copernicus EFFIS)",
+    "effisBurnedAreas": "المناطق المحروقة (EFFIS)",
+    "effisBurnedAreasLegendTitle": "المناطق المحروقة (Copernicus EFFIS)",
+    "wildfire": "حرائق نشطة",
+    "overlayLegendsTitle": "مفاتيح الطبقات",
+    "overlayLegendsOpen": "فتح مفاتيح الطبقات",
+    "overlayLegendsClose": "إغلاق مفاتيح الطبقات",
+    "overlayLegendsModelingChip": "النمذجة",
+    "overlayLegendsEffisHotspotsChip": "بؤر الحرائق",
+    "overlayLegendsEffisBurnedChip": "محروقة",
+    "overlayLegendsLoading": "جاري تحميل المفتاح…",
+    "overlayLegendsError": "المفتاح غير متاح",
+    "firePeriod24h": "24 ساعة",
+    "firePeriod7d": "7 أيام",
+    "firePeriodDay": "يوم",
+    "firePeriodWeek": "أسبوع",
+    "firePeriodSeason": "الموسم",
+    "firePeriodHotspotsAria": "فترة بؤر الحرائق",
+    "firePeriodBurnedAria": "فترة المناطق المحروقة",
+    "fireLegendFreshness": "الحداثة",
+    "fireLegendLast24h": "أقل من 24 ساعة",
+    "fireLegendOlder": "أقدم",
+    "fireLegendPower": "القدرة الإشعاعية",
+    "fireLegendPowerUnit": "ميغاواط (مقياس لوغاريتمي)",
+    "fireLegendMaskNote": "يتم استبعاد مصادر الحرارة الدائمة (الشعلات الصناعية، صناعة الصلب): {{count}} منطقة رُصدت في {{days}} أيام مختلفة على الأقل خلال 12 شهرًا.",
+    "fireLegendBurnedArea": "المحيط المحروق",
+    "fireLegendBurnedNote": "محيطات مرسومة بواسطة MODIS. قد يستغرق ظهور حريق حديث عدة أيام.",
+    "groupModeling": "النمذجة",
+    "groupFire": "الحرائق"
   },
   "toast": {
     "sourceUnavailable": "{{name}} غير متاح",
@@ -593,5 +740,84 @@
     "disableIncompatibleSources": "تعطيل المصادر غير المتوافقة",
     "sourceUnavailableShort": "المصدر غير متاح",
     "changeTimeStep": "تغيير الخطوة الزمنية"
+  },
+  "tour": {
+    "common": {
+      "skip": "تخطي الدليل",
+      "next": "التالي",
+      "previous": "السابق",
+      "done": "إنهاء",
+      "replay": "إعادة الدليل",
+      "progress": "{{current}} من {{total}}"
+    },
+    "historical": {
+      "step1": {
+        "title": "اكتشاف الوضع التاريخي",
+        "description": "يتيح هذا الوضع إعادة عرض جودة الهواء لفترة سابقة. وهو متاح فقط لخطوات 15 دقيقة والساعة واليوم."
+      },
+      "step2": {
+        "title": "تفعيل الوضع التاريخي",
+        "description": "انقر على هذا الزر لتفعيل الوضع. سيتم استبدال العلامات الحالية ببيانات الفترة المحددة."
+      },
+      "step3": {
+        "title": "اختيار فترة",
+        "description": "حدد تاريخ البداية والنهاية. المصادر AtmoRef وAtmoMicro وNebuleAir مدعومة. تعتمد المدة القصوى على الخطوة الزمنية (7 أيام لـ 15 دقيقة، 30 يومًا بالساعة)."
+      },
+      "step4": {
+        "title": "تحميل البيانات",
+        "description": "بعد اختيار الفترة، انقر هنا لتحميل القياسات التاريخية على الخريطة."
+      },
+      "step5": {
+        "title": "عناصر التحكم في التشغيل",
+        "description": "استخدم التشغيل/الإيقاف والجدول الزمني والسرعة للتنقل عبر الزمن. هذه اللوحة قابلة للسحب؛ أعد فتح التقويم عبر الأيقونة أعلى اليمين."
+      }
+    },
+    "global": {
+      "welcome": {
+        "title": "مرحبًا بك في OpenAirMap!",
+        "description": "التطبيق مفتوح المصدر الذي طورته AtmoSud وAirCarto لعرض قياسات جودة الهواء في الوقت الفعلي."
+      },
+      "pollutant": {
+        "title": "اختر ملوثًا",
+        "description": "اختر الملوث الذي تريد عرضه على الخريطة"
+      },
+      "sources": {
+        "title": "اختر المصادر",
+        "description": "اختر الجهاز أو الأجهزة التي ستُستخدم كمصدر"
+      },
+      "timeStep": {
+        "title": "حدد الخطوة الزمنية",
+        "description": "اختر الفاصل الزمني بين قياسين"
+      },
+      "search": {
+        "title": "ابحث عن عنوان أو محطة/جهاز استشعار",
+        "description": "اعثر بسرعة على عنوان أو جهاز قياس"
+      },
+      "legend": {
+        "title": "وسيلة الإيضاح",
+        "description": "مرر الفأرة فوق مختلف المستويات للتعرف على التركيزات المرتبطة بها"
+      }
+    }
+  },
+  "rail": {
+    "regionLabel": "عناصر التحكم بالخريطة",
+    "toolbarLabel": "شريط أدوات الخريطة",
+    "groupData": "البيانات",
+    "groupLayers": "الطبقات",
+    "groupTime": "الزمن",
+    "groupPanels": "اللوحات",
+    "frozenDuringPlayback": "عناصر التحكم غير متاحة أثناء التشغيل التاريخي",
+    "caption": {
+      "sources_one": "{{count}} مصدر",
+      "sources_other": "{{count}} مصادر",
+      "modeling": "نمذجة",
+      "modelingOff": "—",
+      "baseLayer": "خلفية",
+      "historical": "تاريخ"
+    },
+    "groupUtilities": "أدوات",
+    "groupBaseLayer": "خلفية الخريطة",
+    "groupModes": "الأنماط",
+    "brandWebsite": "موقع {{organization}}"
   }
 }

@@ -1,8 +1,33 @@
+import tailwindcssAnimate from "tailwindcss-animate";
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["var(--font-ui)"],
+        display: ["var(--font-display)"],
+      },
+      // Échelle nommée : remplace 13 valeurs arbitraires posées à la main.
+      // Miroir en --z-* dans index.css pour les règles CSS en !important.
+      zIndex: {
+        "map-ambient": "400", // échelle, boussole, attribution
+        "map-info": "500", // légende, statistiques, légendes de couches
+        "map-tooltip": "510", // tooltips de la légende
+        "map-search": "600", // contrôle de recherche et ses résultats
+        notify: "700", // pile de notifications de carte
+        panel: "800", // panneaux latéraux, bannières
+        "panel-raised": "810", // voile du panneau de statistiques
+        "panel-sheet": "820", // panneau de statistiques lui-même
+        rail: "900", // rail de contrôles
+        floating: "1000", // panneaux historiques (date, lecture)
+        popover: "1100", // contenus Radix, menu de langue
+        "tour-overlay": "1200", // voile driver.js
+        "tour-popover": "1210", // bulle driver.js
+        modal: "1300", // modale d'informations
+        toast: "1400", // toasts, lien d'évitement, tooltip de marqueur
+      },
       keyframes: {
         'slide-in-left': {
           '0%': {
@@ -80,15 +105,25 @@ export default {
             transform: 'scale(0.95)',
           },
         },
+        // Entrée du rail de contrôles, jouée une seule fois au montage
+        'rail-in': {
+          '0%': { opacity: '0', transform: 'translateX(-8px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
+        },
       },
       animation: {
-        'slide-in-left': 'slide-in-left 0.3s ease-out',
-        'slide-out-left': 'slide-out-left-smooth 0.3s ease-in forwards',
+        // Entrée et sortie des panneaux latéraux : sur les tokens, pour que le
+        // timeout JS de SidePanelShell (PANEL_EXIT_MS) et l'animation CSS soient
+        // pilotés par la même valeur --dur-panel.
+        'slide-in-left': 'slide-in-left var(--dur-panel) var(--ease-out)',
+        'slide-out-left':
+          'slide-out-left-smooth var(--dur-panel) var(--ease-in) forwards',
         'fade-in': 'fade-in 0.3s ease-out',
         'fade-out': 'fade-out 0.3s ease-in',
         'scale-in': 'scale-in 0.3s ease-out',
         'scale-out': 'scale-out 0.3s ease-in',
         'slide-in-left-delayed': 'slide-in-left 0.3s ease-out 0.1s both',
+        'rail-in': 'rail-in 0.26s cubic-bezier(0.22, 1.2, 0.36, 1) both',
       },
       colors: {
         border: "hsl(var(--border))",
@@ -136,5 +171,5 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [tailwindcssAnimate],
 };

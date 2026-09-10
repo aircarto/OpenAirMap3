@@ -39,9 +39,26 @@ export const featureFlags = {
     import.meta.env.VITE_MARKER_NEBULEAIR as string | undefined,
     true // Par défaut, nebuleair a son propre marqueur (comportement d'origine)
   ),
-  displayClusteringToggle: parseBooleanFlag(
-    import.meta.env.VITE_DISPLAY_CLUSTERING_TOGGLE as string | undefined,
-    true // Par défaut, le toggle est affiché
+  useAdvertising: parseBooleanFlag(
+    import.meta.env.VITE_USE_ADVERTISING as string | undefined,
+    false
+  ),
+  historicalModeLogs: parseBooleanFlag(
+    import.meta.env.VITE_HISTORICAL_MODE_LOGS as string | undefined,
+    false
+  ),
+
+  /**
+   * Sert les microcapteurs AtmoSud depuis la nouvelle API microspot
+   * (api-export-prod.uspot.probesys.net/microspot) au lieu de l'ancienne
+   * (api.atmosud.org/observations/capteurs).
+   *
+   * Par défaut false : quelques campagnes ne sont pas encore exposées côté
+   * microspot, donc l'ancienne API reste le chemin de repli.
+   */
+  useMicrospotApi: parseBooleanFlag(
+    import.meta.env.VITE_USE_MICROSPOT_API as string | undefined,
+    false
   ),
 
   /**
@@ -58,5 +75,4 @@ export const featureFlags = {
     return Number.isInteger(num) && num >= 0 ? num : null;
   })(),
 };
-
 

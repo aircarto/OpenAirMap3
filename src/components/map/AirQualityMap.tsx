@@ -1,18 +1,27 @@
-import React, { useEffect, useState, useCallback, useRef, useMemo } from "react";
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
 import { useTranslation } from "react-i18next";
 import {
   MapContainer,
-  TileLayer,
   Marker,
   Popup,
   useMapEvents,
   useMap,
+  AttributionControl,
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import "maplibre-gl/dist/maplibre-gl.css";
 import "geoportal-extensions-leaflet";
 import "leaflet-velocity";
 import "leaflet-velocity/dist/leaflet-velocity.css";
+import { DomainConfig } from "../../config/domainConfig";
+import { cn } from "../../lib/utils";
 
 // Déclaration de type pour l'extension Geoportal
 declare module "leaflet" {
@@ -29,23 +38,30 @@ import {
   WildfireReport,
 } from "../../types";
 import { BaseLayerKey, ModelingLayerType } from "../../constants/mapLayers";
+import {
+  BurnedAreaPeriod,
+  HotspotPeriod,
+  isWithinHotspotsRetention,
+} from "../../services/EffisLayerService";
 import { MAX_COMPARISON_STATIONS } from "../../constants/comparison";
-import BaseLayerControl from "../controls/BaseLayerControl";
 import CustomSearchControl from "../controls/CustomSearchControl";
+import MapControlRail from "./rail/MapControlRail";
+import { useMapControls } from "../../contexts/mapControlsContext";
 import ScaleControl from "../controls/ScaleControl";
 import NorthArrow from "../controls/NorthArrow";
 import Legend from "./Legend";
+import MapReadyNotifier from "./MapReadyNotifier";
 import MobileAirRoutes from "./MobileAirRoutes";
 import CustomSpiderfiedMarkers from "./CustomSpiderfiedMarkers";
 import CustomSpiderfiedSignalAirMarkers from "./CustomSpiderfiedSignalAirMarkers";
 import MarkerWithTooltip from "./MarkerWithTooltip";
 import DeviceStatistics from "./DeviceStatistics";
-import MapFloatingActions from "./MapFloatingActions";
 import MapPanelsContainer from "./MapPanelsContainer";
 import MapDataMarkers from "./MapDataMarkers";
 import MapOverlays from "./MapOverlays";
+import MapViewSyncHandler from "./MapViewSyncHandler";
 import { AtmoRefService } from "../../services/AtmoRefService";
-import { AtmoMicroService } from "../../services/AtmoMicroService";
+import type { AtmoMicroLikeService } from "../../types";
 import { NebuleAirService } from "../../services/NebuleAirService";
 import { DataServiceFactory } from "../../services/DataServiceFactory";
 // Hooks personnalisés
@@ -58,13 +74,13 @@ import { useSignalAir } from "./hooks/useSignalAir";
 import { useMobileAir } from "./hooks/useMobileAir";
 import { useMarkerTooltip } from "./hooks/useMarkerTooltip";
 import { useVisibleDevices } from "./hooks/useVisibleDevices";
+import { useMapSurfaceHints } from "./hooks/useMapSurfaceHints";
 
 // Utilitaires
 import {
   createCustomIcon,
   createSignalIcon,
   createWildfireIcon,
-  formatWildfireDate,
   getMarkerKey,
   isDeviceSelected,
   sortDevicesByPriority,
@@ -75,6 +91,9 @@ import {
   createLoadComparisonDataHandler,
   createRemoveStationFromComparisonHandler,
 } from "./handlers/comparisonHandlers";
+import { trackEvent, trackFeatureUsage } from "../../services/analyticsService";
+import { featureFlags } from "../../config/featureFlags";
+import { advertisingConfig } from "../../config/advertisingConfig";
 
 // Correction pour les icônes Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -101,12 +120,14 @@ interface AirQualityMapProps {
   currentModelingLayer: ModelingLayerType | null;
   modelingHourIndex?: number | null;
   shouldOverrideDisplayedPeriod?: boolean;
+  aircrowdWmsEnabled?: boolean;
+  aircrowdWmsDate?: string;
+  aircrowdWmsHour?: number;
   loading?: boolean;
   signalAirPeriod: { startDate: string; endDate: string };
   signalAirSelectedTypes: string[];
   onSignalAirPeriodChange: (startDate: string, endDate: string) => void;
   onSignalAirTypesChange: (types: string[]) => void;
-  onSignalAirLoadRequest: () => void;
   isSignalAirLoading?: boolean;
   signalAirHasLoaded?: boolean;
   signalAirReportsCount?: number;
@@ -115,7 +136,7 @@ interface AirQualityMapProps {
   onSignalAirSourceDeselected?: () => void;
   onMobileAirSensorSelected?: (
     sensorId: string,
-    period: { startDate: string; endDate: string }
+    period: { startDate: string; endDate: string },
   ) => void;
   onMobileAirSourceDeselected?: () => void;
   isHistoricalModeActive?: boolean;
@@ -126,14 +147,18 @@ interface AirQualityMapProps {
   isMobileAirVisible?: boolean;
   onSignalAirToggle?: (visible: boolean) => void;
   onMobileAirToggle?: (visible: boolean) => void;
-  onSignalAirPanelOpen?: () => void;
-  onMobileAirPanelOpen?: () => void;
-  /** Incrémenter pour demander l'ouverture du panel SignalAir (depuis le header) */
-  openSignalAirPanelRequest?: number;
-  /** Incrémenter pour demander l'ouverture du panel MobileAir (depuis le header) */
-  openMobileAirPanelRequest?: number;
   /** Date actuellement affichée en mode historique (pour la période dans DeviceStatistics) */
   historicalCurrentDate?: string;
+  historicalStartDate?: string;
+  historicalEndDate?: string;
+  historicalTimeStep?: string;
+  historicalPlaybackDate?: string;
+  /** Masque l'encart promo quand le panel historique de sélection de date est visible */
+  isHistoricalDatePanelVisible?: boolean;
+  /** Callback quand l'utilisateur déplace ou zoome la carte */
+  onMapViewChange?: (center: [number, number], zoom: number) => void;
+  /** Emprise de l'instance courante (voir DomainConfig.mapBounds) — limite les couches EFFIS */
+  mapBounds: DomainConfig["mapBounds"];
 }
 
 const defaultSpiderfyConfig = {
@@ -248,12 +273,14 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
   currentModelingLayer,
   modelingHourIndex,
   shouldOverrideDisplayedPeriod = false,
+  aircrowdWmsEnabled = false,
+  aircrowdWmsDate,
+  aircrowdWmsHour = 0,
   loading,
   signalAirPeriod,
   signalAirSelectedTypes,
   onSignalAirPeriodChange,
   onSignalAirTypesChange,
-  onSignalAirLoadRequest,
   isSignalAirLoading = false,
   signalAirHasLoaded = false,
   signalAirReportsCount = 0,
@@ -268,18 +295,67 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
   isMobileAirVisible = true,
   onSignalAirToggle,
   onMobileAirToggle,
-  onSignalAirPanelOpen,
-  onMobileAirPanelOpen,
-  openSignalAirPanelRequest = 0,
-  openMobileAirPanelRequest = 0,
   historicalCurrentDate,
+  historicalStartDate,
+  historicalEndDate,
+  historicalTimeStep,
+  historicalPlaybackDate,
+  isHistoricalDatePanelVisible = false,
+  onMapViewChange,
+  mapBounds,
 }) => {
   const { t, i18n } = useTranslation();
+  // AirQualityMap est rendu dans MapControlsProvider : il peut consommer le
+  // contexte pour transmettre les notices applicatives à la pile unique.
+  const mapControls = useMapControls();
+  const mapColumnRef = useRef<HTMLDivElement | null>(null);
   // Configuration du spiderfier
   const [spiderfyConfig, setSpiderfyConfig] = useState(defaultSpiderfyConfig);
   const [currentBaseLayer, setCurrentBaseLayer] =
     useState<BaseLayerKey>("Carte standard");
+  const [mapReadyVersion, setMapReadyVersion] = useState(0);
+  const handleMapReady = useCallback(() => {
+    setMapReadyVersion((v) => v + 1);
+  }, []);
   const [isCommunalLayerEnabled, setIsCommunalLayerEnabled] = useState(false);
+  const [isEffisHotspotsEnabled, setIsEffisHotspotsEnabled] = useState(false);
+  const [isEffisBurnedAreasEnabled, setIsEffisBurnedAreasEnabled] =
+    useState(false);
+  /** 24 h par défaut : la demande porte d'abord sur la donnée la plus fraîche */
+  const [effisHotspotsPeriod, setEffisHotspotsPeriod] =
+    useState<HotspotPeriod>("24h");
+  /**
+   * Saison par défaut : `today` renvoie très souvent zéro polygone (MODIS met
+   * plusieurs jours à cartographier un périmètre), un défaut vide serait trompeur.
+   */
+  const [effisBurnedAreasPeriod, setEffisBurnedAreasPeriod] =
+    useState<BurnedAreaPeriod>("season");
+
+  /**
+   * Date rejouée par la timeline historique, source de vérité des couches feux.
+   * Absente hors mode historique : les couches repassent alors en temps réel.
+   */
+  const effisReferenceDate = useMemo(() => {
+    if (!historicalPlaybackDate) return undefined;
+    // Les timestamps du mode historique peuvent arriver en "YYYY-MM-DD HH:mm:ss" :
+    // Safari refuse ce format, d'où la normalisation en ISO avant parsing.
+    const normalized = historicalPlaybackDate.includes("T")
+      ? historicalPlaybackDate
+      : historicalPlaybackDate.replace(" ", "T");
+    const parsed = new Date(normalized);
+    return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+  }, [historicalPlaybackDate]);
+
+  /**
+   * `all.hs.query` ne conserve que 365 jours glissants (mesuré sur le service).
+   * Au-delà, mieux vaut désactiver la couche et l'expliquer que d'afficher un vide
+   * que l'utilisateur prendrait pour une absence de feux.
+   */
+  const isHotspotsBeyondRetention = Boolean(
+    effisReferenceDate && !isWithinHotspotsRetention(effisReferenceDate),
+  );
+  const [isWildfireLayerEnabledByControl, setIsWildfireLayerEnabledByControl] =
+    useState(featureFlags.wildfireLayer);
 
   // Position du pinpoint affiché après une recherche de localisation (null = masqué)
   const [searchPinPosition, setSearchPinPosition] = useState<
@@ -312,15 +388,27 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
 
   const mapLayers = useMapLayers({
     mapRef: mapView.mapRef,
+    mapReadyVersion,
     currentBaseLayer,
     selectedTimeStep,
     selectedPollutant,
     currentModelingLayer,
     modelingHourIndex,
+    aircrowdWmsEnabled,
+    aircrowdWmsDate,
+    aircrowdWmsHour,
     isCommunalLayerEnabled,
+    isEffisHotspotsEnabled:
+      isEffisHotspotsEnabled && !isHotspotsBeyondRetention,
+    isEffisBurnedAreasEnabled,
+    effisHotspotsPeriod,
+    effisBurnedAreasPeriod,
+    effisReferenceDate,
+    mapBounds,
   });
 
-  const wildfire = useWildfireLayer();
+  const wildfire = useWildfireLayer(isWildfireLayerEnabledByControl);
+  const isWildfireVisible = wildfire.isWildfireLayerEnabled;
 
   const sidePanels = useSidePanels({
     initialSelectedPollutant: selectedPollutant,
@@ -332,7 +420,6 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
     isSignalAirLoading,
     reports,
     mapRef: mapView.mapRef,
-    onSignalAirLoadRequest,
     isEnabled: isSignalAirEnabled,
     isHistoricalModeWithSignalAirData,
   });
@@ -343,36 +430,6 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
     onMobileAirSensorSelected,
     isEnabled: isMobileAirEnabled,
   });
-
-  // Ouvrir les panels SignalAir / MobileAir quand le header demande (bouton "Sources spéciales")
-  useEffect(() => {
-    // Important: on ne traite qu'une nouvelle requête d'ouverture.
-    // Sans ce garde-fou, un rerender peut rouvrir le panneau juste
-    // après que l'utilisateur l'a fermé via la croix.
-    if (
-      openSignalAirPanelRequest > 0 &&
-      openSignalAirPanelRequest !== lastHandledSignalAirOpenRequestRef.current
-    ) {
-      signalAir.handleOpenSignalAirPanel();
-      lastHandledSignalAirOpenRequestRef.current = openSignalAirPanelRequest;
-    }
-    // Pourquoi cette dépendance ?
-    // React "capture" les valeurs au moment du render. En listant le handler,
-    // on garantit que l'effet utilisera toujours la version la plus récente.
-  }, [openSignalAirPanelRequest, signalAir]);
-
-  useEffect(() => {
-    // Même logique pour MobileAir: ignorer les rerenders et ne réagir
-    // qu'à un nouvel identifiant de requête d'ouverture.
-    if (
-      openMobileAirPanelRequest > 0 &&
-      openMobileAirPanelRequest !== lastHandledMobileAirOpenRequestRef.current
-    ) {
-      mobileAir.handleOpenMobileAirSelectionPanel();
-      lastHandledMobileAirOpenRequestRef.current = openMobileAirPanelRequest;
-    }
-    // Même principe ici : on évite un "stale closure" si le handler change.
-  }, [openMobileAirPanelRequest, mobileAir]);
 
   // Hook pour gérer le tooltip au hover sur les marqueurs (désactivé - on utilise les tooltips Leaflet natifs maintenant)
   // const { tooltip, showTooltip, hideTooltip, isHidden } = useMarkerTooltip({
@@ -406,10 +463,6 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
 
   // Référence pour suivre l'état précédent du mode historique
   const prevHistoricalModeRef = useRef(isHistoricalModeActive);
-  // Ces refs mémorisent la dernière requête d'ouverture déjà traitée.
-  // Elles évitent les réouvertures involontaires des panels lors des rerenders.
-  const lastHandledSignalAirOpenRequestRef = useRef(0);
-  const lastHandledMobileAirOpenRequestRef = useRef(0);
 
   // Refs pour empêcher les clics multiples rapides
   const isProcessingClickRef = useRef(false);
@@ -429,7 +482,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
             {
               elapsed: `${elapsed}ms`,
               lastClicked: lastClickedDeviceIdRef.current,
-            }
+            },
           );
           isProcessingClickRef.current = false;
           lastClickedDeviceIdRef.current = null;
@@ -452,12 +505,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
       // Fermer complètement tous les side panels (pas juste rabattus)
       sidePanels.handleCloseSidePanel();
 
-      // Fermer les panels SignalAir
-      signalAir.handleCloseSignalAirPanel();
       signalAir.handleCloseSignalAirDetailPanel();
-
-      // Fermer les panels MobileAir
-      mobileAir.handleCloseMobileAirSelectionPanel();
       mobileAir.handleCloseMobileAirDetailPanel();
     }
 
@@ -467,20 +515,25 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
     // avec leur état courant (règle exhaustive-deps).
   }, [isHistoricalModeActive, sidePanels, signalAir, mobileAir]);
 
+  /**
+   * Un panneau, quelle que soit sa famille, occupe de la largeur dans la colonne
+   * carte. « Occupe de la largeur » et non « est ouvert » : un panneau replié
+   * (`panelSize === "hidden"`) sort du flux flex et la carte reprend sa place.
+   *
+   * Quatre familles de panneaux, donc quatre clauses. Nommé et calculé une fois
+   * plutôt que réécrit à chaque consommateur — l'attribution Leaflet s'efface,
+   * et le rail se resserre, sur exactement la même condition.
+   */
+  const isMapColumnSqueezed =
+    (sidePanels.isSidePanelOpen && sidePanels.panelSize !== "hidden") ||
+    (isComparisonPanelVisible && sidePanels.panelSize !== "hidden") ||
+    (mobileAir.isMobileAirDetailPanelOpen &&
+      mobileAir.mobileAirDetailPanelSize !== "hidden") ||
+    (signalAir.isSignalAirDetailPanelOpen &&
+      signalAir.signalAirDetailPanelSize !== "hidden");
+
   // Gestion de l'attribution Leaflet
-  useMapAttribution({
-    shouldHide:
-      (sidePanels.isSidePanelOpen && sidePanels.panelSize !== "hidden") ||
-      (isComparisonPanelVisible && sidePanels.panelSize !== "hidden") ||
-      (mobileAir.isMobileAirSelectionPanelOpen &&
-        mobileAir.mobileAirSelectionPanelSize !== "hidden") ||
-      (mobileAir.isMobileAirDetailPanelOpen &&
-        mobileAir.mobileAirDetailPanelSize !== "hidden") ||
-      (signalAir.isSignalAirPanelOpen &&
-        signalAir.signalAirPanelSize !== "hidden") ||
-      (signalAir.isSignalAirDetailPanelOpen &&
-        signalAir.signalAirDetailPanelSize !== "hidden"),
-  });
+  useMapAttribution({ shouldHide: isMapColumnSqueezed });
 
   // Effet pour redimensionner la carte quand les panneaux latéraux changent de taille
   useEffect(() => {
@@ -514,16 +567,20 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
     mapView.mapRef,
     sidePanels.panelSize,
     sidePanels.isSidePanelOpen,
-    mobileAir.mobileAirSelectionPanelSize,
     mobileAir.mobileAirDetailPanelSize,
-    mobileAir.isMobileAirSelectionPanelOpen,
     mobileAir.isMobileAirDetailPanelOpen,
-    signalAir.signalAirPanelSize,
-    signalAir.isSignalAirPanelOpen,
     signalAir.signalAirDetailPanelSize,
     signalAir.isSignalAirDetailPanelOpen,
     isComparisonPanelVisible,
   ]);
+
+  // Indices de surface consommés par les classes .glass-* (voir index.css)
+  useMapSurfaceHints(
+    mapColumnRef,
+    mapView.mapRef,
+    currentBaseLayer as BaseLayerKey,
+    mapReadyVersion
+  );
 
   const handleBaseLayerChange = (layerKey: BaseLayerKey) => {
     setCurrentBaseLayer(layerKey);
@@ -531,84 +588,125 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
 
   // Handlers pour la comparaison
   const handleLoadComparisonData = createLoadComparisonDataHandler(
-    sidePanels.setComparisonState
+    sidePanels.setComparisonState,
   );
-  const handleRemoveStationFromComparison =
+  const removeStationFromComparisonBase =
     createRemoveStationFromComparisonHandler(
       sidePanels.comparisonState,
       sidePanels.setComparisonState,
       sidePanels.setIsSidePanelOpen,
-      sidePanels.setSelectedStation
+      sidePanels.setSelectedStation,
     );
+  const handleRemoveStationFromComparison = useCallback(
+    (stationId: string) => {
+      const removedStation = sidePanels.comparisonState.comparedStations.find(
+        (station) => station.id === stationId,
+      );
+      removeStationFromComparisonBase(stationId);
+      trackEvent(
+        "comparison",
+        "remove_station",
+        removedStation?.source ?? "unknown",
+      );
+      trackFeatureUsage("comparison_station_removed", {
+        source: removedStation?.source ?? "unknown",
+        remainingStations: Math.max(
+          sidePanels.comparisonState.comparedStations.length - 1,
+          0,
+        ),
+      });
+    },
+    [
+      sidePanels.comparisonState.comparedStations,
+      removeStationFromComparisonBase,
+    ],
+  );
 
   // Handler pour ajouter une station à la comparaison
   // useCallback rend la fonction stable entre renders.
   // Cela évite que les callbacks dépendants se recréent inutilement.
-  const handleAddStationToComparison = useCallback(async (device: MeasurementDevice) => {
-    // Vérifier que la station n'est pas déjà dans la liste
-    const isAlreadyAdded = sidePanels.comparisonState.comparedStations.some(
-      (station) => station.id === device.id
-    );
+  const handleAddStationToComparison = useCallback(
+    async (device: MeasurementDevice) => {
+      // Vérifier que la station n'est pas déjà dans la liste
+      const isAlreadyAdded = sidePanels.comparisonState.comparedStations.some(
+        (station) => station.id === device.id,
+      );
 
-    // Si la station est déjà ajoutée, la retirer (désélection)
-    if (isAlreadyAdded) {
-      handleRemoveStationFromComparison(device.id);
-      return;
-    }
-
-    // Vérifier les limites (max N stations) seulement si on ajoute une nouvelle station
-    if (sidePanels.comparisonState.comparedStations.length >= MAX_COMPARISON_STATIONS) {
-      console.warn(`Maximum ${MAX_COMPARISON_STATIONS} stations autorisées en comparaison`);
-      return;
-    }
-
-    try {
-      let variables: Record<
-        string,
-        { label: string; code_iso: string; en_service: boolean }
-      > = {};
-
-      // Récupérer les informations détaillées selon la source
-      let sensorModel: string | undefined;
-      let lastSeenSec: number | undefined;
-
-      if (device.source === "atmoRef") {
-        const atmoRefService = DataServiceFactory.getService('atmoRef') as AtmoRefService;
-        variables = await atmoRefService.fetchStationVariables(device.id);
-      } else if (device.source === "atmoMicro") {
-        const atmoMicroService = DataServiceFactory.getService('atmoMicro') as AtmoMicroService;
-        const siteInfo = await atmoMicroService.fetchSiteVariables(device.id);
-        variables = siteInfo.variables;
-        sensorModel = siteInfo.sensorModel;
-      } else if (device.source === "nebuleair") {
-        const nebuleAirService = new NebuleAirService();
-        const siteInfo = await nebuleAirService.fetchSiteInfo(device.id);
-        variables = siteInfo.variables;
-        lastSeenSec = siteInfo.lastSeenSec;
+      // Si la station est déjà ajoutée, la retirer (désélection)
+      if (isAlreadyAdded) {
+        handleRemoveStationFromComparison(device.id);
+        return;
       }
 
-      const stationInfo: StationInfo = {
-        id: device.id,
-        name: device.name,
-        address: device.address || "",
-        departmentId: device.departmentId || "",
-        source: device.source,
-        variables,
-        sensorModel,
-        ...(lastSeenSec !== undefined && { lastSeenSec }),
-      };
+      // Vérifier les limites (max N stations) seulement si on ajoute une nouvelle station
+      if (
+        sidePanels.comparisonState.comparedStations.length >=
+        MAX_COMPARISON_STATIONS
+      ) {
+        console.warn(
+          `Maximum ${MAX_COMPARISON_STATIONS} stations autorisées en comparaison`,
+        );
+        return;
+      }
 
-      sidePanels.setComparisonState((prev) => ({
-        ...prev,
-        comparedStations: [...prev.comparedStations, stationInfo],
-      }));
-    } catch (error) {
-      console.error(
-        "Erreur lors de l'ajout de la station à la comparaison:",
-        error
-      );
-    }
-  }, [sidePanels, handleRemoveStationFromComparison]);
+      try {
+        let variables: Record<
+          string,
+          { label: string; code_iso: string; en_service: boolean }
+        > = {};
+
+        // Récupérer les informations détaillées selon la source
+        let sensorModel: string | undefined;
+        let lastSeenSec: number | undefined;
+
+        if (device.source === "atmoRef") {
+          const atmoRefService = DataServiceFactory.getService(
+            "atmoRef",
+          ) as AtmoRefService;
+          variables = await atmoRefService.fetchStationVariables(device.id);
+        } else if (device.source === "atmoMicro") {
+          const atmoMicroService = DataServiceFactory.getService(
+            "atmoMicro",
+          ) as AtmoMicroLikeService;
+          const siteInfo = await atmoMicroService.fetchSiteVariables(device.id);
+          variables = siteInfo.variables;
+          sensorModel = siteInfo.sensorModel;
+        } else if (device.source === "nebuleair") {
+          const nebuleAirService = new NebuleAirService();
+          const siteInfo = await nebuleAirService.fetchSiteInfo(device.id);
+          variables = siteInfo.variables;
+          lastSeenSec = siteInfo.lastSeenSec;
+        }
+
+        const stationInfo: StationInfo = {
+          id: device.id,
+          name: device.name,
+          address: device.address || "",
+          departmentId: device.departmentId || "",
+          source: device.source,
+          variables,
+          sensorModel,
+          ...(lastSeenSec !== undefined && { lastSeenSec }),
+        };
+
+        sidePanels.setComparisonState((prev) => ({
+          ...prev,
+          comparedStations: [...prev.comparedStations, stationInfo],
+        }));
+        trackEvent("comparison", "add_station", device.source);
+        trackFeatureUsage("comparison_station_added", {
+          source: device.source,
+          stationCount: sidePanels.comparisonState.comparedStations.length + 1,
+        });
+      } catch (error) {
+        console.error(
+          "Erreur lors de l'ajout de la station à la comparaison:",
+          error,
+        );
+      }
+    },
+    [sidePanels, handleRemoveStationFromComparison],
+  );
 
   // Wrapper pour createCustomIcon avec les états du composant
   // Wrappers pour les fonctions utilitaires avec les états du composant
@@ -628,7 +726,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
     return createWildfireIcon(
       report,
       wildfire.wildfireLoading,
-      wildfire.wildfireReports.length
+      wildfire.wildfireReports.length,
     );
   };
 
@@ -636,7 +734,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
     return getMarkerKey(
       device,
       sidePanels.comparisonState,
-      sidePanels.selectedStation
+      sidePanels.selectedStation,
     );
   };
 
@@ -687,11 +785,6 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
       }
 
       // Les tooltips sont maintenant gérés par Leaflet, pas besoin de les masquer manuellement
-
-      // Désactiver les clics sur les marqueurs en mode historique
-      if (isHistoricalModeActive) {
-        return;
-      }
 
       // Exclure SignalAir
       if (device.source === "signalair") {
@@ -800,17 +893,23 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
         try {
           // Récupérer les informations détaillées selon la source
           if (device.source === "atmoRef") {
-            const atmoRefService = DataServiceFactory.getService('atmoRef') as AtmoRefService;
+            const atmoRefService = DataServiceFactory.getService(
+              "atmoRef",
+            ) as AtmoRefService;
             variables = await atmoRefService.fetchStationVariables(device.id);
           } else if (device.source === "atmoMicro") {
-            const atmoMicroService = DataServiceFactory.getService('atmoMicro') as AtmoMicroService;
+            const atmoMicroService = DataServiceFactory.getService(
+              "atmoMicro",
+            ) as AtmoMicroLikeService;
             const siteInfo = await atmoMicroService.fetchSiteVariables(
-              device.id
+              device.id,
             );
             variables = siteInfo.variables;
             sensorModel = siteInfo.sensorModel;
           } else if (device.source === "nebuleair") {
-            const nebuleAirService = DataServiceFactory.getService('nebuleair') as NebuleAirService;
+            const nebuleAirService = DataServiceFactory.getService(
+              "nebuleair",
+            ) as NebuleAirService;
             const siteInfo = await nebuleAirService.fetchSiteInfo(device.id);
             variables = siteInfo.variables;
             lastSeenSec = siteInfo.lastSeenSec;
@@ -818,7 +917,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
         } catch (error) {
           console.error(
             `❌ [Map] Erreur lors de la récupération des informations de la station ${device.id}:`,
-            error
+            error,
           );
           // Continuer avec des variables vides - le sidepanel s'ouvrira quand même
         }
@@ -845,7 +944,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
       } catch (error) {
         console.error(
           `❌ [Map] Erreur lors du traitement du clic pour ${device.id}:`,
-          error
+          error,
         );
         // Même en cas d'erreur, réinitialiser le flag pour permettre de nouveaux clics
       } finally {
@@ -866,7 +965,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
         }, 300); // Délai réduit à 300ms pour une meilleure réactivité
       }
     },
-    [isHistoricalModeActive, sidePanels, handleAddStationToComparison]
+    [sidePanels, handleAddStationToComparison],
   );
 
   // Callback pour la sélection d'un capteur depuis la recherche
@@ -880,7 +979,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           {
             animate: true,
             duration: 1.5,
-          }
+          },
         );
       }
 
@@ -888,38 +987,85 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
       handleMarkerClick(device);
     },
     // mapView.mapRef est utilisé dans le callback: on le déclare explicitement.
-    [handleMarkerClick, mapView.mapRef]
+    [handleMarkerClick, mapView.mapRef],
   );
 
   // Les handlers SignalAir et MobileAir sont maintenant dans leurs hooks respectifs
   // Utiliser signalAir.* et mobileAir.* pour accéder aux handlers
 
   return (
-    <div className="w-full h-full flex items-stretch relative">
+    <div className="relative flex h-full w-full min-w-0 items-stretch overflow-x-hidden">
       <MapPanelsContainer
         sidePanels={sidePanels}
         signalAir={signalAir}
         mobileAir={mobileAir}
         selectedPollutant={selectedPollutant}
-        signalAirSelectedTypes={signalAirSelectedTypes}
-        signalAirPeriod={signalAirPeriod}
-        onSignalAirTypesChange={onSignalAirTypesChange}
-        onSignalAirPeriodChange={onSignalAirPeriodChange}
-        isSignalAirLoading={isSignalAirLoading}
-        signalAirHasLoaded={signalAirHasLoaded}
-        signalAirReportsCount={signalAirReportsCount}
         isComparisonPanelVisible={isComparisonPanelVisible}
         handleRemoveStationFromComparison={handleRemoveStationFromComparison}
         handleLoadComparisonData={handleLoadComparisonData}
         purpleAirDeviceData={purpleAirDeviceData}
+        isHistoricalModeActive={isHistoricalModeActive}
+        historicalStartDate={historicalStartDate}
+        historicalEndDate={historicalEndDate}
+        historicalTimeStep={historicalTimeStep}
+        historicalPlaybackDate={historicalPlaybackDate}
       />
 
       {/* Conteneur de la carte */}
+      {/* Cible du lien d'évitement : la carte elle-même, et non <main> qui
+          englobe le rail. `tabIndex={-1}` rend l'ancre focalisable par script
+          sans l'ajouter à l'ordre de tabulation. */}
+      {/* Sous sm, si un panneau occupe `w-full`, on replie la colonne carte :
+          sinon panneau 100% + carte flex-1 = scroll horizontal du viewport. */}
       <div
-        className="flex-1 relative"
+        ref={mapColumnRef}
+        id="main-content"
+        tabIndex={-1}
+        className={cn(
+          "relative min-w-0 flex-1 focus:outline-none",
+          isMapColumnSqueezed && "max-sm:hidden"
+        )}
         role="region"
         aria-label={t("app.mapAriaLabel")}
       >
+        {/* Rail de contrôles : absolute dans cette colonne, donc il glisse
+            quand un panneau latéral la pousse. */}
+        {/* Bande instrument : la rose des vents n'est plus un contrôle Leaflet,
+            elle s'adosse à --rail-inset comme l'échelle. */}
+        <NorthArrow
+          isSidePanelOpen={sidePanels.isSidePanelOpen}
+          panelSize={sidePanels.panelSize}
+        />
+
+        <MapControlRail
+          compact={isMapColumnSqueezed}
+          baseLayer={{
+            currentBaseLayer: currentBaseLayer as BaseLayerKey,
+            onBaseLayerChange: setCurrentBaseLayer,
+            isCommunalLayerEnabled,
+            onCommunalLayerToggle: setIsCommunalLayerEnabled,
+            isEffisHotspotsEnabled,
+            onEffisHotspotsToggle: setIsEffisHotspotsEnabled,
+            effisHotspotsPeriod,
+            onEffisHotspotsPeriodChange: setEffisHotspotsPeriod,
+            isEffisBurnedAreasEnabled,
+            onEffisBurnedAreasToggle: setIsEffisBurnedAreasEnabled,
+            effisBurnedAreasPeriod,
+            onEffisBurnedAreasPeriodChange: setEffisBurnedAreasPeriod,
+            isWildfireLayerEnabled: isWildfireVisible,
+            onWildfireLayerToggle: setIsWildfireLayerEnabledByControl,
+          }}
+          shortcuts={{
+            sidePanels,
+            signalAir,
+            mobileAir,
+            isComparisonPanelVisible,
+          }}
+          communitySources={{
+            onMobileAirLoadRoute: mobileAir.handleMobileAirSensorsSelected,
+          }}
+        />
+
         {/* Contrôle de recherche personnalisé */}
         <CustomSearchControl
           devices={devices}
@@ -940,6 +1086,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           }}
           ref={mapView.mapRef}
           zoomControl={false}
+          attributionControl={false}
           scrollWheelZoom={true}
           doubleClickZoom={true}
           dragging={true}
@@ -951,26 +1098,19 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
         >
           <MapBoundsLock maxBounds={maxBounds} />
           <MapZoomLock minZoom={minZoom} maxZoom={maxZoom} />
+          {/* Attribution en bas-gauche : laisse la légende en bas-droite sur mobile
+              (évite le chevauchement). Pas de position:fixed — voir index.css. */}
+          <AttributionControl position="bottomleft" prefix={false} />
+
           {/* Gestionnaire d'événements pour les clics sur la carte */}
-          <MapClickHandler
-            onMapClick={() => setSearchPinPosition(null)}
-          />
-          {/* Fond de carte initial */}
-          <TileLayer
-            attribution='&copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png"
-            minZoom={0}
-            maxZoom={20}
-          />
+          <MapClickHandler onMapClick={() => setSearchPinPosition(null)} />
+          <MapReadyNotifier onReady={handleMapReady} />
+          {onMapViewChange && (
+            <MapViewSyncHandler onViewChange={onMapViewChange} />
+          )}
 
           {/* Contrôle d'échelle */}
           <ScaleControl
-            isSidePanelOpen={sidePanels.isSidePanelOpen}
-            panelSize={sidePanels.panelSize}
-          />
-
-          {/* Flèche du nord */}
-          <NorthArrow
             isSidePanelOpen={sidePanels.isSidePanelOpen}
             panelSize={sidePanels.panelSize}
           />
@@ -1002,11 +1142,13 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
             isSignalAirVisible={isSignalAirVisible}
             reports={reports}
             createSignalIconWrapper={createSignalIconWrapper}
-            handleSignalAirMarkerClickWrapper={handleSignalAirMarkerClickWrapper}
+            handleSignalAirMarkerClickWrapper={
+              handleSignalAirMarkerClickWrapper
+            }
           />
 
           {/* Marqueurs pour les incendies en cours */}
-          {wildfire.isWildfireLayerEnabled &&
+          {isWildfireVisible &&
             wildfire.wildfireReports.map((incident) => (
               <Marker
                 key={`wildfire-${incident.id}`}
@@ -1018,12 +1160,6 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
                     <h3 className="font-bold text-lg mb-2">{incident.title}</h3>
                     <div className="space-y-2 text-sm">
                       <p>
-                        <strong>Commune:</strong> {incident.commune}
-                      </p>
-                      <p>
-                        <strong>Type:</strong> {incident.type || "Non spécifié"}
-                      </p>
-                      <p>
                         <strong>Statut:</strong> {incident.status || "Inconnu"}
                       </p>
                       {incident.fireState && (
@@ -1031,22 +1167,27 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
                           <strong>État du feu:</strong> {incident.fireState}
                         </p>
                       )}
-                      <p>
-                        <strong>Déclaré:</strong> {formatWildfireDate(incident)}
-                      </p>
-                      {incident.description && (
-                        <p className="whitespace-pre-line">
-                          <strong>Description:</strong> {incident.description}
+                      {incident.url && (
+                        <p>
+                          <a
+                            href={incident.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-700 underline"
+                          >
+                            Voir le signalement complet
+                          </a>
                         </p>
                       )}
-                      <p>
+                      <p className="text-xs text-gray-500 pt-1 border-t border-gray-100">
+                        Source :{" "}
                         <a
-                          href={incident.url}
+                          href="https://feuxdeforet.fr"
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-600 hover:text-blue-700 underline"
                         >
-                          Voir le signalement complet
+                          feuxdeforet.fr
                         </a>
                       </p>
                     </div>
@@ -1054,17 +1195,27 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
                 </Popup>
               </Marker>
             ))}
-
         </MapContainer>
 
         <MapOverlays
           signalAir={signalAir}
+          promo={
+            featureFlags.useAdvertising && advertisingConfig.sensorShopUrl
+              ? {
+                  shopUrl: advertisingConfig.sensorShopUrl,
+                  hidden: Boolean(isHistoricalDatePanelVisible),
+                }
+              : null
+          }
+          appNotices={mapControls.ui.notices}
           t={t}
           sidePanels={sidePanels}
-          currentBaseLayer={currentBaseLayer}
-          setCurrentBaseLayer={setCurrentBaseLayer}
-          isCommunalLayerEnabled={isCommunalLayerEnabled}
-          setIsCommunalLayerEnabled={setIsCommunalLayerEnabled}
+          isEffisHotspotsEnabled={isEffisHotspotsEnabled}
+          effisHotspotsPeriod={effisHotspotsPeriod}
+          isEffisBurnedAreasEnabled={isEffisBurnedAreasEnabled}
+          effisBurnedAreasPeriod={effisBurnedAreasPeriod}
+          isHotspotsBeyondRetention={isHotspotsBeyondRetention}
+          isWildfireVisible={isWildfireVisible}
           shouldShowStandardLegend={shouldShowStandardLegend}
           selectedPollutant={selectedPollutant}
           isComparisonPanelVisible={isComparisonPanelVisible}
@@ -1077,24 +1228,13 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           selectedSources={selectedSources}
           selectedTimeStep={selectedTimeStep}
           historicalCurrentDate={historicalCurrentDate}
-          isPollutantForecastMode={
-            shouldOverrideDisplayedPeriod && currentModelingLayer === "pollutant"
-          }
+          isPollutantForecastMode={currentModelingLayer === "pollutant"}
           modelingHourIndex={modelingHourIndex ?? null}
           locale={i18n.language}
           statistics={statistics}
           sourceStatistics={sourceStatistics}
         />
       </div>
-
-      <MapFloatingActions
-        sidePanels={sidePanels}
-        signalAir={signalAir}
-        mobileAir={mobileAir}
-        isComparisonPanelVisible={isComparisonPanelVisible}
-        selectedSources={selectedSources}
-        t={t}
-      />
     </div>
   );
 };

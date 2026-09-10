@@ -87,7 +87,7 @@ export const createSeriesTooltip = (
       label += " " + i18n.t("chart.correctedSuffix");
     }
     
-    tooltipText += `${label}: ${typeof value === "number" ? value.toFixed(1) : value} ${encodedUnit}`;
+    tooltipText += `${label}: ${typeof value === "number" ? value.toFixed(2) : value} ${encodedUnit}`;
     
     return tooltipText;
   });
@@ -419,4 +419,171 @@ export function restoreLegendAfterExport(
   legend.set("height", saved.height);
   legend.set("layout", saved.layout);
 }
+
+const PLAYBACK_MARKER_SERIES_ID = "__playback_marker__";
+
+export const getPlaybackMarkerSeriesId = (): string => PLAYBACK_MARKER_SERIES_ID;
+
+const isValidChartValue = (value: unknown): boolean =>
+  value !== null && value !== undefined && !Number.isNaN(value as number);
+
+/**
+ * Détermine la clé de la série principale pour le marqueur de lecture.
+ */
+export const getPrimaryPlaybackDataKey = (
+  source: string,
+  selectedPollutants: string[],
+  showRawData: boolean,
+  chartData: any[]
+): string | null => {
+  if (!selectedPollutants.length || !chartData.length) {
+    return null;
+  }
+
+  const pollutant = selectedPollutants[0];
+  const normalizedSource = source?.toLowerCase() ?? "";
+
+  if (normalizedSource === "atmomicro") {
+    const correctedKey = `${pollutant}_corrected`;
+    const hasCorrected = chartData.some((point) =>
+      isValidChartValue(point[correctedKey])
+    );
+    if (hasCorrected && !showRawData) {
+      return correctedKey;
+    }
+
+    const rawKey = `${pollutant}_raw`;
+    const hasRaw = chartData.some((point) => isValidChartValue(point[rawKey]));
+    if (hasRaw) {
+      return rawKey;
+    }
+  }
+
+  return pollutant;
+};
+
+/**
+ * Trouve le point de mesure valide le plus proche du timestamp de lecture.
+ */
+export const findNearestPlaybackPoint = (
+  chartData: any[],
+  playbackTimestamp: number,
+  dataKey: string
+): { timestamp: number; value: number } | null => {
+  if (!chartData.length || Number.isNaN(playbackTimestamp)) {
+    return null;
+  }
+
+  let nearest: { timestamp: number; value: number } | null = null;
+  let minDistance = Infinity;
+
+  chartData.forEach((point) => {
+    const value = point[dataKey];
+    if (!isValidChartValue(value)) {
+      return;
+    }
+
+    const timestamp =
+      typeof point.timestamp === "number"
+        ? point.timestamp
+        : new Date(point.timestamp).getTime();
+
+    if (Number.isNaN(timestamp)) {
+      return;
+    }
+
+    const distance = Math.abs(timestamp - playbackTimestamp);
+    if (distance < minDistance) {
+      minDistance = distance;
+      nearest = { timestamp, value: value as number };
+    }
+  });
+
+  return nearest;
+};
+
+const SLIM_Y_RAIL_PX = 5;
+const SLIM_Y_GRIP_PX = 9;
+
+/**
+ * Scrollbar Y fine et discrète : rail de 5px, grips circulaires miniatures.
+ * Remplace la scrollbar amCharts par défaut (trop large en side panel).
+ */
+export const createSlimYScrollbar = (
+  root: am5.Root,
+  margins: { top: number; bottom: number }
+): am5.Scrollbar => {
+  const scrollbar = am5.Scrollbar.new(root, {
+    orientation: 'vertical',
+    width: SLIM_Y_RAIL_PX,
+    minWidth: SLIM_Y_RAIL_PX,
+    maxWidth: SLIM_Y_RAIL_PX,
+    marginTop: margins.top,
+    marginBottom: margins.bottom,
+  });
+
+  const track = scrollbar.get('background');
+  if (track) {
+    track.setAll({
+      fill: am5.color(0x94a3b8),
+      fillOpacity: 0.18,
+      strokeOpacity: 0,
+      cornerRadiusTL: 999,
+      cornerRadiusTR: 999,
+      cornerRadiusBL: 999,
+      cornerRadiusBR: 999,
+    });
+  }
+
+  scrollbar.thumb.setAll({
+    width: SLIM_Y_RAIL_PX,
+    fill: am5.color(0x64748b),
+    fillOpacity: 0.55,
+    strokeOpacity: 0,
+    cornerRadiusTL: 999,
+    cornerRadiusTR: 999,
+    cornerRadiusBL: 999,
+    cornerRadiusBR: 999,
+  });
+
+  scrollbar.thumb.states.create('hover', {
+    fill: am5.color(0x475569),
+    fillOpacity: 0.75,
+  });
+
+  scrollbar.thumb.states.create('down', {
+    fill: am5.color(0x334155),
+    fillOpacity: 0.9,
+  });
+
+  [scrollbar.startGrip, scrollbar.endGrip].forEach((grip) => {
+    grip.setAll({
+      width: SLIM_Y_GRIP_PX,
+      height: SLIM_Y_GRIP_PX,
+      scale: 1,
+    });
+
+    const bg = grip.get('background');
+    if (bg) {
+      bg.setAll({
+        fill: am5.color(0x475569),
+        fillOpacity: 0.85,
+        stroke: am5.color(0xffffff),
+        strokeWidth: 1.5,
+        strokeOpacity: 0.9,
+        cornerRadiusTL: 999,
+        cornerRadiusTR: 999,
+        cornerRadiusBL: 999,
+        cornerRadiusBR: 999,
+      });
+    }
+
+    const icon = grip.get('icon');
+    if (icon) {
+      icon.set('forceHidden', true);
+    }
+  });
+
+  return scrollbar;
+};
 

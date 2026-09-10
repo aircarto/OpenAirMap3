@@ -1,5 +1,9 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { MeasurementDevice, SignalAirReport } from "../types";
+import {
+  AtmoMicroLikeService,
+  MeasurementDevice,
+  SignalAirReport,
+} from "../types";
 import { DataServiceFactory } from "../services/DataServiceFactory";
 import { AtmoMicroMeasuresUnavailableError } from "../services/AtmoMicroService";
 import { pasDeTemps } from "../constants/timeSteps";
@@ -8,7 +12,7 @@ interface UseAirQualityDataProps {
   selectedPollutant: string;
   selectedSources: string[];
   selectedTimeStep: string;
-  atmoMicroAllowedSiteIds?: number[];
+  atmoMicroAllowedSiteIds?: Array<string | number>;
   signalAirPeriod?: { startDate: string; endDate: string };
   mobileAirPeriod?: { startDate: string; endDate: string };
   selectedMobileAirSensor?: string | null;
@@ -82,7 +86,11 @@ export const useAirQualityData = ({
     if (!atmoMicroAllowedSiteIds || atmoMicroAllowedSiteIds.length === 0) {
       return null;
     }
-    return new Set(atmoMicroAllowedSiteIds.map((id) => id.toString()));
+    // Normalise en majuscules : microspot renvoie des device.id hexadécimaux
+    // parfois en casse mixte, alors que la whitelist est en majuscules.
+    return new Set(
+      atmoMicroAllowedSiteIds.map((id) => id.toString().toUpperCase())
+    );
   }, [atmoMicroAllowedSiteIds]);
 
   const fetchData = useCallback(async () => {
@@ -257,10 +265,10 @@ export const useAirQualityData = ({
       }
 
 
-      // Traiter chaque service individuellement pour un affichage progressif
+      // Traiter chaque service individuellement pour un affichage progressif - TODO: Vérifier si fetchableIndexes est toujours utile
       for (const index of fetchableIndexes) {
         const service = services[index];
-        const sourceCode = selectedSources[index]; // Code original pour l'affichage
+        const sourceCode = filteredSources[index]; // Code original pour l'affichage
         const mappedSourceCode = mappedSources[index]; // Code réel du service
 
         try {
@@ -292,7 +300,9 @@ export const useAirQualityData = ({
             // Filtre domaine: ne garder que certains sites AtmoMicro
             const filteredMeasurementDevices =
               mappedSourceCode === "atmoMicro" && atmoMicroAllowedSiteIdsSet
-                ? measurementDevices.filter((d) => atmoMicroAllowedSiteIdsSet.has(d.id))
+                ? measurementDevices.filter((d) =>
+                    atmoMicroAllowedSiteIdsSet.has(d.id.toUpperCase())
+                  )
                 : measurementDevices;
 
             // Mettre à jour les appareils de mesure
@@ -327,6 +337,16 @@ export const useAirQualityData = ({
               });
             }
           }
+
+          if (mappedSourceCode === "atmoMicro") {
+            // Les deux implémentations AtmoMicro (ancienne API et microspot)
+            // exposent ce contrat, d'où le transtypage vers l'interface plutôt
+            // qu'un test d'existence de méthode.
+            const atmoMicroService = service as unknown as AtmoMicroLikeService;
+            setAtmoMicroOutage(
+              atmoMicroService.isMeasuresUnavailableIncident() === true
+            );
+          }
         } catch (err) {
           console.error(
             `❌ Erreur lors de la récupération des données pour ${sourceCode}:`,
@@ -338,10 +358,6 @@ export const useAirQualityData = ({
             err instanceof AtmoMicroMeasuresUnavailableError
           ) {
             setAtmoMicroOutage(true);
-            // En incident mesures/dernieres, retirer les points AtmoMicro affichés.
-            setDevices((prevDevices) =>
-              prevDevices.filter((device) => device.source !== "atmoMicro")
-            );
           }
 
           // En cas d'erreur, on garde les données existantes mais on retire la source du loading

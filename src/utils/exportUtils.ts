@@ -138,6 +138,8 @@ export const exportAmChartsAsPNG = async (
     const root = resolveAmChartsRootFromContainer(container);
     let previousTooltipContainerVisible: boolean | undefined;
     let previousCursorVisible: boolean | undefined;
+    let previousZoomOutButtonForceHidden: any;
+    let zoomOutButtonWasHidden = false;
     const tooltipForceHiddenState: Array<{
       tooltip: { get: (key: string) => any; set: (key: string, value: any) => void };
       previousForceHidden: any;
@@ -162,6 +164,14 @@ export const exportAmChartsAsPNG = async (
       if (cursor?.get && cursor?.set) {
         previousCursorVisible = cursor.get("visible");
         cursor.set("visible", false);
+      }
+
+      // Masquer le bouton natif de dézoom amCharts pendant la capture
+      const zoomOutButton = chart?.zoomOutButton;
+      if (zoomOutButton?.get && zoomOutButton?.set) {
+        previousZoomOutButtonForceHidden = zoomOutButton.get("forceHidden");
+        zoomOutButton.set("forceHidden", true);
+        zoomOutButtonWasHidden = true;
       }
 
       if (chart?.series?.each) {
@@ -312,6 +322,11 @@ export const exportAmChartsAsPNG = async (
       const cursor = chart?.get?.("cursor");
       if (cursor?.set && typeof previousCursorVisible !== "undefined") {
         cursor.set("visible", previousCursorVisible);
+      }
+
+      const zoomOutButton = chart?.zoomOutButton;
+      if (zoomOutButton?.set && zoomOutButtonWasHidden) {
+        zoomOutButton.set("forceHidden", previousZoomOutButtonForceHidden ?? false);
       }
 
       tooltipForceHiddenState.forEach(({ tooltip, previousForceHidden }) => {
@@ -879,17 +894,18 @@ export const exportDataAsCSV = (
       stations.forEach((station) => {
         headers.push(station.name);
       });
-    } else if (source === "atmoRef" || source === "mobileair") {
-      // AtmoRef : une seule colonne par polluant (pas de distinction brut/corrigé)
-      selectedPollutants.forEach((pollutant) => {
-        const pollutantName = pollutants[pollutant]?.name || pollutant;
-        headers.push(pollutantName);
-      });
-    } else {
-      // Mode normal : une colonne par polluant (corrigé et brut)
+    } else if (source === "atmoMicro") {
+      // AtmoMicro : distinction entre valeur corrigée et valeur brute
       selectedPollutants.forEach((pollutant) => {
         headers.push(`${pollutant} (corrigé)`);
         headers.push(`${pollutant} (brut)`);
+      });
+    } else {
+      // Autres sources (AtmoRef, MobileAir, NebuleAir, etc.) : une seule colonne
+      // par polluant, ces sources ne fournissant pas de distinction brut/corrigé
+      selectedPollutants.forEach((pollutant) => {
+        const pollutantName = pollutants[pollutant]?.name || pollutant;
+        headers.push(pollutantName);
       });
     }
 
@@ -912,16 +928,17 @@ export const exportDataAsCSV = (
             // Si la valeur n'existe pas, mettre une chaîne vide
             values.push(value !== undefined && value !== null ? value : "");
           });
-        } else if (source === "atmoRef" || source === "mobileair") {
-          // AtmoRef/MobileAir : lire directement depuis la clé du polluant (pas de _corrected ou _raw)
-          selectedPollutants.forEach((pollutant) => {
-            values.push(row[pollutant] || "");
-          });
-        } else {
-          // Mode normal : données corrigées et brutes
+        } else if (source === "atmoMicro") {
+          // AtmoMicro : données corrigées et brutes
           selectedPollutants.forEach((pollutant) => {
             values.push(row[`${pollutant}_corrected`] || "");
             values.push(row[`${pollutant}_raw`] || "");
+          });
+        } else {
+          // Autres sources (AtmoRef, MobileAir, NebuleAir, etc.) : lire directement
+          // depuis la clé du polluant (pas de distinction _corrected/_raw)
+          selectedPollutants.forEach((pollutant) => {
+            values.push(row[pollutant] || "");
           });
         }
 

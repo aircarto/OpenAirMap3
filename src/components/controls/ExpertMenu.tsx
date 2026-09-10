@@ -26,6 +26,9 @@ interface ExpertMenuProps {
   // Option fond coloré par seuil (mode daltoniens)
   hideThresholdBackgroundForColorblind?: boolean;
   onHideThresholdBackgroundForColorblindChange?: (checked: boolean) => void;
+
+  // Mode historique : seule l'option "données brutes" reste active
+  historicalLocked?: boolean;
 }
 
 const ExpertMenu: React.FC<ExpertMenuProps> = ({
@@ -39,6 +42,7 @@ const ExpertMenu: React.FC<ExpertMenuProps> = ({
   rawDataAvailable = false,
   hideThresholdBackgroundForColorblind = false,
   onHideThresholdBackgroundForColorblindChange,
+  historicalLocked = false,
 }) => {
   const { t } = useTranslation();
   // Compter le nombre d'options actives pour l'indicateur
@@ -121,7 +125,7 @@ const ExpertMenu: React.FC<ExpertMenuProps> = ({
           <DropdownMenuCheckboxItem
             checked={showModeling}
             onCheckedChange={onModelingChange}
-            disabled={modelingDisabled || loadingModeling}
+            disabled={modelingDisabled || loadingModeling || historicalLocked}
             className="px-3 py-2.5 cursor-pointer"
           >
             <div className="flex flex-col gap-1">
@@ -175,6 +179,7 @@ const ExpertMenu: React.FC<ExpertMenuProps> = ({
             <DropdownMenuCheckboxItem
               checked={hideThresholdBackgroundForColorblind}
               onCheckedChange={onHideThresholdBackgroundForColorblindChange}
+              disabled={historicalLocked}
               className="px-3 py-2.5 cursor-pointer"
             >
               <div className="flex flex-col gap-1">

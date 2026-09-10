@@ -13,7 +13,51 @@ import {
   createLineSeries,
   addThresholdZones,
   setupLegend,
+  getPrimaryPlaybackDataKey,
+  findNearestPlaybackPoint,
+  getPlaybackMarkerSeriesId,
+  createSlimYScrollbar,
 } from "../utils/amChartsHelpers";
+import { getHistoricalAxisRange } from "../../../utils/historicalTimeRange";
+
+const applyFixedXAxisRange = (
+  xAxis: am5xy.DateAxis<am5xy.AxisRenderer>,
+  minStr?: string,
+  maxStr?: string,
+  zoomToFullRange = true,
+  timeStep?: string,
+  dataPoints?: Array<{ timestampValue?: number }>
+): boolean => {
+  if (!minStr || !maxStr) {
+    xAxis.set("strictMinMax", false);
+    xAxis.set("min", undefined);
+    xAxis.set("max", undefined);
+    xAxis.set("extraMin", 0);
+    xAxis.set("extraMax", 0);
+    return false;
+  }
+
+  const range = getHistoricalAxisRange(minStr, maxStr, timeStep, dataPoints);
+  if (!range) {
+    return false;
+  }
+
+  xAxis.set("strictMinMax", true);
+  xAxis.set("min", range.min);
+  xAxis.set("max", range.max);
+  xAxis.set("extraMin", 0.01);
+  xAxis.set("extraMax", 0.01);
+
+  if (zoomToFullRange) {
+    try {
+      xAxis.zoomToDates(new Date(range.min), new Date(range.max));
+    } catch {
+      // Ignorer les erreurs de zoom
+    }
+  }
+
+  return true;
+};
 
 interface UseAmChartsChartProps {
   containerRef: React.RefObject<HTMLDivElement | null>;
@@ -29,6 +73,12 @@ interface UseAmChartsChartProps {
   isLandscapeMobile: boolean;
   stationInfo: any | null;
   timeStep?: string;
+  xAxisMin?: string;
+  xAxisMax?: string;
+  playbackMarkerDate?: string;
+  source?: string;
+  selectedPollutants?: string[];
+  showRawData?: boolean;
 }
 
 export const useAmChartsChart = ({
@@ -45,6 +95,12 @@ export const useAmChartsChart = ({
   isLandscapeMobile,
   stationInfo,
   timeStep,
+  xAxisMin,
+  xAxisMax,
+  playbackMarkerDate,
+  source = "",
+  selectedPollutants = [],
+  showRawData = true,
 }: UseAmChartsChartProps) => {
   const chartRef = useRef<am5xy.XYChart | null>(null);
   const rootRef = useRef<am5.Root | null>(null);
@@ -53,23 +109,39 @@ export const useAmChartsChart = ({
   );
   const unitKeysRef = useRef<string[]>(unitKeys);
   const seriesConfigsRef = useRef<SeriesConfig[]>(seriesConfigs);
+  const xAxisMinRef = useRef(xAxisMin);
+  const xAxisMaxRef = useRef(xAxisMax);
+  const timeStepRef = useRef(timeStep);
+  // Dernier jeu de données connu : les mises à jour différées (setTimeout) doivent
+  // TOUJOURS repartir de cette ref et jamais de la valeur capturée dans leur closure,
+  // sinon un jeu obsolète peut écraser des données déjà appliquées.
+  const amChartsDataRef = useRef(amChartsData);
   unitKeysRef.current = unitKeys;
   seriesConfigsRef.current = seriesConfigs;
+  xAxisMinRef.current = xAxisMin;
+  xAxisMaxRef.current = xAxisMax;
+  timeStepRef.current = timeStep;
+  amChartsDataRef.current = amChartsData;
 
   // Mettre à jour la ref du formatter quand xAxisDateFormat change
   useEffect(() => {
     xAxisDateFormatRef.current = xAxisDateFormat;
   }, [xAxisDateFormat]);
 
-  // Création initiale du graphique
+  // Création du graphique.
+  // Dépend de la présence de données : quand il n'y en a pas, HistoricalChart
+  // n'affiche pas le conteneur DOM et la création est impossible. L'effet doit
+  // donc être rejoué dès que des données arrivent (et le graphique détruit quand
+  // elles disparaissent), sinon le graphique ne serait jamais créé pour cette
+  // instance et resterait vide définitivement.
+  const hasChartData = chartData.length > 0;
   useEffect(() => {
-    if (!containerRef.current) {
-      console.warn("[HistoricalChart] Conteneur DOM non disponible");
+    if (!hasChartData) {
       return;
     }
 
-    if (!chartData || chartData.length === 0) {
-      console.warn("[HistoricalChart] Aucune donnée à afficher");
+    if (!containerRef.current) {
+      console.warn("[HistoricalChart] Conteneur DOM non disponible");
       return;
     }
 
@@ -88,11 +160,11 @@ export const useAmChartsChart = ({
     const chart = root.container.children.push(
       am5xy.XYChart.new(root, {
         panX: true,
-        panY: true, // Permet le déplacement vertical (scrollbar Y native)
+        panY: true,
         wheelX: "panX",
-        wheelY: "zoomX", // Molette inversée : zoom sur l'axe X
+        wheelY: "zoomX", // Molette : zoom sur l'axe X
         pinchZoomX: true,
-        pinchZoomY: true,
+        pinchZoomY: false, // Zoom Y dédié via le rail fin (scrollbarY)
         layout: root.verticalLayout,
         paddingTop: chartMargins.top,
         paddingRight: chartMargins.right,
@@ -130,6 +202,8 @@ export const useAmChartsChart = ({
         }),
       })
     );
+
+    applyFixedXAxisRange(xAxis, xAxisMin, xAxisMax, true, timeStep, amChartsData);
 
     // Configurer la grille verticale
     xAxis.get("renderer").grid.template.setAll({
@@ -182,7 +256,7 @@ export const useAmChartsChart = ({
         })
       );
 
-      // Ajouter le label (traduit) uniquement pour l'axe droit ; l'axe gauche a son label à part (ordre Label → Contrôle → Graduation)
+      // Label axe droit uniquement ; l'axe gauche a son label à part (Label → Rail → Graduation)
       if (yAxisId === "right") {
         yAxis.children.push(
           am5.Label.new(root, {
@@ -237,17 +311,15 @@ export const useAmChartsChart = ({
       );
     });
 
-    // Scrollbar Y native amCharts : zoom/pan sur l'axe Y directement sur l'axe
-    const scrollbarY = am5.Scrollbar.new(root, {
-      orientation: "vertical",
-      marginTop: chartMargins.top,
-      marginBottom: chartMargins.bottom,
+    // Rail Y fin : zoom/pan vertical uniquement (indépendant de Ctrl+glisser = zoom X)
+    const scrollbarY = createSlimYScrollbar(root, {
+      top: chartMargins.top,
+      bottom: chartMargins.bottom,
     });
     chart.set("scrollbarY", scrollbarY);
-    // Positionner la scrollbar à gauche (côté axe Y) au lieu de la droite par défaut
     chart.leftAxesContainer.children.push(scrollbarY);
 
-    // Ordre axe gauche : Label → Contrôle (scrollbar) → Graduation
+    // Ordre axe gauche : Label → Rail → Graduation
     if (unitKeys.length > 0) {
       const yAxisLabel = am5.Label.new(root, {
         rotation: -90,
@@ -261,7 +333,7 @@ export const useAmChartsChart = ({
     }
 
     // Créer le curseur : par défaut pas de zoom au drag (le drag sert au déplacement)
-    // Le zoom au drag est activé uniquement quand Ctrl est maintenu.
+    // Ctrl maintenu => zoom X uniquement (le Y reste piloté par le rail)
     const cursor = chart.set(
       "cursor",
       am5xy.XYCursor.new(root, {
@@ -277,10 +349,10 @@ export const useAmChartsChart = ({
     cursor.lineX.set("visible", true);
 
     // Basculer le mode du curseur selon Ctrl :
-    // - Ctrl enfoncé => zoom au drag
-    // - Ctrl relâché => drag = pan (déplacement)
+    // - Ctrl enfoncé => zoom temporel (X)
+    // - Ctrl relâché => drag = pan
     const setCursorBehaviorFromCtrl = (ctrlPressed: boolean) => {
-      cursor.set("behavior", ctrlPressed ? "zoomXY" : "none");
+      cursor.set("behavior", ctrlPressed ? "zoomX" : "none");
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -319,8 +391,34 @@ export const useAmChartsChart = ({
         rootRef.current = null;
         chartRef.current = null;
       }
+      // Le graphique est détruit : les mémos de comparaison doivent repartir de
+      // zéro pour que les données et les séries soient bien réappliquées si un
+      // nouveau graphique est créé.
+      lastAmChartsDataRef.current = "";
+      lastSeriesConfigsRef.current = "";
+      isUpdatingRef.current = false;
     };
-  }, []); // Création initiale uniquement
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- création/destruction pilotée par la disponibilité des données ; mises à jour via les autres effets et i18n.on
+  }, [hasChartData]);
+
+  useEffect(() => {
+    if (!chartRef.current) return;
+
+    const xAxis = chartRef.current.xAxes.getIndex(
+      0
+    ) as am5xy.DateAxis<am5xy.AxisRendererX>;
+
+    if (!xAxis) return;
+
+    applyFixedXAxisRange(
+      xAxis,
+      xAxisMin,
+      xAxisMax,
+      true,
+      timeStep,
+      amChartsData
+    );
+  }, [xAxisMin, xAxisMax, timeStep, amChartsData]);
 
   // Mettre à jour les labels de l'axe Y et la légende quand la langue change (au re-render)
   useEffect(() => {
@@ -356,7 +454,7 @@ export const useAmChartsChart = ({
         }
       });
     }
-  }, [unitKeys, i18n.language, seriesConfigs]);
+  }, [unitKeys, seriesConfigs]);
 
   // Mise à jour des labels et légende au changement de langue (sans dépendre du re-render)
   useEffect(() => {
@@ -408,6 +506,7 @@ export const useAmChartsChart = ({
   const lastAmChartsDataRef = useRef<string>("");
   const isUpdatingRef = useRef(false);
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const zoomTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Mise à jour des données sans recréer le graphique
   useEffect(() => {
@@ -428,8 +527,11 @@ export const useAmChartsChart = ({
       }
       // Programmer une mise à jour après un court délai
       updateTimeoutRef.current = setTimeout(() => {
-        // Réessayer la mise à jour
-        const currentDataKey = JSON.stringify(amChartsData);
+        updateTimeoutRef.current = null;
+        // Toujours repartir des données les plus récentes (ref), jamais de la
+        // closure : de nouvelles données peuvent être arrivées pendant l'attente.
+        const latestData = amChartsDataRef.current;
+        const currentDataKey = JSON.stringify(latestData);
         if (lastAmChartsDataRef.current !== currentDataKey) {
           lastAmChartsDataRef.current = currentDataKey;
           isUpdatingRef.current = false;
@@ -442,8 +544,18 @@ export const useAmChartsChart = ({
             ) as am5xy.DateAxis<am5xy.AxisRendererX>;
             if (xAxis) {
               chart.series.values.forEach((lineSeries) => {
-                (lineSeries as am5xy.LineSeries).data.setAll(amChartsData);
+                (lineSeries as am5xy.LineSeries).data.setAll(latestData);
               });
+              if (xAxisMinRef.current && xAxisMaxRef.current) {
+                applyFixedXAxisRange(
+                  xAxis,
+                  xAxisMinRef.current,
+                  xAxisMaxRef.current,
+                  true,
+                  timeStepRef.current,
+                  latestData
+                );
+              }
             }
           }
         }
@@ -469,18 +581,24 @@ export const useAmChartsChart = ({
       return;
     }
 
-    // Préserver l'état du zoom
+    const hasFixedHistoricalRange = Boolean(
+      xAxisMinRef.current && xAxisMaxRef.current
+    );
+
+    // Préserver l'état du zoom uniquement hors mode historique figé
     let zoomStart: number | undefined;
     let zoomEnd: number | undefined;
-    try {
-      const start = (xAxis as any).getPrivate("start");
-      const end = (xAxis as any).getPrivate("end");
-      if (start !== undefined && end !== undefined) {
-        zoomStart = start as number;
-        zoomEnd = end as number;
+    if (!hasFixedHistoricalRange) {
+      try {
+        const start = (xAxis as any).getPrivate("start");
+        const end = (xAxis as any).getPrivate("end");
+        if (start !== undefined && end !== undefined) {
+          zoomStart = start as number;
+          zoomEnd = end as number;
+        }
+      } catch {
+        // Ignorer si on ne peut pas récupérer le zoom
       }
-    } catch (e) {
-      // Ignorer si on ne peut pas récupérer le zoom
     }
 
     // Mettre à jour les données de chaque série
@@ -488,19 +606,27 @@ export const useAmChartsChart = ({
       (lineSeries as am5xy.LineSeries).data.setAll(amChartsData);
     });
 
-    // Restaurer le zoom avec un petit délai pour laisser amCharts mettre à jour
-    if (zoomStart !== undefined && zoomEnd !== undefined) {
-      setTimeout(() => {
-        try {
-          xAxis.zoomToDates(new Date(zoomStart!), new Date(zoomEnd!));
-        } catch (e) {
-          // Ignorer les erreurs de zoom
+    // Restaurer le zoom ou cadrer sur toute la période historique
+    zoomTimeoutRef.current = setTimeout(() => {
+      zoomTimeoutRef.current = null;
+      try {
+        if (hasFixedHistoricalRange) {
+          applyFixedXAxisRange(
+            xAxis,
+            xAxisMinRef.current,
+            xAxisMaxRef.current,
+            true,
+            timeStepRef.current,
+            amChartsDataRef.current
+          );
+        } else if (zoomStart !== undefined && zoomEnd !== undefined) {
+          xAxis.zoomToDates(new Date(zoomStart), new Date(zoomEnd));
         }
-        isUpdatingRef.current = false;
-      }, 10);
-    } else {
+      } catch {
+        // Ignorer les erreurs de zoom
+      }
       isUpdatingRef.current = false;
-    }
+    }, 10);
 
     // Nettoyage au démontage
     return () => {
@@ -508,11 +634,27 @@ export const useAmChartsChart = ({
         clearTimeout(updateTimeoutRef.current);
         updateTimeoutRef.current = null;
       }
+      if (zoomTimeoutRef.current) {
+        clearTimeout(zoomTimeoutRef.current);
+        zoomTimeoutRef.current = null;
+        isUpdatingRef.current = false;
+      }
     };
   }, [amChartsData]);
 
   // Ref pour mémoriser la dernière configuration des séries
   const lastSeriesConfigsRef = useRef<string>("");
+  const seriesDataTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Annuler la mise à jour différée des séries au démontage
+  useEffect(() => {
+    return () => {
+      if (seriesDataTimeoutRef.current) {
+        clearTimeout(seriesDataTimeoutRef.current);
+        seriesDataTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   // Mise à jour des séries (quand la configuration change)
   useEffect(() => {
@@ -593,19 +735,44 @@ export const useAmChartsChart = ({
     // Forcer une mise à jour du graphique après recréation des séries
     // Cela garantit que les données sont bien appliquées avec le bon connectNulls
     // Utiliser un petit délai pour s'assurer que les séries sont bien créées
-    setTimeout(() => {
-      if (chartRef.current && amChartsData && amChartsData.length > 0) {
+    if (seriesDataTimeoutRef.current) {
+      clearTimeout(seriesDataTimeoutRef.current);
+    }
+    seriesDataTimeoutRef.current = setTimeout(() => {
+      seriesDataTimeoutRef.current = null;
+      // IMPORTANT: repartir des données les plus récentes (ref) et non de la
+      // closure. Sinon, si de nouvelles données ont été appliquées entre-temps
+      // (ex. réponse API arrivée en moins de 50 ms après un changement de pas
+      // de temps), ce timeout réécrirait le jeu obsolète et la courbe
+      // disparaîtrait (points isolés entourés de null avec connect: false).
+      const latestData = amChartsDataRef.current;
+      if (chartRef.current && latestData && latestData.length > 0) {
         const chart = chartRef.current;
+        const xAxis = chart.xAxes.getIndex(
+          0
+        ) as am5xy.DateAxis<am5xy.AxisRendererX>;
         // Mettre à jour les données de toutes les séries
         chart.series.values.forEach((lineSeries) => {
           const series = lineSeries as am5xy.LineSeries;
-          series.data.setAll(amChartsData);
+          series.data.setAll(latestData);
           // S'assurer que connect est bien configuré selon timeStep
+          const currentTimeStep = timeStepRef.current;
           const isAggregatedTimeStep =
-            timeStep && ["quartHeure", "heure", "jour"].includes(timeStep);
+            currentTimeStep &&
+            ["quartHeure", "heure", "jour"].includes(currentTimeStep);
           const shouldConnect = !isAggregatedTimeStep;
           series.set("connect" as keyof am5xy.IXYSeriesSettings, shouldConnect);
         });
+        if (xAxis && xAxisMinRef.current && xAxisMaxRef.current) {
+          applyFixedXAxisRange(
+            xAxis,
+            xAxisMinRef.current,
+            xAxisMaxRef.current,
+            true,
+            timeStepRef.current,
+            latestData
+          );
+        }
       }
     }, 50);
   }, [seriesConfigs, amChartsData, timeStep]);
@@ -712,7 +879,178 @@ export const useAmChartsChart = ({
     xAxis.get("renderer").labels.template.setAll({
       fontSize: isMobile ? 7 : isLandscapeMobile ? 9 : 12,
     });
-  }, [chartMargins, isMobile, isLandscapeMobile]);
+  }, [chartMargins, isMobile, isLandscapeMobile, timeStep]);
+
+  const playbackRangeDataItemRef = useRef<am5.DataItem<am5xy.IDateAxisDataItem> | null>(
+    null
+  );
+  const playbackRangeRef = useRef<am5.DataItem<am5xy.IDateAxisDataItem> | null>(
+    null
+  );
+  const playbackSeriesRef = useRef<am5xy.LineSeries | null>(null);
+
+  useEffect(() => {
+    const chart = chartRef.current;
+    const root = rootRef.current;
+    if (!chart || !root) {
+      return;
+    }
+
+    const xAxis = chart.xAxes.getIndex(
+      0
+    ) as am5xy.DateAxis<am5xy.AxisRendererX>;
+    if (!xAxis) {
+      return;
+    }
+
+    const clearPlaybackMarker = () => {
+      if (playbackRangeRef.current) {
+        xAxis.axisRanges.removeValue(playbackRangeRef.current);
+        playbackRangeRef.current.dispose();
+        playbackRangeRef.current = null;
+        playbackRangeDataItemRef.current = null;
+      }
+
+      if (playbackSeriesRef.current) {
+        if (chart.series.values.includes(playbackSeriesRef.current)) {
+          chart.series.removeValue(playbackSeriesRef.current);
+        }
+        playbackSeriesRef.current.dispose();
+        playbackSeriesRef.current = null;
+      }
+    };
+
+    if (!playbackMarkerDate) {
+      clearPlaybackMarker();
+      return;
+    }
+
+    const playbackTimestamp = new Date(playbackMarkerDate).getTime();
+    if (Number.isNaN(playbackTimestamp) || amChartsData.length === 0) {
+      clearPlaybackMarker();
+      return;
+    }
+
+    const dataKey = getPrimaryPlaybackDataKey(
+      source,
+      selectedPollutants,
+      showRawData,
+      amChartsData
+    );
+    if (!dataKey) {
+      clearPlaybackMarker();
+      return;
+    }
+
+    const nearestPoint = findNearestPlaybackPoint(
+      amChartsData,
+      playbackTimestamp,
+      dataKey
+    );
+    if (!nearestPoint) {
+      clearPlaybackMarker();
+      return;
+    }
+
+    const primarySeriesConfig = seriesConfigs.find(
+      (config) => config.dataKey === dataKey
+    );
+    const markerColor = primarySeriesConfig?.color ?? "#4271B3";
+    const yAxisId = primarySeriesConfig?.yAxisId ?? "left";
+
+    const yAxis = chart.yAxes.values.find(
+      (axis) => (axis as any).get("id") === yAxisId
+    ) as am5xy.ValueAxis<am5xy.AxisRendererY> | undefined;
+    if (!yAxis) {
+      clearPlaybackMarker();
+      return;
+    }
+
+    if (!playbackRangeDataItemRef.current || !playbackRangeRef.current) {
+      const rangeDataItem = xAxis.makeDataItem({
+        value: playbackTimestamp,
+      });
+      const range = xAxis.createAxisRange(rangeDataItem);
+      range.get("grid")!.setAll({
+        stroke: am5.color("#4271B3"),
+        strokeOpacity: 0.5,
+        strokeDasharray: [4, 4],
+        visible: true,
+        location: 0,
+      });
+      playbackRangeDataItemRef.current = rangeDataItem;
+      playbackRangeRef.current = range;
+    } else {
+      playbackRangeDataItemRef.current.set("value", playbackTimestamp);
+    }
+
+    const playbackSeriesId = getPlaybackMarkerSeriesId();
+    const markerData = [
+      { timestamp: nearestPoint.timestamp, value: nearestPoint.value },
+    ];
+
+    let playbackSeries = chart.series.values.find(
+      (series) => (series as any).get("id") === playbackSeriesId
+    ) as am5xy.LineSeries | undefined;
+
+    if (!playbackSeries) {
+      playbackSeries = chart.series.push(
+        am5xy.LineSeries.new(root, {
+          id: playbackSeriesId,
+          name: "",
+          xAxis,
+          yAxis,
+          valueYField: "value",
+          valueXField: "timestamp",
+        })
+      );
+      playbackSeries.strokes.template.set("strokeOpacity", 0);
+      playbackSeries.set("connect", false);
+      playbackSeries.bullets.push(() =>
+        am5.Bullet.new(root, {
+          sprite: am5.Circle.new(root, {
+            radius: 6,
+            fill: am5.color(markerColor),
+            stroke: am5.color("#ffffff"),
+            strokeWidth: 2,
+          }),
+        })
+      );
+      playbackSeriesRef.current = playbackSeries;
+    } else {
+      playbackSeriesRef.current = playbackSeries;
+    }
+
+    playbackSeries.data.setAll(markerData);
+
+    chart.children.each((child) => {
+      if (child instanceof am5.Legend) {
+        const legend = child as am5.Legend;
+        legend.data.setAll(
+          chart.series.values.filter(
+            (series) => (series as any).get("id") !== playbackSeriesId
+          )
+        );
+      }
+    });
+
+    const cursor = chart.get("cursor") as am5xy.XYCursor;
+    if (cursor) {
+      cursor.set(
+        "snapToSeries",
+        chart.series.values.filter(
+          (series) => (series as any).get("id") !== playbackSeriesId
+        )
+      );
+    }
+  }, [
+    playbackMarkerDate,
+    amChartsData,
+    seriesConfigs,
+    source,
+    selectedPollutants,
+    showRawData,
+  ]);
 
   return {
     chartRef: chartRef as React.RefObject<am5xy.XYChart | null>,

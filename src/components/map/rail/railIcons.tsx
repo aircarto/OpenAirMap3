@@ -1,0 +1,103 @@
+import React from "react";
+
+/**
+ * Icônes du rail — traits de 1,5 px, grille de 24, `currentColor`.
+ *
+ * Dessinées ici plutôt qu'importées d'une bibliothèque : le rail n'en utilise
+ * qu'une poignée, et aucune dépendance d'icônes n'est installée dans le projet.
+ * Elles remplacent aussi les glyphes texte (✓, ✕) employés jusqu'ici comme
+ * icônes, qui ne se localisent pas et rendent différemment selon la plateforme.
+ */
+
+/*
+ * Trait de 1,75 et non 1,5, à 22 px et non 20.
+ *
+ * Le contraste n'était pas en cause : mesuré, une icône en --fg-muted sur la
+ * surface composée au-dessus d'une carte claire atteint déjà 9,2:1, et opacifier
+ * la surface ne gagne que 0,3 point. Ce qui manquait était la MASSE visuelle.
+ * Le cas du fond sombre est traité ailleurs, par la compensation d'opacité de
+ * `[data-basemap="satellite"]` (6,7:1).
+ */
+const base = {
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 1.75,
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+  className: "h-[22px] w-[22px]",
+};
+
+/** Polluant : particule centrale et satellites */
+export const IconPollutant: React.FC = () => (
+  <svg {...base} aria-hidden="true">
+    <circle cx="12" cy="12" r="3.25" />
+    <circle cx="18.5" cy="6.5" r="1.4" />
+    <circle cx="5.5" cy="8" r="1.1" />
+    <circle cx="7" cy="18" r="1.6" />
+    <circle cx="17.5" cy="16.5" r="1.1" />
+  </svg>
+);
+
+/** Sources : strates de mesure empilées */
+export const IconSources: React.FC = () => (
+  <svg {...base} aria-hidden="true">
+    <path d="M12 3.5 3.5 8l8.5 4.5L20.5 8 12 3.5Z" />
+    <path d="M3.5 12.5 12 17l8.5-4.5" />
+    <path d="M3.5 16.75 12 21.25l8.5-4.5" />
+  </svg>
+);
+
+/** Pas de temps : cadran */
+export const IconTimeStep: React.FC = () => (
+  <svg {...base} aria-hidden="true">
+    <circle cx="12" cy="12" r="8.25" />
+    <path d="M12 7.25V12l3.25 2" />
+  </svg>
+);
+
+/** Modélisation : nappe de valeurs continue */
+export const IconModeling: React.FC = () => (
+  <svg {...base} aria-hidden="true">
+    <path d="M3 16.5c2.5-3.5 5-3.5 7.5 0s5 3.5 7.5 0" />
+    <path d="M3 11c2.5-3.5 5-3.5 7.5 0s5 3.5 7.5 0" />
+    <path d="M20.5 5.5v13" />
+  </svg>
+);
+
+/** Fond de carte : carte pliée. Volontairement distincte d'IconSources, dont
+ *  les plans empilés étaient trop proches pour être distingués à 20 px. */
+export const IconBaseLayer: React.FC = () => (
+  <svg {...base} aria-hidden="true">
+    <path d="M3.25 6.5 9 4.25l6 2.25 5.75-2.25v13L15 19.5 9 17.25 3.25 19.5v-13Z" />
+    <path d="M9 4.25v13" />
+    <path d="M15 6.5v13" />
+  </svg>
+);
+
+/** Mode historique : retour dans le temps */
+export const IconHistorical: React.FC = () => (
+  <svg {...base} aria-hidden="true">
+    <path d="M4 12a8 8 0 1 0 2.5-5.8" />
+    <path d="M3.75 4.5V9.5h5" />
+    <path d="M12 8.5V12l2.75 1.75" />
+  </svg>
+);
+
+/** Langue : globe */
+export const IconLanguage: React.FC = () => (
+  <svg {...base} aria-hidden="true">
+    <circle cx="12" cy="12" r="8.25" />
+    <path d="M3.75 12h16.5" />
+    <path d="M12 3.75c2.1 2.3 3.25 5.15 3.25 8.25S14.1 18.05 12 20.25c-2.1-2.2-3.25-5.15-3.25-8.25S9.9 6.05 12 3.75Z" />
+  </svg>
+);
+
+/** Informations */
+export const IconInfo: React.FC = () => (
+  <svg {...base} aria-hidden="true">
+    <circle cx="12" cy="12" r="8.25" />
+    <path d="M12 11v5.25" />
+    <path d="M12 7.75h.01" />
+  </svg>
+);

@@ -1,4 +1,11 @@
-import { Pollutant } from "../types";
+import { Pollutant, type PollutantCategory } from "../types";
+
+/** Ordre d'affichage des sections dans le menu polluant */
+export const POLLUTANT_CATEGORY_ORDER: PollutantCategory[] = [
+  "polluant",
+  "bruit",
+  "chaleur",
+];
 
 // Configuration des seuils pour les particules fines PM1 et PM2.5
 export const seuilsPm1Pm25 = {
@@ -22,31 +29,31 @@ export const seuilsPm10 = {
 
 // Configuration des seuils pour le dioxyde d'azote (NO2)
 export const seuilsNo2 = {
-  bon: { code: "bon", min: 0, max: 10 },
-  moyen: { code: "moyen", min: 10, max: 25 },
-  degrade: { code: "degrade", min: 25, max: 60 },
-  mauvais: { code: "mauvais", min: 60, max: 100 },
-  tresMauvais: { code: "tresMauvais", min: 100, max: 150 },
-  extrMauvais: { code: "extrMauvais", min: 150, max: 9999 },
+  bon: { code: "bon", min: 0, max: 11 },
+  moyen: { code: "moyen", min: 11, max: 26 },
+  degrade: { code: "degrade", min: 26, max: 61 },
+  mauvais: { code: "mauvais", min: 61, max: 101 },
+  tresMauvais: { code: "tresMauvais", min: 101, max: 151 },
+  extrMauvais: { code: "extrMauvais", min: 151, max: 9999 },
 };
 
 // Configuration des seuils pour l'ozone (O3)
 export const seuilsO3 = {
-  bon: { code: "bon", min: 0, max: 60 },
-  moyen: { code: "moyen", min: 60, max: 100 },
-  degrade: { code: "degrade", min: 100, max: 120 },
-  mauvais: { code: "mauvais", min: 120, max: 160 },
-  tresMauvais: { code: "tresMauvais", min: 160, max: 180 },
+  bon: { code: "bon", min: 0, max: 61 },
+  moyen: { code: "moyen", min: 61, max: 101 },
+  degrade: { code: "degrade", min: 101, max: 121 },
+  mauvais: { code: "mauvais", min: 121, max: 161 },
+  tresMauvais: { code: "tresMauvais", min: 161, max: 180 },
   extrMauvais: { code: "extrMauvais", min: 180, max: 9999 },
 };
 
 // Configuration des seuils pour le dioxyde de soufre (SO2)
 export const seuilsSo2 = {
-  bon: { code: "bon", min: 0, max: 20 },
-  moyen: { code: "moyen", min: 20, max: 40 },
-  degrade: { code: "degrade", min: 40, max: 125 },
-  mauvais: { code: "mauvais", min: 125, max: 190 },
-  tresMauvais: { code: "tresMauvais", min: 190, max: 275 },
+  bon: { code: "bon", min: 0, max: 21 },
+  moyen: { code: "moyen", min: 21, max: 41 },
+  degrade: { code: "degrade", min: 41, max: 126 },
+  mauvais: { code: "mauvais", min: 126, max: 191 },
+  tresMauvais: { code: "tresMauvais", min: 191, max: 275 },
   extrMauvais: { code: "extrMauvais", min: 275, max: 9999 },
 };
 
@@ -66,43 +73,52 @@ export const pollutants: Record<string, Pollutant> = {
     code: "pm1",
     unit: "µg/m³",
     thresholds: seuilsPm1Pm25,
+    category: "polluant",
   },
   pm25: {
     name: "PM₂.₅",
     code: "pm25",
     unit: "µg/m³",
     thresholds: seuilsPm1Pm25,
+    category: "polluant",
   },
   pm10: {
     name: "PM₁₀",
     code: "pm10",
     unit: "µg/m³",
     thresholds: seuilsPm10,
+    category: "polluant",
   },
   no2: {
     name: "NO₂",
     code: "no2",
     unit: "µg/m³",
     thresholds: seuilsNo2,
+    category: "polluant",
   },
   so2: {
     name: "SO₂",
     code: "so2",
     unit: "µg/m³",
     thresholds: seuilsSo2,
+    category: "polluant",
   },
   o3: {
     name: "O₃",
     code: "o3",
     unit: "µg/m³",
     thresholds: seuilsO3,
+    category: "polluant",
   },
   bruit: {
     name: "Bruit",
     code: "bruit",
     unit: "dB(A)",
     thresholds: seuilsBruit,
+    category: "bruit",
     supportedTimeSteps: ["instantane", "deuxMin"],
+    // Pas encore exposé dans le sélecteur global (Scan / ≤2 min)
+    activated: false,
   },
 };
 
@@ -144,6 +160,7 @@ export const isPollutantSupportedForTimeStep = (
 ): boolean => {
   const pollutant = pollutants[pollutantCode];
   if (!pollutant) return false;
+  if (pollutant.activated === false) return false;
   if (!pollutant.supportedTimeSteps || pollutant.supportedTimeSteps.length === 0)
     return true;
   return pollutant.supportedTimeSteps.includes(timeStep);
@@ -154,6 +171,7 @@ export const getSupportedPollutantsForTimeStep = (
 ): string[] => {
   return Object.entries(pollutants)
     .filter(([, pollutant]) => {
+      if (pollutant.activated === false) return false;
       if (!pollutant.supportedTimeSteps || pollutant.supportedTimeSteps.length === 0)
         return true;
       return pollutant.supportedTimeSteps.includes(timeStep);

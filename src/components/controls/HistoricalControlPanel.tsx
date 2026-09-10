@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { HistoricalControlPanelProps } from "../../types";
 import PollutionEpisodeCalendar from "./PollutionEpisodeCalendar";
+import TourReplayButton from "../tour/TourReplayButton";
 
 const HistoricalControlPanel: React.FC<
   HistoricalControlPanelProps & {
@@ -126,7 +127,8 @@ const HistoricalControlPanel: React.FC<
         <div
           ref={panelRef}
           data-testid="historical-control-panel"
-          className={`fixed top-[60px] right-4 z-[2000] bg-white border border-gray-300 rounded-lg shadow-xl max-w-md w-full transition-all duration-300 overflow-hidden ${
+          data-tour="historical-date-panel"
+          className={`fixed top-[60px] right-4 z-floating bg-white border border-gray-300 rounded-lg shadow-xl max-w-md w-full transition-all duration-300 overflow-hidden ${
             isExpanded ? "max-h-[90vh]" : "h-auto"
           }`}
         >
@@ -151,6 +153,7 @@ const HistoricalControlPanel: React.FC<
               </h3>
             </div>
             <div className="flex items-center space-x-2">
+              <TourReplayButton tourId="historical_mode" />
               {/* Bouton pour rouvrir le panel de contrôle de lecture (visible uniquement si des données sont chargées) */}
               {state.data.length > 0 && onOpenPlaybackPanel && (
                 <button
@@ -276,26 +279,13 @@ const HistoricalControlPanel: React.FC<
                   <div>
                     <p className="font-medium text-blue-800">
                       {t("historical.instructionTitle")}
-                    </p>
-                    <p className="text-blue-700 mt-1">
-                      {t("historical.instructionMarkers")}
-                    </p>
-                    {(state.timeStep === "qh" || state.timeStep === "quartHeure") && (
-                      <p className="text-blue-700 mt-1 italic">
-                        {t("historical.limit7days")}
-                      </p>
-                    )}
-                    {(state.timeStep === "h" || state.timeStep === "heure") && (
-                      <p className="text-blue-700 mt-1 italic">
-                        {t("historical.limit30days")}
-                      </p>
-                    )}
+                    </p>                   
                   </div>
                 </div>
               </div>
 
               {/* Calendrier des épisodes de pollution */}
-              <div className="space-y-4">
+              <div className="space-y-4" data-tour="historical-date-range">
                 <div className="text-sm font-medium text-gray-700">
                   {t("historical.selectTimePeriod")}
                 </div>
@@ -363,6 +353,7 @@ const HistoricalControlPanel: React.FC<
               <div className="flex space-x-2">
                 <button
                   type="button"
+                  data-tour="historical-load-data"
                   onClick={() => isDataReady && onLoadData?.()}
                   disabled={!isDataReady || state.loading}
                   className={`

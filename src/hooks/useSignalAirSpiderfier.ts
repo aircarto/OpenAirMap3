@@ -180,7 +180,7 @@ export const useSignalAirSpiderfier = ({
     // Analyser et traiter les marqueurs
     const groups = analyzeOverlappingMarkers();
     processOverlappingGroups(groups);
-  }, [enabled, map, reportsToSpiderfy, currentZoom, zoomThreshold]);
+  }, [enabled, map, reportsToSpiderfy, currentZoom, zoomThreshold, reports.length]);
 
   // Fonction pour obtenir la position d'un marqueur (originale ou éclatée)
   const getMarkerPosition = (report: SignalAirReport) => {

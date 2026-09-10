@@ -8,6 +8,10 @@ export default defineConfig({
     globals: true,
     environment: "jsdom",
     setupFiles: "./src/tests/setupTests.ts",
+    // Cantonne Vitest à src/ : sans cela le motif par défaut ramasse aussi les
+    // specs Playwright de e2e/, qui échouent à la collecte sous jsdom (8
+    // fichiers en erreur alors que tous les tests unitaires passaient).
+    include: ["src/**/*.{test,spec}.{ts,tsx}"],
     css: true,
     restoreMocks: true,
     clearMocks: true,
@@ -28,9 +32,22 @@ export default defineConfig({
       "crista-unlockable-vivan.ngrok-free.dev",
       "localhost",
       "127.0.0.1",
+      "aircrowd.atmosud.org",
+      "openairmap.atmosud.org",
       ".ngrok-free.dev",
     ],
     proxy: {
+      "/aircrowd-wms": {
+        target: "https://preprod-geoservices.atmosud.org",
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/aircrowd-wms/, "/aircrowd"),
+        configure: (proxy) => {
+          proxy.on("error", (err) => {
+            console.log("aircrowd-wms proxy error", err);
+          });
+        },
+      },
       "/aircarto": {
         target: "https://api.aircarto.fr",
         changeOrigin: true,
@@ -45,6 +62,26 @@ export default defineConfig({
           proxy.on("proxyRes", (proxyRes, req) => {
             console.log(
               "Received Response from AirCarto:",
+              proxyRes.statusCode,
+              req.url
+            );
+          });
+        },
+      },
+      "/feuxdeforet": {
+        target: "https://feuxdeforet.fr",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/feuxdeforet/, ""),
+        configure: (proxy) => {
+          proxy.on("error", (err) => {
+            console.log("feuxdeforet proxy error", err);
+          });
+          proxy.on("proxyReq", (proxyReq, req) => {
+            console.log("Sending Request to FeuxDeForet:", req.method, req.url);
+          });
+          proxy.on("proxyRes", (proxyRes, req) => {
+            console.log(
+              "Received Response from FeuxDeForet:",
               proxyRes.statusCode,
               req.url
             );

@@ -1,39 +1,45 @@
 import { WildfireReport } from "../types";
 
-interface RawWildfireSignalement {
-  id: number;
-  title: string;
-  lat: number;
-  lng: number;
-  type: string;
-  commune: string;
-  date: string;
-  url: string;
-  statut: string;
-  etat_feu: string;
-  post_status: string;
-  description: string;
-  post_modified: string;
+interface GeoJsonFeatureProperties {
+  id?: string | number;
+  statut?: string;
+  etat?: string;
+  url?: string;
+}
+
+interface GeoJsonFeature {
+  type: "Feature";
+  geometry?: {
+    type?: string;
+    coordinates?: [number, number];
+  };
+  properties?: GeoJsonFeatureProperties;
 }
 
 interface WildfireApiResponse {
-  signalements: RawWildfireSignalement[];
-  meta: {
-    total: number;
-    timestamp: string;
-    cache_duration: number;
+  data?: {
+    type?: "FeatureCollection";
+    features?: GeoJsonFeature[];
+  };
+  meta?: {
+    last_update?: string;
+    count?: number;
+    scope?: string;
   };
 }
 
 export class FeuxDeForetService {
-  private static readonly BASE_URL =
-    "https://feuxdeforet.fr/wp-json/fdf/v1/carte-signalements";
+  private static getBaseUrl(): string {
+    // L'API feuxdeforet.fr bloque les requêtes navigateur (cookies + CORS).
+    // On passe par un proxy same-origin (/feuxdeforet) configuré dans Vite (dev)
+    // et dans le reverse proxy de production.
+    return "/feuxdeforet/fdf/cartographie/geojson?scope=web";
+  }
 
   async fetchTodaySignalements(): Promise<WildfireReport[]> {
-    const timestamp = Date.now();
-    const url = `${FeuxDeForetService.BASE_URL}?context=web&limit=100&format=minimal&_t=${timestamp}`;
-
-    const response = await fetch(url);
+    const response = await fetch(FeuxDeForetService.getBaseUrl(), {
+      credentials: "omit",
+    });
 
     if (!response.ok) {
       throw new Error(
@@ -43,16 +49,19 @@ export class FeuxDeForetService {
 
     const data: WildfireApiResponse = await response.json();
 
-    if (!data.signalements || !Array.isArray(data.signalements)) {
+    const features = data.data?.features;
+
+    if (!features || !Array.isArray(features)) {
       return [];
     }
 
-    const referenceDate = this.parseMetaTimestamp(data.meta?.timestamp) ?? new Date();
+    const referenceDate = this.parseMetaTimestamp(data.meta?.last_update) ?? new Date();
     const freshnessWindowMs = 48 * 60 * 60 * 1000; // 48 heures
 
-
-    return data.signalements
-      .map((signalement) => this.transformSignalement(signalement))
+    return features
+      .map((feature) => this.transformSignalement(feature, data.meta?.last_update))
+      .filter((report): report is WildfireReport => report !== null)
+      .filter((report) => report.status !== 'cloture')
       .filter((report) => {
         const isRecent = this.isReportRecent(
           report,
@@ -60,80 +69,60 @@ export class FeuxDeForetService {
           freshnessWindowMs
         );
 
-
         return isRecent;
       });
   }
 
   private transformSignalement(
-    signalement: RawWildfireSignalement
-  ): WildfireReport {
-    const parsedDate = this.parseDate(signalement.date);
+    feature: GeoJsonFeature,
+    fallbackDate?: string
+  ): WildfireReport | null {
+    const coordinates = feature.geometry?.coordinates;
+    const rawId = feature.properties?.id;
+
+    if (
+      !coordinates ||
+      coordinates.length < 2 ||
+      typeof coordinates[0] !== "number" ||
+      typeof coordinates[1] !== "number"
+    ) {
+      return null;
+    }
+
+    const id =
+      typeof rawId === "number"
+        ? rawId
+        : rawId
+          ? Number.parseInt(String(rawId), 10)
+          : Number.NaN;
+
+    if (Number.isNaN(id)) {
+      return null;
+    }
+
+    const parsedDate = this.parseMetaTimestamp(fallbackDate)?.toISOString() ?? null;
+    const [longitude, latitude] = coordinates;
+    const status = feature.properties?.statut ?? "";
+    const fireState = feature.properties?.etat ?? "";
+    const url = feature.properties?.url ?? "";
+    const title = "Signalement feu de forêt";
 
     return {
-      id: signalement.id,
-      title: signalement.title,
-      latitude: signalement.lat,
-      longitude: signalement.lng,
-      type: signalement.type,
-      commune: signalement.commune,
-      dateText: signalement.date,
+      id,
+      title,
+      latitude,
+      longitude,
+      type: "Feu de forêt",
+      commune: "Non renseignée",
+      dateText: fallbackDate ?? "",
       date: parsedDate,
-      url: signalement.url,
-      status: signalement.statut,
-      fireState: signalement.etat_feu,
-      postStatus: signalement.post_status,
-      description: signalement.description,
-      postModified: signalement.post_modified,
+      url,
+      status,
+      fireState,
+      postStatus: status,
+      description: "",
+      postModified: fallbackDate ?? "",
     };
-  }
-
-  private parseDate(dateText: string): string | null {
-    if (!dateText) {
-      return null;
-    }
-
-    const [datePart, timePart] = dateText.split(" ");
-
-    if (!datePart) {
-      return null;
-    }
-
-    const [dayStr, monthStr, yearStr] = datePart.split("/");
-
-    if (!dayStr || !monthStr || !yearStr) {
-      return null;
-    }
-
-    const day = Number.parseInt(dayStr, 10);
-    const month = Number.parseInt(monthStr, 10);
-    const year = Number.parseInt(yearStr, 10);
-
-    if (Number.isNaN(day) || Number.isNaN(month) || Number.isNaN(year)) {
-      return null;
-    }
-
-    let hours = 0;
-    let minutes = 0;
-
-    if (timePart) {
-      const [hoursStr, minutesStr] = timePart.split(":");
-
-      if (hoursStr) {
-        hours = Number.parseInt(hoursStr, 10) || 0;
-      }
-      if (minutesStr) {
-        minutes = Number.parseInt(minutesStr, 10) || 0;
-      }
-    }
-
-    const parsedDate = new Date(year, month - 1, day, hours, minutes);
-
-    if (Number.isNaN(parsedDate.getTime())) {
-      return null;
-    }
-
-    return parsedDate.toISOString();
   }
 
   private parseMetaTimestamp(timestamp?: string): Date | null {

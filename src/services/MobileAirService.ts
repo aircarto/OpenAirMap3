@@ -15,6 +15,8 @@ export class MobileAirService extends BaseDataService {
   private readonly baseUrl = this.getApiBaseUrl();
   private sensors: MobileAirSensor[] = [];
   private routes: MobileAirRoute[] = [];
+  /** Requête de catalogue en vol, pour dédupliquer les appels concurrents */
+  private sensorsPromise: Promise<MobileAirSensor[]> | null = null;
 
   constructor() {
     super("mobileair");
@@ -313,6 +315,30 @@ export class MobileAirService extends BaseDataService {
   // Méthodes publiques pour accéder aux données
   getSensors(): MobileAirSensor[] {
     return this.sensors;
+  }
+
+  /**
+   * Garantit que le catalogue de capteurs est chargé, et le renvoie.
+   *
+   * Distincte de `fetchData()`, qui sort avant de charger le catalogue si le
+   * polluant courant n'est pas supporté par MobileAir : l'interface de sélection
+   * a besoin de la liste des capteurs même dans ce cas, sinon elle reste vide
+   * sans erreur et sans explication.
+   *
+   * Idempotente, et déduplique les appels concurrents en mémorisant la requête en
+   * vol — l'ouverture d'un menu peut en déclencher plusieurs dans le même tick.
+   */
+  async ensureSensorsLoaded(): Promise<MobileAirSensor[]> {
+    if (this.sensors.length > 0) return this.sensors;
+    if (this.sensorsPromise) return this.sensorsPromise;
+
+    this.sensorsPromise = this.fetchSensors()
+      .then(() => this.sensors)
+      .finally(() => {
+        this.sensorsPromise = null;
+      });
+
+    return this.sensorsPromise;
   }
 
   getRoutes(): MobileAirRoute[] {

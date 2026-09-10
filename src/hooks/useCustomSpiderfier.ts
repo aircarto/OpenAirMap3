@@ -182,7 +182,7 @@ export const useCustomSpiderfier = ({
     // Analyser et traiter les marqueurs
     const groups = analyzeOverlappingMarkers();
     processOverlappingGroups(groups);
-  }, [enabled, map, devicesToSpiderfy, currentZoom, zoomThreshold]);
+  }, [enabled, map, devicesToSpiderfy, currentZoom, zoomThreshold, devices.length]);
 
   // Fonction pour obtenir la position d'un marqueur (originale ou éclatée)
   const getMarkerPosition = (device: MeasurementDevice) => {

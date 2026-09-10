@@ -2,7 +2,19 @@ import * as React from "react"
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu"
 import { cn } from "../../lib/utils"
 
-const DropdownMenu = DropdownMenuPrimitive.Root
+/**
+ * `modal={false}` par défaut : en mode modal (défaut Radix), le clic hors menu
+ * est absorbé par la couche de fermeture — cliquer un autre déclencheur du rail
+ * ne fait que fermer le menu ouvert, sans ouvrir le suivant. En non-modal, le
+ * même clic ferme l'un et ouvre l'autre (comportement attendu d'une barre d'outils).
+ */
+const DropdownMenu = ({
+  modal = false,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Root>) => (
+  <DropdownMenuPrimitive.Root modal={modal} {...props} />
+)
+DropdownMenu.displayName = "DropdownMenu"
 
 const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger
 
@@ -73,7 +85,7 @@ const DropdownMenuContent = React.forwardRef<
       ref={ref}
       sideOffset={sideOffset}
       className={cn(
-        "z-[3000] min-w-[8rem] overflow-hidden rounded-md border border-gray-300 bg-white p-1 text-gray-950 shadow-lg",
+        "z-popover min-w-[8rem] overflow-hidden rounded-md border border-gray-300 bg-white p-1 text-gray-950 shadow-lg",
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
         "[&[data-width=trigger]]:w-[var(--radix-dropdown-menu-trigger-width)]",
         className

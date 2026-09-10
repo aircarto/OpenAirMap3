@@ -1,7 +1,12 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { clearToursCompleted, seedToursCompleted } from "./tourSetup";
 
 test.describe("Accessibilité (a11y)", () => {
+  test.beforeEach(async ({ page }) => {
+    await seedToursCompleted(page);
+  });
+
   test("page principale : pas de violations axe critiques", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 15000 });
@@ -21,7 +26,7 @@ test.describe("Accessibilité (a11y)", () => {
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 15000 });
 
-    const infoButton = page.getByRole("button", { name: /about|informations|openairmap/i }).first();
+    const infoButton = page.getByTestId("rail-info-button");
     await infoButton.click();
 
     const dialog = page.getByRole("dialog").first();
@@ -50,15 +55,19 @@ test.describe("Accessibilité (a11y)", () => {
     } catch {
       test.skip(true, "Aucun marqueur affiché (API vide ou lente)");
     }
-    await marker.click();
     const panelSelector =
       '[data-testid="station-side-panel"], [data-testid="micro-side-panel"], [data-testid="nebuleair-side-panel"], [data-testid="sensorcommunity-side-panel"], [data-testid="purpleair-side-panel"]';
     const panel = page.locator(panelSelector).first();
-    try {
-      await expect(panel).toBeVisible({ timeout: 15000 });
-    } catch {
-      test.skip(true, "Panel latéral non affiché après clic marqueur");
-    }
+
+    // `force` parce que l'icône Leaflet porte le handler mais que son enfant
+    // `.custom-marker-container` intercepte le pointeur ; et l'ensemble est
+    // réessayé parce qu'un poll de données re-rend les marqueurs et peut
+    // détacher le nôtre entre l'assertion de visibilité et le clic. Même motif
+    // que panel-scroll.spec.ts.
+    await expect(async () => {
+      await page.locator(".leaflet-marker-icon").first().click({ force: true });
+      await expect(panel).toBeVisible({ timeout: 5000 });
+    }).toPass({ timeout: 40000 });
 
     const results = await new AxeBuilder({ page })
       .include(panelSelector)
@@ -93,6 +102,89 @@ test.describe("Accessibilité (a11y)", () => {
     expect(
       critical,
       `Violations critiques axe (panel mode historique) : ${JSON.stringify(critical, null, 2)}`
+    ).toEqual([]);
+  });
+
+  test("rail de contrôles : pas de violations axe critiques", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible({
+      timeout: 15000,
+    });
+    await expect(page.getByTestId("map-control-rail")).toBeVisible();
+
+    const results = await new AxeBuilder({ page })
+      .include('[data-testid="map-control-rail"]')
+      .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+      .analyze();
+
+    const critical = results.violations.filter((v) => v.impact === "critical");
+    expect(
+      critical,
+      `Violations critiques axe (rail) : ${JSON.stringify(critical, null, 2)}`
+    ).toEqual([]);
+  });
+
+  test("rail : chaque déclencheur a un nom accessible", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByTestId("map-control-rail")).toBeVisible({
+      timeout: 15000,
+    });
+
+    // Les items sont iconographiques : sans nom accessible ils sont muets.
+    const unnamed = await page
+      .locator("[data-rail-item]")
+      .evaluateAll((els) =>
+        els
+          .filter((el) => {
+            const byLabel = el.getAttribute("aria-label")?.trim();
+            const ids = (el.getAttribute("aria-labelledby") || "")
+              .split(/\s+/)
+              .filter(Boolean);
+            const byIds = ids
+              .map((id) => document.getElementById(id)?.textContent?.trim())
+              .filter(Boolean)
+              .join(" ");
+            return !byLabel && !byIds;
+          })
+          .map((el) => el.getAttribute("data-rail-item"))
+      );
+    expect(unnamed).toEqual([]);
+  });
+
+  test("tutoriel mode historique actif : pas de violations axe critiques", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible({
+      timeout: 15000,
+    });
+
+    // Enregistré après seedToursCompleted : le script s'exécute ensuite et neutralise
+    // l'amorçage, ce qui laisse le tutoriel se déclencher au rechargement.
+    await clearToursCompleted(page);
+    await page.reload();
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible({
+      timeout: 15000,
+    });
+
+    const tourPopover = page.locator(".driver-popover.openairmap-tour-popover");
+    try {
+      await expect(tourPopover).toBeVisible({ timeout: 8000 });
+    } catch {
+      test.skip(true, "Tutoriel non affiché (pas de temps incompatible ou UI masquée)");
+    }
+
+    const results = await new AxeBuilder({ page })
+      .include(".driver-popover.openairmap-tour-popover")
+      .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+      .analyze();
+
+    const critical = results.violations.filter((v) => v.impact === "critical");
+    expect(
+      critical,
+      `Violations critiques axe (tutoriel) : ${JSON.stringify(critical, null, 2)}`
     ).toEqual([]);
   });
 });
