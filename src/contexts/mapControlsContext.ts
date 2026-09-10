@@ -35,6 +35,8 @@ export interface MapControlsBrand {
   favicon: string;
   title: string;
   organization: string;
+  /** URL externe au clic sur le logo du rail ; absente = modale infos */
+  logoHref?: string;
 }
 
 export interface MapControlsFilters {

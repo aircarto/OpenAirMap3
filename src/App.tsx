@@ -651,6 +651,7 @@ const AppContent: React.FC = () => {
       favicon: domainConfig.favicon,
       title: domainConfig.title,
       organization: domainConfig.organization,
+      logoHref: domainConfig.links.logo,
     }),
     [
       domainConfig.logo,
@@ -658,6 +659,7 @@ const AppContent: React.FC = () => {
       domainConfig.favicon,
       domainConfig.title,
       domainConfig.organization,
+      domainConfig.links.logo,
     ],
   );
 
@@ -844,7 +846,7 @@ const AppContent: React.FC = () => {
     ],
   );
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
+    <div className="flex h-screen flex-col overflow-x-hidden bg-gray-50">
       {/* Lien d'évitement : premier élément focusable pour la navigation clavier et lecteurs d'écran */}
       <a href="#main-content" className="skip-link" data-testid="skip-link">
         {t("app.skipToContent")}
@@ -861,7 +863,7 @@ const AppContent: React.FC = () => {
           `h-screen`. Un panneau latéral plus haut que le viewport faisait alors
           grandir <main>, rendant toute la page défilante au lieu de laisser le
           panneau défiler dans sa propre zone. */}
-      <main className="flex-1 relative min-h-0">
+      <main className="relative min-h-0 min-w-0 flex-1 overflow-x-hidden">
         {/* Carte */}
         {/* Le provider n'enveloppe que la carte : AirQualityMap ne gagne aucune
             prop, et le rail de contrôles qui vit dans sa colonne lit l'état

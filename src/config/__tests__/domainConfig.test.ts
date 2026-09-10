@@ -76,4 +76,9 @@ describe("getConfigForDomain", () => {
       DOMAIN_CONFIG.default.organization
     );
   });
+
+  it("expose un lien logo uniquement pour atmosud (default garde la modale infos)", () => {
+    expect(DOMAIN_CONFIG.default.links.logo).toBeUndefined();
+    expect(DOMAIN_CONFIG.atmosud.links.logo).toBe("https://www.atmosud.org/");
+  });
 });
