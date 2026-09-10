@@ -74,9 +74,10 @@ export const MapControlRail: React.FC<MapControlRailProps> = ({
     if (orientation === "horizontal") {
       column.style.setProperty("--rail-inset", "0px");
       const publishBottom = () => {
-        // Hauteur du rail + marge `bottom-2` (8px) : la légende s'adosse juste
-        // au-dessus sans passer sous la barre.
-        const inset = rail.offsetHeight + 8;
+        // Hauteur du rail + offset `bottom` (safe-area) pour que légende /
+        // attribution s'adossent juste au-dessus.
+        const bottomPx = Number.parseFloat(getComputedStyle(rail).bottom) || 8;
+        const inset = rail.offsetHeight + bottomPx;
         column.style.setProperty("--rail-bottom-inset", `${inset}px`);
       };
       publishBottom();
@@ -137,7 +138,8 @@ export const MapControlRail: React.FC<MapControlRailProps> = ({
             // occupe l'angle bas-gauche, et sur un viewport court le rail
             // l'atteindrait — mesuré à 620 px de haut.
             ? "left-3 top-3 max-h-[calc(100%-5rem)] flex-col items-center"
-          : "bottom-2 left-2 right-2 flex-row items-center",
+          // Horizontal : left/right fixes ; le `bottom` est en style (safe-area iOS)
+          : "left-2 right-2 flex-row items-center",
         // Les `max()` protègent d'une taille de police racine réduite.
         isVertical &&
           (compact ? "w-[max(3.75rem,60px)]" : "w-[max(4.5rem,72px)]"),
@@ -153,7 +155,13 @@ export const MapControlRail: React.FC<MapControlRailProps> = ({
         // Consommée par .rail-item. Le défaut (48px) vit dans index.css : le rail
         // horizontal et le mode compact n'ont donc rien à déclarer.
         ...(isVertical && !compact ? { "--rail-item-w": "56px" } : null),
-        paddingBottom: isVertical ? undefined : "calc(0.375rem + env(safe-area-inset-bottom))",
+        // Ancrage au-dessus de l'indicateur d'accueil / chrome iOS — pas seulement
+        // du padding interne, sinon la barre semble « glisser » sous Safari.
+        ...(!isVertical
+          ? {
+              bottom: "max(0.5rem, env(safe-area-inset-bottom, 0px))",
+            }
+          : null),
       } as React.CSSProperties}
     >
       <RailBrand onOpenAbout={ui.onOpenInfoModal} />

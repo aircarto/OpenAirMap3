@@ -632,6 +632,7 @@
     "reportsVisible_one": "{{count}} signalement visible",
     "reportsVisible_other": "{{count}} signalements visibles",
     "ofTotal": "/ {{total}} au total",
+    "periodAria": "Période : {{period}}",
     "zoomHint": "Zoomer ou déplacer la carte pour voir des appareils",
     "globalTitle": "Statistiques globales",
     "average": "Moyenne",

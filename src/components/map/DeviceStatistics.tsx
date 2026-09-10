@@ -1,14 +1,16 @@
-import React, { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { MeasurementDevice, SignalAirReport } from "../../types";
-import StatisticsPanel from "./StatisticsPanel";
-import { cn } from "../../lib/utils";
-import { sources } from "../../constants/sources";
+import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { MeasurementDevice, SignalAirReport } from '../../types';
+import StatisticsPanel from './StatisticsPanel';
+import { cn } from '../../lib/utils';
+import { sources } from '../../constants/sources';
 import {
   DeviceStatistics as DeviceStatisticsType,
   SourceStatistics,
-} from "../../utils/deviceStatisticsUtils";
-import { getDisplayedPeriod } from "../../utils/dataPeriodUtils";
+} from '../../utils/deviceStatisticsUtils';
+import { getDisplayedPeriod } from '../../utils/dataPeriodUtils';
+
+export type DeviceStatisticsVariant = 'compact' | 'full';
 
 interface DeviceStatisticsProps {
   visibleDevices: MeasurementDevice[];
@@ -19,13 +21,18 @@ interface DeviceStatisticsProps {
   selectedSources?: string[];
   selectedTimeStep?: string;
   historicalCurrentDate?: string;
-  statistics?: DeviceStatisticsType; // OPTIMISATION : Statistiques pré-calculées
-  sourceStatistics?: SourceStatistics[]; // OPTIMISATION : Stats par source pré-calculées
+  statistics?: DeviceStatisticsType;
+  sourceStatistics?: SourceStatistics[];
   showDetails?: boolean;
+  /**
+   * `compact` : chip période seule (mobile).
+   * `full` : période + compteurs (desktop / tablette).
+   */
+  variant?: DeviceStatisticsVariant;
 }
 
 /**
- * Composant pour afficher les statistiques des appareils visibles dans le viewport
+ * Statistiques des appareils visibles dans le viewport (chip période ou bloc complet).
  */
 const DeviceStatistics: React.FC<DeviceStatisticsProps> = ({
   visibleDevices,
@@ -34,195 +41,170 @@ const DeviceStatistics: React.FC<DeviceStatisticsProps> = ({
   totalReports,
   selectedPollutant,
   selectedSources = [],
-  selectedTimeStep = "",
+  selectedTimeStep = '',
   historicalCurrentDate,
-  statistics, // OPTIMISATION : Utiliser les statistiques pré-calculées
-  sourceStatistics, // OPTIMISATION : Stats par source pré-calculées
-  showDetails = false,
+  statistics,
+  sourceStatistics,
+  variant = 'full',
 }) => {
   const { t, i18n } = useTranslation();
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const isCompact = variant === 'compact';
   const displayedPeriod =
     selectedTimeStep &&
-    getDisplayedPeriod(selectedTimeStep, historicalCurrentDate, i18n.language);
+    getDisplayedPeriod(selectedTimeStep, historicalCurrentDate, i18n.language, {
+      compact: isCompact,
+    });
 
-  // OPTIMISATION : Utiliser les statistiques pré-calculées si disponibles
-  // Sinon, calculer localement (fallback pour compatibilité)
-  const devicesBySource = statistics?.devicesBySource || visibleDevices.reduce((acc, device) => {
-    acc[device.source] = (acc[device.source] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  const canOpenPanel =
+    visibleDevices.length > 0 || visibleReports.length > 0;
 
-  const qualityLevels = statistics?.qualityLevels || visibleDevices.reduce((acc, device) => {
-    const level = device.qualityLevel || "default";
-    acc[level] = (acc[level] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  const averageValue = statistics?.averageValue ?? 0;
-  const minValue = statistics?.minValue ?? 0;
-  const maxValue = statistics?.maxValue ?? 0;
-  const activeDevices = statistics?.activeDevices ?? 0;
-
-  // Formatage des nombres
-  const formatNumber = (num: number, decimals: number = 1): string => {
-    return num.toFixed(decimals);
-  };
-
-  // Obtenir le nom lisible de la source depuis les constantes
-  const getSourceName = (source: string): string => {
-    // Gérer les sous-sources (ex: "communautaire.nebuleair")
-    if (source.includes(".")) {
-      const [groupKey, subKey] = source.split(".");
-      const group = sources[groupKey as keyof typeof sources];
-      if (group?.isGroup && group.subSources) {
-        const subSource = group.subSources[subKey as keyof typeof group.subSources];
-        if (subSource) {
-          // Cas spécial pour NebuleAir
-          if (subKey === "nebuleair") {
-            return "NebuleAir AirCarto";
-          }
-          return subSource.name;
-        }
-      }
+  const openPanel = () => {
+    if (canOpenPanel) {
+      setIsPanelOpen((open) => !open);
     }
-    
-    // Vérifier si c'est une sous-source communautaire sans préfixe (ex: "nebuleair")
-    const communautaireGroup = sources.communautaire;
-    if (communautaireGroup?.isGroup && communautaireGroup.subSources) {
-      const subSource = communautaireGroup.subSources[source as keyof typeof communautaireGroup.subSources];
-      if (subSource) {
-        // Cas spécial pour NebuleAir
-        if (source === "nebuleair") {
-          return "NebuleAir AirCarto";
-        }
-        return subSource.name;
-      }
+  };
+
+  const isRtl = i18n.language === 'ar';
+  const periodAria = displayedPeriod
+    ? t('statistics.periodAria', { period: displayedPeriod })
+    : t('panels.showStats');
+
+  if (isCompact) {
+    if (!displayedPeriod) {
+      return null;
     }
-    
-    // Source directe
-    const sourceConfig = sources[source as keyof typeof sources];
-    if (sourceConfig && !sourceConfig.isGroup) {
-      return sourceConfig.name;
-    }
-    
-    // Fallback : retourner le code source tel quel
-    return source;
-  };
 
-  // Obtenir le nom lisible du niveau de qualité
-  const getQualityName = (level: string): string => {
-    const key = level === "default" ? "panels.noMeasureRecent" : `quality.${level}`;
-    return t(key);
-  };
+    return (
+      <>
+        <button
+          type='button'
+          onClick={openPanel}
+          disabled={!canOpenPanel}
+          className={cn(
+            'glass-3 flex min-h-10 max-w-full items-center rounded-[var(--r-md)] border border-[rgb(16_32_56_/_0.09)] border-l-4 border-l-blue-400 px-2.5 py-1.5 text-left shadow-sm transition-colors',
+            'landscape:max-w-[9.5rem] landscape:min-h-9 landscape:px-2 landscape:py-1',
+            canOpenPanel
+              ? 'cursor-pointer hover:bg-white/80'
+              : 'cursor-default opacity-80',
+            isPanelOpen && 'ring-1 ring-blue-300'
+          )}
+          aria-label={periodAria}
+        >
+          <span
+            className='truncate text-sm font-medium text-blue-600 landscape:text-xs'
+            dir={isRtl ? 'rtl' : 'ltr'}
+          >
+            {displayedPeriod}
+          </span>
+        </button>
 
-  // Couleurs pour les niveaux de qualité
-  const getQualityColor = (level: string): string => {
-    const colors: Record<string, string> = {
-      bon: "text-green-600",
-      moyen: "text-yellow-600",
-      degrade: "text-orange-600",
-      mauvais: "text-red-600",
-      tresMauvais: "text-red-700",
-      extrMauvais: "text-red-900",
-      default: "text-gray-600",
-    };
-    return colors[level] || "text-gray-600";
-  };
-
-  const isRtl = i18n.language === "ar";
+        <StatisticsPanel
+          visibleDevices={visibleDevices}
+          visibleReports={visibleReports}
+          selectedSources={selectedSources}
+          selectedPollutant={selectedPollutant}
+          isOpen={isPanelOpen}
+          onClose={() => setIsPanelOpen(false)}
+          statistics={statistics}
+          sourceStatistics={sourceStatistics}
+        />
+      </>
+    );
+  }
 
   return (
     <>
       <div
         className={cn(
-          "text-xs text-gray-600 cursor-pointer transition-all",
-          "hover:bg-gray-50 rounded-md -mx-1 px-1 py-0.5",
-          isPanelOpen && "bg-gray-50"
+          'cursor-pointer text-xs text-gray-600 transition-all',
+          'hover:bg-gray-50 rounded-md -mx-1 px-1 py-0.5',
+          isPanelOpen && 'bg-gray-50'
         )}
-        onClick={() => (visibleDevices.length > 0 || visibleReports.length > 0) && setIsPanelOpen(!isPanelOpen)}
-        role="button"
+        onClick={openPanel}
+        role='button'
         tabIndex={0}
         onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
+          if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            if (visibleDevices.length > 0 || visibleReports.length > 0) {
-              setIsPanelOpen(!isPanelOpen);
-            }
+            openPanel();
           }
         }}
-        aria-label={t("panels.showStats")}
+        aria-label={t('panels.showStats')}
       >
-        {/* Période des données affichées (mise en avant quand le panneau est fermé) */}
-        {displayedPeriod && !isPanelOpen && (
-          <div className="mb-1.5">
+        {displayedPeriod && !isPanelOpen ? (
+          <div className='mb-1.5'>
             <div
-              className="flex w-full items-center justify-center rounded-r-md rounded-l border border-slate-200 border-l-4 border-l-blue-400 bg-white py-1.5 pl-2.5 pr-3 shadow-sm"
-              role="status"
-              aria-label={`${t("controls.period")}: ${displayedPeriod}`}
+              className='flex w-full items-center justify-center rounded-r-md rounded-l border border-slate-200 border-l-4 border-l-blue-400 bg-white py-1.5 pl-2.5 pr-3 shadow-sm'
+              role='status'
+              aria-label={periodAria}
             >
               <span
-                className="text-sm text-slate-600"
-                dir={isRtl ? "rtl" : "ltr"}
+                className='text-sm text-slate-600'
+                dir={isRtl ? 'rtl' : 'ltr'}
               >
-                <span className="font-medium text-slate-700">{t("controls.period")}</span>
-                <span className="text-slate-400 mx-1" aria-hidden>·</span>
-                <span className="font-medium text-blue-600">{displayedPeriod}</span>
+                <span className='font-medium text-slate-700'>
+                  {t('controls.period')}
+                </span>
+                <span className='mx-1 text-slate-400' aria-hidden>
+                  ·
+                </span>
+                <span className='font-medium text-blue-600'>
+                  {displayedPeriod}
+                </span>
               </span>
             </div>
           </div>
-        )}
+        ) : null}
 
-        {/* Affichage principal : nombre d'appareils visibles (RTL uniquement sur le texte) */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-1 min-w-0">
-            <span className="font-medium" dir={isRtl ? "rtl" : "ltr"}>
-              {t("statistics.devicesVisible", { count: visibleDevices.length })}
-              {visibleDevices.length !== totalDevices && totalDevices > 0 && (
-                <span className="text-gray-500 font-normal">
-                  {" "}
-                  {t("statistics.ofTotal", { total: totalDevices })}
+        <div className='flex items-center justify-between'>
+          <div className='flex min-w-0 items-center space-x-1'>
+            <span className='font-medium' dir={isRtl ? 'rtl' : 'ltr'}>
+              {t('statistics.devicesVisible', { count: visibleDevices.length })}
+              {visibleDevices.length !== totalDevices && totalDevices > 0 ? (
+                <span className='font-normal text-gray-500'>
+                  {' '}
+                  {t('statistics.ofTotal', { total: totalDevices })}
                 </span>
-              )}
+              ) : null}
             </span>
           </div>
-          {(visibleDevices.length > 0 || visibleReports.length > 0) && (
+          {canOpenPanel ? (
             <svg
               className={cn(
-                "h-4 w-4 text-gray-400 transition-transform",
-                isPanelOpen && "rotate-180"
+                'h-4 w-4 text-gray-400 transition-transform',
+                isPanelOpen && 'rotate-180'
               )}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+              fill='none'
+              stroke='currentColor'
+              viewBox='0 0 24 24'
+              aria-hidden='true'
             >
               <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
+                strokeLinecap='round'
+                strokeLinejoin='round'
                 strokeWidth={2}
-                d="M19 9l-7 7-7-7"
+                d='M19 9l-7 7-7-7'
               />
             </svg>
-          )}
+          ) : null}
         </div>
 
-        {/* Affichage des signalements si présents */}
-        {visibleReports.length > 0 && (
-          <div className="mt-1">
-            <span dir={isRtl ? "rtl" : "ltr"}>
-              {t("statistics.reportsVisible", { count: visibleReports.length })}
-              {visibleReports.length !== totalReports && totalReports > 0 && (
-                <span className="text-gray-500">
-                  {" "}
-                  {t("statistics.ofTotal", { total: totalReports })}
+        {visibleReports.length > 0 ? (
+          <div className='mt-1'>
+            <span dir={isRtl ? 'rtl' : 'ltr'}>
+              {t('statistics.reportsVisible', { count: visibleReports.length })}
+              {visibleReports.length !== totalReports && totalReports > 0 ? (
+                <span className='text-gray-500'>
+                  {' '}
+                  {t('statistics.ofTotal', { total: totalReports })}
                 </span>
-              )}
+              ) : null}
             </span>
           </div>
-        )}
+        ) : null}
       </div>
 
-      {/* Panel statistique */}
       <StatisticsPanel
         visibleDevices={visibleDevices}
         visibleReports={visibleReports}
@@ -230,8 +212,8 @@ const DeviceStatistics: React.FC<DeviceStatisticsProps> = ({
         selectedPollutant={selectedPollutant}
         isOpen={isPanelOpen}
         onClose={() => setIsPanelOpen(false)}
-        statistics={statistics} // OPTIMISATION : Passer les statistiques pré-calculées
-        sourceStatistics={sourceStatistics} // OPTIMISATION : Passer les stats par source pré-calculées
+        statistics={statistics}
+        sourceStatistics={sourceStatistics}
       />
     </>
   );

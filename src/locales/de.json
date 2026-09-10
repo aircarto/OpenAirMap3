@@ -626,6 +626,7 @@
     "reportsVisible_one": "{{count}} Meldung sichtbar",
     "reportsVisible_other": "{{count}} Meldungen sichtbar",
     "ofTotal": "/ {{total}} gesamt",
+    "periodAria": "Zeitraum: {{period}}",
     "zoomHint": "Karte zoomen oder verschieben, um Geräte anzuzeigen",
     "globalTitle": "Gesamtstatistiken",
     "average": "Durchschnitt",

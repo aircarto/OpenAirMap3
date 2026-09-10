@@ -328,16 +328,20 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
         />
       )}
 
-      {/* Panel */}
+      {/* Panel : bottom sheet sous md, carte flottante au-delà */}
       <div
         className={cn(
-          "fixed bottom-6 right-4 z-panel-sheet w-[420px] max-h-[80vh]",
-          "bg-white rounded-lg border border-gray-200 shadow-xl",
-          "flex flex-col transition-all duration-300",
+          "fixed z-panel-sheet flex flex-col bg-white shadow-xl transition-all duration-300",
+          "inset-x-0 bottom-0 max-h-[min(80vh,100dvh)] w-full rounded-t-2xl border border-gray-200 border-b-0",
+          "pb-[env(safe-area-inset-bottom,0px)]",
+          "md:inset-x-auto md:bottom-6 md:right-4 md:w-[420px] md:max-h-[80vh] md:rounded-lg md:border-b md:pb-0",
           isOpen
             ? "opacity-100 translate-y-0"
-            : "opacity-0 translate-y-4 pointer-events-none"
+            : "pointer-events-none translate-y-4 opacity-0"
         )}
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("statistics.title")}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
@@ -375,7 +379,7 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
         </div>
 
         {/* Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-6">
           {visibleDevices.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <svg

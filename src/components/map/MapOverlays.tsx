@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useSyncExternalStore } from "react";
 import Legend from "./Legend";
 import SensorPromoCard from "./SensorPromoCard";
 import NotificationStack from "./notifications/NotificationStack";
@@ -16,6 +16,43 @@ import {
   BurnedAreaPeriod,
   HotspotPeriod,
 } from "../../services/EffisLayerService";
+
+const MD_QUERY = "(min-width: 768px)";
+const LG_QUERY = "(min-width: 1024px)";
+
+const subscribeMd = (onChange: () => void) => {
+  if (typeof window === "undefined" || !window.matchMedia) return () => {};
+  const list = window.matchMedia(MD_QUERY);
+  list.addEventListener("change", onChange);
+  return () => list.removeEventListener("change", onChange);
+};
+
+const subscribeLg = (onChange: () => void) => {
+  if (typeof window === "undefined" || !window.matchMedia) return () => {};
+  const list = window.matchMedia(LG_QUERY);
+  list.addEventListener("change", onChange);
+  return () => list.removeEventListener("change", onChange);
+};
+
+const useIsMdUp = () =>
+  useSyncExternalStore(
+    subscribeMd,
+    () =>
+      typeof window !== "undefined" && window.matchMedia
+        ? window.matchMedia(MD_QUERY).matches
+        : false,
+    () => false
+  );
+
+const useIsLgUp = () =>
+  useSyncExternalStore(
+    subscribeLg,
+    () =>
+      typeof window !== "undefined" && window.matchMedia
+        ? window.matchMedia(LG_QUERY).matches
+        : true,
+    () => true
+  );
 
 interface MapOverlaysProps {
   signalAir: any;
@@ -75,6 +112,8 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
   statistics,
   sourceStatistics,
 }) => {
+  const isMdUp = useIsMdUp();
+  const isLgUp = useIsLgUp();
   const sidePanelOffset =
     sidePanels.isSidePanelOpen && sidePanels.panelSize !== "hidden";
 
@@ -259,9 +298,48 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
         sidePanelOffset={sidePanelOffset}
       />
 
-      {/* Colonne bas-droite : promo, légendes de couches, puis période et
-          compteurs. Une seule colonne flex à la place de trois ancrages absolus
-          qui se chevauchaient. */}
+      {/* Mobile / tablette : période (+ compteurs dès md) en haut à gauche,
+          en face de la recherche. Un seul DeviceStatistics monté (< lg). */}
+      {!isLgUp ? (
+        <div
+          className="pointer-events-auto absolute left-3 top-4 z-map-info max-w-[min(12rem,46vw)] md:max-w-[min(18rem,42vw)] landscape:max-w-[min(9.5rem,40vw)]"
+          data-tour="period-stats-chip"
+        >
+          {isMdUp ? (
+            <div className="glass-3 rounded-[var(--r-md)] px-3 py-2">
+              <DeviceStatistics
+                visibleDevices={visibleDevices}
+                visibleReports={visibleReports}
+                totalDevices={totalDevices}
+                totalReports={totalReports}
+                selectedPollutant={selectedPollutant}
+                selectedSources={selectedSources}
+                selectedTimeStep={selectedTimeStep}
+                historicalCurrentDate={historicalCurrentDate}
+                statistics={statistics}
+                sourceStatistics={sourceStatistics}
+                variant="full"
+              />
+            </div>
+          ) : (
+            <DeviceStatistics
+              visibleDevices={visibleDevices}
+              visibleReports={visibleReports}
+              totalDevices={totalDevices}
+              totalReports={totalReports}
+              selectedPollutant={selectedPollutant}
+              selectedSources={selectedSources}
+              selectedTimeStep={selectedTimeStep}
+              historicalCurrentDate={historicalCurrentDate}
+              statistics={statistics}
+              sourceStatistics={sourceStatistics}
+              variant="compact"
+            />
+          )}
+        </div>
+      ) : null}
+
+      {/* Desktop lg+ : colonne bas-droite (promo, légendes couches, stats) */}
       <div
         className="pointer-events-none absolute bottom-7 right-3 z-map-info hidden max-h-[calc(100%-9rem)] flex-col items-end gap-2 overflow-y-auto lg:flex"
       >
@@ -274,19 +352,21 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
           </div>
         )}
         <div className="glass-3 pointer-events-auto shrink-0 rounded-[var(--r-md)] px-3 py-2">
-          <DeviceStatistics
-            visibleDevices={visibleDevices}
-            visibleReports={visibleReports}
-            totalDevices={totalDevices}
-            totalReports={totalReports}
-            selectedPollutant={selectedPollutant}
-            selectedSources={selectedSources}
-            selectedTimeStep={selectedTimeStep}
-            historicalCurrentDate={historicalCurrentDate}
-            statistics={statistics}
-            sourceStatistics={sourceStatistics}
-            showDetails={false}
-          />
+          {isLgUp ? (
+            <DeviceStatistics
+              visibleDevices={visibleDevices}
+              visibleReports={visibleReports}
+              totalDevices={totalDevices}
+              totalReports={totalReports}
+              selectedPollutant={selectedPollutant}
+              selectedSources={selectedSources}
+              selectedTimeStep={selectedTimeStep}
+              historicalCurrentDate={historicalCurrentDate}
+              statistics={statistics}
+              sourceStatistics={sourceStatistics}
+              variant="full"
+            />
+          ) : null}
           {isWildfireVisible && wildfire.wildfireReports.length > 0 && (
             <div className="mt-1 text-xs text-gray-600">
               • {wildfire.wildfireReports.length} incendie

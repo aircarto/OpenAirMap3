@@ -634,6 +634,7 @@
     "reportsVisible_many": "{{count}} تقارير ظاهرة",
     "reportsVisible_other": "{{count}} تقارير ظاهرة",
     "ofTotal": "/ {{total}} الإجمالي",
+    "periodAria": "الفترة: {{period}}",
     "zoomHint": "كبّر أو حرّك الخريطة لرؤية الأجهزة",
     "globalTitle": "إحصائيات عامة",
     "average": "المتوسط",

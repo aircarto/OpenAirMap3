@@ -626,6 +626,7 @@
     "reportsVisible_one": "{{count}} reporte visible",
     "reportsVisible_other": "{{count}} reportes visibles",
     "ofTotal": "/ {{total}} en total",
+    "periodAria": "Período: {{period}}",
     "zoomHint": "Zoom o mueva el mapa para ver dispositivos",
     "globalTitle": "Estadísticas globales",
     "average": "Media",
