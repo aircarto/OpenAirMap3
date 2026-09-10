@@ -71,12 +71,10 @@ const Legend: React.FC<LegendProps> = ({
     },
   ];
 
-  // Position fixe de la légende pour éviter les décalages
+  // Position : desktop centré ; mobile géré en CSS ([data-tour]) pour
+  // éviter les arbitrary Tailwind avec virgule dans var() (non générés).
   const getLegendPosition = () => {
-    // Mobile : à droite, au-dessus du rail et de l'attribution Leaflet
-    // (`--rail-bottom-inset` + ~2.25rem pour la bande d'attribution).
-    // Desktop : centrée sur la colonne carte.
-    return "absolute right-2 max-md:[bottom:calc(var(--rail-bottom-inset,4.5rem)+2.25rem)] md:bottom-3 lg:right-auto lg:left-1/2 lg:-translate-x-1/2 lg:max-w-[calc(100%-26rem)]";
+    return "absolute right-2 bottom-3 md:bottom-3 lg:right-auto lg:left-1/2 lg:-translate-x-1/2 lg:max-w-[calc(100%-26rem)]";
   };
 
   const visibilityClass =

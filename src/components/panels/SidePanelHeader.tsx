@@ -74,10 +74,12 @@ export const SidePanelHeader: React.FC<SidePanelHeaderProps> = ({
       {/* Débord dans le rembourrage : les cibles de 44 px restent optiquement
           près du bord, comme la croix des notices, sans rétrécir la cible. */}
       <div className="-mr-1 flex shrink-0 items-center sm:-mr-2">
+        {/* Sous sm le panneau occupe déjà toute la largeur (carte repliée) :
+            agrandir / rétrécir n'a aucun effet visible. */}
         <button
           type="button"
           onClick={() => onSizeChange(isFullscreen ? "normal" : "fullscreen")}
-          className={controlClass}
+          className={cn(controlClass, "hidden sm:flex")}
           title={isFullscreen ? t("panels.shrinkPanel") : t("panels.expandPanel")}
           aria-label={
             isFullscreen ? t("panels.shrinkPanel") : t("panels.expandPanel")

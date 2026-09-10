@@ -687,8 +687,9 @@ html {
 }
 
 /* Styles pour l'encart d'attribution de Leaflet.
-   Sur mobile le rail occupe le bas : on s'adosse à --rail-bottom-inset
-   (publié par MapControlRail), comme la légende — sans passer sous la barre. */
+   Sur mobile : bas-gauche, au-dessus du rail, pour laisser la légende
+   en bas-droite sans chevauchement. --rail-bottom-inset est publié par
+   MapControlRail sur la colonne carte (héritée jusqu'ici). */
 .leaflet-control-attribution {
   position: fixed !important;
   bottom: 0px !important;
@@ -710,31 +711,33 @@ html {
   display: none !important;
 }
 
-/* Ajustement pour les petits écrans en mode paysage */
-@media (max-width: 1024px) and (orientation: landscape) {
+/* Légende qualité : ancrage fiable hors desktop centré.
+   Les arbitrary Tailwind avec virgule dans var() ne sont pas générés. */
+@media (max-width: 1023px) {
   .leaflet-control-attribution {
+    left: 2px !important;
+    right: auto !important;
     bottom: calc(var(--rail-bottom-inset, 0px) + 0.25rem) !important;
-    right: 2px !important;
+    border-radius: 0 var(--r-sm) 0 0 !important;
     font-size: 10px !important;
     padding: 1px 4px !important;
-    max-width: 210px !important;
-    text-align: right !important;
+    /* Laisse de la place à la légende à droite */
+    max-width: min(240px, calc(100vw - 5.5rem)) !important;
+    text-align: left !important;
     white-space: normal !important;
     line-height: 1.3 !important;
   }
-}
 
-/* Version compacte pour mobile — empilement : rail → attribution → légende */
-@media (max-width: 767px) {
-  .leaflet-control-attribution {
-    bottom: calc(var(--rail-bottom-inset, 4.5rem) + 0.25rem) !important;
-    right: 2px !important;
-    font-size: 10px !important;
-    padding: 1px 4px !important;
-    max-width: 210px !important;
-    text-align: right !important;
-    white-space: normal !important;
-    line-height: 1.3 !important;
+  [data-tour="global-legend"] {
+    right: 0.5rem !important;
+    bottom: calc(var(--rail-bottom-inset, 0px) + 0.5rem) !important;
+    left: auto !important;
+    transform: none !important;
+  }
+
+  [data-tour="overlay-legends-mobile"] {
+    right: 0.5rem !important;
+    bottom: calc(var(--rail-bottom-inset, 0px) + 9rem) !important;
   }
 }
 
