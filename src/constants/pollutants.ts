@@ -1,4 +1,11 @@
-import { Pollutant } from "../types";
+import { Pollutant, type PollutantCategory } from "../types";
+
+/** Ordre d'affichage des sections dans le menu polluant */
+export const POLLUTANT_CATEGORY_ORDER: PollutantCategory[] = [
+  "polluant",
+  "bruit",
+  "chaleur",
+];
 
 // Configuration des seuils pour les particules fines PM1 et PM2.5
 export const seuilsPm1Pm25 = {
@@ -66,42 +73,49 @@ export const pollutants: Record<string, Pollutant> = {
     code: "pm1",
     unit: "µg/m³",
     thresholds: seuilsPm1Pm25,
+    category: "polluant",
   },
   pm25: {
     name: "PM₂.₅",
     code: "pm25",
     unit: "µg/m³",
     thresholds: seuilsPm1Pm25,
+    category: "polluant",
   },
   pm10: {
     name: "PM₁₀",
     code: "pm10",
     unit: "µg/m³",
     thresholds: seuilsPm10,
+    category: "polluant",
   },
   no2: {
     name: "NO₂",
     code: "no2",
     unit: "µg/m³",
     thresholds: seuilsNo2,
+    category: "polluant",
   },
   so2: {
     name: "SO₂",
     code: "so2",
     unit: "µg/m³",
     thresholds: seuilsSo2,
+    category: "polluant",
   },
   o3: {
     name: "O₃",
     code: "o3",
     unit: "µg/m³",
     thresholds: seuilsO3,
+    category: "polluant",
   },
   bruit: {
     name: "Bruit",
     code: "bruit",
     unit: "dB(A)",
     thresholds: seuilsBruit,
+    category: "bruit",
     supportedTimeSteps: ["instantane", "deuxMin"],
     // Pas encore exposé dans le sélecteur global (Scan / ≤2 min)
     activated: false,

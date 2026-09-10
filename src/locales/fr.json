@@ -35,7 +35,12 @@
     "so2": "SO₂",
     "o3": "O₃",
     "bruit": "Bruit",
-    "noAvailable": "Aucun polluant disponible"
+    "noAvailable": "Aucun polluant disponible",
+    "categories": {
+      "polluant": "Polluant",
+      "bruit": "Bruit",
+      "chaleur": "Chaleur"
+    }
   },
   "quality": {
     "noData": "Pas de donnée",
@@ -589,7 +594,9 @@
       "personalDataTitle": "Données personnelles",
       "personalDataText": "OpenAirMap ne propose pas de compte utilisateur. Des cookies ou traceurs techniques (notamment à des fins de mesure d'audience via Matomo) peuvent être utilisés pour assurer le bon fonctionnement et l'amélioration du service.",
       "privacyPolicyLink": "Politique de confidentialité AtmoSud"
-    }
+    },
+    "tourTitle": "Prise en main",
+    "tourText": "Relancez le tutoriel guidé pour découvrir les contrôles de la carte, les sources de données et le mode historique."
   },
   "tooltip": {
     "model": "Modèle :",
@@ -784,6 +791,7 @@
     },
     "groupUtilities": "Utilitaires",
     "groupBaseLayer": "Fond de carte",
-    "groupModes": "Modes"
+    "groupModes": "Modes",
+    "brandWebsite": "Site {{organization}}"
   }
 }

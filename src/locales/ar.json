@@ -35,7 +35,12 @@
     "so2": "SO₂",
     "o3": "O₃",
     "bruit": "الضجيج",
-    "noAvailable": "لا يوجد ملوث متاح"
+    "noAvailable": "لا يوجد ملوث متاح",
+    "categories": {
+      "polluant": "ملوث",
+      "bruit": "ضجيج",
+      "chaleur": "حرارة"
+    }
   },
   "quality": {
     "noData": "لا توجد بيانات",
@@ -589,7 +594,9 @@
       "personalDataTitle": "البيانات الشخصية",
       "personalDataText": "لا يوفّر OpenAirMap حسابات مستخدمين. قد تُستخدم ملفات تعريف ارتباط أو أدوات تتبع تقنية (لا سيما لقياس الجمهور عبر Matomo) لضمان حسن التشغيل وتحسين الخدمة.",
       "privacyPolicyLink": "سياسة الخصوصية لدى AtmoSud"
-    }
+    },
+    "tourTitle": "البدء",
+    "tourText": "أعد تشغيل الجولة الإرشادية لاكتشاف عناصر التحكم في الخريطة ومصادر البيانات والوضع التاريخي."
   },
   "tooltip": {
     "model": "النموذج:",
@@ -800,6 +807,7 @@
     },
     "groupUtilities": "أدوات",
     "groupBaseLayer": "خلفية الخريطة",
-    "groupModes": "الأنماط"
+    "groupModes": "الأنماط",
+    "brandWebsite": "موقع {{organization}}"
   }
 }
