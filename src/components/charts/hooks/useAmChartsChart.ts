@@ -16,6 +16,7 @@ import {
   getPrimaryPlaybackDataKey,
   findNearestPlaybackPoint,
   getPlaybackMarkerSeriesId,
+  createSlimYScrollbar,
 } from "../utils/amChartsHelpers";
 import { getHistoricalAxisRange } from "../../../utils/historicalTimeRange";
 
@@ -159,11 +160,11 @@ export const useAmChartsChart = ({
     const chart = root.container.children.push(
       am5xy.XYChart.new(root, {
         panX: true,
-        panY: true, // Permet le déplacement vertical (scrollbar Y native)
+        panY: true,
         wheelX: "panX",
-        wheelY: "zoomX", // Molette inversée : zoom sur l'axe X
+        wheelY: "zoomX", // Molette : zoom sur l'axe X
         pinchZoomX: true,
-        pinchZoomY: true,
+        pinchZoomY: false, // Zoom Y dédié via le rail fin (scrollbarY)
         layout: root.verticalLayout,
         paddingTop: chartMargins.top,
         paddingRight: chartMargins.right,
@@ -255,7 +256,7 @@ export const useAmChartsChart = ({
         })
       );
 
-      // Ajouter le label (traduit) uniquement pour l'axe droit ; l'axe gauche a son label à part (ordre Label → Contrôle → Graduation)
+      // Label axe droit uniquement ; l'axe gauche a son label à part (Label → Rail → Graduation)
       if (yAxisId === "right") {
         yAxis.children.push(
           am5.Label.new(root, {
@@ -310,17 +311,15 @@ export const useAmChartsChart = ({
       );
     });
 
-    // Scrollbar Y native amCharts : zoom/pan sur l'axe Y directement sur l'axe
-    const scrollbarY = am5.Scrollbar.new(root, {
-      orientation: "vertical",
-      marginTop: chartMargins.top,
-      marginBottom: chartMargins.bottom,
+    // Rail Y fin : zoom/pan vertical uniquement (indépendant de Ctrl+glisser = zoom X)
+    const scrollbarY = createSlimYScrollbar(root, {
+      top: chartMargins.top,
+      bottom: chartMargins.bottom,
     });
     chart.set("scrollbarY", scrollbarY);
-    // Positionner la scrollbar à gauche (côté axe Y) au lieu de la droite par défaut
     chart.leftAxesContainer.children.push(scrollbarY);
 
-    // Ordre axe gauche : Label → Contrôle (scrollbar) → Graduation
+    // Ordre axe gauche : Label → Rail → Graduation
     if (unitKeys.length > 0) {
       const yAxisLabel = am5.Label.new(root, {
         rotation: -90,
@@ -334,7 +333,7 @@ export const useAmChartsChart = ({
     }
 
     // Créer le curseur : par défaut pas de zoom au drag (le drag sert au déplacement)
-    // Le zoom au drag est activé uniquement quand Ctrl est maintenu.
+    // Ctrl maintenu => zoom X uniquement (le Y reste piloté par le rail)
     const cursor = chart.set(
       "cursor",
       am5xy.XYCursor.new(root, {
@@ -350,10 +349,10 @@ export const useAmChartsChart = ({
     cursor.lineX.set("visible", true);
 
     // Basculer le mode du curseur selon Ctrl :
-    // - Ctrl enfoncé => zoom au drag
-    // - Ctrl relâché => drag = pan (déplacement)
+    // - Ctrl enfoncé => zoom temporel (X)
+    // - Ctrl relâché => drag = pan
     const setCursorBehaviorFromCtrl = (ctrlPressed: boolean) => {
-      cursor.set("behavior", ctrlPressed ? "zoomXY" : "none");
+      cursor.set("behavior", ctrlPressed ? "zoomX" : "none");
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {

@@ -770,11 +770,16 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
           </div>
         ) : (
           <div className="h-64 relative" ref={chartContainerRef}>
-            <ExportMenu
-              hasData={amChartsData.length > 0}
-              onExportPNG={handleExportPNG}
-              onExportCSV={handleExportCSV}
-            />
+            <div
+              className="absolute top-2 right-2 z-10"
+              data-export-ignore="true"
+            >
+              <ExportMenu
+                hasData={amChartsData.length > 0}
+                onExportPNG={handleExportPNG}
+                onExportCSV={handleExportCSV}
+              />
+            </div>
             <AmChartsLineChart
               key={`mobileair-chart-${localSelectedPollutants.join("-")}`}
               data={amChartsData}

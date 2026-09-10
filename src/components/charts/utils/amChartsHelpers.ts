@@ -502,3 +502,88 @@ export const findNearestPlaybackPoint = (
   return nearest;
 };
 
+const SLIM_Y_RAIL_PX = 5;
+const SLIM_Y_GRIP_PX = 9;
+
+/**
+ * Scrollbar Y fine et discrète : rail de 5px, grips circulaires miniatures.
+ * Remplace la scrollbar amCharts par défaut (trop large en side panel).
+ */
+export const createSlimYScrollbar = (
+  root: am5.Root,
+  margins: { top: number; bottom: number }
+): am5.Scrollbar => {
+  const scrollbar = am5.Scrollbar.new(root, {
+    orientation: 'vertical',
+    width: SLIM_Y_RAIL_PX,
+    minWidth: SLIM_Y_RAIL_PX,
+    maxWidth: SLIM_Y_RAIL_PX,
+    marginTop: margins.top,
+    marginBottom: margins.bottom,
+  });
+
+  const track = scrollbar.get('background');
+  if (track) {
+    track.setAll({
+      fill: am5.color(0x94a3b8),
+      fillOpacity: 0.18,
+      strokeOpacity: 0,
+      cornerRadiusTL: 999,
+      cornerRadiusTR: 999,
+      cornerRadiusBL: 999,
+      cornerRadiusBR: 999,
+    });
+  }
+
+  scrollbar.thumb.setAll({
+    width: SLIM_Y_RAIL_PX,
+    fill: am5.color(0x64748b),
+    fillOpacity: 0.55,
+    strokeOpacity: 0,
+    cornerRadiusTL: 999,
+    cornerRadiusTR: 999,
+    cornerRadiusBL: 999,
+    cornerRadiusBR: 999,
+  });
+
+  scrollbar.thumb.states.create('hover', {
+    fill: am5.color(0x475569),
+    fillOpacity: 0.75,
+  });
+
+  scrollbar.thumb.states.create('down', {
+    fill: am5.color(0x334155),
+    fillOpacity: 0.9,
+  });
+
+  [scrollbar.startGrip, scrollbar.endGrip].forEach((grip) => {
+    grip.setAll({
+      width: SLIM_Y_GRIP_PX,
+      height: SLIM_Y_GRIP_PX,
+      scale: 1,
+    });
+
+    const bg = grip.get('background');
+    if (bg) {
+      bg.setAll({
+        fill: am5.color(0x475569),
+        fillOpacity: 0.85,
+        stroke: am5.color(0xffffff),
+        strokeWidth: 1.5,
+        strokeOpacity: 0.9,
+        cornerRadiusTL: 999,
+        cornerRadiusTR: 999,
+        cornerRadiusBL: 999,
+        cornerRadiusBR: 999,
+      });
+    }
+
+    const icon = grip.get('icon');
+    if (icon) {
+      icon.set('forceHidden', true);
+    }
+  });
+
+  return scrollbar;
+};
+
