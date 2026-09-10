@@ -20,6 +20,7 @@ import "geoportal-extensions-leaflet";
 import "leaflet-velocity";
 import "leaflet-velocity/dist/leaflet-velocity.css";
 import { DomainConfig } from "../../config/domainConfig";
+import { cn } from "../../lib/utils";
 
 // Déclaration de type pour l'extension Geoportal
 declare module "leaflet" {
@@ -904,7 +905,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
   // Utiliser signalAir.* et mobileAir.* pour accéder aux handlers
 
   return (
-    <div className="w-full h-full flex items-stretch relative">
+    <div className="relative flex h-full w-full min-w-0 items-stretch overflow-x-hidden">
       <MapPanelsContainer
         sidePanels={sidePanels}
         signalAir={signalAir}
@@ -925,11 +926,16 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
       {/* Cible du lien d'évitement : la carte elle-même, et non <main> qui
           englobe le rail. `tabIndex={-1}` rend l'ancre focalisable par script
           sans l'ajouter à l'ordre de tabulation. */}
+      {/* Sous sm, si un panneau occupe `w-full`, on replie la colonne carte :
+          sinon panneau 100% + carte flex-1 = scroll horizontal du viewport. */}
       <div
         ref={mapColumnRef}
         id="main-content"
         tabIndex={-1}
-        className="flex-1 relative focus:outline-none"
+        className={cn(
+          "relative min-w-0 flex-1 focus:outline-none",
+          isMapColumnSqueezed && "max-sm:hidden"
+        )}
         role="region"
         aria-label={t("app.mapAriaLabel")}
       >

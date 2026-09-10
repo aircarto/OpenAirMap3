@@ -16,10 +16,17 @@ export type PanelSize = "normal" | "fullscreen" | "hidden";
  */
 export const PANEL_EXIT_MS = 300;
 
-/** Échelles de largeur. Deux suffisent — il en existait cinq, par dérive. */
+/** Échelles de largeur. Deux suffisent — il en existait cinq, par dérive.
+ *  `max-w-full` + `min-w-0` : un enfant (graphique, toggle) ne doit jamais
+ *  élargir le panneau au-delà de sa colonne flex, sinon scroll horizontal.
+ *  Sous `sm`, le panneau vise toute la largeur utile ; la colonne carte est
+ *  alors repliée (voir AirQualityMap) pour éviter `w-full` + `flex-1` = overflow.
+ */
 const WIDTHS = {
-  default: "w-full sm:w-[320px] md:w-[400px] lg:w-[600px] xl:w-[650px]",
-  compact: "w-full sm:w-[340px] md:w-[420px] lg:w-[480px] xl:w-[520px]",
+  default:
+    "w-full max-w-full min-w-0 shrink-0 sm:w-[min(320px,100%)] md:w-[min(400px,100%)] lg:w-[min(560px,48vw)] xl:w-[min(620px,45vw)]",
+  compact:
+    "w-full max-w-full min-w-0 shrink-0 sm:w-[min(340px,100%)] md:w-[min(400px,100%)] lg:w-[min(460px,48vw)] xl:w-[min(500px,45vw)]",
 } as const;
 
 export interface SidePanelShellProps {
@@ -159,7 +166,7 @@ export const SidePanelShell: React.FC<SidePanelShellProps> = ({
   }, [isOpen, size, handleSizeChange]);
 
   const panelClasses = cn(
-    "glass-2 relative z-panel flex h-full min-h-0 flex-col",
+    "glass-2 relative z-panel flex h-full min-h-0 flex-col overflow-x-hidden",
     isAnimatingOut
       ? // `fixed` pour rester visible alors que le panneau est déjà sorti du flux
         cn(
@@ -170,7 +177,7 @@ export const SidePanelShell: React.FC<SidePanelShellProps> = ({
       : size === "fullscreen"
       ? // `absolute` et non un frère flex : en plein écran le panneau recouvre la
         // carte au lieu de la comprimer à zéro.
-        "absolute inset-0 w-full animate-slide-in-left"
+        "absolute inset-0 w-full max-w-full animate-slide-in-left"
       : size === "hidden"
       ? "hidden"
       : cn(WIDTHS[width], "animate-slide-in-left"),
@@ -206,10 +213,10 @@ export const SidePanelShell: React.FC<SidePanelShellProps> = ({
       {size !== "hidden" && (
         <div
           className={cn(
-            // `min-h-0` est ce qui rend `overflow-y-auto` effectif : sans lui la
-            // zone refuse de se réduire sous la hauteur de son contenu et c'est
-            // le panneau entier qui déborde.
-            "min-h-0 flex-1 overflow-y-auto",
+            // `min-h-0` rend `overflow-y-auto` effectif ; `overflow-x-hidden` +
+            // `min-w-0` empêchent un enfant large (amCharts, toggles) de forcer
+            // un scroll horizontal sur le viewport.
+            "min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden",
             bodyClassName ?? "space-y-4 p-3 sm:space-y-6 sm:p-4"
           )}
         >
