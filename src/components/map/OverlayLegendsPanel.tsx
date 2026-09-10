@@ -191,7 +191,7 @@ export const OverlayLegendsMobile: React.FC<OverlayLegendsMobileProps> = ({
   return (
     <div
       ref={panelRef}
-      className={`absolute bottom-24 ${rightOffset} z-map-info lg:hidden`}
+      className={`absolute max-md:[bottom:calc(var(--rail-bottom-inset,4.5rem)+7.5rem)] md:bottom-24 ${rightOffset} z-map-info lg:hidden`}
     >
       <button
         type="button"

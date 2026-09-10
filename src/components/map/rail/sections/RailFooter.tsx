@@ -1,7 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "../../../controls/LanguageSwitcher";
-import TourReplayButton from "../../../tour/TourReplayButton";
 import { useMapControls } from "../../../../contexts/mapControlsContext";
 import RailItem from "../RailItem";
 import RailSection from "../RailSection";
@@ -10,7 +9,7 @@ import {
   RAIL_FLYOUT_SIDE_OFFSET,
   railFlyoutSide,
 } from "../railFlyout";
-import { IconInfo, IconLanguage, IconTour } from "../railIcons";
+import { IconInfo, IconLanguage } from "../railIcons";
 import type { RailOrientation } from "../useRailRoving";
 
 export interface RailFooterProps {
@@ -19,12 +18,11 @@ export interface RailFooterProps {
 }
 
 /**
- * Pied du rail : langue, tutoriel, informations.
+ * Pied du rail : langue et informations.
  *
- * Ce groupe n'est PAS gelé pendant la lecture historique, contrairement au
- * header actuel qui atténuait aussi langue/tutoriel/infos (App.tsx:733).
- * Empêcher de changer de langue ou d'ouvrir les informations parce qu'une
- * animation temporelle est en cours n'a pas de justification.
+ * Le replay du tutoriel vit dans la modale d'informations : sur mobile, un
+ * troisième item épinglé mangeait la place du mode historique dans la zone
+ * défilante. Ce groupe n'est PAS gelé pendant la lecture historique.
  */
 export const RailFooter: React.FC<RailFooterProps> = ({
   orientation,
@@ -55,23 +53,6 @@ export const RailFooter: React.FC<RailFooterProps> = ({
             label={t("common.chooseLanguage")}
             icon={<IconLanguage />}
             caption={code}
-          />
-        )}
-      />
-
-      <TourReplayButton
-        tourId="app_overview"
-        renderTrigger={({ label, disabled, onReplay }) => (
-          <RailItem
-            itemId="tour"
-            data-testid="rail-tour-replay"
-            aria-label={label}
-            title={label}
-            disabled={disabled}
-            onClick={onReplay}
-            onFocus={onItemFocus}
-            label={label}
-            icon={<IconTour />}
           />
         )}
       />

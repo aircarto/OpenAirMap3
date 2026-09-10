@@ -101,12 +101,3 @@ export const IconInfo: React.FC = () => (
     <path d="M12 7.75h.01" />
   </svg>
 );
-
-/** Rejouer le tutoriel */
-export const IconTour: React.FC = () => (
-  <svg {...base} aria-hidden="true">
-    <circle cx="12" cy="12" r="8.25" />
-    <path d="M9.75 9.25a2.25 2.25 0 1 1 2.9 2.16c-.6.2-.9.72-.9 1.34v.5" />
-    <path d="M12 16.5h.01" />
-  </svg>
-);

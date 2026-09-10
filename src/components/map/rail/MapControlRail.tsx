@@ -38,9 +38,10 @@ export interface MapControlRailProps {
  * flex qui poussent cette colonne, donc le rail glisse avec elle au lieu de
  * rester par-dessus.
  *
- * Il publie son emprise en `--rail-inset` sur la colonne carte, ce dont se
- * servent les contrôles Leaflet ancrés à gauche et la légende centrée pour
- * s'écarter — sans mesure JS et en suivant le décalage des panneaux.
+ * Il publie son emprise en `--rail-inset` (vertical) et `--rail-bottom-inset`
+ * (horizontal / mobile) sur la colonne carte, ce dont se servent les contrôles
+ * Leaflet ancrés à gauche, la légende et l'attribution pour s'écarter — sans
+ * mesure JS et en suivant le décalage des panneaux.
  *
  * Deux largeurs en vertical : 72 px par défaut, 60 px quand `compact` dit qu'un
  * panneau comprime déjà la colonne. La place ne manque que dans le second cas,
@@ -62,7 +63,8 @@ export const MapControlRail: React.FC<MapControlRailProps> = ({
   const railRef = useRef<HTMLElement | null>(null);
 
   // Publie l'emprise du rail sur la colonne carte. En horizontal (mobile) le
-  // rail est en bas : il ne décale rien latéralement.
+  // rail est en bas : on publie sa hauteur pour que légende et overlays
+  // s'élèvent au-dessus ; en vertical, seul le décalage latéral compte.
   useEffect(() => {
     const rail = railRef.current;
     const column = rail?.parentElement;
@@ -70,9 +72,23 @@ export const MapControlRail: React.FC<MapControlRailProps> = ({
 
     if (orientation === "horizontal") {
       column.style.setProperty("--rail-inset", "0px");
-      return () => column.style.removeProperty("--rail-inset");
+      const publishBottom = () => {
+        // Hauteur du rail + marge `bottom-2` (8px) : la légende s'adosse juste
+        // au-dessus sans passer sous la barre.
+        const inset = rail.offsetHeight + 8;
+        column.style.setProperty("--rail-bottom-inset", `${inset}px`);
+      };
+      publishBottom();
+      const observer = new ResizeObserver(publishBottom);
+      observer.observe(rail);
+      return () => {
+        observer.disconnect();
+        column.style.removeProperty("--rail-inset");
+        column.style.removeProperty("--rail-bottom-inset");
+      };
     }
 
+    column.style.setProperty("--rail-bottom-inset", "0px");
     const publish = () => {
       // largeur + marge gauche + gouttière
       const inset = rail.offsetWidth + 12 + 12;
@@ -85,6 +101,7 @@ export const MapControlRail: React.FC<MapControlRailProps> = ({
     return () => {
       observer.disconnect();
       column.style.removeProperty("--rail-inset");
+      column.style.removeProperty("--rail-bottom-inset");
     };
   }, [orientation]);
 

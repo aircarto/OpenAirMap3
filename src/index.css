@@ -686,7 +686,9 @@ html {
   }
 }
 
-/* Styles pour l'encart d'attribution de Leaflet */
+/* Styles pour l'encart d'attribution de Leaflet.
+   Sur mobile le rail occupe le bas : on s'adosse à --rail-bottom-inset
+   (publié par MapControlRail), comme la légende — sans passer sous la barre. */
 .leaflet-control-attribution {
   position: fixed !important;
   bottom: 0px !important;
@@ -711,7 +713,7 @@ html {
 /* Ajustement pour les petits écrans en mode paysage */
 @media (max-width: 1024px) and (orientation: landscape) {
   .leaflet-control-attribution {
-    bottom: 2px !important;
+    bottom: calc(var(--rail-bottom-inset, 0px) + 0.25rem) !important;
     right: 2px !important;
     font-size: 10px !important;
     padding: 1px 4px !important;
@@ -722,10 +724,10 @@ html {
   }
 }
 
-/* Version compacte pour mobile */
-@media (max-width: 768px) {
+/* Version compacte pour mobile — empilement : rail → attribution → légende */
+@media (max-width: 767px) {
   .leaflet-control-attribution {
-    bottom: 2px !important;
+    bottom: calc(var(--rail-bottom-inset, 4.5rem) + 0.25rem) !important;
     right: 2px !important;
     font-size: 10px !important;
     padding: 1px 4px !important;
