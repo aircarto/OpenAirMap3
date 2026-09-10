@@ -8,17 +8,26 @@ import L from 'leaflet';
  * Exemple :
  *   aircrowd:aircrowd_pm10_2026_09_02_11h
  *
- * L’URL relative `/aircrowd-wms/wms` passe par le proxy Vite (dev) pour éviter
- * NS_ERROR_DOM_NETWORK_ERR quand le navigateur n’atteint pas le GeoServer
- * preprod (VPN / réseau interne). Cible réelle :
- * https://preprod-geoservices.atmosud.org/aircrowd/wms
+ * URL de service :
+ * - override : `VITE_AIRCROWD_WMS_URL` (absolu ou chemin same-origin)
+ * - dev : `/aircrowd-wms/wms` via proxy Vite → preprod
+ * - prod : GeoServer direct (CORS `*`) — le proxy Vite n’existe pas en build
+ *
+ * Si le navigateur n’atteint pas preprod, configurer un reverse proxy nginx
+ * sur `/aircrowd-wms` et fixer `VITE_AIRCROWD_WMS_URL=/aircrowd-wms/wms`.
  */
 
 export const AIRCROWD_WMS_UPSTREAM =
   'https://preprod-geoservices.atmosud.org/aircrowd';
 
-/** Endpoint WMS same-origin (proxy Vite → preprod). */
-export const AIRCROWD_WMS_URL = '/aircrowd-wms/wms';
+/** Chemin same-origin (proxy Vite en local, nginx éventuel en prod). */
+export const AIRCROWD_WMS_PROXY_PATH = '/aircrowd-wms/wms';
+
+/** @deprecated alias — préférer AIRCROWD_WMS_PROXY_PATH */
+export const AIRCROWD_WMS_URL = AIRCROWD_WMS_PROXY_PATH;
+
+const AIRCROWD_WMS_ERROR_TILE =
+  'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 
 /** Première carto générée (PoC) — borne basse du sélecteur de date. */
 export const AIRCROWD_WMS_DEFAULT_START_DATE = '2026-09-02';
@@ -43,11 +52,27 @@ export type AirCrowdWmsAvailability = {
   maxDate: string;
 };
 
-const getAirCrowdWmsUrl = (): string => {
-  if (typeof window !== 'undefined' && window.location?.origin) {
-    return `${window.location.origin}${AIRCROWD_WMS_URL}`;
+/**
+ * Résout l’endpoint WMS (absolu) selon env / mode.
+ * Exposé pour les tests.
+ */
+export const getAirCrowdWmsUrl = (): string => {
+  const configured = import.meta.env.VITE_AIRCROWD_WMS_URL?.trim();
+  const raw =
+    configured ||
+    (import.meta.env.DEV
+      ? AIRCROWD_WMS_PROXY_PATH
+      : `${AIRCROWD_WMS_UPSTREAM}/wms`);
+
+  if (/^https?:\/\//i.test(raw) || raw.startsWith('//')) {
+    return raw;
   }
-  return AIRCROWD_WMS_URL;
+
+  const path = raw.startsWith('/') ? raw : `/${raw}`;
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return `${window.location.origin}${path}`;
+  }
+  return path;
 };
 
 const WMS_CONFIG = {
@@ -228,8 +253,6 @@ export const pickNearestAvailableAirCrowdHour = (
 };
 
 export const createAirCrowdWMSLayer = (layerName: string): L.TileLayer.WMS => {
-  // URL absolue same-origin : évite les soucis Firefox avec les chemins relatifs
-  // et force le passage par le proxy Vite (/aircrowd-wms → preprod).
   return L.tileLayer.wms(getAirCrowdWmsUrl(), {
     layers: layerName,
     format: WMS_CONFIG.format,
@@ -240,8 +263,7 @@ export const createAirCrowdWMSLayer = (layerName: string): L.TileLayer.WMS => {
     minZoom: WMS_CONFIG.minZoom,
     maxZoom: WMS_CONFIG.maxZoom,
     pane: 'overlayPane',
-    // Ne pas bloquer sur les layers absents (réponse XML LayerNotDefined)
-    errorTileUrl:
-      'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==',
+    // Layers absents (XML LayerNotDefined) → tuile transparente, sans bruit UI
+    errorTileUrl: AIRCROWD_WMS_ERROR_TILE,
   });
 };

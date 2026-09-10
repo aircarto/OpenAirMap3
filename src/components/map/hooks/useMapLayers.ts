@@ -341,12 +341,6 @@ export const useMapLayers = ({
         aircrowdWmsHour
       );
       const wmsLayer = createAirCrowdWMSLayer(layerName);
-      wmsLayer.on("tileerror", (event) => {
-        console.warn("❌ [AIRCROWD WMS] Tuile en erreur:", {
-          layerName,
-          url: (event as { tile?: HTMLImageElement }).tile?.src,
-        });
-      });
       wmsLayer.addTo(map);
       aircrowdWmsLayerRef.current = wmsLayer;
       setCurrentModelingLegendUrl(getAirCrowdWmsLegendUrl(layerName));

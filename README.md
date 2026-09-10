@@ -308,6 +308,15 @@ server {
     try_files $uri $uri/ /index.html;
   }
 
+  # Proxy WMS AirCrowd (optionnel) — utile si le navigateur n'atteint pas
+  # preprod-geoservices. Alors builder avec :
+  #   VITE_AIRCROWD_WMS_URL=/aircrowd-wms/wms
+  # location /aircrowd-wms/ {
+  #   proxy_pass https://preprod-geoservices.atmosud.org/aircrowd/;
+  #   proxy_ssl_server_name on;
+  #   proxy_set_header Host preprod-geoservices.atmosud.org;
+  # }
+
   # Cache long pour assets versionnes
   location ~* \.(js|mjs|css|png|jpg|jpeg|gif|svg|ico|webp|woff2?)$ {
     expires 30d;

@@ -9,6 +9,13 @@ VITE_MAINTENANCE_MODE=boolean
 # Vide ou non defini = utilise window.location.hostname.
 VITE_FORCE_DOMAIN_CONFIG=string
 
+# Endpoint WMS AirCrowd (PoC). Optionnel.
+# - non defini : en dev → /aircrowd-wms/wms (proxy Vite) ;
+#               en prod → https://preprod-geoservices.atmosud.org/aircrowd/wms
+# - chemin (ex: /aircrowd-wms/wms) si reverse proxy nginx same-origin
+# - URL absolue GeoServer sinon
+VITE_AIRCROWD_WMS_URL=string|url
+
 
 # =====================================================
 # Couches et affichage carte
