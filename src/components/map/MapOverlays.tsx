@@ -5,6 +5,7 @@ import NotificationStack from "./notifications/NotificationStack";
 import { compactNotices, type Notice } from "./notifications/notice";
 import DeviceStatistics from "./DeviceStatistics";
 import { getModelingDisplayedPeriod } from "../../utils/modelingPeriodUtils";
+import { getAirCrowdWmsDisplayedPeriod } from "../../utils/airCrowdWmsMeasurements";
 import OverlayLegendsCard, {
   OverlayLegendItem,
   OverlayLegendsMobile,
@@ -84,6 +85,9 @@ interface MapOverlaysProps {
   historicalCurrentDate?: string;
   isPollutantForecastMode?: boolean;
   modelingHourIndex?: number | null;
+  aircrowdWmsEnabled?: boolean;
+  aircrowdWmsDate?: string;
+  aircrowdWmsHour?: number;
   locale?: string;
   statistics: any;
   sourceStatistics: any;
@@ -115,14 +119,18 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
   historicalCurrentDate,
   isPollutantForecastMode = false,
   modelingHourIndex = null,
+  aircrowdWmsEnabled = false,
+  aircrowdWmsDate,
+  aircrowdWmsHour = 0,
   locale = "fr",
   statistics,
   sourceStatistics,
 }) => {
   const isMdUp = useIsMdUp();
   const isLgUp = useIsLgUp();
-  const displayedPeriodOverride =
-    isPollutantForecastMode && typeof modelingHourIndex === "number"
+  const displayedPeriodOverride = aircrowdWmsEnabled && aircrowdWmsDate
+    ? getAirCrowdWmsDisplayedPeriod(aircrowdWmsDate, aircrowdWmsHour, locale)
+    : isPollutantForecastMode && typeof modelingHourIndex === "number"
       ? getModelingDisplayedPeriod(modelingHourIndex, locale)
       : undefined;
   const sidePanelOffset =

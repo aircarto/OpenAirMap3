@@ -1230,6 +1230,9 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           historicalCurrentDate={historicalCurrentDate}
           isPollutantForecastMode={currentModelingLayer === "pollutant"}
           modelingHourIndex={modelingHourIndex ?? null}
+          aircrowdWmsEnabled={aircrowdWmsEnabled}
+          aircrowdWmsDate={aircrowdWmsDate}
+          aircrowdWmsHour={aircrowdWmsHour}
           locale={i18n.language}
           statistics={statistics}
           sourceStatistics={sourceStatistics}

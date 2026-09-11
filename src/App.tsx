@@ -23,6 +23,7 @@ import type {
   MapControlsValue,
 } from "./contexts/mapControlsContext";
 import { useAirQualityData } from "./hooks/useAirQualityData";
+import { useAirCrowdWmsMeasurements } from "./hooks/useAirCrowdWmsMeasurements";
 import { useTemporalVisualization } from "./hooks/useTemporalVisualization";
 import { useDomainConfig } from "./hooks/useDomainConfig";
 import { useFavicon } from "./hooks/useFavicon";
@@ -481,6 +482,9 @@ const AppContent: React.FC = () => {
     isHistoricalModeAllowedForTimeStep(selectedTimeStep);
 
   const handleHistoricalModeToggle = useCallback(() => {
+    if (!isHistoricalModeActive) {
+      setAircrowdWmsEnabled(false);
+    }
     toggleHistoricalMode();
     trackFeatureUsage("historical_mode_toggle", {
       from: isHistoricalModeActive,
@@ -493,6 +497,13 @@ const AppContent: React.FC = () => {
       exitHistoricalMode();
     }
   }, [isHistoricalModeAllowed, isHistoricalModeActive, exitHistoricalMode]);
+
+  // AirCrowd WMS et mode historique sont exclusifs (snapshot vs timeline)
+  useEffect(() => {
+    if (aircrowdWmsEnabled && isHistoricalModeActive) {
+      exitHistoricalMode();
+    }
+  }, [aircrowdWmsEnabled, isHistoricalModeActive, exitHistoricalMode]);
 
   // Réinitialiser la visibilité du panel quand le mode historique est activé
   useEffect(() => {
@@ -543,8 +554,22 @@ const AppContent: React.FC = () => {
     mobileAirPeriod,
     selectedMobileAirSensor,
     signalAirOptions,
-    autoRefreshEnabled: autoRefreshEnabled && !isHistoricalModeActive, // Désactiver l'auto-refresh en mode historique
+    autoRefreshEnabled:
+      autoRefreshEnabled && !isHistoricalModeActive && !aircrowdWmsEnabled,
   });
+
+  const {
+    devices: aircrowdWmsDevices,
+    loading: aircrowdWmsLoading,
+  } = useAirCrowdWmsMeasurements({
+    enabled: aircrowdWmsEnabled,
+    date: aircrowdWmsDate,
+    hour: aircrowdWmsHour,
+    pollutant: selectedPollutant,
+    selectedSources,
+    atmoMicroAllowedSiteIds: domainConfig.atmoMicroAllowedSiteIds,
+  });
+
   const [atmoMicroMaintenanceBanner, setAtmoMicroMaintenanceBanner] =
     useState<AtmoMicroMaintenanceBannerConfig>(
       DEFAULT_ATMOMICRO_MAINTENANCE_BANNER,
@@ -597,8 +622,6 @@ const AppContent: React.FC = () => {
   }, [atmoMicroOutage]);
 
   // Déterminer quelles données utiliser selon le mode
-  const devices = isHistoricalModeActive ? getCurrentDevices() : normalDevices;
-
   const isPollutantForecastMode = currentModelingLayer === "pollutant";
   const defaultModelingHourIndexForMeasurements = useMemo(() => {
     if (!isPollutantForecastMode) return null;
@@ -612,6 +635,15 @@ const AppContent: React.FC = () => {
     typeof modelingHourIndex === "number" &&
     typeof defaultModelingHourIndexForMeasurements === "number" &&
     modelingHourIndex !== defaultModelingHourIndexForMeasurements;
+
+  // Priorité : historique > snapshot AirCrowd WMS > masquage Azur > live
+  const devices = isHistoricalModeActive
+    ? getCurrentDevices()
+    : aircrowdWmsEnabled
+      ? aircrowdWmsDevices
+      : shouldHideMeasurementsInPollutantModeling
+        ? []
+        : normalDevices;
 
   useEffect(() => {
     if (!isPollutantForecastMode) {
@@ -1014,7 +1046,7 @@ const AppContent: React.FC = () => {
             applicatif par contexte au lieu d'un troisième chemin de props. */}
         <MapControlsProvider value={mapControlsValue}>
           <AirQualityMap
-            devices={shouldHideMeasurementsInPollutantModeling ? [] : devices}
+            devices={devices}
             reports={reportsForMap}
             center={mapCenter}
             zoom={mapZoom}
@@ -1032,9 +1064,9 @@ const AppContent: React.FC = () => {
             aircrowdWmsDate={aircrowdWmsDate}
             aircrowdWmsHour={aircrowdWmsHour}
             shouldOverrideDisplayedPeriod={
-              shouldHideMeasurementsInPollutantModeling
+              shouldHideMeasurementsInPollutantModeling || aircrowdWmsEnabled
             }
-            loading={loading || temporalState.loading}
+            loading={loading || temporalState.loading || aircrowdWmsLoading}
             signalAirPeriod={signalAirDraftPeriod}
             signalAirSelectedTypes={signalAirSelectedTypes}
             onSignalAirPeriodChange={handleSignalAirDraftPeriodChange}
