@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { StationInfo } from "../../types";
+import { isTimeStepAvailable } from "../../constants/timeSteps";
 import SidePanelShell, { type PanelSize } from "./SidePanelShell";
 import PanelReopenBadge from "./PanelReopenBadge";
 
@@ -232,7 +233,9 @@ const SensorCommunitySidePanel: React.FC<SensorCommunitySidePanelProps> = ({
                   { key: "quartHeure", labelKey: "timeStep15min", active: false },
                   { key: "heure", labelKey: "timeStep1h", active: false },
                   { key: "jour", labelKey: "timeStep1j", active: false },
-                ].map(({ key, labelKey, active }) => (
+                ]
+                  .filter(({ key }) => isTimeStepAvailable(key))
+                  .map(({ key, labelKey, active }) => (
                   <button
                     key={key}
                     disabled={!active}

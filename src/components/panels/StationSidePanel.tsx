@@ -8,7 +8,7 @@ import {
   ATMOREF_POLLUTANT_MAPPING,
 } from "../../types";
 import { pollutants } from "../../constants/pollutants";
-import { pasDeTemps } from "../../constants/timeSteps";
+import { isTimeStepAvailable } from "../../constants/timeSteps";
 import { AtmoRefService } from "../../services/AtmoRefService";
 import { ModelingService } from "../../services/ModelingService";
 import { DataServiceFactory } from "../../services/DataServiceFactory";
@@ -1348,7 +1348,9 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
                         shortLabelKey: "timeStep1j",
                         alwaysDisabled: false,
                       },
-                    ].map(({ key, labelKey, shortLabelKey, alwaysDisabled }) => {
+                    ]
+                      .filter(({ key }) => isTimeStepAvailable(key))
+                      .map(({ key, labelKey, shortLabelKey, alwaysDisabled }) => {
                       const isDisabledByRange =
                         !isTimeStepValidForCurrentRange(key);
                       const isDisabled =
@@ -1398,6 +1400,7 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
                       { key: "heure", labelKey: "timeStep1h" },
                       { key: "jour", labelKey: "timeStep1j" },
                     ].filter(({ key }) => {
+                      if (!isTimeStepAvailable(key)) return false;
                       const alwaysDisabled = key === "instantane";
                       const isDisabledByRange =
                         !isTimeStepValidForCurrentRange(key);

@@ -790,7 +790,8 @@
     "groupLayers": "Layers",
     "groupTime": "Time",
     "groupPanels": "Panels",
-    "frozenDuringPlayback": "Controls unavailable during historical playback",
+    "frozenDuringPlayback": "Controls unavailable during time exploration",
+    "hourlyOnly": "Only the hourly time step is available on this map",
     "caption": {
       "sources_one": "{{count}} src",
       "sources_other": "{{count}} src",
@@ -803,5 +804,18 @@
     "groupBaseLayer": "Base map",
     "groupModes": "Modes",
     "brandWebsite": "{{organization}} website"
+  },
+  "timeBar": {
+    "now": "Now",
+    "live": "Live",
+    "past": "Past",
+    "forecast": "Forecast",
+    "goTo": "Go to…",
+    "goToTitle": "Go to a date",
+    "previous": "Previous hour",
+    "next": "Next hour",
+    "slider": "Time position",
+    "azurUnavailable": "Azur modeling is only available for the last 24 hours, plus 24 h of forecast.",
+    "regionLabel": "Time navigation"
   }
 }

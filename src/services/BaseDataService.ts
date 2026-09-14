@@ -43,7 +43,8 @@ export abstract class BaseDataService implements DataService {
 
   protected async makeRequest(
     url: string,
-    options?: RequestInit
+    options?: RequestInit,
+    requestOptions?: { treatNotFoundAsEmpty?: boolean }
   ): Promise<any> {
     try {
       const method = options?.method || "GET";
@@ -70,6 +71,11 @@ export abstract class BaseDataService implements DataService {
       const response = await fetch(url, defaultOptions);
 
       if (!response.ok) {
+        // AtmoSud répond 404 quand aucune mesure n'existe encore pour la fenêtre
+        // (heure en cours non publiée). Ce n'est pas une panne réseau.
+        if (requestOptions?.treatNotFoundAsEmpty && response.status === 404) {
+          return null;
+        }
         throw new Error(
           `HTTP error! status: ${response.status} - ${response.statusText}`
         );

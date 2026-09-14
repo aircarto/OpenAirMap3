@@ -28,6 +28,19 @@
     "availableHours": "Heures dispo. : {{hours}}",
     "capabilitiesError": "Catalogue GeoServer indisponible — créneaux limités au PoC."
   },
+  "timeBar": {
+    "now": "Maintenant",
+    "live": "Temps réel",
+    "past": "Passé",
+    "forecast": "Prévision",
+    "goTo": "Aller à…",
+    "goToTitle": "Aller à une date",
+    "previous": "Heure précédente",
+    "next": "Heure suivante",
+    "slider": "Position temporelle",
+    "azurUnavailable": "La modélisation Azur n'est disponible que sur les dernières 24 heures, plus 24 h de prévision.",
+    "regionLabel": "Navigation temporelle"
+  },
   "timeSteps": {
     "instantane": "Scan",
     "deuxMin": "≤ 2 min",
@@ -605,7 +618,7 @@
       "privacyPolicyLink": "Politique de confidentialité AtmoSud"
     },
     "tourTitle": "Prise en main",
-    "tourText": "Relancez le tutoriel guidé pour découvrir les contrôles de la carte, les sources de données et le mode historique."
+    "tourText": "Relancez le tutoriel guidé pour découvrir les contrôles de la carte, les sources de données et la navigation temporelle."
   },
   "tooltip": {
     "model": "Modèle :",
@@ -736,12 +749,12 @@
     },
     "historical": {
       "step1": {
-        "title": "Découvrir le mode historique",
-        "description": "Ce mode permet de connaître la qualité de l'air sur une période passée. Il est disponible uniquement aux pas de temps 15 min, heure et jour."
+        "title": "Naviguer dans le temps",
+        "description": "Un seul curseur synchronise la modélisation et les mesures. Glissez-le pour explorer le passé (ou la prévision Azur). Le bouton Maintenant ramène au temps réel."
       },
       "step2": {
-        "title": "Activer le mode historique",
-        "description": "Cliquez sur ce bouton pour activer le mode. Les marqueurs actuels seront remplacés par les données de la période sélectionnée."
+        "title": "Aller à une date",
+        "description": "Pour une date plus lointaine, ouvrez Aller à… Le calendrier des épisodes de pollution reste disponible, en parcours secondaire."
       },
       "step3": {
         "title": "Choisir une période",
@@ -790,7 +803,8 @@
     "groupLayers": "Couches",
     "groupTime": "Temps",
     "groupPanels": "Panneaux",
-    "frozenDuringPlayback": "Contrôles indisponibles pendant la lecture historique",
+    "frozenDuringPlayback": "Contrôles indisponibles pendant l'exploration temporelle",
+    "hourlyOnly": "Seul le pas de temps horaire est disponible sur cette carte",
     "caption": {
       "sources_one": "{{count}} src",
       "sources_other": "{{count}} src",

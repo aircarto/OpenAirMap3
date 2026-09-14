@@ -135,10 +135,37 @@ export const useAirCrowdWmsMeasurements = ({
           );
         }
 
-        const results = await Promise.all(promises);
+        const settled = await Promise.allSettled(promises);
         if (requestId !== requestIdRef.current) return;
 
-        const merged = mergeTemporalDataPoints(results);
+        const series = settled.flatMap((result) =>
+          result.status === 'fulfilled' ? [result.value] : []
+        );
+        const failures = settled.filter(
+          (result): result is PromiseRejectedResult =>
+            result.status === 'rejected'
+        );
+
+        if (failures.length > 0) {
+          console.warn(
+            '[SNAPSHOT HORAIRE] Une ou plusieurs sources ont échoué:',
+            failures.map((failure) => failure.reason)
+          );
+        }
+
+        if (series.length === 0 && failures.length > 0) {
+          const firstError = failures[0].reason;
+          setDevices([]);
+          setLoading(false);
+          setError(
+            firstError instanceof Error
+              ? firstError.message
+              : 'Erreur lors du chargement des mesures horaires'
+          );
+          return;
+        }
+
+        const merged = mergeTemporalDataPoints(series);
         const closest = pickClosestTemporalPoint(merged, targetMs);
         const snapshot = closest?.devices ?? [];
         const filtered = filterDevicesByAtmoMicroWhitelist(

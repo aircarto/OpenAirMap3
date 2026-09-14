@@ -790,7 +790,8 @@
     "groupLayers": "Capas",
     "groupTime": "Tiempo",
     "groupPanels": "Paneles",
-    "frozenDuringPlayback": "Controles no disponibles durante la reproducción histórica",
+    "frozenDuringPlayback": "Controles no disponibles durante la exploración temporal",
+    "hourlyOnly": "En este mapa solo está disponible el paso de tiempo horario",
     "caption": {
       "sources_one": "{{count}} fte",
       "sources_other": "{{count}} ftes",
@@ -803,5 +804,18 @@
     "groupBaseLayer": "Mapa base",
     "groupModes": "Modos",
     "brandWebsite": "Sitio de {{organization}}"
+  },
+  "timeBar": {
+    "now": "Ahora",
+    "live": "Tiempo real",
+    "past": "Pasado",
+    "forecast": "Previsión",
+    "goTo": "Ir a…",
+    "goToTitle": "Ir a una fecha",
+    "previous": "Hora anterior",
+    "next": "Hora siguiente",
+    "slider": "Posición temporal",
+    "azurUnavailable": "La modelización Azur solo está disponible en las últimas 24 horas, más 24 h de previsión.",
+    "regionLabel": "Navegación temporal"
   }
 }

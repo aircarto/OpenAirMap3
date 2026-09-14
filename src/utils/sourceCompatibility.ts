@@ -1,5 +1,5 @@
 import { sources } from "../constants/sources";
-import { pasDeTemps } from "../constants/timeSteps";
+import { isTimeStepAvailable, pasDeTemps } from "../constants/timeSteps";
 
 /**
  * Vérifie si une source est compatible avec le pas de temps actuel
@@ -116,7 +116,9 @@ export const getSupportedTimeStepNames = (sourceCode: string): string[] => {
  * Obtient le premier pas de temps compatible pour une source
  */
 export const getFirstCompatibleTimeStep = (sourceCode: string): string | null => {
-  const supportedSteps = getSupportedTimeStepsForSource(sourceCode);
+  const supportedSteps = getSupportedTimeStepsForSource(sourceCode).filter(
+    isTimeStepAvailable
+  );
   if (supportedSteps.length > 0) {
     return supportedSteps[0];
   }

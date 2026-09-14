@@ -595,9 +595,12 @@ export class AtmoRefService extends BaseDataService {
     )}&temporalite=${temporalite}&metadata=false&format=json&download=false`;
 
     try {
-      const response = await this.makeRequest(url);
+      const response = await this.makeRequest(url, undefined, {
+        treatNotFoundAsEmpty: true,
+      });
 
       // L'API AtmoRef retourne un objet avec une propriété 'mesures'
+      // 404 (heure non publiée) → null, traité comme une série vide
       if (!response || !response.mesures || !Array.isArray(response.mesures)) {
         return [];
       }

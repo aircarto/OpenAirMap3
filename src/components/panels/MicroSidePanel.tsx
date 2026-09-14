@@ -20,6 +20,7 @@ import { ToggleGroup, ToggleGroupItem } from "../ui/button-group";
 import ExpertMenu from "../controls/ExpertMenu";
 import { cn } from "../../lib/utils";
 import { sources } from "../../constants/sources";
+import { isTimeStepAvailable } from "../../constants/timeSteps";
 import SidePanelShell, { type PanelSize } from "./SidePanelShell";
 import PanelReopenBadge from "./PanelReopenBadge";
 
@@ -41,13 +42,15 @@ interface MicroSidePanelProps {
   } | null;
 }
 
-const MICRO_TIME_STEP_PRIORITY = ["heure", "quartHeure", "instantane"] as const;
+const MICRO_TIME_STEP_PRIORITY = ["heure", "quartHeure", "instantane"].filter(
+  isTimeStepAvailable
+);
 const MICRO_TIME_STEP_OPTIONS = [
   { key: "instantane", labelKey: "timeStepScan", shortLabelKey: "timeStepScan" },
   { key: "quartHeure", labelKey: "timeStep15min", shortLabelKey: "timeStep15min" },
   { key: "heure", labelKey: "timeStep1h", shortLabelKey: "timeStep1h" },
   { key: "jour", labelKey: "timeStep1j", shortLabelKey: "timeStep1j" },
-] as const;
+].filter((option) => isTimeStepAvailable(option.key));
 const ATMOMICRO_DISCOVER_URL =
   "https://www.atmosud.org/article/utiliser-mon-microcapteur-citoyen";
 
@@ -118,6 +121,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
   const chartControlsDisabled = state.loading;
   const microSupportedTimeSteps = sources.atmoMicro.supportedTimeSteps || [];
   const isTimeStepSupportedByAtmoMicro = (timeStep: string): boolean =>
+    isTimeStepAvailable(timeStep) &&
     microSupportedTimeSteps.includes(timeStep);
   const getMicroFallbackTimeStep = (): string =>
     MICRO_TIME_STEP_PRIORITY.find((timeStep) =>

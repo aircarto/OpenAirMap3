@@ -806,7 +806,8 @@
     "groupLayers": "الطبقات",
     "groupTime": "الزمن",
     "groupPanels": "اللوحات",
-    "frozenDuringPlayback": "عناصر التحكم غير متاحة أثناء التشغيل التاريخي",
+    "frozenDuringPlayback": "عناصر التحكم غير متاحة أثناء الاستكشاف الزمني",
+    "hourlyOnly": "خطوة الزمن الساعية فقط متاحة على هذه الخريطة",
     "caption": {
       "sources_one": "{{count}} مصدر",
       "sources_other": "{{count}} مصادر",
@@ -819,5 +820,18 @@
     "groupBaseLayer": "خلفية الخريطة",
     "groupModes": "الأنماط",
     "brandWebsite": "موقع {{organization}}"
+  },
+  "timeBar": {
+    "now": "الآن",
+    "live": "الوقت الحقيقي",
+    "past": "الماضي",
+    "forecast": "التوقعات",
+    "goTo": "انتقل إلى…",
+    "goToTitle": "انتقل إلى تاريخ",
+    "previous": "الساعة السابقة",
+    "next": "الساعة التالية",
+    "slider": "الموضع الزمني",
+    "azurUnavailable": "نمذجة Azur متاحة فقط للـ 24 ساعة الماضية بالإضافة إلى 24 ساعة من التوقعات.",
+    "regionLabel": "التنقل الزمني"
   }
 }

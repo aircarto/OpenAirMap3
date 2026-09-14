@@ -3,7 +3,6 @@ import React, {
   useMemo,
   useEffect,
   useCallback,
-  useRef,
 } from "react";
 import AirQualityMap from "./components/map/AirQualityMap";
 import {
@@ -19,12 +18,14 @@ import type {
   MapControlsAirCrowdWms,
   MapControlsRefresh,
   MapControlsCommunitySources,
+  MapControlsTimeBar,
   MapControlsUi,
   MapControlsValue,
 } from "./contexts/mapControlsContext";
 import { useAirQualityData } from "./hooks/useAirQualityData";
 import { useAirCrowdWmsMeasurements } from "./hooks/useAirCrowdWmsMeasurements";
-import { useTemporalVisualization } from "./hooks/useTemporalVisualization";
+import { useAirCrowdWmsAvailability } from "./hooks/useAirCrowdWmsAvailability";
+import { useMapInstant } from "./hooks/useMapInstant";
 import { useDomainConfig } from "./hooks/useDomainConfig";
 import { useFavicon } from "./hooks/useFavicon";
 import { useDocumentTitle } from "./hooks/useDocumentTitle";
@@ -36,14 +37,16 @@ import {
   getSupportedPollutantsForTimeStep,
 } from "./constants/pollutants";
 import {
-  pasDeTemps,
-  isHistoricalModeAllowedForTimeStep,
+  getDefaultTimeStep,
+  isTimeStepAvailable,
 } from "./constants/timeSteps";
 import { getConfigForDomain } from "./config/domainConfig";
 import {
   AIRCROWD_WMS_DEFAULT_START_DATE,
   clampAirCrowdWmsDate,
   getAirCrowdWmsToday,
+  getAvailableHoursForAirCrowd,
+  pickNearestAvailableAirCrowdHour,
 } from "./services/AirCrowdWmsLayerService";
 import {
   buildAppUrlDefaults,
@@ -51,8 +54,6 @@ import {
   AppUrlParams,
 } from "./utils/appUrlParams";
 import { useAppUrlSync } from "./hooks/useAppUrlSync";
-import HistoricalControlPanel from "./components/controls/HistoricalControlPanel";
-import HistoricalPlaybackControl from "./components/controls/HistoricalPlaybackControl";
 import InformationModal from "./components/modals/InformationModal";
 import AboutPanel from "./components/AboutPanel";
 import { ModelingLayerType } from "./constants/mapLayers";
@@ -60,10 +61,19 @@ import {
   getModelingLayerHour,
   isModelingAvailable,
 } from "./services/ModelingLayerService";
-import { getModelingHourCalendarSlot } from "./utils/modelingPeriodUtils";
+import { buildAirCrowdWmsHourWindow } from "./utils/airCrowdWmsMeasurements";
+import {
+  buildTimeBarWindow,
+  findSlotIndex,
+  instantToAzurIndex,
+  isMapInstantAllowedForTimeStep,
+  lastCompletedHourInstant,
+  minInstantForLookback,
+  type MapInstant,
+  type ModelingKind,
+} from "./utils/mapInstant";
 import { useToast } from "./hooks/useToast";
 import { ToastContainer } from "./components/ui/toast";
-import { cn } from "./lib/utils";
 import { useTranslation } from "react-i18next";
 import {
   initAnalytics,
@@ -72,7 +82,6 @@ import {
   trackPageView,
 } from "./services/analyticsService";
 import { FeatureTourProvider } from "./components/tour/FeatureTourProvider";
-import HistoricalModeTourController from "./components/tour/HistoricalModeTourController";
 import GlobalAppTourController from "./components/tour/GlobalAppTourController";
 
 interface AtmoMicroMaintenanceBannerConfig {
@@ -125,12 +134,7 @@ const AppContent: React.FC = () => {
   const { toasts, addToast, removeToast } = useToast();
 
   // Trouver le pas de temps activé par défaut (calculé une seule fois)
-  const defaultTimeStep = useMemo(() => {
-    const defaultTimeStep = Object.entries(pasDeTemps).find(
-      ([_, timeStep]) => timeStep.activated,
-    );
-    return defaultTimeStep ? defaultTimeStep[0] : "heure";
-  }, []);
+  const defaultTimeStep = useMemo(() => getDefaultTimeStep(), []);
 
   // Calculer la période par défaut pour SignalAir (2 derniers jours)
   const defaultSignalAirPeriod = useMemo(() => {
@@ -171,11 +175,6 @@ const AppContent: React.FC = () => {
   const [signalAirLoadTrigger, setSignalAirLoadTrigger] = useState(0);
   const [currentModelingLayer, setCurrentModelingLayer] =
     useState<ModelingLayerType | null>(null);
-  const [modelingHourIndex, setModelingHourIndex] = useState<number | null>(
-    null,
-  );
-  const [hasUserAdjustedModelingHour, setHasUserAdjustedModelingHour] =
-    useState(false);
   const aircrowdWmsStartDate =
     domainConfig.aircrowdWmsStartDate ?? AIRCROWD_WMS_DEFAULT_START_DATE;
   // Aligné sur domainConfig.aircrowdWmsEnabled : feature exposée = couche on au démarrage
@@ -183,13 +182,25 @@ const AppContent: React.FC = () => {
   const [aircrowdWmsEnabled, setAircrowdWmsEnabled] = useState(() =>
     Boolean(domainConfig.aircrowdWmsEnabled),
   );
-  // Date/heure courantes (locale) ; GetCapabilities recalera si le créneau n’existe pas encore.
   const [aircrowdWmsDate, setAircrowdWmsDate] = useState(() =>
-    clampAirCrowdWmsDate(getAirCrowdWmsToday(), aircrowdWmsStartDate),
+    clampAirCrowdWmsDate(
+      lastCompletedHourInstant().date,
+      aircrowdWmsStartDate,
+    ),
   );
-  const [aircrowdWmsHour, setAircrowdWmsHour] = useState(() =>
-    new Date().getHours(),
+  const [aircrowdWmsHour, setAircrowdWmsHour] = useState(
+    () => lastCompletedHourInstant().hour,
   );
+  const { availability: aircrowdAvailability } = useAirCrowdWmsAvailability(
+    Boolean(domainConfig.aircrowdWmsEnabled),
+  );
+  const {
+    mode: mapInstantMode,
+    instant: mapInstant,
+    isExploration,
+    goLive,
+    seekTo,
+  } = useMapInstant();
 
   const resetSignalAirSettings = useCallback(() => {
     const resetPeriod = {
@@ -247,6 +258,9 @@ const AppContent: React.FC = () => {
   }, []);
 
   const handleTimeStepChange = useCallback((timeStep: string) => {
+    if (!isTimeStepAvailable(timeStep)) {
+      return;
+    }
     setSelectedTimeStep(timeStep);
     trackFeatureUsage("time_step_change", { timeStep });
   }, []);
@@ -255,42 +269,26 @@ const AppContent: React.FC = () => {
     (layer: ModelingLayerType | null) => {
       setCurrentModelingLayer(layer);
       trackFeatureUsage("modeling_layer_change", { layer: layer ?? "none" });
+      goLive();
 
       if (layer) {
         setAircrowdWmsEnabled(false);
       }
-
-      if (layer !== "pollutant") {
-        setHasUserAdjustedModelingHour(false);
-        setModelingHourIndex(null);
-        return;
-      }
-
-      setHasUserAdjustedModelingHour(false);
-      if (!isModelingAvailable(selectedTimeStep)) {
-        setModelingHourIndex(null);
-        return;
-      }
-      const defaultHour = getModelingLayerHour(selectedTimeStep);
-      setModelingHourIndex(defaultHour >= 0 ? defaultHour : null);
     },
-    [selectedTimeStep],
+    [goLive],
   );
 
-  const handleModelingHourChange = useCallback((hour: number) => {
-    setHasUserAdjustedModelingHour(true);
-    setModelingHourIndex(hour);
-  }, []);
-
-  const handleAircrowdWmsEnabledChange = useCallback((enabled: boolean) => {
-    setAircrowdWmsEnabled(enabled);
-    if (enabled) {
-      setCurrentModelingLayer(null);
-      setHasUserAdjustedModelingHour(false);
-      setModelingHourIndex(null);
-    }
-    trackFeatureUsage("aircrowd_wms_toggle", { enabled });
-  }, []);
+  const handleAircrowdWmsEnabledChange = useCallback(
+    (enabled: boolean) => {
+      setAircrowdWmsEnabled(enabled);
+      goLive();
+      if (enabled) {
+        setCurrentModelingLayer(null);
+      }
+      trackFeatureUsage("aircrowd_wms_toggle", { enabled });
+    },
+    [goLive],
+  );
 
   const handleAircrowdWmsDateChange = useCallback(
     (date: string) => {
@@ -453,93 +451,183 @@ const AppContent: React.FC = () => {
     }
   }, [selectedPollutant, selectedTimeStep]);
 
-  // État pour contrôler la visibilité du panel de sélection de date
-  // Note: Le panel ne se ferme plus complètement, il se rabat juste
-  const [isDatePanelVisible, setIsDatePanelVisible] = useState(true);
-  const expandPanelRef = useRef<(() => void) | null>(null);
+  const modelingKind: ModelingKind = aircrowdWmsEnabled
+    ? "aircrowd"
+    : currentModelingLayer === "pollutant" &&
+        isModelingAvailable(selectedTimeStep)
+      ? "azur"
+      : "none";
 
-  // Hook pour la visualisation temporelle
-  const {
-    state: temporalState,
-    controls: temporalControls,
-    toggleHistoricalMode,
-    exitHistoricalMode,
-    loadHistoricalData,
-    getCurrentDevices,
-    getCurrentSignalAirReports,
-    isHistoricalModeActive,
-    hasHistoricalData,
-    seekToDate,
-    goToPrevious,
-    goToNext,
-  } = useTemporalVisualization({
-    selectedPollutant,
-    selectedSources,
-    timeStep: selectedTimeStep,
-    signalAirEnabled: isSignalAirEnabled,
-    signalAirSelectedTypes,
-  });
+  const timeBarVisible =
+    modelingKind !== "none" || isMapInstantAllowedForTimeStep(selectedTimeStep);
 
-  // Mode historique autorisé uniquement pour les pas 15 min, heure et jour
-  const isHistoricalModeAllowed =
-    isHistoricalModeAllowedForTimeStep(selectedTimeStep);
+  const timeBarWindow = useMemo(
+    () =>
+      buildTimeBarWindow({
+        kind: modelingKind,
+        aircrowdMinDate:
+          aircrowdAvailability?.minDate ?? aircrowdWmsStartDate,
+        aircrowdMaxDate:
+          aircrowdAvailability?.maxDate ?? getAirCrowdWmsToday(),
+        aircrowdHoursByDate:
+          aircrowdAvailability?.byPollutant[selectedPollutant],
+        explorationInstant: isExploration ? mapInstant : null,
+      }),
+    [
+      modelingKind,
+      aircrowdAvailability,
+      aircrowdWmsStartDate,
+      selectedPollutant,
+      isExploration,
+      mapInstant,
+    ],
+  );
 
-  const handleHistoricalModeToggle = useCallback(() => {
-    if (!isHistoricalModeActive) {
-      setAircrowdWmsEnabled(false);
+  const defaultAzurHour = getModelingLayerHour(selectedTimeStep);
+  const liveSlotIndex =
+    modelingKind === "azur" && defaultAzurHour >= 0
+      ? defaultAzurHour
+      : Math.max(0, timeBarWindow.liveIndex);
+
+  const liveInstant: MapInstant =
+    timeBarWindow.slots[liveSlotIndex] ??
+    timeBarWindow.slots[timeBarWindow.slots.length - 1] ??
+    lastCompletedHourInstant();
+
+  const effectiveInstant: MapInstant =
+    isExploration && mapInstant ? mapInstant : liveInstant;
+
+  const modelingHourIndex = useMemo(() => {
+    if (modelingKind !== "azur") return null;
+    if (!isExploration || !mapInstant) {
+      return defaultAzurHour >= 0 ? defaultAzurHour : null;
     }
-    toggleHistoricalMode();
-    trackFeatureUsage("historical_mode_toggle", {
-      from: isHistoricalModeActive,
-    });
-  }, [toggleHistoricalMode, isHistoricalModeActive]);
+    return instantToAzurIndex(mapInstant);
+  }, [modelingKind, isExploration, mapInstant, defaultAzurHour]);
 
-  // Désactiver le mode historique si l'utilisateur passe sur Scan ou ≤2 min
+  const displayedAircrowdDate =
+    modelingKind === "aircrowd" ? effectiveInstant.date : aircrowdWmsDate;
+  const displayedAircrowdHour =
+    modelingKind === "aircrowd" ? effectiveInstant.hour : aircrowdWmsHour;
+
   useEffect(() => {
-    if (!isHistoricalModeAllowed && isHistoricalModeActive) {
-      exitHistoricalMode();
+    if (!timeBarVisible && isExploration) {
+      goLive();
     }
-  }, [isHistoricalModeAllowed, isHistoricalModeActive, exitHistoricalMode]);
+  }, [timeBarVisible, isExploration, goLive]);
 
-  // AirCrowd WMS et mode historique sont exclusifs (snapshot vs timeline)
   useEffect(() => {
-    if (aircrowdWmsEnabled && isHistoricalModeActive) {
-      exitHistoricalMode();
-    }
-  }, [aircrowdWmsEnabled, isHistoricalModeActive, exitHistoricalMode]);
-
-  // Réinitialiser la visibilité du panel quand le mode historique est activé
-  useEffect(() => {
-    if (isHistoricalModeActive) {
-      setIsDatePanelVisible(true);
-    }
-  }, [isHistoricalModeActive]);
-
-  // Cacher le panel de sélection quand les données historiques sont chargées (sauf si explicitement réouvert)
-  useEffect(() => {
-    if (hasHistoricalData && isHistoricalModeActive) {
-      // Cacher le panel de sélection quand les données sont chargées pour la première fois
-      // (l'utilisateur peut le rouvrir via le bouton calendrier)
-      setIsDatePanelVisible(false);
-    }
-  }, [hasHistoricalData, isHistoricalModeActive]);
-
-  // En mode historique avec signalements chargés : afficher automatiquement les marqueurs SignalAir
-  useEffect(() => {
-    if (
-      isHistoricalModeActive &&
-      hasHistoricalData &&
-      (temporalState.historicalSignalAirReports?.length ?? 0) > 0
-    ) {
-      setIsSignalAirVisible(true);
+    if (mapInstantMode !== "live" || modelingKind !== "aircrowd") return;
+    if (!aircrowdAvailability) return;
+    const hours = getAvailableHoursForAirCrowd(
+      aircrowdAvailability,
+      selectedPollutant,
+      aircrowdWmsDate,
+    );
+    if (hours.length === 0) return;
+    const preferredHour = lastCompletedHourInstant().hour;
+    if (!hours.includes(aircrowdWmsHour)) {
+      const nearest = pickNearestAvailableAirCrowdHour(hours, preferredHour);
+      if (nearest !== null) setAircrowdWmsHour(nearest);
     }
   }, [
-    isHistoricalModeActive,
-    hasHistoricalData,
-    temporalState.historicalSignalAirReports?.length,
+    mapInstantMode,
+    modelingKind,
+    aircrowdAvailability,
+    selectedPollutant,
+    aircrowdWmsDate,
+    aircrowdWmsHour,
   ]);
 
-  // Hook pour récupérer les données (mode normal)
+  const timeBarIndex =
+    isExploration && mapInstant
+      ? findSlotIndex(timeBarWindow.slots, mapInstant)
+      : liveSlotIndex;
+
+  const handleTimeBarIndexChange = useCallback(
+    (index: number) => {
+      const slot = timeBarWindow.slots[index];
+      if (!slot) return;
+      if (index === liveSlotIndex) {
+        goLive();
+        return;
+      }
+      seekTo({ date: slot.date, hour: slot.hour });
+      trackFeatureUsage("map_instant_seek", {
+        date: slot.date,
+        hour: slot.hour,
+        kind: modelingKind,
+      });
+    },
+    [timeBarWindow.slots, liveSlotIndex, goLive, seekTo, modelingKind],
+  );
+
+  const handleTimeBarGoLive = useCallback(() => {
+    goLive();
+    trackFeatureUsage("map_instant_live");
+  }, [goLive]);
+
+  const handleTimeBarGoToDate = useCallback(
+    (date: string) => {
+      const next: MapInstant = {
+        date,
+        hour: effectiveInstant.hour,
+      };
+      if (modelingKind === "azur") {
+        const azurIndex = instantToAzurIndex(next);
+        if (azurIndex === null) {
+          addToast({
+            title: t("timeBar.goToTitle"),
+            description: t("timeBar.azurUnavailable"),
+            variant: "warning",
+          });
+          return;
+        }
+      }
+      if (modelingKind === "aircrowd" && aircrowdAvailability) {
+        const hours = getAvailableHoursForAirCrowd(
+          aircrowdAvailability,
+          selectedPollutant,
+          date,
+        );
+        const nearest = pickNearestAvailableAirCrowdHour(hours, next.hour);
+        if (nearest !== null) next.hour = nearest;
+      }
+      seekTo(next);
+    },
+    [
+      effectiveInstant.hour,
+      modelingKind,
+      aircrowdAvailability,
+      selectedPollutant,
+      seekTo,
+      addToast,
+      t,
+    ],
+  );
+
+  const goToMinDate =
+    modelingKind === "none"
+      ? minInstantForLookback(selectedTimeStep).date
+      : timeBarWindow.minDate;
+  const goToMaxDate = timeBarWindow.maxDate;
+
+  const hideMeasurementsForIncompleteAzurHour =
+    modelingKind === "azur" &&
+    typeof modelingHourIndex === "number" &&
+    modelingHourIndex >= 24;
+
+  // Snapshot horaire uniquement en exploration (ou Azur h0–h23).
+  // En Live + AirCrowd, /stations/mesures 404 tant que l'heure n'est pas
+  // publiée : on garde alors les mesures live (/derniere).
+  const hourlySnapshotEnabled =
+    !hideMeasurementsForIncompleteAzurHour &&
+    ((aircrowdWmsEnabled && isExploration) ||
+      (modelingKind === "azur" &&
+        typeof modelingHourIndex === "number" &&
+        modelingHourIndex < 24) ||
+      (modelingKind === "none" && isExploration));
+
   const {
     devices: normalDevices,
     reports,
@@ -559,47 +647,17 @@ const AppContent: React.FC = () => {
     signalAirOptions,
     autoRefreshEnabled:
       autoRefreshEnabled &&
-      !isHistoricalModeActive &&
-      !aircrowdWmsEnabled &&
-      currentModelingLayer !== "pollutant",
+      !hourlySnapshotEnabled &&
+      !hideMeasurementsForIncompleteAzurHour,
   });
-
-  // Snapshot horaire partagé : AirCrowd WMS (date/heure UI) ou Azur (h0–h23 uniquement).
-  // h24 = heure en cours (agrégat horaire pas encore clos), h25+ = futur → pas de mesures.
-  const isPollutantForecastMode = currentModelingLayer === "pollutant";
-  const azurSnapshotSlot = useMemo(() => {
-    if (
-      !isPollutantForecastMode ||
-      typeof modelingHourIndex !== "number" ||
-      !isModelingAvailable(selectedTimeStep) ||
-      modelingHourIndex >= 24
-    ) {
-      return null;
-    }
-    return getModelingHourCalendarSlot(modelingHourIndex);
-  }, [isPollutantForecastMode, modelingHourIndex, selectedTimeStep]);
-
-  const hideMeasurementsForIncompleteAzurHour =
-    isPollutantForecastMode &&
-    typeof modelingHourIndex === "number" &&
-    modelingHourIndex >= 24;
-
-  const hourlySnapshotEnabled =
-    aircrowdWmsEnabled || azurSnapshotSlot !== null;
-  const hourlySnapshotDate = aircrowdWmsEnabled
-    ? aircrowdWmsDate
-    : (azurSnapshotSlot?.date ?? "");
-  const hourlySnapshotHour = aircrowdWmsEnabled
-    ? aircrowdWmsHour
-    : (azurSnapshotSlot?.hour ?? 0);
 
   const {
     devices: hourlySnapshotDevices,
     loading: hourlySnapshotLoading,
   } = useAirCrowdWmsMeasurements({
     enabled: hourlySnapshotEnabled,
-    date: hourlySnapshotDate,
-    hour: hourlySnapshotHour,
+    date: effectiveInstant.date,
+    hour: effectiveInstant.hour,
     pollutant: selectedPollutant,
     selectedSources,
     atmoMicroAllowedSiteIds: domainConfig.atmoMicroAllowedSiteIds,
@@ -656,59 +714,17 @@ const AppContent: React.FC = () => {
     }
   }, [atmoMicroOutage]);
 
-  // Priorité : historique > masquage Azur h24+ > snapshot (AirCrowd / Azur passé) > live
-  const devices = isHistoricalModeActive
-    ? getCurrentDevices()
-    : hideMeasurementsForIncompleteAzurHour
-      ? []
-      : hourlySnapshotEnabled
-        ? hourlySnapshotDevices
-        : normalDevices;
+  // Priorité : masquage Azur h24+ > snapshot (exploration / AirCrowd / Azur passé) > live
+  const devices = hideMeasurementsForIncompleteAzurHour
+    ? []
+    : hourlySnapshotEnabled
+      ? hourlySnapshotDevices
+      : normalDevices;
 
-  useEffect(() => {
-    if (!isPollutantForecastMode) {
-      setModelingHourIndex(null);
-      setHasUserAdjustedModelingHour(false);
-      return;
-    }
-
-    if (!isModelingAvailable(selectedTimeStep)) {
-      setModelingHourIndex(null);
-      setHasUserAdjustedModelingHour(false);
-      return;
-    }
-
-    if (!hasUserAdjustedModelingHour) {
-      const defaultHour = getModelingLayerHour(selectedTimeStep);
-      setModelingHourIndex(defaultHour >= 0 ? defaultHour : null);
-    }
-  }, [isPollutantForecastMode, selectedTimeStep, hasUserAdjustedModelingHour]);
-
-  const signalAirReports = useMemo(
-    () => reports.filter((report) => report.source === "signalair"),
-    [reports],
-  );
-
-  // En mode historique avec données : afficher les signalements filtrés par fenêtre temporelle (période locale)
-  const reportsForMap = useMemo(() => {
-    if (isHistoricalModeActive && hasHistoricalData) {
-      return getCurrentSignalAirReports();
-    }
-    return reports;
-  }, [
-    isHistoricalModeActive,
-    hasHistoricalData,
-    getCurrentSignalAirReports,
-    reports,
-  ]);
+  const reportsForMap = reports;
 
   const isSignalAirLoading = loadingSources.includes("signalair");
-  // En mode historique : considérer "chargé" si des signalements ont été récupérés
-  const hasSignalAirLoaded =
-    signalAirLoadTrigger > 0 ||
-    (isHistoricalModeActive &&
-      hasHistoricalData &&
-      temporalState.historicalSignalAirReports?.length > 0);
+  const hasSignalAirLoaded = signalAirLoadTrigger > 0;
 
   // Un seul filtre pour les deux usages : le compte affiché dans l'interface de
   // sélection et le drapeau `hasSignalAirData` en dérivaient séparément.
@@ -719,32 +735,6 @@ const AppContent: React.FC = () => {
 
   const hasSignalAirData = hasSignalAirLoaded && signalAirReportsCount > 0;
   const hasMobileAirData = devices.some((d) => d.source === "mobileair");
-
-  // Fonction pour gérer le chargement des données historiques
-  const handleLoadHistoricalData = () => {
-    if (temporalState.startDate && temporalState.endDate) {
-      loadHistoricalData();
-    }
-  };
-
-  // Effet pour charger automatiquement les données quand les dates changent en mode historique
-  useEffect(() => {
-    if (
-      isHistoricalModeActive &&
-      temporalState.startDate &&
-      temporalState.endDate &&
-      !temporalState.loading &&
-      temporalState.data.length === 0
-    ) {
-      // Ne pas charger automatiquement, laisser l'utilisateur décider
-    }
-  }, [
-    isHistoricalModeActive,
-    temporalState.startDate,
-    temporalState.endDate,
-    temporalState.loading,
-    temporalState.data.length,
-  ]);
 
   // Configuration de la carte basée sur le domaine et l'URL
   const [mapCenter, setMapCenter] = useState<[number, number]>([
@@ -778,9 +768,11 @@ const AppContent: React.FC = () => {
     setMapCenter([params.lat, params.lng]);
     setMapZoom(params.zoom);
     setSelectedPollutant(params.pollutant);
-    setSelectedTimeStep(params.timeStep);
+    setSelectedTimeStep(
+      isTimeStepAvailable(params.timeStep) ? params.timeStep : defaultTimeStep
+    );
     setSelectedSources(params.sources);
-  }, []);
+  }, [defaultTimeStep]);
 
   const { markMapViewTouched } = useAppUrlSync({
     state: appUrlState,
@@ -800,7 +792,7 @@ const AppContent: React.FC = () => {
 
   const handleOpenInfoModal = useCallback(() => setIsInfoModalOpen(true), []);
 
-  const headerDisabled = isHistoricalModeActive && temporalState.isPlaying;
+  const headerDisabled = isExploration;
 
   // ── Valeur du contexte de contrôles de carte ──────────────────────────────
   // Mémoïsée par groupe, et non d'un bloc : hasSignalAirData / hasMobileAirData
@@ -849,14 +841,12 @@ const AppContent: React.FC = () => {
       currentModelingLayer,
       onModelingLayerChange: handleModelingLayerChange,
       modelingHourIndex,
-      onModelingHourChange: handleModelingHourChange,
       locale: i18n.language,
     }),
     [
       currentModelingLayer,
       handleModelingLayerChange,
       modelingHourIndex,
-      handleModelingHourChange,
       i18n.language,
     ],
   );
@@ -867,9 +857,9 @@ const AppContent: React.FC = () => {
       startDate: aircrowdWmsStartDate,
       enabled: aircrowdWmsEnabled,
       onEnabledChange: handleAircrowdWmsEnabledChange,
-      date: aircrowdWmsDate,
+      date: displayedAircrowdDate,
       onDateChange: handleAircrowdWmsDateChange,
-      hour: aircrowdWmsHour,
+      hour: displayedAircrowdHour,
       onHourChange: handleAircrowdWmsHourChange,
     }),
     [
@@ -877,23 +867,23 @@ const AppContent: React.FC = () => {
       aircrowdWmsStartDate,
       aircrowdWmsEnabled,
       handleAircrowdWmsEnabledChange,
-      aircrowdWmsDate,
+      displayedAircrowdDate,
       handleAircrowdWmsDateChange,
-      aircrowdWmsHour,
+      displayedAircrowdHour,
       handleAircrowdWmsHourChange,
     ],
   );
 
   const refreshValue = useMemo<MapControlsRefresh>(
     () => ({
-      autoRefreshEnabled: autoRefreshEnabled && !isHistoricalModeActive,
+      autoRefreshEnabled: autoRefreshEnabled && !isExploration,
       onToggleAutoRefresh: handleAutoRefreshToggle,
       loading,
       lastRefresh,
     }),
     [
       autoRefreshEnabled,
-      isHistoricalModeActive,
+      isExploration,
       handleAutoRefreshToggle,
       loading,
       lastRefresh,
@@ -902,14 +892,47 @@ const AppContent: React.FC = () => {
 
   const historicalValue = useMemo<MapControlsHistorical>(
     () => ({
-      isActive: isHistoricalModeActive,
-      isAllowed: isHistoricalModeAllowed,
-      onToggle: handleHistoricalModeToggle,
+      isActive: isExploration,
+      isAllowed: false,
+      onToggle: goLive,
+    }),
+    [isExploration, goLive],
+  );
+
+  const explorationRange = isExploration
+    ? buildAirCrowdWmsHourWindow(effectiveInstant.date, effectiveInstant.hour)
+    : null;
+
+  const timeBarValue = useMemo<MapControlsTimeBar>(
+    () => ({
+      visible: timeBarVisible,
+      mode: mapInstantMode,
+      slots: timeBarWindow.slots,
+      index: timeBarIndex,
+      liveIndex: timeBarWindow.liveIndex,
+      showForecastZone: timeBarWindow.showForecastZone,
+      minDate: goToMinDate,
+      maxDate: goToMaxDate,
+      selectedPollutant,
+      loading: hourlySnapshotLoading,
+      onIndexChange: handleTimeBarIndexChange,
+      onGoLive: handleTimeBarGoLive,
+      onGoToDate: handleTimeBarGoToDate,
     }),
     [
-      isHistoricalModeActive,
-      isHistoricalModeAllowed,
-      handleHistoricalModeToggle,
+      timeBarVisible,
+      mapInstantMode,
+      timeBarWindow.slots,
+      timeBarWindow.showForecastZone,
+      timeBarIndex,
+      timeBarWindow.liveIndex,
+      goToMinDate,
+      goToMaxDate,
+      selectedPollutant,
+      hourlySnapshotLoading,
+      handleTimeBarIndexChange,
+      handleTimeBarGoLive,
+      handleTimeBarGoToDate,
     ],
   );
 
@@ -1027,6 +1050,7 @@ const AppContent: React.FC = () => {
       airCrowdWms: airCrowdWmsValue,
       refresh: refreshValue,
       historical: historicalValue,
+      timeBar: timeBarValue,
       communitySources: communitySourcesValue,
       ui: uiValue,
     }),
@@ -1037,6 +1061,7 @@ const AppContent: React.FC = () => {
       airCrowdWmsValue,
       refreshValue,
       historicalValue,
+      timeBarValue,
       communitySourcesValue,
       uiValue,
     ],
@@ -1081,12 +1106,10 @@ const AppContent: React.FC = () => {
             currentModelingLayer={currentModelingLayer}
             modelingHourIndex={modelingHourIndex}
             aircrowdWmsEnabled={aircrowdWmsEnabled}
-            aircrowdWmsDate={aircrowdWmsDate}
-            aircrowdWmsHour={aircrowdWmsHour}
-            shouldOverrideDisplayedPeriod={
-              hourlySnapshotEnabled
-            }
-            loading={loading || temporalState.loading || hourlySnapshotLoading}
+            aircrowdWmsDate={displayedAircrowdDate}
+            aircrowdWmsHour={displayedAircrowdHour}
+            shouldOverrideDisplayedPeriod={hourlySnapshotEnabled || isExploration}
+            loading={loading || hourlySnapshotLoading}
             signalAirPeriod={signalAirDraftPeriod}
             signalAirSelectedTypes={signalAirSelectedTypes}
             onSignalAirPeriodChange={handleSignalAirDraftPeriodChange}
@@ -1094,15 +1117,11 @@ const AppContent: React.FC = () => {
             isSignalAirLoading={isSignalAirLoading}
             signalAirHasLoaded={hasSignalAirLoaded}
             signalAirReportsCount={signalAirReportsCount}
-            isHistoricalModeWithSignalAirData={
-              isHistoricalModeActive &&
-              hasHistoricalData &&
-              (temporalState.historicalSignalAirReports?.length ?? 0) > 0
-            }
+            isHistoricalModeWithSignalAirData={false}
             onSignalAirSourceDeselected={handleSignalAirSourceDeselected}
             onMobileAirSensorSelected={handleMobileAirSensorSelected}
             onMobileAirSourceDeselected={handleMobileAirSourceDeselected}
-            isHistoricalModeActive={isHistoricalModeActive}
+            isHistoricalModeActive={false}
             isSignalAirEnabled={isSignalAirEnabled}
             isMobileAirEnabled={isMobileAirEnabled}
             isSignalAirVisible={isSignalAirVisible}
@@ -1110,75 +1129,24 @@ const AppContent: React.FC = () => {
             onSignalAirToggle={handleSignalAirVisibilityToggle}
             onMobileAirToggle={handleMobileAirVisibilityToggle}
             historicalCurrentDate={
-              isHistoricalModeActive && temporalState.isPlaying
-                ? temporalState.currentDate
+              isExploration ? effectiveInstant.date : undefined
+            }
+            historicalStartDate={explorationRange?.startDate}
+            historicalEndDate={explorationRange?.endDate}
+            historicalTimeStep={isExploration ? "heure" : undefined}
+            historicalPlaybackDate={
+              isExploration
+                ? new Date(
+                    effectiveInstant.date +
+                      "T" +
+                      String(effectiveInstant.hour).padStart(2, "0") +
+                      ":00:00",
+                  ).toISOString()
                 : undefined
             }
-            historicalStartDate={
-              isHistoricalModeActive ? temporalState.startDate : undefined
-            }
-            historicalEndDate={
-              isHistoricalModeActive ? temporalState.endDate : undefined
-            }
-            historicalTimeStep={
-              isHistoricalModeActive ? temporalState.timeStep : undefined
-            }
-            historicalPlaybackDate={
-              isHistoricalModeActive ? temporalState.currentDate : undefined
-            }
-            isHistoricalDatePanelVisible={
-              isHistoricalModeActive && isDatePanelVisible
-            }
+            isHistoricalDatePanelVisible={false}
           />
         </MapControlsProvider>
-
-        {/* Panel de contrôle historique (sélection de date) - Visible si mode historique actif ET panel de date visible */}
-        <HistoricalControlPanel
-          isVisible={isHistoricalModeActive && isDatePanelVisible}
-          onToggleHistoricalMode={toggleHistoricalMode}
-          state={temporalState}
-          controls={temporalControls}
-          onLoadData={handleLoadHistoricalData}
-          onSeekToDate={seekToDate}
-          onGoToPrevious={goToPrevious}
-          onGoToNext={goToNext}
-          onPanelVisibilityChange={(visible) => {
-            setIsDatePanelVisible(visible);
-          }}
-          onOpenPlaybackPanel={() => {
-            setIsDatePanelVisible(false);
-          }}
-          onExpandRequest={(expandFn) => {
-            expandPanelRef.current = expandFn;
-          }}
-          selectedPollutant={selectedPollutant}
-        />
-
-        {/* Panneau de lecture draggable - Visible si données historiques chargées ET panel de sélection caché */}
-        {isHistoricalModeActive && hasHistoricalData && !isDatePanelVisible && (
-          <HistoricalPlaybackControl
-            state={temporalState}
-            controls={temporalControls}
-            onToggleHistoricalMode={toggleHistoricalMode}
-            onOpenDatePanel={() => {
-              // Arrêter la lecture si elle est en cours
-              if (temporalState.isPlaying) {
-                temporalControls.onPlayPause();
-              }
-              // Ouvrir le panel de sélection
-              setIsDatePanelVisible(true);
-              // Développer le panel en grand (avec un délai pour s'assurer que le panel est visible)
-              setTimeout(() => {
-                if (expandPanelRef.current) {
-                  expandPanelRef.current();
-                }
-              }, 0);
-            }}
-            onSeekToDate={seekToDate}
-            onGoToPrevious={goToPrevious}
-            onGoToNext={goToNext}
-          />
-        )}
       </main>
 
       <InformationModal
@@ -1190,12 +1158,6 @@ const AppContent: React.FC = () => {
       {/* Conteneur de notifications toast */}
       <ToastContainer toasts={toasts} onClose={removeToast} />
 
-      <HistoricalModeTourController
-        isHistoricalModeAllowed={isHistoricalModeAllowed}
-        isHistoricalModeActive={isHistoricalModeActive}
-        hasHistoricalData={hasHistoricalData}
-        isDatePanelVisible={isDatePanelVisible}
-      />
       <GlobalAppTourController />
     </div>
   );

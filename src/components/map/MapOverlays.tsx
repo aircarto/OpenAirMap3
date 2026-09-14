@@ -88,6 +88,7 @@ interface MapOverlaysProps {
   aircrowdWmsEnabled?: boolean;
   aircrowdWmsDate?: string;
   aircrowdWmsHour?: number;
+  shouldOverrideDisplayedPeriod?: boolean;
   locale?: string;
   statistics: any;
   sourceStatistics: any;
@@ -122,17 +123,19 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
   aircrowdWmsEnabled = false,
   aircrowdWmsDate,
   aircrowdWmsHour = 0,
+  shouldOverrideDisplayedPeriod = false,
   locale = "fr",
   statistics,
   sourceStatistics,
 }) => {
   const isMdUp = useIsMdUp();
   const isLgUp = useIsLgUp();
-  const displayedPeriodOverride = aircrowdWmsEnabled && aircrowdWmsDate
-    ? getAirCrowdWmsDisplayedPeriod(aircrowdWmsDate, aircrowdWmsHour, locale)
-    : isPollutantForecastMode && typeof modelingHourIndex === "number"
-      ? getModelingDisplayedPeriod(modelingHourIndex, locale)
-      : undefined;
+  const displayedPeriodOverride =
+    shouldOverrideDisplayedPeriod && aircrowdWmsEnabled && aircrowdWmsDate
+      ? getAirCrowdWmsDisplayedPeriod(aircrowdWmsDate, aircrowdWmsHour, locale)
+      : isPollutantForecastMode && typeof modelingHourIndex === "number"
+        ? getModelingDisplayedPeriod(modelingHourIndex, locale)
+        : undefined;
   const sidePanelOffset =
     sidePanels.isSidePanelOpen && sidePanels.panelSize !== "hidden";
 
@@ -318,10 +321,15 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
       />
 
       {/* Mobile / tablette : période (+ compteurs dès md) en haut à gauche,
-          en face de la recherche. Un seul DeviceStatistics monté (< lg). */}
+          en face de la recherche. Un seul DeviceStatistics monté (< lg).
+          `left` suit --rail-inset : à 0 le rail est en bas ; sinon le chip
+          s'adosse à droite du rail vertical (md–lg, paysage téléphone). */}
       {!isLgUp ? (
         <div
-          className="pointer-events-auto absolute left-3 top-4 z-map-info max-w-[min(12rem,46vw)] md:max-w-[min(18rem,42vw)] landscape:max-w-[min(9.5rem,40vw)]"
+          className="pointer-events-auto absolute top-4 z-map-info max-w-[min(12rem,46vw)] md:max-w-[min(18rem,42vw)] landscape:max-w-[min(9.5rem,40vw)]"
+          style={{
+            left: 'max(0.75rem, calc(var(--rail-inset, 0px) + 0.25rem))',
+          }}
           data-tour="period-stats-chip"
         >
           {isMdUp ? (
@@ -362,7 +370,7 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
 
       {/* Desktop lg+ : colonne bas-droite (promo, légendes couches, stats) */}
       <div
-        className="pointer-events-none absolute bottom-7 right-3 z-map-info hidden max-h-[calc(100%-9rem)] flex-col items-end gap-2 overflow-y-auto lg:flex"
+        className="pointer-events-none absolute bottom-[calc(var(--rail-bottom-inset,0px)+var(--timebar-inset,0px)+1.75rem)] right-3 z-map-info hidden max-h-[calc(100%-9rem)] flex-col items-end gap-2 overflow-y-auto lg:flex"
       >
         {promo && !promo.hidden && (
           <SensorPromoCard shopUrl={promo.shopUrl} hidden={false} />

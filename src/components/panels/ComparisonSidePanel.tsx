@@ -14,6 +14,7 @@ import ChartLoadingOverlay from "../charts/ChartLoadingOverlay";
 import HistoricalTimeRangeSelector from "../controls/HistoricalTimeRangeSelector";
 import { getMaxHistoryDays, type TimeRange } from "../../utils/historicalTimeRange";
 import { sources } from "../../constants/sources";
+import { isTimeStepAvailable } from "../../constants/timeSteps";
 import SidePanelShell, { type PanelSize } from "./SidePanelShell";
 import PanelReopenBadge from "./PanelReopenBadge";
 
@@ -34,13 +35,18 @@ interface ComparisonSidePanelProps {
   panelSize: PanelSize;
 }
 
-const COMPARISON_TIME_STEP_PRIORITY = ["heure", "quartHeure", "instantane", "jour"] as const;
+const COMPARISON_TIME_STEP_PRIORITY = [
+  "heure",
+  "quartHeure",
+  "instantane",
+  "jour",
+].filter(isTimeStepAvailable);
 const COMPARISON_TIME_STEP_OPTIONS = [
   { key: "instantane", labelKey: "timeStepScan" },
   { key: "quartHeure", labelKey: "timeStep15min" },
   { key: "heure", labelKey: "timeStep1h" },
   { key: "jour", labelKey: "timeStep1j" },
-] as const;
+].filter((option) => isTimeStepAvailable(option.key));
 
 const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
   isOpen,
@@ -127,16 +133,20 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
 
   const availableComparisonTimeSteps = useMemo(
     () =>
-      comparisonState.comparedStations.reduce<string[]>(
-        (commonSteps, station, index) => {
-          const stationSupportedSteps = getSupportedTimeStepsBySource(station.source);
-          if (index === 0) return stationSupportedSteps;
-          return commonSteps.filter((timeStep) =>
-            stationSupportedSteps.includes(timeStep)
-          );
-        },
-        []
-      ),
+      comparisonState.comparedStations
+        .reduce<string[]>(
+          (commonSteps, station, index) => {
+            const stationSupportedSteps = getSupportedTimeStepsBySource(
+              station.source
+            );
+            if (index === 0) return stationSupportedSteps;
+            return commonSteps.filter((timeStep) =>
+              stationSupportedSteps.includes(timeStep)
+            );
+          },
+          []
+        )
+        .filter(isTimeStepAvailable),
     [comparisonState.comparedStations]
   );
 

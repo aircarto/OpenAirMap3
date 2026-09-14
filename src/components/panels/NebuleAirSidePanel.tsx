@@ -17,6 +17,7 @@ import { pollutants } from "../../constants/pollutants";
 import { NebuleAirService } from "../../services/NebuleAirService";
 import { ModelingService } from "../../services/ModelingService";
 import { DataServiceFactory } from "../../services/DataServiceFactory";
+import { isTimeStepAvailable } from "../../constants/timeSteps";
 import HistoricalChart from "../charts/HistoricalChart";
 import ChartLoadingOverlay from "../charts/ChartLoadingOverlay";
 import HistoricalTimeRangeSelector from "../controls/HistoricalTimeRangeSelector";
@@ -32,7 +33,7 @@ const NEBULEAIR_TIMESTEP_OPTIONS = [
   "quartHeure",
   "heure",
   "jour",
-] as const;
+].filter((step) => isTimeStepAvailable(step));
 
 const getSupportedTimeStepsForPollutants = (
   pollutantCodes: string[]
@@ -1387,7 +1388,9 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                       { key: "quartHeure", labelKey: "timeStep15min" },
                       { key: "heure", labelKey: "timeStep1h" },
                       { key: "jour", labelKey: "timeStep1j" },
-                    ].map(({ key, labelKey }) => {
+                    ]
+                      .filter(({ key }) => isTimeStepAvailable(key))
+                      .map(({ key, labelKey }) => {
                       const isDisabledBySupport =
                         !supportedTimeSteps.includes(key);
                       const isDisabledByRange =
@@ -1437,6 +1440,7 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                       { key: "heure", labelKey: "timeStep1h" },
                       { key: "jour", labelKey: "timeStep1j" },
                     ].filter(({ key }) => {
+                      if (!isTimeStepAvailable(key)) return false;
                       const isDisabledBySupport =
                         !supportedTimeSteps.includes(key);
                       const isDisabledByRange =

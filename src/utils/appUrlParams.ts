@@ -5,7 +5,10 @@ import {
   pollutants,
 } from "../constants/pollutants";
 import { getDefaultSources, sources } from "../constants/sources";
-import { pasDeTemps } from "../constants/timeSteps";
+import {
+  getAvailableTimeSteps,
+  getDefaultTimeStep,
+} from "../constants/timeSteps";
 
 export interface AppUrlParams {
   lat: number;
@@ -27,13 +30,6 @@ export interface SerializeAppUrlOptions {
 const COORD_EPSILON = 1e-5;
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 18;
-
-const getDefaultTimeStep = (): string => {
-  const defaultTimeStep = Object.entries(pasDeTemps).find(
-    ([, timeStep]) => timeStep.activated
-  );
-  return defaultTimeStep ? defaultTimeStep[0] : "heure";
-};
 
 export const buildAppUrlDefaults = (mapDefaults: {
   mapCenter: [number, number];
@@ -66,7 +62,7 @@ const getAllValidSourceCodes = (): string[] => {
 
 const VALID_SOURCE_CODES = new Set(getAllValidSourceCodes());
 const VALID_POLLUTANTS = new Set(Object.keys(pollutants));
-const VALID_TIME_STEPS = new Set(Object.keys(pasDeTemps));
+const VALID_TIME_STEPS = new Set(getAvailableTimeSteps());
 
 const parseFloatParam = (value: string | null): number | null => {
   if (value === null || value.trim() === "") {

@@ -30,13 +30,10 @@ const NorthArrow: React.FC<NorthArrowProps> = ({
       data-testid="north-arrow"
       aria-hidden="true"
       className={cn(
-        "glass-3 pointer-events-none absolute bottom-3 z-map-ambient",
+        "glass-3 pointer-events-none absolute z-map-ambient",
         "hidden flex-col items-center justify-center gap-0.5 px-2 py-1.5",
         "rounded-[var(--r-md)]",
-        // Dans l'angle, et non décalée derrière le rail : celui-ci n'occupe que
-        // le HAUT du bord gauche. C'est le rail qui réserve la place de cette
-        // bande en bas (voir sa max-height), pas la bande qui contourne le rail.
-        "left-3",
+        "left-3 bottom-[calc(var(--rail-bottom-inset,0px)+var(--timebar-inset,0px)+0.75rem)]",
         hiddenWithPanel ? "md:hidden lg:flex" : "md:flex"
       )}
     >

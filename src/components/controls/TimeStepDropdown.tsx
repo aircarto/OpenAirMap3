@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { pasDeTemps } from "../../constants/timeSteps";
+import { pasDeTemps, getAvailableTimeSteps, isTimeStepAvailable } from "../../constants/timeSteps";
 import { sources } from "../../constants/sources";
 import {
   DropdownMenu,
@@ -43,10 +43,12 @@ const TimeStepDropdown: React.FC<TimeStepDropdownProps> = ({
   menuClassName,
 }) => {
   const { t } = useTranslation();
-  // Fonction pour obtenir les pas de temps supportés par les sources sélectionnées
+  const availableTimeSteps = useMemo(() => getAvailableTimeSteps(), []);
+  const isLockedToSingle = availableTimeSteps.length <= 1;
+
   const supportedTimeSteps = useMemo(() => {
     if (!selectedSources || selectedSources.length === 0) {
-      return Object.keys(pasDeTemps);
+      return availableTimeSteps;
     }
 
     const allSupportedTimeSteps = new Set<string>();
@@ -60,39 +62,43 @@ const TimeStepDropdown: React.FC<TimeStepDropdownProps> = ({
 
       const source = sources[actualSourceCode];
       if (source) {
-        // Ajouter les pas de temps de la source principale
         if (source.supportedTimeSteps) {
           source.supportedTimeSteps.forEach((timeStep) => {
-            allSupportedTimeSteps.add(timeStep);
+            if (isTimeStepAvailable(timeStep)) {
+              allSupportedTimeSteps.add(timeStep);
+            }
           });
         }
 
-        // Ajouter les pas de temps des sous-sources si c'est un groupe
         if (source.isGroup && source.subSources) {
           Object.values(source.subSources).forEach((subSource) => {
             if (subSource.supportedTimeSteps) {
               subSource.supportedTimeSteps.forEach((timeStep) => {
-                allSupportedTimeSteps.add(timeStep);
+                if (isTimeStepAvailable(timeStep)) {
+                  allSupportedTimeSteps.add(timeStep);
+                }
               });
             }
           });
         }
       } else {
-        // Si c'est une source communautaire, chercher dans le groupe communautaire
         const communautaireSource = sources["communautaire"];
         if (communautaireSource && communautaireSource.subSources) {
           const subSource = communautaireSource.subSources[actualSourceCode];
           if (subSource && subSource.supportedTimeSteps) {
             subSource.supportedTimeSteps.forEach((timeStep) => {
-              allSupportedTimeSteps.add(timeStep);
+              if (isTimeStepAvailable(timeStep)) {
+                allSupportedTimeSteps.add(timeStep);
+              }
             });
           }
         }
       }
     });
 
-    return Array.from(allSupportedTimeSteps);
-  }, [selectedSources]);
+    const intersection = Array.from(allSupportedTimeSteps);
+    return intersection.length > 0 ? intersection : availableTimeSteps;
+  }, [selectedSources, availableTimeSteps]);
 
   // Vérifier si le pas de temps actuel est toujours supporté
   useEffect(() => {
@@ -107,8 +113,10 @@ const TimeStepDropdown: React.FC<TimeStepDropdownProps> = ({
 
   // Gérer le changement de pas de temps avec vérification des incompatibilités
   const handleTimeStepChange = (newTimeStep: string) => {
-    // Si le pas de temps ne change pas, ne rien faire
     if (newTimeStep === selectedTimeStep) {
+      return;
+    }
+    if (!isTimeStepAvailable(newTimeStep)) {
       return;
     }
 
@@ -196,21 +204,28 @@ const TimeStepDropdown: React.FC<TimeStepDropdownProps> = ({
     return timeStep ? t(`timeSteps.${selectedTimeStep}`) : t("timeSteps.choose");
   };
 
+  const trigger = renderTrigger ? (
+    renderTrigger({ displayText: getDisplayText(), disabled: isLockedToSingle })
+  ) : (
+    <DropdownButton
+      id={triggerId}
+      data-tour="global-timestep"
+      disabled={isLockedToSingle}
+      hideChevron={isLockedToSingle}
+      title={isLockedToSingle ? t("rail.hourlyOnly") : undefined}
+      className="min-w-[72px] max-w-[130px] rtl-on-ar"
+    >
+      <span className="block truncate pr-6">{getDisplayText()}</span>
+    </DropdownButton>
+  );
+
+  if (isLockedToSingle) {
+    return trigger;
+  }
+
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        {renderTrigger ? (
-          renderTrigger({ displayText: getDisplayText() })
-        ) : (
-          <DropdownButton
-            id={triggerId}
-            data-tour="global-timestep"
-            className="min-w-[72px] max-w-[130px] rtl-on-ar"
-          >
-            <span className="block truncate pr-6">{getDisplayText()}</span>
-          </DropdownButton>
-        )}
-      </DropdownMenuTrigger>
+      <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
       <DropdownMenuContent
         side={menuSide}
         align={menuAlign ?? "start"}

@@ -18,7 +18,7 @@ describe("parseAppUrlParams", () => {
 
   it("parse lat, lng, zoom et filtres valides", () => {
     const result = parseAppUrlParams(
-      "?lat=43.5&lng=5.4&zoom=11&pollutant=pm10&timeStep=quartHeure&sources=atmoRef,atmoMicro",
+      "?lat=43.5&lng=5.4&zoom=11&pollutant=pm10&timeStep=heure&sources=atmoRef,atmoMicro",
       defaults
     );
 
@@ -27,9 +27,14 @@ describe("parseAppUrlParams", () => {
       lng: 5.4,
       zoom: 11,
       pollutant: "pm10",
-      timeStep: "quartHeure",
+      timeStep: "heure",
       sources: ["atmoRef", "atmoMicro"],
     });
+  });
+
+  it("ignore un pas de temps hors horaire", () => {
+    const result = parseAppUrlParams("?timeStep=quartHeure", defaults);
+    expect(result.timeStep).toBe("heure");
   });
 
   it("ignore les coordonnées invalides", () => {
@@ -81,15 +86,12 @@ describe("serializeAppUrlParams", () => {
       {
         ...defaults,
         pollutant: "no2",
-        timeStep: "quartHeure",
         sources: ["atmoMicro"],
       },
       { defaults, includeMapView: false }
     );
 
-    expect(query).toBe(
-      "?pollutant=no2&timeStep=quartHeure&sources=atmoMicro"
-    );
+    expect(query).toBe("?pollutant=no2&sources=atmoMicro");
   });
 
   it("arrondit lat/lng à 5 décimales", () => {

@@ -90,4 +90,53 @@ describe('useAirCrowdWmsMeasurements', () => {
     expect(result.current.devices[0].id).toBe('05C1A382');
     expect(result.current.error).toBeNull();
   });
+
+  it('conserve les mesures d’une source si une autre échoue', async () => {
+    fetchTemporalData
+      .mockRejectedValueOnce(new Error('HTTP error! status: 404 - NOT FOUND'))
+      .mockResolvedValueOnce([
+        {
+          timestamp: new Date(2026, 8, 2, 11, 0).toISOString(),
+          devices: [
+            {
+              id: 'FR001',
+              name: 'Marseille',
+              latitude: 43.3,
+              longitude: 5.4,
+              source: 'atmoRef',
+              pollutant: 'pm25',
+              value: 8,
+              unit: 'µg/m³',
+              timestamp: new Date(2026, 8, 2, 11, 0).toISOString(),
+              status: 'active',
+            },
+          ],
+          deviceCount: 1,
+          averageValue: 8,
+          qualityLevels: {},
+        },
+      ]);
+
+    const { result } = renderHook(() =>
+      useAirCrowdWmsMeasurements({
+        enabled: true,
+        date: '2026-09-02',
+        hour: 11,
+        pollutant: 'pm25',
+        selectedSources: ['atmoMicro', 'atmoRef'],
+      })
+    );
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(400);
+    });
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    expect(result.current.devices).toHaveLength(1);
+    expect(result.current.devices[0].id).toBe('FR001');
+    expect(result.current.error).toBeNull();
+  });
 });

@@ -790,7 +790,8 @@
     "groupLayers": "Ebenen",
     "groupTime": "Zeit",
     "groupPanels": "Panels",
-    "frozenDuringPlayback": "Steuerung während der Verlaufswiedergabe nicht verfügbar",
+    "frozenDuringPlayback": "Steuerung während der Zeitexploration nicht verfügbar",
+    "hourlyOnly": "Auf dieser Karte ist nur der stündliche Zeitschritt verfügbar",
     "caption": {
       "sources_one": "{{count}} Qu.",
       "sources_other": "{{count}} Qu.",
@@ -803,5 +804,18 @@
     "groupBaseLayer": "Kartenhintergrund",
     "groupModes": "Modi",
     "brandWebsite": "Website von {{organization}}"
+  },
+  "timeBar": {
+    "now": "Jetzt",
+    "live": "Live",
+    "past": "Vergangenheit",
+    "forecast": "Vorhersage",
+    "goTo": "Gehe zu…",
+    "goToTitle": "Zu einem Datum",
+    "previous": "Vorherige Stunde",
+    "next": "Nächste Stunde",
+    "slider": "Zeitposition",
+    "azurUnavailable": "Die Azur-Modellierung ist nur für die letzten 24 Stunden plus 24 h Vorhersage verfügbar.",
+    "regionLabel": "Zeitnavigation"
   }
 }

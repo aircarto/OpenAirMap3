@@ -2,6 +2,7 @@ import { createContext, useContext } from "react";
 import { ModelingLayerType } from "../constants/mapLayers";
 import { Toast } from "../components/ui/toast";
 import type { Notice } from "../components/map/notifications/notice";
+import type { TimeBarSlot } from "../utils/mapInstant";
 
 /**
  * Transport d'état pour les contrôles de carte — pas un propriétaire d'état.
@@ -86,6 +87,23 @@ export interface MapControlsHistorical {
   onToggle: () => void;
 }
 
+/** Barre d’instant unique (Live / exploration) rendue dans la colonne carte. */
+export interface MapControlsTimeBar {
+  visible: boolean;
+  mode: "live" | "exploration";
+  slots: TimeBarSlot[];
+  index: number;
+  liveIndex: number;
+  showForecastZone: boolean;
+  minDate: string;
+  maxDate: string;
+  selectedPollutant: string;
+  loading: boolean;
+  onIndexChange: (index: number) => void;
+  onGoLive: () => void;
+  onGoToDate: (date: string) => void;
+}
+
 /**
  * SignalAir et MobileAir — les deux sources communautaires qui ne passent pas
  * par `selectedSources`.
@@ -133,7 +151,7 @@ export interface MapControlsCommunitySources {
 }
 
 export interface MapControlsUi {
-  /** Ex-`headerDisabled` : mode historique actif ET lecture en cours */
+  /** Filtres gelés hors Live (exploration temporelle) */
   controlsLocked: boolean;
   onOpenInfoModal: () => void;
   onToast: (toast: Omit<Toast, "id">) => void;
@@ -154,6 +172,7 @@ export interface MapControlsValue {
   airCrowdWms: MapControlsAirCrowdWms;
   refresh: MapControlsRefresh;
   historical: MapControlsHistorical;
+  timeBar: MapControlsTimeBar;
   communitySources: MapControlsCommunitySources;
   ui: MapControlsUi;
 }

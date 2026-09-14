@@ -6,11 +6,23 @@ export const pasDeTemps = {
   jour: { name: "Jour", code: "d", activated: false }, // Moyenne journalière
 };
 
-/** Pas de temps pour lesquels le mode historique est disponible (15 min, heure, jour uniquement) */
+export type TimeStepCode = keyof typeof pasDeTemps;
+
+/** Pas de temps exposés dans l’UI (branche AirCrowd : horaire uniquement). */
+export const getAvailableTimeSteps = (): TimeStepCode[] =>
+  (Object.keys(pasDeTemps) as TimeStepCode[]).filter(
+    (code) => pasDeTemps[code].activated
+  );
+
+export const isTimeStepAvailable = (timeStep: string): boolean =>
+  pasDeTemps[timeStep as TimeStepCode]?.activated === true;
+
+export const getDefaultTimeStep = (): TimeStepCode =>
+  getAvailableTimeSteps()[0] ?? "heure";
+
+/** Pas de temps pour lesquels le mode historique / TimeBar est disponible */
 export const HISTORICAL_MODE_ALLOWED_TIME_STEPS = [
-  "quartHeure",
   "heure",
-  "jour",
 ] as const;
 
 export const isHistoricalModeAllowedForTimeStep = (timeStep: string): boolean =>

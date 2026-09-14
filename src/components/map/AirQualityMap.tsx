@@ -60,6 +60,7 @@ import MapPanelsContainer from "./MapPanelsContainer";
 import MapDataMarkers from "./MapDataMarkers";
 import MapOverlays from "./MapOverlays";
 import MapViewSyncHandler from "./MapViewSyncHandler";
+import MapTimeBar from "../controls/MapTimeBar";
 import { AtmoRefService } from "../../services/AtmoRefService";
 import type { AtmoMicroLikeService } from "../../types";
 import { NebuleAirService } from "../../services/NebuleAirService";
@@ -1095,9 +1096,9 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
         >
           <MapBoundsLock maxBounds={maxBounds} />
           <MapZoomLock minZoom={minZoom} maxZoom={maxZoom} />
-          {/* Attribution en bas-gauche : laisse la légende en bas-droite sur mobile
-              (évite le chevauchement). Pas de position:fixed — voir index.css. */}
-          <AttributionControl position="bottomleft" prefix={false} />
+          {/* Attribution en bas-droite, au-dessus de la TimeBar. La légende
+              mobile se décale pour ne pas chevaucher — voir index.css. */}
+          <AttributionControl position="bottomright" prefix={false} />
 
           {/* Gestionnaire d'événements pour les clics sur la carte */}
           <MapClickHandler onMapClick={() => setSearchPinPosition(null)} />
@@ -1194,6 +1195,8 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
             ))}
         </MapContainer>
 
+        <MapTimeBar {...mapControls.timeBar} />
+
         <MapOverlays
           signalAir={signalAir}
           promo={
@@ -1230,6 +1233,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           aircrowdWmsEnabled={aircrowdWmsEnabled}
           aircrowdWmsDate={aircrowdWmsDate}
           aircrowdWmsHour={aircrowdWmsHour}
+          shouldOverrideDisplayedPeriod={shouldOverrideDisplayedPeriod}
           locale={i18n.language}
           statistics={statistics}
           sourceStatistics={sourceStatistics}

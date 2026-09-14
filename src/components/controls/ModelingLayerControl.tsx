@@ -28,6 +28,8 @@ interface ModelingLayerControlProps extends CustomTriggerProps {
   selectedTimeStep?: string;
   /** Id du trigger pour association avec un <label htmlFor> (accessibilité) */
   triggerId?: string;
+  /** Gelé hors Live : le choix de nappe suit l’instant unique */
+  locked?: boolean;
 }
 
 const ModelingLayerControl: React.FC<ModelingLayerControlProps> = ({
@@ -42,6 +44,7 @@ const ModelingLayerControl: React.FC<ModelingLayerControlProps> = ({
   menuAlign,
   menuSideOffset,
   menuClassName,
+  locked = false,
 }) => {
   const { t } = useTranslation();
   const handleLayerSelect = (layerType: ModelingLayerType) => {
@@ -98,7 +101,8 @@ const ModelingLayerControl: React.FC<ModelingLayerControlProps> = ({
   const renderOptions = (itemClassName?: string) =>
     layerTypes.map((layerType) => {
       const isSelected = currentModelingLayer === layerType;
-      const isItemDisabled = layerType === "pollutant" && !selectedPollutant;
+      const isItemDisabled =
+        locked || (layerType === "pollutant" && !selectedPollutant);
       return (
         <button
           key={layerType}

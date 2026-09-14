@@ -790,7 +790,8 @@
     "groupLayers": "Livelli",
     "groupTime": "Tempo",
     "groupPanels": "Pannelli",
-    "frozenDuringPlayback": "Controlli non disponibili durante la riproduzione storica",
+    "frozenDuringPlayback": "Controlli non disponibili durante l'esplorazione temporale",
+    "hourlyOnly": "Su questa mappa è disponibile solo il passo temporale orario",
     "caption": {
       "sources_one": "{{count}} font",
       "sources_other": "{{count}} font",
@@ -803,5 +804,18 @@
     "groupBaseLayer": "Mappa di base",
     "groupModes": "Modalità",
     "brandWebsite": "Sito di {{organization}}"
+  },
+  "timeBar": {
+    "now": "Adesso",
+    "live": "Tempo reale",
+    "past": "Passato",
+    "forecast": "Previsione",
+    "goTo": "Vai a…",
+    "goToTitle": "Vai a una data",
+    "previous": "Ora precedente",
+    "next": "Ora successiva",
+    "slider": "Posizione temporale",
+    "azurUnavailable": "La modellizzazione Azur è disponibile solo per le ultime 24 ore, più 24 h di previsione.",
+    "regionLabel": "Navigazione temporale"
   }
 }

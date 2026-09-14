@@ -74,7 +74,7 @@ const Legend: React.FC<LegendProps> = ({
   // Position : desktop centré ; mobile géré en CSS ([data-tour]) pour
   // éviter les arbitrary Tailwind avec virgule dans var() (non générés).
   const getLegendPosition = () => {
-    return "absolute right-2 bottom-3 md:bottom-3 lg:right-auto lg:left-1/2 lg:-translate-x-1/2 lg:max-w-[calc(100%-26rem)]";
+    return "absolute right-2 bottom-[calc(var(--rail-bottom-inset,0px)+var(--timebar-inset,0px)+0.75rem)] md:bottom-[calc(var(--rail-bottom-inset,0px)+var(--timebar-inset,0px)+0.75rem)] lg:right-auto lg:left-1/2 lg:-translate-x-1/2 lg:max-w-[calc(100%-26rem)]";
   };
 
   const visibilityClass =

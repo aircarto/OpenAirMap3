@@ -131,5 +131,38 @@ describe("AtmoRefService", () => {
       qualityLevel: "default",
     });
   });
+
+  it("traite un 404 de /stations/mesures comme une série temporelle vide", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(
+      async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/stations/mesures?")) {
+          return new Response(JSON.stringify({ detail: "NOT FOUND" }), {
+            status: 404,
+            statusText: "NOT FOUND",
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        if (url.includes("/stations?")) {
+          return new Response(JSON.stringify({ stations: [buildStation()] }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        return new Response("unexpected", { status: 500 });
+      }
+    );
+
+    const result = await service.fetchTemporalData({
+      pollutant: "pm25",
+      timeStep: "heure",
+      startDate: "2026-09-14T10:00:00.000Z",
+      endDate: "2026-09-14T10:59:59.999Z",
+    });
+
+    expect(result).toEqual([]);
+    expect(fetchSpy).toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
 });
 

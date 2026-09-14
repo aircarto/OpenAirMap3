@@ -64,10 +64,7 @@ const MapPanelsContainer: React.FC<MapPanelsContainerProps> = ({
   historicalPlaybackDate,
 }) => {
   const historicalMode =
-    isHistoricalModeActive &&
-    historicalStartDate &&
-    historicalEndDate &&
-    historicalTimeStep
+    historicalStartDate && historicalEndDate && historicalTimeStep
       ? {
           startDate: historicalStartDate,
           endDate: historicalEndDate,

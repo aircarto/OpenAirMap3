@@ -2,9 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import BaseLayerControl from "../../../controls/BaseLayerControl";
 import ModelingLayerControl from "../../../controls/ModelingLayerControl";
-import ModelingTimeControl from "../../../controls/ModelingTimeControl";
 import AirCrowdWmsControls from "../../../controls/AirCrowdWmsControls";
-import { isModelingAvailable } from "../../../../services/ModelingLayerService";
 import { useMapControls } from "../../../../contexts/mapControlsContext";
 import RailItem from "../RailItem";
 import RailSection from "../RailSection";
@@ -22,18 +20,8 @@ export interface RailBaseLayerSectionProps {
 /**
  * Groupe « fond de carte », isolé en fin de zone défilante.
  *
- * Son panneau porte deux sous-menus dépliables : « Modélisation » et
- * « Incendie ». Tous trois touchent au SUPPORT ou aux surfaces peintes sur la
- * carte, par opposition aux filtres de données du haut du rail.
- *
- * Séparé du groupe « couches » : la modélisation et les sources spéciales
- * ajoutent de la donnée SUR la carte, tandis que le fond de carte change le
- * support lui-même. Ce sont deux natures de réglage différentes, et le placer
- * juste au-dessus du pied (langue, tutoriel, informations) le range avec les
- * réglages d'affichage plutôt qu'avec les filtres de données.
- *
- * N'est PAS gelé pendant la lecture historique : changer de fond de carte ne
- * touche pas aux données affichées.
+ * Le choix de couche Azur / AirCrowd est gelé hors Live : l’instant unique
+ * de la TimeBar ne doit pas changer de nappe en cours d’exploration.
  */
 export const RailBaseLayerSection: React.FC<RailBaseLayerSectionProps> = ({
   orientation,
@@ -41,12 +29,7 @@ export const RailBaseLayerSection: React.FC<RailBaseLayerSectionProps> = ({
   baseLayer,
 }) => {
   const { t } = useTranslation();
-  const { filters, modeling, airCrowdWms } = useMapControls();
-  const showModelingHourSlider =
-    modeling.currentModelingLayer === "pollutant" &&
-    isModelingAvailable(filters.selectedTimeStep) &&
-    typeof modeling.modelingHourIndex === "number" &&
-    typeof modeling.onModelingHourChange === "function";
+  const { filters, modeling, airCrowdWms, ui } = useMapControls();
 
   return (
     <RailSection
@@ -67,15 +50,8 @@ export const RailBaseLayerSection: React.FC<RailBaseLayerSectionProps> = ({
               onModelingLayerChange={modeling.onModelingLayerChange}
               selectedPollutant={filters.selectedPollutant}
               selectedTimeStep={filters.selectedTimeStep}
+              locked={ui.controlsLocked}
             />
-            {showModelingHourSlider ? (
-              <ModelingTimeControl
-                value={modeling.modelingHourIndex!}
-                locale={modeling.locale}
-                onChange={modeling.onModelingHourChange!}
-                className="min-w-0 w-full"
-              />
-            ) : null}
           </div>
         }
         isAirCrowdActive={airCrowdWms.enabled}
@@ -84,12 +60,8 @@ export const RailBaseLayerSection: React.FC<RailBaseLayerSectionProps> = ({
             <AirCrowdWmsControls
               enabled={airCrowdWms.enabled}
               onEnabledChange={airCrowdWms.onEnabledChange}
-              date={airCrowdWms.date}
-              onDateChange={airCrowdWms.onDateChange}
-              hour={airCrowdWms.hour}
-              onHourChange={airCrowdWms.onHourChange}
-              startDate={airCrowdWms.startDate}
               selectedPollutant={filters.selectedPollutant}
+              locked={ui.controlsLocked}
             />
           ) : null
         }
@@ -97,8 +69,6 @@ export const RailBaseLayerSection: React.FC<RailBaseLayerSectionProps> = ({
           <RailItem
             itemId="baselayer"
             data-testid="rail-basemap-trigger"
-            // Ni onClick ni aria-expanded ici : Radix PopoverTrigger les fournit
-            // via asChild, et un second basculement annulerait le premier.
             aria-label={`${t("baseLayer.title")} : ${label}`}
             title={`${t("baseLayer.title")} : ${label}`}
             onFocus={onItemFocus}
