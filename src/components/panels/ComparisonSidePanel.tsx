@@ -118,9 +118,8 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
       return sources[sourceCode].supportedTimeSteps || [];
     }
     if (sourceCode === "nebuleair") {
-      return (
-        sources.communautaire.subSources?.nebuleair?.supportedTimeSteps || []
-      );
+      // Source communautaire hors périmètre actuel
+      return [];
     }
     // Comportement inchangé pour les sources inattendues en comparaison.
     return COMPARISON_TIME_STEP_OPTIONS.map(({ key }) => key);

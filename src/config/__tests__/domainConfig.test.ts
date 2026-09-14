@@ -97,6 +97,7 @@ describe("getConfigForDomain", () => {
     );
     expect(config.aircrowdWmsEnabled).toBe(true);
     expect(config.aircrowdWmsStartDate).toBe("2026-09-02");
+    // Même flag : feature exposée + couche WMS active à l’arrivée
     expect(config.markSquare).toBe(DOMAIN_CONFIG.atmosud.markSquare);
     expect(config.logo).toBe(DOMAIN_CONFIG.atmosud.logo);
   });

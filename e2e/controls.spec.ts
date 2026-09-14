@@ -78,27 +78,21 @@ test.describe("Contrôles du rail de carte", () => {
     await expect(atmoRef).toHaveAttribute("aria-checked", "true");
   });
 
-  test("menu sources : le groupe communautaire annonce son état mixte", async ({
+  test("menu sources : seules les sources AtmoSud sont proposées", async ({
     page,
   }) => {
     await page.getByTestId("rail-sources-trigger").click();
     const flyout = page.getByTestId("sources-flyout");
     await expect(flyout).toBeVisible({ timeout: 5000 });
 
-    const groupAll = flyout.getByTestId("sources-group-communautaire-all");
-
-    // Par défaut seul NebuleAir est activé sur les trois du périmètre. L'ancienne
-    // implémentation posait `data-state="indeterminate"` en impératif tout en
-    // laissant `aria-checked="false"` : un lecteur d'écran annonçait « non
-    // coché » sur un groupe partiellement sélectionné.
-    await expect(groupAll).toHaveAttribute("aria-checked", "mixed");
-    await expect(groupAll).toHaveAttribute("data-state", "indeterminate");
-
-    await groupAll.click();
-    await expect(groupAll).toHaveAttribute("aria-checked", "true");
-
-    await groupAll.click();
-    await expect(groupAll).toHaveAttribute("aria-checked", "false");
+    await expect(flyout.getByTestId("source-atmoRef")).toBeVisible();
+    await expect(flyout.getByTestId("source-atmoMicro")).toBeVisible();
+    await expect(
+      flyout.getByTestId("sources-group-communautaire-all")
+    ).toHaveCount(0);
+    await expect(flyout.getByTestId("sources-group-signalements")).toHaveCount(
+      0
+    );
   });
 
   test("menu sources : un seul arrêt de tabulation dans le flyout", async ({
@@ -108,9 +102,8 @@ test.describe("Contrôles du rail de carte", () => {
     const flyout = page.getByTestId("sources-flyout");
     await expect(flyout).toBeVisible({ timeout: 5000 });
 
-    // Le tout-cocher était un `<div role="button" tabIndex={0}>` enveloppant un
-    // vrai `role="checkbox"` : deux éléments interactifs imbriqués. Il ne doit
-    // plus rester que des cases.
+    // Ancien tout-cocher communautaire : deux éléments interactifs imbriqués.
+    // Il ne doit rester que des cases AtmoSud.
     const nested = await flyout.evaluate(
       (el) => el.querySelectorAll('[role="button"] [role="checkbox"]').length
     );

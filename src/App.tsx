@@ -42,8 +42,6 @@ import {
 import { getConfigForDomain } from "./config/domainConfig";
 import {
   AIRCROWD_WMS_DEFAULT_START_DATE,
-  AIRCROWD_WMS_DEMO_DATE,
-  AIRCROWD_WMS_DEMO_HOUR,
   clampAirCrowdWmsDate,
   getAirCrowdWmsToday,
 } from "./services/AirCrowdWmsLayerService";
@@ -62,6 +60,7 @@ import {
   getModelingLayerHour,
   isModelingAvailable,
 } from "./services/ModelingLayerService";
+import { getModelingHourCalendarSlot } from "./utils/modelingPeriodUtils";
 import { useToast } from "./hooks/useToast";
 import { ToastContainer } from "./components/ui/toast";
 import { cn } from "./lib/utils";
@@ -179,13 +178,17 @@ const AppContent: React.FC = () => {
     useState(false);
   const aircrowdWmsStartDate =
     domainConfig.aircrowdWmsStartDate ?? AIRCROWD_WMS_DEFAULT_START_DATE;
-  const [aircrowdWmsEnabled, setAircrowdWmsEnabled] = useState(false);
-  // PoC : démarrer sur une carto connue (pas « aujourd’hui », souvent absente).
-  const [aircrowdWmsDate, setAircrowdWmsDate] = useState(() =>
-    clampAirCrowdWmsDate(AIRCROWD_WMS_DEMO_DATE, aircrowdWmsStartDate),
+  // Aligné sur domainConfig.aircrowdWmsEnabled : feature exposée = couche on au démarrage
+  // (même idée que sources[].activated / getDefaultSources).
+  const [aircrowdWmsEnabled, setAircrowdWmsEnabled] = useState(() =>
+    Boolean(domainConfig.aircrowdWmsEnabled),
   );
-  const [aircrowdWmsHour, setAircrowdWmsHour] = useState(
-    AIRCROWD_WMS_DEMO_HOUR,
+  // Date/heure courantes (locale) ; GetCapabilities recalera si le créneau n’existe pas encore.
+  const [aircrowdWmsDate, setAircrowdWmsDate] = useState(() =>
+    clampAirCrowdWmsDate(getAirCrowdWmsToday(), aircrowdWmsStartDate),
+  );
+  const [aircrowdWmsHour, setAircrowdWmsHour] = useState(() =>
+    new Date().getHours(),
   );
 
   const resetSignalAirSettings = useCallback(() => {
@@ -555,16 +558,48 @@ const AppContent: React.FC = () => {
     selectedMobileAirSensor,
     signalAirOptions,
     autoRefreshEnabled:
-      autoRefreshEnabled && !isHistoricalModeActive && !aircrowdWmsEnabled,
+      autoRefreshEnabled &&
+      !isHistoricalModeActive &&
+      !aircrowdWmsEnabled &&
+      currentModelingLayer !== "pollutant",
   });
 
+  // Snapshot horaire partagé : AirCrowd WMS (date/heure UI) ou Azur (h0–h23 uniquement).
+  // h24 = heure en cours (agrégat horaire pas encore clos), h25+ = futur → pas de mesures.
+  const isPollutantForecastMode = currentModelingLayer === "pollutant";
+  const azurSnapshotSlot = useMemo(() => {
+    if (
+      !isPollutantForecastMode ||
+      typeof modelingHourIndex !== "number" ||
+      !isModelingAvailable(selectedTimeStep) ||
+      modelingHourIndex >= 24
+    ) {
+      return null;
+    }
+    return getModelingHourCalendarSlot(modelingHourIndex);
+  }, [isPollutantForecastMode, modelingHourIndex, selectedTimeStep]);
+
+  const hideMeasurementsForIncompleteAzurHour =
+    isPollutantForecastMode &&
+    typeof modelingHourIndex === "number" &&
+    modelingHourIndex >= 24;
+
+  const hourlySnapshotEnabled =
+    aircrowdWmsEnabled || azurSnapshotSlot !== null;
+  const hourlySnapshotDate = aircrowdWmsEnabled
+    ? aircrowdWmsDate
+    : (azurSnapshotSlot?.date ?? "");
+  const hourlySnapshotHour = aircrowdWmsEnabled
+    ? aircrowdWmsHour
+    : (azurSnapshotSlot?.hour ?? 0);
+
   const {
-    devices: aircrowdWmsDevices,
-    loading: aircrowdWmsLoading,
+    devices: hourlySnapshotDevices,
+    loading: hourlySnapshotLoading,
   } = useAirCrowdWmsMeasurements({
-    enabled: aircrowdWmsEnabled,
-    date: aircrowdWmsDate,
-    hour: aircrowdWmsHour,
+    enabled: hourlySnapshotEnabled,
+    date: hourlySnapshotDate,
+    hour: hourlySnapshotHour,
     pollutant: selectedPollutant,
     selectedSources,
     atmoMicroAllowedSiteIds: domainConfig.atmoMicroAllowedSiteIds,
@@ -621,28 +656,13 @@ const AppContent: React.FC = () => {
     }
   }, [atmoMicroOutage]);
 
-  // Déterminer quelles données utiliser selon le mode
-  const isPollutantForecastMode = currentModelingLayer === "pollutant";
-  const defaultModelingHourIndexForMeasurements = useMemo(() => {
-    if (!isPollutantForecastMode) return null;
-    if (!isModelingAvailable(selectedTimeStep)) return null;
-    const hour = getModelingLayerHour(selectedTimeStep);
-    return hour >= 0 ? hour : null;
-  }, [isPollutantForecastMode, selectedTimeStep]);
-
-  const shouldHideMeasurementsInPollutantModeling =
-    isPollutantForecastMode &&
-    typeof modelingHourIndex === "number" &&
-    typeof defaultModelingHourIndexForMeasurements === "number" &&
-    modelingHourIndex !== defaultModelingHourIndexForMeasurements;
-
-  // Priorité : historique > snapshot AirCrowd WMS > masquage Azur > live
+  // Priorité : historique > masquage Azur h24+ > snapshot (AirCrowd / Azur passé) > live
   const devices = isHistoricalModeActive
     ? getCurrentDevices()
-    : aircrowdWmsEnabled
-      ? aircrowdWmsDevices
-      : shouldHideMeasurementsInPollutantModeling
-        ? []
+    : hideMeasurementsForIncompleteAzurHour
+      ? []
+      : hourlySnapshotEnabled
+        ? hourlySnapshotDevices
         : normalDevices;
 
   useEffect(() => {
@@ -1064,9 +1084,9 @@ const AppContent: React.FC = () => {
             aircrowdWmsDate={aircrowdWmsDate}
             aircrowdWmsHour={aircrowdWmsHour}
             shouldOverrideDisplayedPeriod={
-              shouldHideMeasurementsInPollutantModeling || aircrowdWmsEnabled
+              hourlySnapshotEnabled
             }
-            loading={loading || temporalState.loading || aircrowdWmsLoading}
+            loading={loading || temporalState.loading || hourlySnapshotLoading}
             signalAirPeriod={signalAirDraftPeriod}
             signalAirSelectedTypes={signalAirSelectedTypes}
             onSignalAirPeriodChange={handleSignalAirDraftPeriodChange}

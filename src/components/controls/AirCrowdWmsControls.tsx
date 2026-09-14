@@ -2,10 +2,10 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "../../lib/utils";
 import {
-  AIRCROWD_WMS_DEFAULT_END_DATE,
   AirCrowdWmsAvailability,
   fetchAirCrowdWmsAvailability,
   formatAirCrowdWmsHour,
+  getAirCrowdWmsToday,
   getAvailableHoursForAirCrowd,
   isAirCrowdLayerAvailable,
   isAirCrowdWmsPollutantSupported,
@@ -68,7 +68,7 @@ const AirCrowdWmsControls: React.FC<AirCrowdWmsControlsProps> = ({
   }, []);
 
   const minDate = availability?.minDate ?? startDate;
-  const maxDate = availability?.maxDate ?? AIRCROWD_WMS_DEFAULT_END_DATE;
+  const maxDate = availability?.maxDate ?? getAirCrowdWmsToday();
   const availableDates = pollutantOk
     ? Object.keys(availability?.byPollutant[selectedPollutant] ?? {}).sort()
     : [];

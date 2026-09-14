@@ -34,11 +34,11 @@ export const AIRCROWD_WMS_DEFAULT_START_DATE = '2026-09-02';
 
 /**
  * Dernière date connue côté GeoServer PoC (fallback si GetCapabilities échoue).
- * Au-delà, les GetMap renvoient LayerNotDefined → tuiles transparentes.
+ * Préférer `getAirCrowdWmsToday()` côté UI quand le catalogue n’est pas encore chargé.
  */
 export const AIRCROWD_WMS_DEFAULT_END_DATE = '2026-09-04';
 
-/** Date/heure de démo connue pour exister côté GeoServer (PoC). */
+/** @deprecated Ancienne date/heure de démo PoC — préférer getAirCrowdWmsToday() / heure locale. */
 export const AIRCROWD_WMS_DEMO_DATE = '2026-09-02';
 export const AIRCROWD_WMS_DEMO_HOUR = 11;
 

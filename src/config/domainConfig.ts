@@ -53,10 +53,14 @@ export interface DomainConfig {
    * Ancienne API : `id_site` numériques. Microspot : `device.id` hexadécimaux
    * (aucune correspondance entre les deux espaces d'identifiants). */
   atmoMicroAllowedSiteIds?: Array<string | number>;
-  /** PoC : active l’entrée « Cartographie AirCrowd » (WMS preprod). */
-  aircrowdWmsEnabled?: boolean;
   /** Première date de carto disponible (YYYY-MM-DD) pour le sélecteur. */
   aircrowdWmsStartDate?: string;
+  /**
+   * PoC Cartographie AirCrowd (WMS) :
+   * - expose le contrôle dans le menu fond de carte ;
+   * - active la couche par défaut à l’arrivée sur l’instance.
+   */
+  aircrowdWmsEnabled?: boolean;
   title: string;
   /** Titre long utilisé uniquement pour <title>/document.title. Si absent, `title` sert de repli (voir useDocumentTitle). */
   seoTitle?: string;

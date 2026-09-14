@@ -74,6 +74,7 @@ export const pollutants: Record<string, Pollutant> = {
     unit: "µg/m³",
     thresholds: seuilsPm1Pm25,
     category: "polluant",
+    activated: false,
   },
   pm25: {
     name: "PM₂.₅",
@@ -95,6 +96,7 @@ export const pollutants: Record<string, Pollutant> = {
     unit: "µg/m³",
     thresholds: seuilsNo2,
     category: "polluant",
+    activated: false,
   },
   so2: {
     name: "SO₂",
@@ -102,6 +104,7 @@ export const pollutants: Record<string, Pollutant> = {
     unit: "µg/m³",
     thresholds: seuilsSo2,
     category: "polluant",
+    activated: false,
   },
   o3: {
     name: "O₃",
@@ -109,6 +112,7 @@ export const pollutants: Record<string, Pollutant> = {
     unit: "µg/m³",
     thresholds: seuilsO3,
     category: "polluant",
+    activated: false,
   },
   bruit: {
     name: "Bruit",

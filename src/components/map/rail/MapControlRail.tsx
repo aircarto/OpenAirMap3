@@ -12,7 +12,6 @@ import { useRailRoving, type RailOrientation } from "./useRailRoving";
 import { useRailOrientation } from "./useRailBreakpoint";
 import type {
   BaseLayerControlBinding,
-  CommunitySourcesBinding,
   RailShortcutsBinding,
 } from "./railBindings";
 
@@ -27,7 +26,6 @@ export interface MapControlRailProps {
   /** État local à la carte : voyage par props, pas par contexte */
   baseLayer: BaseLayerControlBinding;
   shortcuts: RailShortcutsBinding;
-  communitySources: CommunitySourcesBinding;
 }
 
 /**
@@ -52,7 +50,6 @@ export const MapControlRail: React.FC<MapControlRailProps> = ({
   compact = false,
   baseLayer,
   shortcuts,
-  communitySources,
 }) => {
   const detectedOrientation = useRailOrientation();
   const orientation = forcedOrientation ?? detectedOrientation;
@@ -199,7 +196,6 @@ export const MapControlRail: React.FC<MapControlRailProps> = ({
           <RailFiltersSection
             orientation={orientation}
             onItemFocus={onItemFocus}
-            communitySources={communitySources}
           />
           <RailModesSection orientation={orientation} onItemFocus={onItemFocus} />
           <RailShortcutsSection

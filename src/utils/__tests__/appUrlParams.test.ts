@@ -18,7 +18,7 @@ describe("parseAppUrlParams", () => {
 
   it("parse lat, lng, zoom et filtres valides", () => {
     const result = parseAppUrlParams(
-      "?lat=43.5&lng=5.4&zoom=11&pollutant=no2&timeStep=quartHeure&sources=atmoRef,atmoMicro",
+      "?lat=43.5&lng=5.4&zoom=11&pollutant=pm10&timeStep=quartHeure&sources=atmoRef,atmoMicro",
       defaults
     );
 
@@ -26,7 +26,7 @@ describe("parseAppUrlParams", () => {
       lat: 43.5,
       lng: 5.4,
       zoom: 11,
-      pollutant: "no2",
+      pollutant: "pm10",
       timeStep: "quartHeure",
       sources: ["atmoRef", "atmoMicro"],
     });
@@ -40,13 +40,13 @@ describe("parseAppUrlParams", () => {
     expect(result.zoom).toBe(defaults.zoom);
   });
 
-  it("filtre les sources inconnues et retombe sur les défauts si liste vide", () => {
+  it("filtre les sources inconnues et ignore les sources communautaires hors périmètre", () => {
     const result = parseAppUrlParams(
       "?sources=atmoRef,unknown,communautaire.nebuleair",
       defaults
     );
 
-    expect(result.sources).toEqual(["atmoRef", "communautaire.nebuleair"]);
+    expect(result.sources).toEqual(["atmoRef"]);
   });
 
   it("corrige un polluant incompatible avec le pas de temps", () => {

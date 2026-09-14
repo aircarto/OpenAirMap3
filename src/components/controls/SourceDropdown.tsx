@@ -1,10 +1,8 @@
-import React, { useEffect, useId, useMemo, useState } from "react";
+import React, { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { COMMUNAUTAIRE_SOURCE_CODES } from "../../constants/sources";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Checkbox } from "../ui/checkbox";
 import { DropdownButton } from "./DropdownButton";
-import SourceGroupCheckbox from "./SourceGroupCheckbox";
 import type { CustomTriggerProps } from "./dropdownTriggerContract";
 import { cn } from "../../lib/utils";
 import {
@@ -43,25 +41,6 @@ interface SourceDropdownProps extends CustomTriggerProps {
   controlsLocked?: boolean;
   /** Id du trigger pour association avec un <label htmlFor> (accessibilité) */
   triggerId?: string;
-  /**
-   * Dépliant MobileAir, rangé dans le groupe des capteurs communautaires.
-   *
-   * Injecté par l'appelant plutôt que construit ici, sur le motif du
-   * `modelingSlot` de `BaseLayerControl` : ce composant vit dans `controls/` et
-   * n'a aucune raison de connaître le contexte de la carte ni les hooks de
-   * MobileAir. Le couplage resterait sinon inversé.
-   *
-   * Fonction de rendu et non nœud : le flyout se referme après un chargement,
-   * et son état d'ouverture appartient à ce composant.
-   */
-  mobileAirSlot?: (api: SourceSlotApi) => React.ReactNode;
-  /** Dépliant SignalAir, qui forme à lui seul le groupe « signalements » */
-  signalAirSlot?: (api: SourceSlotApi) => React.ReactNode;
-}
-
-export interface SourceSlotApi {
-  /** Referme le flyout — l'utilisateur veut voir la carte après un chargement */
-  close: () => void;
 }
 
 /**
@@ -81,15 +60,13 @@ const SourceCheckboxRow: React.FC<{
   label: string;
   checked: boolean;
   onToggle: () => void;
-  indented?: boolean;
-}> = ({ code, label, checked, onToggle, indented = false }) => {
+}> = ({ code, label, checked, onToggle }) => {
   const id = useId();
 
   return (
     <div
       className={cn(
         "flex w-full items-center gap-3 rounded-md px-2 py-2 transition-colors",
-        indented && "ml-4",
         checked ? "bg-[#e7eef8]" : "hover:bg-black/[0.04]"
       )}
     >
@@ -124,8 +101,6 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
   isHistoricalModeActive = false,
   controlsLocked = false,
   triggerId,
-  mobileAirSlot,
-  signalAirSlot,
   renderTrigger,
   menuSide,
   menuAlign,
@@ -136,33 +111,9 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const mainLabelId = useId();
 
-  const slotApi = useMemo<SourceSlotApi>(
-    () => ({ close: () => setIsOpen(false) }),
-    []
-  );
-
   useEffect(() => {
     if (controlsLocked) setIsOpen(false);
   }, [controlsLocked]);
-
-  const communautaireSubSources = useMemo(
-    () =>
-      COMMUNAUTAIRE_SOURCE_CODES.map((code) => ({
-        code,
-        label: getSourceDisplayName(code, t),
-      })),
-    [t]
-  );
-
-  const communautaireSelectedCount = useMemo(
-    () =>
-      COMMUNAUTAIRE_SOURCE_CODES.filter((source) =>
-        selectedSources.includes(source)
-      ).length,
-    [selectedSources]
-  );
-  const allCommunautaireSelected =
-    communautaireSelectedCount === COMMUNAUTAIRE_SOURCE_CODES.length;
 
   const handleSourceToggle = (sourceCode: string) => {
     const isCurrentlySelected = selectedSources.includes(sourceCode);
@@ -212,32 +163,6 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
     const newSources = isCurrentlySelected
       ? selectedSources.filter((s) => s !== sourceCode)
       : [...selectedSources, sourceCode];
-    onSourceChange(newSources);
-  };
-
-  /**
-   * Tout cocher / tout décocher le groupe communautaire.
-   *
-   * Sémantique inchangée, y compris le fait que ce chemin **contourne** la garde
-   * de compatibilité pas de temps appliquée aux cases individuelles : cocher le
-   * groupe peut donc sélectionner une source que le pas de temps courant ne sait
-   * pas servir. C'est une incohérence préexistante, laissée telle quelle ici
-   * pour ne pas mêler un changement de comportement à un portage de primitive.
-   */
-  const handleCommunautaireGroupToggle = () => {
-    if (allCommunautaireSelected) {
-      onSourceChange(
-        selectedSources.filter(
-          (source) => !COMMUNAUTAIRE_SOURCE_CODES.includes(source)
-        )
-      );
-      return;
-    }
-
-    const newSources = [...selectedSources];
-    COMMUNAUTAIRE_SOURCE_CODES.forEach((source) => {
-      if (!newSources.includes(source)) newSources.push(source);
-    });
     onSourceChange(newSources);
   };
 
@@ -296,7 +221,6 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
         )}
 
         <div className="min-h-0 flex-1 overflow-y-auto p-1.5">
-          {/* Sources principales */}
           <div role="group" aria-labelledby={mainLabelId}>
             <div
               id={mainLabelId}
@@ -314,68 +238,6 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
               />
             ))}
           </div>
-
-          <div
-            role="separator"
-            className="my-1.5 border-t border-black/[0.06]"
-          />
-
-          {/* Groupe communautaire */}
-          <div role="group" aria-label={t("controls.sourceCommunautaire")}>
-            <SourceGroupCheckbox
-              testId="sources-group-communautaire-all"
-              label={t("controls.sourceCommunautaire")}
-              scope={COMMUNAUTAIRE_SOURCE_CODES}
-              selectedSources={selectedSources}
-              onToggle={handleCommunautaireGroupToggle}
-              hint={t("controls.sourceGroupCount", {
-                selected: communautaireSelectedCount,
-                total: COMMUNAUTAIRE_SOURCE_CODES.length,
-              })}
-            />
-            {communautaireSubSources.map(({ code, label }) => (
-              <SourceCheckboxRow
-                key={code}
-                code={code}
-                label={label}
-                checked={selectedSources.includes(code)}
-                onToggle={() => handleSourceToggle(code)}
-                indented
-              />
-            ))}
-
-            {mobileAirSlot && (
-              <>
-                {/* Filet fin : MobileAir est du groupe, mais hors du
-                    tout-cocher — sans cette césure, voir « tout coché » alors
-                    qu'il est éteint se lirait comme un bug. */}
-                <div
-                  aria-hidden="true"
-                  className="mx-2 my-1.5 border-t border-dashed border-black/[0.08]"
-                />
-                <div className="ml-4">{mobileAirSlot(slotApi)}</div>
-              </>
-            )}
-          </div>
-
-          {signalAirSlot && (
-            <>
-              <div
-                role="separator"
-                className="my-1.5 border-t border-black/[0.06]"
-              />
-              <div
-                role="group"
-                aria-label={t("controls.sourceSignalements")}
-                data-testid="sources-group-signalements"
-              >
-                <div className="mb-1 px-2 text-xs font-medium uppercase tracking-wide text-gray-500">
-                  {t("controls.sourceSignalements")}
-                </div>
-                <div className="ml-1">{signalAirSlot(slotApi)}</div>
-              </div>
-            </>
-          )}
         </div>
       </PopoverContent>
     </Popover>

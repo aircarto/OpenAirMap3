@@ -592,7 +592,7 @@ export class AtmoRefService extends BaseDataService {
       formattedStartDate
     )}&date_fin=${encodeURIComponent(
       formattedEndDate
-    )}&temporalite=${temporalite}&metadata=false&only_validate_values=true&format=json&download=false`;
+    )}&temporalite=${temporalite}&metadata=false&format=json&download=false`;
 
     try {
       const response = await this.makeRequest(url);

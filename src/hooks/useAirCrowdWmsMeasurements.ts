@@ -32,7 +32,7 @@ export interface UseAirCrowdWmsMeasurementsResult {
 }
 
 /**
- * Snapshot capteurs aligné sur la date/heure de la carto WMS AirCrowd.
+ * Snapshot capteurs pour un créneau date/heure local (AirCrowd WMS ou Azur h0–h47).
  * Masque le live dès l’activation ; charge via fetchTemporalData (1 h).
  */
 export const useAirCrowdWmsMeasurements = ({
@@ -151,13 +151,13 @@ export const useAirCrowdWmsMeasurements = ({
         setError(null);
       } catch (err) {
         if (requestId !== requestIdRef.current) return;
-        console.error('❌ [AIRCROWD WMS] Erreur fetch mesures:', err);
+        console.error('❌ [SNAPSHOT HORAIRE] Erreur fetch mesures:', err);
         setDevices([]);
         setLoading(false);
         setError(
           err instanceof Error
             ? err.message
-            : 'Erreur lors du chargement des mesures AirCrowd'
+            : 'Erreur lors du chargement des mesures horaires'
         );
       }
     }, DEBOUNCE_MS);
