@@ -33,7 +33,7 @@ const NorthArrow: React.FC<NorthArrowProps> = ({
         "glass-3 pointer-events-none absolute z-map-ambient",
         "hidden flex-col items-center justify-center gap-0.5 px-2 py-1.5",
         "rounded-[var(--r-md)]",
-        "left-3 bottom-[calc(var(--rail-bottom-inset,0px)+var(--timebar-inset,0px)+0.75rem)]",
+        "left-3 bottom-[calc(var(--rail-bottom-inset,0px)+var(--attribution-inset,1.65rem))]",
         hiddenWithPanel ? "md:hidden lg:flex" : "md:flex"
       )}
     >

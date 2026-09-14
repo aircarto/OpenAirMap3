@@ -1,6 +1,13 @@
 import { test, expect, Page } from "@playwright/test";
 import { seedToursCompleted } from "./tourSetup";
 
+test.beforeEach(() => {
+  test.skip(
+    true,
+    "Branche AirCrowd : seul le pas de temps horaire est exposé"
+  );
+});
+
 /**
  * Non-régression : au changement de pas de temps (heure <-> 15 min) dans le side
  * panel d'une station de référence, la courbe doit rester affichée.

@@ -1096,8 +1096,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
         >
           <MapBoundsLock maxBounds={maxBounds} />
           <MapZoomLock minZoom={minZoom} maxZoom={maxZoom} />
-          {/* Attribution en bas-droite, au-dessus de la TimeBar. La légende
-              mobile se décale pour ne pas chevaucher — voir index.css. */}
+          {/* Attribution sous la TimeBar, coin bas-droit — voir index.css. */}
           <AttributionControl position="bottomright" prefix={false} />
 
           {/* Gestionnaire d'événements pour les clics sur la carte */}

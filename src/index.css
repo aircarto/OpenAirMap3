@@ -172,6 +172,12 @@
      ici, donc ni le rail horizontal ni le mode compact n'ont à la déclarer.  */
   --rail-item-w: 48px;
 
+  /* Hauteur réservée sous la TimeBar pour l'attribution Leaflet. */
+  --attribution-inset: 1.65rem;
+  /* Emprise gauche de la bande instrument (boussole + échelle) : 0 hors md,
+     pour que la TimeBar s'aligne à droite de ce groupe au lieu de passer dessous. */
+  --instrument-band: 0px;
+
   /* ── Mouvement ────────────────────────────────────────────────────────── */
   --dur-fast: 120ms;
   --dur-base: 180ms;
@@ -340,6 +346,11 @@ html {
 @media (min-width: 768px) {
   .leaflet-bottom.leaflet-left {
     margin-inline-start: 3.75rem;
+  }
+
+  :root {
+    /* left-3 + boussole ~2.25rem + gouttière + échelle (~8.75rem) + 0.5rem */
+    --instrument-band: 13.5rem;
   }
 }
 
@@ -645,8 +656,8 @@ html {
   font-weight: 500 !important;
   color: var(--fg) !important;
   padding: 6px 10px !important;
-  /* décalage horizontal appliqué par .leaflet-bottom.leaflet-left */
-  margin: 0 0 12px 0 !important;
+  /* Alignée sur la TimeBar : le décalage horizontal vient de .leaflet-bottom.leaflet-left */
+  margin: 0 !important;
   z-index: var(--z-map-ambient) !important;
   position: relative !important;
 }
@@ -686,8 +697,8 @@ html {
   }
 }
 
-/* Attribution Leaflet : coin bas-droit, dans le flux `.leaflet-bottom`
-   (pas de `position: fixed` — iOS Safari l'ancrait au milieu de la carte). */
+/* Attribution Leaflet : sous la TimeBar, coin bas-droit.
+   Pas de `position: fixed` — iOS Safari l'ancrait au milieu de la carte. */
 .leaflet-control-attribution {
   background: rgb(var(--glass-tint) / var(--glass-3-alpha)) !important;
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)) !important;
@@ -703,7 +714,7 @@ html {
   max-width: none !important;
   white-space: nowrap !important;
   line-height: 1.3 !important;
-  margin: 0 8px 6px 0 !important;
+  margin: 0 8px 4px 0 !important;
 }
 
 .leaflet-control-attribution a {
@@ -714,25 +725,25 @@ html {
   display: none !important;
 }
 
-.leaflet-bottom {
+/* Échelle + boussole : même bas que la TimeBar, à gauche du --instrument-band.
+   Attribution : sous la TimeBar, au-dessus du rail horizontal. */
+.leaflet-bottom.leaflet-left {
   bottom: calc(
-    var(--timebar-inset, 0px) + env(safe-area-inset-bottom, 0px)
+    var(--rail-bottom-inset, 0px) + var(--attribution-inset, 1.65rem)
   ) !important;
 }
 
-/* Sous lg : remonter le coin bas de Leaflet au-dessus du rail horizontal,
-   et ancrer la légende au-dessus de l'attribution (bas-droit). */
-@media (max-width: 1023px) {
-  .leaflet-bottom {
-    bottom: calc(
-      var(--rail-bottom-inset, 0px) + var(--timebar-inset, 0px) + env(safe-area-inset-bottom, 0px)
-    ) !important;
-  }
+.leaflet-bottom.leaflet-right {
+  bottom: calc(
+    var(--rail-bottom-inset, 0px) + env(safe-area-inset-bottom, 0px)
+  ) !important;
+}
 
+@media (max-width: 1023px) {
   .leaflet-control-attribution {
     font-size: 9px !important;
     padding: 2px 6px !important;
-    margin: 0 6px 4px 0 !important;
+    margin: 0 6px 3px 0 !important;
     max-width: min(62vw, 22rem) !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
@@ -747,7 +758,7 @@ html {
   [data-tour="global-legend"] {
     right: 0.5rem !important;
     bottom: calc(
-      var(--rail-bottom-inset, 0px) + var(--timebar-inset, 0px) + env(safe-area-inset-bottom, 0px) + 1.85rem
+      var(--rail-bottom-inset, 0px) + var(--timebar-inset, 0px) + env(safe-area-inset-bottom, 0px) + 0.5rem
     ) !important;
     left: auto !important;
     transform: none !important;

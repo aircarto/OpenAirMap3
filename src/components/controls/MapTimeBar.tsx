@@ -114,13 +114,14 @@ const MapTimeBar: React.FC<MapTimeBarProps> = ({
       aria-label={t('timeBar.regionLabel')}
       className={cn(
         'glass-1 pointer-events-auto absolute z-map-search',
-        'left-[max(0.5rem,calc(var(--rail-inset,0px)+0.35rem))] right-2',
+        'right-2',
         'flex items-center gap-2 px-2 py-1.5 sm:gap-3 sm:px-3'
       )}
       style={{
         borderRadius: 'var(--r-lg)',
         bottom:
-          'calc(var(--rail-bottom-inset, 0px) + max(0.5rem, env(safe-area-inset-bottom, 0px)))',
+          'calc(var(--rail-bottom-inset, 0px) + var(--attribution-inset, 1.65rem))',
+        left: 'max(0.5rem, calc(var(--rail-inset, 0px) + 0.35rem), var(--instrument-band, 0px))',
       }}
     >
       <button

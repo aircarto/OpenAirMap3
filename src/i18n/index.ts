@@ -8,8 +8,8 @@ import ar from "../locales/ar.json";
 import de from "../locales/de.json";
 
 export const supportedLanguages = [
-  { code: "fr", label: "Français", short: "FR", flag: "🇫🇷" },
   { code: "en", label: "English", short: "EN", flag: "🇬🇧" },
+  { code: "fr", label: "Français", short: "FR", flag: "🇫🇷" },
   { code: "es", label: "Español", short: "ES", flag: "🇪🇸" },
   { code: "it", label: "Italiano", short: "IT", flag: "🇮🇹" },
   { code: "de", label: "Deutsch", short: "DE", flag: "🇩🇪" },
@@ -29,13 +29,7 @@ function getInitialLanguage(): SupportedLocale {
       return saved as SupportedLocale;
     }
   }
-  if (typeof navigator !== "undefined" && navigator.language) {
-    const browserLang = navigator.language.slice(0, 2).toLowerCase();
-    if ((supportedLngCodes as string[]).includes(browserLang)) {
-      return browserLang as SupportedLocale;
-    }
-  }
-  return "fr";
+  return "en";
 }
 
 i18n.use(initReactI18next).init({
@@ -48,7 +42,7 @@ i18n.use(initReactI18next).init({
     ar: { translation: ar },
   },
   lng: getInitialLanguage(),
-  fallbackLng: "fr",
+  fallbackLng: "en",
   supportedLngs: supportedLngCodes,
   interpolation: {
     escapeValue: false, // React échappe déjà le HTML
@@ -72,7 +66,7 @@ i18n.on("languageChanged", (lng) => {
 
 // Appliquer la langue et la direction initiales au document (layout toujours LTR)
 if (typeof document !== "undefined") {
-  const lng = i18n.language || "fr";
+  const lng = i18n.language || "en";
   document.documentElement.lang = lng;
   document.documentElement.setAttribute("data-locale", lng);
 }

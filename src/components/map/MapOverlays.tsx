@@ -20,18 +20,10 @@ import {
 } from "../../services/EffisLayerService";
 
 const MD_QUERY = "(min-width: 768px)";
-const LG_QUERY = "(min-width: 1024px)";
 
 const subscribeMd = (onChange: () => void) => {
   if (typeof window === "undefined" || !window.matchMedia) return () => {};
   const list = window.matchMedia(MD_QUERY);
-  list.addEventListener("change", onChange);
-  return () => list.removeEventListener("change", onChange);
-};
-
-const subscribeLg = (onChange: () => void) => {
-  if (typeof window === "undefined" || !window.matchMedia) return () => {};
-  const list = window.matchMedia(LG_QUERY);
   list.addEventListener("change", onChange);
   return () => list.removeEventListener("change", onChange);
 };
@@ -44,16 +36,6 @@ const useIsMdUp = () =>
         ? window.matchMedia(MD_QUERY).matches
         : false,
     () => false
-  );
-
-const useIsLgUp = () =>
-  useSyncExternalStore(
-    subscribeLg,
-    () =>
-      typeof window !== "undefined" && window.matchMedia
-        ? window.matchMedia(LG_QUERY).matches
-        : true,
-    () => true
   );
 
 interface MapOverlaysProps {
@@ -129,7 +111,6 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
   sourceStatistics,
 }) => {
   const isMdUp = useIsMdUp();
-  const isLgUp = useIsLgUp();
   const displayedPeriodOverride =
     shouldOverrideDisplayedPeriod && aircrowdWmsEnabled && aircrowdWmsDate
       ? getAirCrowdWmsDisplayedPeriod(aircrowdWmsDate, aircrowdWmsHour, locale)
@@ -320,68 +301,18 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
         sidePanelOffset={sidePanelOffset}
       />
 
-      {/* Mobile / tablette : période (+ compteurs dès md) en haut à gauche,
-          en face de la recherche. Un seul DeviceStatistics monté (< lg).
+      {/* Période (+ compteurs dès md) en haut à gauche, en face de la recherche.
           `left` suit --rail-inset : à 0 le rail est en bas ; sinon le chip
-          s'adosse à droite du rail vertical (md–lg, paysage téléphone). */}
-      {!isLgUp ? (
-        <div
-          className="pointer-events-auto absolute top-4 z-map-info max-w-[min(12rem,46vw)] md:max-w-[min(18rem,42vw)] landscape:max-w-[min(9.5rem,40vw)]"
-          style={{
-            left: 'max(0.75rem, calc(var(--rail-inset, 0px) + 0.25rem))',
-          }}
-          data-tour="period-stats-chip"
-        >
-          {isMdUp ? (
-            <div className="glass-3 rounded-[var(--r-md)] px-3 py-2">
-              <DeviceStatistics
-                visibleDevices={visibleDevices}
-                visibleReports={visibleReports}
-                totalDevices={totalDevices}
-                totalReports={totalReports}
-                selectedPollutant={selectedPollutant}
-                selectedSources={selectedSources}
-                selectedTimeStep={selectedTimeStep}
-                historicalCurrentDate={historicalCurrentDate}
-                displayedPeriodOverride={displayedPeriodOverride}
-                statistics={statistics}
-                sourceStatistics={sourceStatistics}
-                variant="full"
-              />
-            </div>
-          ) : (
-            <DeviceStatistics
-              visibleDevices={visibleDevices}
-              visibleReports={visibleReports}
-              totalDevices={totalDevices}
-              totalReports={totalReports}
-              selectedPollutant={selectedPollutant}
-              selectedSources={selectedSources}
-              selectedTimeStep={selectedTimeStep}
-              historicalCurrentDate={historicalCurrentDate}
-              displayedPeriodOverride={displayedPeriodOverride}
-              statistics={statistics}
-              sourceStatistics={sourceStatistics}
-              variant="compact"
-            />
-          )}
-        </div>
-      ) : null}
-
-      {/* Desktop lg+ : colonne bas-droite (promo, légendes couches, stats) */}
+          s'adosse à droite du rail vertical. */}
       <div
-        className="pointer-events-none absolute bottom-[calc(var(--rail-bottom-inset,0px)+var(--timebar-inset,0px)+1.75rem)] right-3 z-map-info hidden max-h-[calc(100%-9rem)] flex-col items-end gap-2 overflow-y-auto lg:flex"
+        className="pointer-events-auto absolute top-4 z-map-info max-w-[min(12rem,46vw)] md:max-w-[min(18rem,42vw)] lg:max-w-[min(22rem,36vw)] landscape:max-w-[min(9.5rem,40vw)] lg:landscape:max-w-[min(22rem,36vw)]"
+        style={{
+          left: 'max(0.75rem, calc(var(--rail-inset, 0px) + 0.25rem))',
+        }}
+        data-tour="period-stats-chip"
       >
-        {promo && !promo.hidden && (
-          <SensorPromoCard shopUrl={promo.shopUrl} hidden={false} />
-        )}
-        {overlayLegendItems.length > 0 && (
-          <div className="pointer-events-auto min-h-0 shrink overflow-y-auto">
-            <OverlayLegendsCard items={overlayLegendItems} />
-          </div>
-        )}
-        <div className="glass-3 pointer-events-auto shrink-0 rounded-[var(--r-md)] px-3 py-2">
-          {isLgUp ? (
+        {isMdUp ? (
+          <div className="glass-3 rounded-[var(--r-md)] px-3 py-2">
             <DeviceStatistics
               visibleDevices={visibleDevices}
               visibleReports={visibleReports}
@@ -396,56 +327,96 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
               sourceStatistics={sourceStatistics}
               variant="full"
             />
-          ) : null}
-          {isWildfireVisible && wildfire.wildfireReports.length > 0 && (
-            <div className="mt-1 text-xs text-gray-600">
-              • {wildfire.wildfireReports.length} incendie
-              {wildfire.wildfireReports.length > 1 ? "s" : ""} en cours
-              {" "}
-              <span className="text-gray-400">(feuxdeforet.fr)</span>
-            </div>
-          )}
+          </div>
+        ) : (
+          <DeviceStatistics
+            visibleDevices={visibleDevices}
+            visibleReports={visibleReports}
+            totalDevices={totalDevices}
+            totalReports={totalReports}
+            selectedPollutant={selectedPollutant}
+            selectedSources={selectedSources}
+            selectedTimeStep={selectedTimeStep}
+            historicalCurrentDate={historicalCurrentDate}
+            displayedPeriodOverride={displayedPeriodOverride}
+            statistics={statistics}
+            sourceStatistics={sourceStatistics}
+            variant="compact"
+          />
+        )}
+      </div>
 
-          {isEffisHotspotsEnabled && hotspotsStats && hotspotsStats.displayed > 0 && (
-            <div className="mt-1 text-xs text-gray-600">
-              •{" "}
-              {t("statistics.effisHotspots", {
-                count: hotspotsStats.displayed,
-              })}{" "}
-              <span className="text-gray-400">
-                ({t(
-                  effisHotspotsPeriod === "24h"
-                    ? "baseLayer.firePeriod24h"
-                    : "baseLayer.firePeriod7d"
-                )}
-                {hotspotsStats.maxFrp > 0 &&
-                  ` · ${t("statistics.effisMaxPower", {
-                    frp: hotspotsStats.maxFrp.toFixed(0),
-                  })}`}
-                )
-              </span>
-            </div>
-          )}
-
-          {isEffisBurnedAreasEnabled &&
-            burnedAreasStats &&
-            burnedAreasStats.displayed > 0 && (
-              <div className="mt-1 text-xs text-gray-600">
-                •{" "}
-                {t("statistics.effisBurnedAreas", {
-                  count: burnedAreasStats.displayed,
-                })}{" "}
-                <span className="text-gray-400">
-                  ({t("statistics.effisBurnedTotal", {
-                    hectares: Math.round(
-                      burnedAreasStats.totalAreaHa
-                    ).toLocaleString("fr-FR"),
-                  })}
-                  )
-                </span>
+      {/* Desktop lg+ : colonne bas-droite (promo, légendes couches, stats) */}
+      <div
+        className="pointer-events-none absolute bottom-[calc(var(--rail-bottom-inset,0px)+var(--timebar-inset,0px)+1.75rem)] right-3 z-map-info hidden max-h-[calc(100%-9rem)] flex-col items-end gap-2 overflow-y-auto lg:flex"
+      >
+        {promo && !promo.hidden && (
+          <SensorPromoCard shopUrl={promo.shopUrl} hidden={false} />
+        )}
+        {overlayLegendItems.length > 0 && (
+          <div className="pointer-events-auto min-h-0 shrink overflow-y-auto">
+            <OverlayLegendsCard items={overlayLegendItems} />
+          </div>
+        )}
+        {(isWildfireVisible && wildfire.wildfireReports.length > 0) ||
+        (isEffisHotspotsEnabled &&
+          hotspotsStats &&
+          hotspotsStats.displayed > 0) ||
+        (isEffisBurnedAreasEnabled &&
+          burnedAreasStats &&
+          burnedAreasStats.displayed > 0) ? (
+          <div className="glass-3 pointer-events-auto shrink-0 rounded-[var(--r-md)] px-3 py-2">
+            {isWildfireVisible && wildfire.wildfireReports.length > 0 && (
+              <div className="text-xs text-gray-600">
+                • {wildfire.wildfireReports.length} incendie
+                {wildfire.wildfireReports.length > 1 ? "s" : ""} en cours{" "}
+                <span className="text-gray-400">(feuxdeforet.fr)</span>
               </div>
             )}
-        </div>
+
+            {isEffisHotspotsEnabled &&
+              hotspotsStats &&
+              hotspotsStats.displayed > 0 && (
+                <div className="text-xs text-gray-600">
+                  •{" "}
+                  {t("statistics.effisHotspots", {
+                    count: hotspotsStats.displayed,
+                  })}{" "}
+                  <span className="text-gray-400">
+                    ({t(
+                      effisHotspotsPeriod === "24h"
+                        ? "baseLayer.firePeriod24h"
+                        : "baseLayer.firePeriod7d"
+                    )}
+                    {hotspotsStats.maxFrp > 0 &&
+                      ` · ${t("statistics.effisMaxPower", {
+                        frp: hotspotsStats.maxFrp.toFixed(0),
+                      })}`}
+                    )
+                  </span>
+                </div>
+              )}
+
+            {isEffisBurnedAreasEnabled &&
+              burnedAreasStats &&
+              burnedAreasStats.displayed > 0 && (
+                <div className="text-xs text-gray-600">
+                  •{" "}
+                  {t("statistics.effisBurnedAreas", {
+                    count: burnedAreasStats.displayed,
+                  })}{" "}
+                  <span className="text-gray-400">
+                    ({t("statistics.effisBurnedTotal", {
+                      hectares: Math.round(
+                        burnedAreasStats.totalAreaHa
+                      ).toLocaleString("fr-FR"),
+                    })}
+                    )
+                  </span>
+                </div>
+              )}
+          </div>
+        ) : null}
       </div>
     </>
   );

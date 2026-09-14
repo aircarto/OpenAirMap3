@@ -207,13 +207,11 @@ test.describe("Contrôles du rail de carte", () => {
     ).toBeVisible();
   });
 
-  test("mode historique : activation et panneau visible", async ({ page }) => {
-    const toggle = page.getByTestId("rail-historical-toggle");
-    await toggle.click();
-    await expect(toggle).toHaveAttribute("aria-pressed", "true");
-    await expect(
-      page.getByText(/load data|charger|date|période|period|plage/i).first()
-    ).toBeVisible({ timeout: 10000 });
+  test("barre temporelle unique visible", async ({ page }) => {
+    const bar = page.getByTestId("map-timebar");
+    await expect(bar).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId("map-timebar-now")).toBeVisible();
+    await expect(page.getByTestId("map-timebar-slider")).toBeVisible();
   });
 
   test("clavier : flèches, extrémités et ouverture", async ({ page }) => {

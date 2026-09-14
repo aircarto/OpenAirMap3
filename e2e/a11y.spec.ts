@@ -81,27 +81,23 @@ test.describe("Accessibilité (a11y)", () => {
     ).toEqual([]);
   });
 
-  test("panel mode historique : pas de violations axe critiques", async ({
+  test("barre temporelle : pas de violations axe critiques", async ({
     page,
   }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 15000 });
-    const historicalBtn = page.getByRole("button", {
-      name: /mode historique|historical mode|load data|charger|date|période|plage/i,
-    }).first();
-    await historicalBtn.click();
-    const panel = page.locator('[data-testid="historical-control-panel"]');
-    await expect(panel).toBeVisible({ timeout: 8000 });
+    const bar = page.getByTestId("map-timebar");
+    await expect(bar).toBeVisible({ timeout: 8000 });
 
     const results = await new AxeBuilder({ page })
-      .include('[data-testid="historical-control-panel"]')
+      .include('[data-testid="map-timebar"]')
       .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
       .analyze();
 
     const critical = results.violations.filter((v) => v.impact === "critical");
     expect(
       critical,
-      `Violations critiques axe (panel mode historique) : ${JSON.stringify(critical, null, 2)}`
+      `Violations critiques axe (barre temporelle) : ${JSON.stringify(critical, null, 2)}`
     ).toEqual([]);
   });
 
