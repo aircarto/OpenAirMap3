@@ -776,7 +776,8 @@
     },
     "groupUtilities": "Utilitaires",
     "groupBaseLayer": "Fond de carte",
-    "groupModes": "Modes"
+    "groupModes": "Modes",
+    "brandWebsite": "Site {{organization}}"
   },
   "timeBar": {
     "now": "Maintenant",
@@ -812,6 +813,27 @@
       "backToMap": "Retour à la carte",
       "ctaMap": "Ouvrir la carte",
       "ctaAbout": "À propos"
+    },
+    "login": {
+      "metaTitle": "Connexion",
+      "metaDescription": "Accès restreint à cette instance OpenAirMap.",
+      "title": "Accès restreint",
+      "subtitle": "Saisissez les identifiants partagés fournis par l’équipe projet.",
+      "username": "Identifiant",
+      "password": "Mot de passe",
+      "submit": "Se connecter",
+      "submitting": "Connexion…",
+      "errorGeneric": "Impossible de se connecter. Réessayez.",
+      "misconfigured": "L’authentification est activée mais mal configurée côté serveur (USER / PASSWORD / SECRET)."
     }
+  },
+  "aircrowdWms": {
+    "title": "Cartographie AirCrowd",
+    "date": "Jour",
+    "hour": "Heure",
+    "unsupportedPollutant": "Disponible uniquement pour PM₁₀ et PM₂.₅",
+    "layerMissing": "Aucune carte publiée pour ce créneau (choisir une heure listée).",
+    "availableHours": "Heures dispo. : {{hours}}",
+    "capabilitiesError": "Catalogue GeoServer indisponible — créneaux limités au PoC."
   }
 }

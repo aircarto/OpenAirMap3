@@ -776,7 +776,8 @@
     },
     "groupUtilities": "Utilities",
     "groupBaseLayer": "Base map",
-    "groupModes": "Modes"
+    "groupModes": "Modes",
+    "brandWebsite": "{{organization}} website"
   },
   "timeBar": {
     "now": "Now",
@@ -812,6 +813,27 @@
       "backToMap": "Back to map",
       "ctaMap": "Open the map",
       "ctaAbout": "About"
+    },
+    "login": {
+      "metaTitle": "Sign in",
+      "metaDescription": "Restricted access to this OpenAirMap instance.",
+      "title": "Restricted access",
+      "subtitle": "Enter the shared credentials provided by the project team.",
+      "username": "Username",
+      "password": "Password",
+      "submit": "Sign in",
+      "submitting": "Signing in…",
+      "errorGeneric": "Unable to sign in. Please try again.",
+      "misconfigured": "Authentication is enabled but misconfigured on the server (USER / PASSWORD / SECRET)."
     }
+  },
+  "aircrowdWms": {
+    "title": "AirCrowd cartography",
+    "date": "Day",
+    "hour": "Hour",
+    "unsupportedPollutant": "Available only for PM₁₀ and PM₂.₅",
+    "layerMissing": "No map published for this slot (pick a listed hour).",
+    "availableHours": "Available hours: {{hours}}",
+    "capabilitiesError": "GeoServer catalog unavailable — limited to PoC slots."
   }
 }

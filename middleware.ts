@@ -1,6 +1,15 @@
 import createMiddleware from 'next-intl/middleware';
 import { NextRequest, NextResponse } from 'next/server';
 import { routing } from './src/i18n/routing';
+import {
+  SHARED_AUTH_COOKIE,
+  detectLocaleFromPathname,
+  getSharedAuthCredentials,
+  isSharedAuthEnabled,
+  isSharedAuthPublicPath,
+  sharedAuthLoginPath,
+  verifySharedAuthToken,
+} from './src/lib/sharedAuth';
 
 const intlMiddleware = createMiddleware(routing);
 
@@ -25,11 +34,32 @@ const attachHostCookie = (request: NextRequest, response: NextResponse) => {
 
 /**
  * next-intl pour les pages ; robots/sitemap hors i18n mais avec cookie Host.
+ * Auth partagée optionnelle (SHARED_AUTH_ENABLED) via cookie signé.
  */
-export default function middleware(request: NextRequest) {
+export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  if (isSharedAuthEnabled() && !isSharedAuthPublicPath(pathname)) {
+    const token = request.cookies.get(SHARED_AUTH_COOKIE)?.value;
+    const { secret } = getSharedAuthCredentials();
+    const valid = await verifySharedAuthToken(token, secret);
+
+    if (!valid) {
+      const locale = detectLocaleFromPathname(pathname);
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = sharedAuthLoginPath(locale);
+      loginUrl.search = '';
+      loginUrl.searchParams.set('next', `${pathname}${request.nextUrl.search}`);
+      return attachHostCookie(request, NextResponse.redirect(loginUrl));
+    }
+  }
+
   if (pathname === '/robots.txt' || pathname === '/sitemap.xml') {
+    return attachHostCookie(request, NextResponse.next());
+  }
+
+  // API auth : ne pas passer par next-intl
+  if (pathname.startsWith('/api/')) {
     return attachHostCookie(request, NextResponse.next());
   }
 
@@ -42,6 +72,7 @@ export const config = {
     '/(fr|en|es|it|de|ar)/:path*',
     '/robots.txt',
     '/sitemap.xml',
+    '/api/:path*',
     '/((?!_next|_vercel|.*\\..*).*)',
   ],
 };

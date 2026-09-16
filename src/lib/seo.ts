@@ -1,16 +1,15 @@
 import { routing, type AppLocale } from '@/i18n/routing';
 
+type AppPathname = '/' | '/a-propos' | '/mentions-legales' | '/connexion';
+
 type BuildAlternatesArgs = {
   origin: string;
   locale: string;
   /** Pathname interne next-intl, ex. '/' | '/a-propos' */
-  pathname: '/' | '/a-propos' | '/mentions-legales';
+  pathname: AppPathname;
 };
 
-const PATHNAME_LOCALIZED: Record<
-  '/' | '/a-propos' | '/mentions-legales',
-  Record<AppLocale, string>
-> = {
+const PATHNAME_LOCALIZED: Record<AppPathname, Record<AppLocale, string>> = {
   '/': {
     fr: '/',
     en: '/en',
@@ -35,11 +34,19 @@ const PATHNAME_LOCALIZED: Record<
     de: '/de/impressum',
     ar: '/ar/legal-notice',
   },
+  '/connexion': {
+    fr: '/connexion',
+    en: '/en/login',
+    es: '/es/inicio-sesion',
+    it: '/it/accesso',
+    de: '/de/anmelden',
+    ar: '/ar/login',
+  },
 };
 
 export const localizedPath = (
   locale: string,
-  pathname: '/' | '/a-propos' | '/mentions-legales'
+  pathname: AppPathname
 ): string => {
   const loc = (
     routing.locales.includes(locale as AppLocale)

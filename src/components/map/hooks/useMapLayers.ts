@@ -16,6 +16,12 @@ import {
   isModelingAvailable,
   loadWindFromAtmoSud,
 } from "../../../services/ModelingLayerService";
+import {
+  buildAirCrowdLayerName,
+  createAirCrowdWMSLayer,
+  getAirCrowdWmsLegendUrl,
+  isAirCrowdWmsPollutantSupported,
+} from "../../../services/AirCrowdWmsLayerService";
 import { createCommunalGeoJSONLayer } from "../../../services/CommunalLayerService";
 import {
   createEffisHotspotsGeoJSONLayer,
@@ -38,6 +44,10 @@ interface UseMapLayersProps {
   selectedPollutant: string;
   currentModelingLayer: ModelingLayerType | null;
   modelingHourIndex?: number | null;
+  /** PoC WMS AirCrowd */
+  aircrowdWmsEnabled?: boolean;
+  aircrowdWmsDate?: string;
+  aircrowdWmsHour?: number;
   isCommunalLayerEnabled: boolean;
   isEffisHotspotsEnabled: boolean;
   isEffisBurnedAreasEnabled: boolean;
@@ -62,6 +72,9 @@ export const useMapLayers = ({
   selectedPollutant,
   currentModelingLayer,
   modelingHourIndex,
+  aircrowdWmsEnabled = false,
+  aircrowdWmsDate,
+  aircrowdWmsHour = 0,
   isCommunalLayerEnabled,
   isEffisHotspotsEnabled,
   isEffisBurnedAreasEnabled,
@@ -96,6 +109,7 @@ export const useMapLayers = ({
   >(null);
 
   const modelingLayerRef = useRef<L.TileLayer | null>(null);
+  const aircrowdWmsLayerRef = useRef<L.TileLayer.WMS | null>(null);
   const windLayerRef = useRef<L.Layer | null>(null);
   const windLayerGroupRef = useRef<L.LayerGroup | null>(null);
   const communalLayerRef = useRef<L.LayerGroup | null>(null);
@@ -302,6 +316,61 @@ export const useMapLayers = ({
     selectedPollutant,
     modelingHourIndex,
     loadWindModeling,
+    mapRef,
+  ]);
+
+  // PoC : couche WMS AirCrowd (date + heure calendaires)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || mapReadyVersion < 1) return;
+
+    if (aircrowdWmsLayerRef.current) {
+      map.removeLayer(aircrowdWmsLayerRef.current);
+      aircrowdWmsLayerRef.current = null;
+    }
+
+    if (!aircrowdWmsEnabled || !aircrowdWmsDate) {
+      return;
+    }
+
+    if (!isAirCrowdWmsPollutantSupported(selectedPollutant)) {
+      return;
+    }
+
+    try {
+      const layerName = buildAirCrowdLayerName(
+        selectedPollutant,
+        aircrowdWmsDate,
+        aircrowdWmsHour
+      );
+      const wmsLayer = createAirCrowdWMSLayer(layerName);
+      wmsLayer.addTo(map);
+      aircrowdWmsLayerRef.current = wmsLayer;
+      setCurrentModelingLegendUrl(getAirCrowdWmsLegendUrl(layerName));
+      setCurrentModelingLegendTitle(`AirCrowd — ${layerName}`);
+    } catch (error) {
+      console.error(
+        "❌ [AIRCROWD WMS] Erreur lors du chargement du layer:",
+        error
+      );
+      setCurrentModelingLegendUrl(null);
+      setCurrentModelingLegendTitle(null);
+    }
+
+    return () => {
+      if (aircrowdWmsLayerRef.current && map) {
+        map.removeLayer(aircrowdWmsLayerRef.current);
+        aircrowdWmsLayerRef.current = null;
+      }
+      setCurrentModelingLegendUrl(null);
+      setCurrentModelingLegendTitle(null);
+    };
+  }, [
+    aircrowdWmsEnabled,
+    aircrowdWmsDate,
+    aircrowdWmsHour,
+    selectedPollutant,
+    mapReadyVersion,
     mapRef,
   ]);
 

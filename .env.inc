@@ -6,10 +6,24 @@
 NEXT_PUBLIC_MAINTENANCE_MODE=boolean
 
 # Force une configuration de domaine (ex: atmosud, default, aircrowd.atmosud.org)
+# En local, preferer /etc/hosts → aircrowd.atmosud.org:3000 (allowedDevOrigins dans next.config)
 NEXT_PUBLIC_FORCE_DOMAIN_CONFIG=string
 
 # noindex + sitemap vide + Disallow (preprod). Variable serveur (pas NEXT_PUBLIC_).
 NOINDEX=boolean
+
+# =====================================================
+# Auth partagée (serveur uniquement — jamais NEXT_PUBLIC_)
+# =====================================================
+# Opt-in. Défaut false : openairmap / preprod restent ouverts.
+# Activer UNIQUEMENT sur le déploiement AirCrowd (ou autre instance privée).
+SHARED_AUTH_ENABLED=boolean
+# Identifiant unique partagé entre les acteurs du projet
+SHARED_AUTH_USER=string
+# Mot de passe unique partagé
+SHARED_AUTH_PASSWORD=string
+# Secret HMAC pour signer le cookie de session (chaîne longue aléatoire)
+SHARED_AUTH_SECRET=string
 
 
 # =====================================================

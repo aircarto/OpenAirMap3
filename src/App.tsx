@@ -17,6 +17,7 @@ import type {
   MapControlsFilters,
   MapControlsHistorical,
   MapControlsModeling,
+  MapControlsAirCrowdWms,
   MapControlsRefresh,
   MapControlsCommunitySources,
   MapControlsTimeBar,
@@ -24,6 +25,7 @@ import type {
   MapControlsValue,
 } from "./contexts/mapControlsContext";
 import { useAirQualityData } from "./hooks/useAirQualityData";
+import { useAirCrowdWmsAvailability } from "./hooks/useAirCrowdWmsAvailability";
 import { useMapInstant } from "./hooks/useMapInstant";
 import { useInstantSnapshot } from "./hooks/useInstantSnapshot";
 import { useDomainConfig } from "./hooks/useDomainConfig";
@@ -48,6 +50,13 @@ import {
   isModelingAvailable,
 } from "./services/ModelingLayerService";
 import {
+  AIRCROWD_WMS_DEFAULT_START_DATE,
+  clampAirCrowdWmsDate,
+  getAirCrowdWmsToday,
+  getAvailableHoursForAirCrowd,
+  pickNearestAvailableAirCrowdHour,
+} from "./services/AirCrowdWmsLayerService";
+import {
   adjacentInstantBeyondSlots,
   buildChartRangeAroundInstant,
   buildTimeBarWindow,
@@ -59,6 +68,7 @@ import {
   instantToIsoLocal,
   isInstantInSlotRange,
   isMapInstantAllowedForTimeStep,
+  lastCompletedHourInstant,
   lastCompletedSlotInstant,
   normalizeInstant,
   TIME_BAR_GO_TO_MIN_DATE,
@@ -164,6 +174,24 @@ const AppContent: React.FC = () => {
   const [signalAirLoadTrigger, setSignalAirLoadTrigger] = useState(0);
   const [currentModelingLayer, setCurrentModelingLayer] =
     useState<ModelingLayerType | null>(null);
+  const aircrowdWmsStartDate =
+    domainConfig.aircrowdWmsStartDate ?? AIRCROWD_WMS_DEFAULT_START_DATE;
+  // Aligné sur domainConfig.aircrowdWmsEnabled : feature exposée = couche on au démarrage
+  const [aircrowdWmsEnabled, setAircrowdWmsEnabled] = useState(() =>
+    Boolean(domainConfig.aircrowdWmsEnabled),
+  );
+  const [aircrowdWmsDate, setAircrowdWmsDate] = useState(() =>
+    clampAirCrowdWmsDate(
+      lastCompletedHourInstant().date,
+      aircrowdWmsStartDate,
+    ),
+  );
+  const [aircrowdWmsHour, setAircrowdWmsHour] = useState(
+    () => lastCompletedHourInstant().hour,
+  );
+  const { availability: aircrowdAvailability } = useAirCrowdWmsAvailability(
+    Boolean(domainConfig.aircrowdWmsEnabled),
+  );
 
   const resetSignalAirSettings = useCallback(() => {
     const resetPeriod = {
@@ -229,9 +257,34 @@ const AppContent: React.FC = () => {
     (layer: ModelingLayerType | null) => {
       setCurrentModelingLayer(layer);
       trackFeatureUsage("modeling_layer_change", { layer: layer ?? "none" });
+      // Exclusion mutuelle avec la nappe AirCrowd (sans toucher à la TimeBar)
+      if (layer) {
+        setAircrowdWmsEnabled(false);
+      }
     },
     [],
   );
+
+  const handleAircrowdWmsEnabledChange = useCallback((enabled: boolean) => {
+    setAircrowdWmsEnabled(enabled);
+    if (enabled) {
+      setCurrentModelingLayer(null);
+    }
+    trackFeatureUsage("aircrowd_wms_toggle", { enabled });
+  }, []);
+
+  const handleAircrowdWmsDateChange = useCallback(
+    (date: string) => {
+      setAircrowdWmsDate(
+        clampAirCrowdWmsDate(date, aircrowdWmsStartDate, getAirCrowdWmsToday()),
+      );
+    },
+    [aircrowdWmsStartDate],
+  );
+
+  const handleAircrowdWmsHourChange = useCallback((hour: number) => {
+    setAircrowdWmsHour(Math.max(0, Math.min(23, Math.floor(hour))));
+  }, []);
 
   const handleAutoRefreshToggle = useCallback((enabled: boolean) => {
     setAutoRefreshEnabled(enabled);
@@ -431,6 +484,36 @@ const AppContent: React.FC = () => {
   const effectiveInstant: MapInstant =
     isExploration && mapInstant ? mapInstant : liveInstant;
 
+  // Quand la nappe AirCrowd est active, la date/heure suit l'instant TimeBar
+  // (Live ou exploration) sans changer ModelingKind / buildTimeBarWindow.
+  const displayedAircrowdDate = aircrowdWmsEnabled
+    ? effectiveInstant.date
+    : aircrowdWmsDate;
+  const displayedAircrowdHour = useMemo(() => {
+    const baseHour = aircrowdWmsEnabled
+      ? effectiveInstant.hour
+      : aircrowdWmsHour;
+    if (!aircrowdWmsEnabled || !aircrowdAvailability) {
+      return baseHour;
+    }
+    const hours = getAvailableHoursForAirCrowd(
+      aircrowdAvailability,
+      selectedPollutant,
+      displayedAircrowdDate,
+    );
+    if (hours.length === 0 || hours.includes(baseHour)) {
+      return baseHour;
+    }
+    return pickNearestAvailableAirCrowdHour(hours, baseHour) ?? baseHour;
+  }, [
+    aircrowdWmsEnabled,
+    effectiveInstant.hour,
+    aircrowdWmsHour,
+    aircrowdAvailability,
+    selectedPollutant,
+    displayedAircrowdDate,
+  ]);
+
   useEffect(() => {
     if (!isExploration) {
       setBlockFocus(null);
@@ -613,6 +696,7 @@ const AppContent: React.FC = () => {
     selectedPollutant,
     selectedSources,
     selectedTimeStep,
+    atmoMicroAllowedSiteIds: domainConfig.atmoMicroAllowedSiteIds,
     signalAirPeriod,
     mobileAirPeriod,
     selectedMobileAirSensor,
@@ -805,6 +889,7 @@ const AppContent: React.FC = () => {
       favicon: domainConfig.favicon,
       title: domainConfig.title,
       organization: domainConfig.organization,
+      logoHref: domainConfig.links.logo,
     }),
     [
       domainConfig.logo,
@@ -812,6 +897,7 @@ const AppContent: React.FC = () => {
       domainConfig.favicon,
       domainConfig.title,
       domainConfig.organization,
+      domainConfig.links.logo,
     ],
   );
 
@@ -840,6 +926,29 @@ const AppContent: React.FC = () => {
       onModelingLayerChange: handleModelingLayerChange,
     }),
     [currentModelingLayer, handleModelingLayerChange],
+  );
+
+  const airCrowdWmsValue = useMemo<MapControlsAirCrowdWms>(
+    () => ({
+      featureEnabled: Boolean(domainConfig.aircrowdWmsEnabled),
+      startDate: aircrowdWmsStartDate,
+      enabled: aircrowdWmsEnabled,
+      onEnabledChange: handleAircrowdWmsEnabledChange,
+      date: displayedAircrowdDate,
+      onDateChange: handleAircrowdWmsDateChange,
+      hour: displayedAircrowdHour,
+      onHourChange: handleAircrowdWmsHourChange,
+    }),
+    [
+      domainConfig.aircrowdWmsEnabled,
+      aircrowdWmsStartDate,
+      aircrowdWmsEnabled,
+      handleAircrowdWmsEnabledChange,
+      displayedAircrowdDate,
+      handleAircrowdWmsDateChange,
+      displayedAircrowdHour,
+      handleAircrowdWmsHourChange,
+    ],
   );
 
   const refreshValue = useMemo<MapControlsRefresh>(
@@ -1047,6 +1156,7 @@ const AppContent: React.FC = () => {
       brand: brandValue,
       filters: filtersValue,
       modeling: modelingValue,
+      airCrowdWms: airCrowdWmsValue,
       refresh: refreshValue,
       historical: historicalValue,
       timeBar: timeBarValue,
@@ -1057,6 +1167,7 @@ const AppContent: React.FC = () => {
       brandValue,
       filtersValue,
       modelingValue,
+      airCrowdWmsValue,
       refreshValue,
       historicalValue,
       timeBarValue,
@@ -1091,6 +1202,9 @@ const AppContent: React.FC = () => {
             reports={reportsForMap}
             center={mapCenter}
             zoom={mapZoom}
+            minZoom={domainConfig.mapMinZoom}
+            maxZoom={domainConfig.mapMaxZoom}
+            maxBounds={domainConfig.mapMaxBounds}
             mapBounds={domainConfig.mapBounds}
             onMapViewChange={handleMapViewChange}
             selectedPollutant={selectedPollutant}
@@ -1098,6 +1212,10 @@ const AppContent: React.FC = () => {
             selectedTimeStep={selectedTimeStep}
             currentModelingLayer={currentModelingLayer}
             modelingHourIndex={modelingHourIndex}
+            aircrowdWmsEnabled={aircrowdWmsEnabled}
+            aircrowdWmsDate={displayedAircrowdDate}
+            aircrowdWmsHour={displayedAircrowdHour}
+            shouldOverrideDisplayedPeriod={aircrowdWmsEnabled}
             loading={mapLoading}
             signalAirPeriod={signalAirDraftPeriod}
             signalAirSelectedTypes={signalAirSelectedTypes}

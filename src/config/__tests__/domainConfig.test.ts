@@ -76,4 +76,35 @@ describe("getConfigForDomain", () => {
       DOMAIN_CONFIG.default.organization
     );
   });
+
+  it("expose un lien logo uniquement pour atmosud (default garde la modale infos)", () => {
+    expect(DOMAIN_CONFIG.default.links.logo).toBeUndefined();
+    expect(DOMAIN_CONFIG.atmosud.links.logo).toBe("https://www.atmosud.org/");
+  });
+
+  it("résout aircrowd.atmosud.org avec zone Gardanne/Meyreuil et whitelist AtmoMicro", () => {
+    const config = getConfigForDomain("aircrowd.atmosud.org");
+    expect(config).toBe(DOMAIN_CONFIG["aircrowd.atmosud.org"]);
+    expect(config.title).toBe("AirCrowd");
+    expect(config.mapZoom).toBe(14);
+    expect(config.mapMinZoom).toBe(10);
+    expect(config.mapMaxZoom).toBe(18);
+    expect(config.mapBounds).toEqual([
+      [43.4, 5.38],
+      [43.58, 5.62],
+    ]);
+    expect(config.mapMaxBounds).toEqual([
+      [43.2, 5.25],
+      [43.6, 5.7],
+    ]);
+    expect(config.mapCenter).toEqual([43.455, 5.475]);
+    expect(config.atmoMicroAllowedSiteIds?.length).toBeGreaterThan(0);
+    expect(config.atmoMicroAllowedSiteIds).toEqual(
+      expect.arrayContaining(["05C1A382", "D0001CA0", 1358])
+    );
+    expect(config.aircrowdWmsEnabled).toBe(true);
+    expect(config.aircrowdWmsStartDate).toBe("2026-09-02");
+    expect(config.markSquare).toBe("./branding/logo-aircrowd.png");
+    expect(config.logo).toBe(DOMAIN_CONFIG.atmosud.logo);
+  });
 });

@@ -41,8 +41,26 @@ export interface DomainConfig {
   markSquare?: string;
   mapCenter: [number, number];
   mapZoom: number;
-  /** Emprise [sud, ouest] / [nord, est] pour limiter les overlays WMS (région Sud) */
+  /** Emprise [sud, ouest] / [nord, est] pour limiter les overlays WMS */
   mapBounds: [[number, number], [number, number]];
+  /** Zoom minimum (verrouillage navigation, ex. instance AirCrowd) */
+  mapMinZoom?: number;
+  /** Zoom maximum (verrouillage navigation) */
+  mapMaxZoom?: number;
+  /** Emprise Leaflet pour empêcher le pan hors zone (ex. Gardanne/Meyreuil) */
+  mapMaxBounds?: [[number, number], [number, number]];
+  /** Whitelist des capteurs AtmoMicro affichés pour cette instance.
+   * Ancienne API : `id_site` numériques. Microspot : `device.id` hexadécimaux
+   * (aucune correspondance entre les deux espaces d'identifiants). */
+  atmoMicroAllowedSiteIds?: Array<string | number>;
+  /** Première date de carto disponible (YYYY-MM-DD) pour le sélecteur. */
+  aircrowdWmsStartDate?: string;
+  /**
+   * PoC Cartographie AirCrowd (WMS) :
+   * - expose le contrôle dans le menu fond de carte ;
+   * - active la couche par défaut à l’arrivée sur l’instance.
+   */
+  aircrowdWmsEnabled?: boolean;
   title: string;
   /** Titre long utilisé uniquement pour <title>/document.title. Si absent, `title` sert de repli (voir useDocumentTitle). */
   seoTitle?: string;
@@ -54,10 +72,24 @@ export interface DomainConfig {
     website: string;
     contact: string;
     about?: string;
+    /** Cible du clic sur le logo du rail. Absente = ouvrir la modale infos. */
+    logo?: string;
   };
   organization: string;
   legal?: DomainLegalInfo;
 }
+
+/** Emprise campagne AirCrowd (overlays WMS / couverture données). */
+const GARDANNE_MEYREUIL_BOUNDS: [[number, number], [number, number]] = [
+  [43.4, 5.38],
+  [43.58, 5.62],
+];
+
+/** Emprise navigation : Gardanne/Meyreuil + dézoom jusqu'à Marseille. */
+const MARSEILLE_GARDANNE_BOUNDS: [[number, number], [number, number]] = [
+  [43.2, 5.25],
+  [43.6, 5.7],
+];
 
 const defaultConfig: DomainConfig = {
   logo: './logo_atmosud_inspirer_ok_web.png',
@@ -131,6 +163,10 @@ const atmosudConfig: DomainConfig = {
   organization: 'AtmoSud',
   // Première mesure exploitable du réseau AtmoSud (station de référence la plus ancienne).
   earliestMeasurementDate: '2007-05-22',
+  links: {
+    ...defaultConfig.links,
+    logo: 'https://www.atmosud.org/',
+  },
   legal: {
     siret: '10795525400019',
     legalForm: 'Association loi 1901',
@@ -158,9 +194,44 @@ const atmosudConfig: DomainConfig = {
   },
 };
 
+/** Instance AirCrowd : zone Gardanne/Meyreuil, whitelist AtmoMicro, logos AtmoSud. */
+const aircrowdConfig: DomainConfig = {
+  ...atmosudConfig,
+  mapCenter: [43.455, 5.475], // Gardanne
+  mapZoom: 14,
+  mapMinZoom: 10, // dézoom possible jusqu'à voir Marseille
+  mapMaxZoom: 18,
+  mapBounds: GARDANNE_MEYREUIL_BOUNDS,
+  mapMaxBounds: MARSEILLE_GARDANNE_BOUNDS,
+  atmoMicroAllowedSiteIds: [
+    // Ancienne API (id_site) — utile si VITE_USE_MICROSPOT_API=false
+    1358, 1377, 1378, 1379, 1380, 1381, 1382, 1383, 1384, 1385, 1398, 1399,
+    1400, 1401, 1402,
+    // Microspot (device.id) — campagne Gardanne / Meyreuil
+    '05C1A382', // Meyreuil Fauvettes
+    '0E1C3E25', // Gardanne_La_Palun
+    '1211D0F6', // Gardanne_Mat'Ild
+    '7AC4C800', // Meyreuil Malet
+    '8C29F6A1', // Gardanne
+    '8E86600E', // Gardanne_Arménie
+    'AFAB4616', // Meyreuil_Ecole_Robert_Lagier
+    'C3F37C3A', // Meyreuil_Mairie
+    'D0001CA0', // Gardanne_Lycée_Fourcade
+    'DE0B8E93', // Gardanne_NotreDame
+  ],
+  title: 'AirCrowd',
+  seoTitle: "AirCrowd – Qualité de l'air à Gardanne / Meyreuil | AtmoSud",
+  description:
+    "Carte interactive de la qualité de l'air sur le secteur Gardanne / Meyreuil : stations de mesure et microcapteurs, données en temps réel proposées par AtmoSud.",
+  markSquare: './branding/logo-aircrowd.png',
+  aircrowdWmsEnabled: true,
+  aircrowdWmsStartDate: '2026-09-02',
+};
+
 export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
   default: defaultConfig,
   atmosud: atmosudConfig,
+  'aircrowd.atmosud.org': aircrowdConfig,
 };
 
 const isAtmoSudHost = (hostname: string) => hostname.endsWith('.atmosud.org');

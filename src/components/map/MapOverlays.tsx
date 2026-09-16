@@ -4,6 +4,8 @@ import SensorPromoCard from "./SensorPromoCard";
 import NotificationStack from "./notifications/NotificationStack";
 import { compactNotices, type Notice } from "./notifications/notice";
 import DeviceStatistics from "./DeviceStatistics";
+import { getModelingDisplayedPeriod } from "../../utils/modelingPeriodUtils";
+import { getAirCrowdWmsDisplayedPeriod } from "../../utils/airCrowdWmsMeasurements";
 import OverlayLegendsCard, {
   OverlayLegendItem,
   OverlayLegendsMobile,
@@ -65,6 +67,13 @@ interface MapOverlaysProps {
   selectedSources: string[];
   selectedTimeStep: string;
   historicalCurrentDate?: string;
+  isPollutantForecastMode?: boolean;
+  modelingHourIndex?: number | null;
+  aircrowdWmsEnabled?: boolean;
+  aircrowdWmsDate?: string;
+  aircrowdWmsHour?: number;
+  shouldOverrideDisplayedPeriod?: boolean;
+  locale?: string;
   statistics: any;
   sourceStatistics: any;
 }
@@ -93,10 +102,23 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
   selectedSources,
   selectedTimeStep,
   historicalCurrentDate,
+  isPollutantForecastMode = false,
+  modelingHourIndex = null,
+  aircrowdWmsEnabled = false,
+  aircrowdWmsDate,
+  aircrowdWmsHour = 0,
+  shouldOverrideDisplayedPeriod = false,
+  locale = "fr",
   statistics,
   sourceStatistics,
 }) => {
   const isMdUp = useIsMdUp();
+  const displayedPeriodOverride =
+    shouldOverrideDisplayedPeriod && aircrowdWmsEnabled && aircrowdWmsDate
+      ? getAirCrowdWmsDisplayedPeriod(aircrowdWmsDate, aircrowdWmsHour, locale)
+      : isPollutantForecastMode && typeof modelingHourIndex === "number"
+        ? getModelingDisplayedPeriod(modelingHourIndex, locale)
+        : undefined;
   const sidePanelOffset =
     sidePanels.isSidePanelOpen && sidePanels.panelSize !== "hidden";
 
@@ -300,6 +322,7 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
               selectedSources={selectedSources}
               selectedTimeStep={selectedTimeStep}
               historicalCurrentDate={historicalCurrentDate}
+              displayedPeriodOverride={displayedPeriodOverride}
               statistics={statistics}
               sourceStatistics={sourceStatistics}
               showDetails={false}
@@ -315,6 +338,7 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
             selectedSources={selectedSources}
             selectedTimeStep={selectedTimeStep}
             historicalCurrentDate={historicalCurrentDate}
+            displayedPeriodOverride={displayedPeriodOverride}
             statistics={statistics}
             sourceStatistics={sourceStatistics}
             showDetails={false}

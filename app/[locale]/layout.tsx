@@ -90,7 +90,8 @@ export default async function LocaleLayout({ children, params }: Props) {
           crossOrigin="anonymous"
         />
       </head>
-      <body>
+      {/* suppressHydrationWarning : extensions navigateur (ex. cz-shortcut-listen) mutent <body> avant hydrate */}
+      <body suppressHydrationWarning>
         <NextIntlClientProvider messages={messages}>
           <I18nLocaleSync>{children}</I18nLocaleSync>
         </NextIntlClientProvider>

@@ -2,6 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import BaseLayerControl from "../../../controls/BaseLayerControl";
 import ModelingLayerControl from "../../../controls/ModelingLayerControl";
+import AirCrowdWmsControls from "../../../controls/AirCrowdWmsControls";
 import { useMapControls } from "../../../../contexts/mapControlsContext";
 import RailItem from "../RailItem";
 import RailSection from "../RailSection";
@@ -38,7 +39,7 @@ export const RailBaseLayerSection: React.FC<RailBaseLayerSectionProps> = ({
   baseLayer,
 }) => {
   const { t } = useTranslation();
-  const { filters, modeling } = useMapControls();
+  const { filters, modeling, airCrowdWms, ui } = useMapControls();
 
   return (
     <RailSection
@@ -59,6 +60,17 @@ export const RailBaseLayerSection: React.FC<RailBaseLayerSectionProps> = ({
             selectedPollutant={filters.selectedPollutant}
             selectedTimeStep={filters.selectedTimeStep}
           />
+        }
+        isAirCrowdActive={airCrowdWms.enabled}
+        airCrowdSlot={
+          airCrowdWms.featureEnabled ? (
+            <AirCrowdWmsControls
+              enabled={airCrowdWms.enabled}
+              onEnabledChange={airCrowdWms.onEnabledChange}
+              selectedPollutant={filters.selectedPollutant}
+              locked={ui.controlsLocked}
+            />
+          ) : null
         }
         renderTrigger={({ isOpen, label }) => (
           <RailItem

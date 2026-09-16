@@ -11,6 +11,7 @@ import {
   Marker,
   Popup,
   useMapEvents,
+  useMap,
   AttributionControl,
 } from "react-leaflet";
 import L from "leaflet";
@@ -110,12 +111,19 @@ interface AirQualityMapProps {
   reports: SignalAirReport[];
   center: [number, number];
   zoom: number;
+  minZoom?: number;
+  maxZoom?: number;
+  maxBounds?: [[number, number], [number, number]];
   selectedPollutant: string;
   selectedSources: string[];
   selectedTimeStep: string;
   currentModelingLayer: ModelingLayerType | null;
   /** Index Azur 0–47 ; `null` masque la couche (hors fenêtre) ; absent = heure live */
   modelingHourIndex?: number | null;
+  shouldOverrideDisplayedPeriod?: boolean;
+  aircrowdWmsEnabled?: boolean;
+  aircrowdWmsDate?: string;
+  aircrowdWmsHour?: number;
   loading?: boolean;
   signalAirPeriod: { startDate: string; endDate: string };
   signalAirSelectedTypes: string[];
@@ -184,16 +192,91 @@ const MapClickHandler: React.FC<{ onMapClick: () => void }> = ({
   return null;
 };
 
+// Verrouille activement la navigation dans les bornes autorisées
+const MapBoundsLock: React.FC<{
+  maxBounds?: [[number, number], [number, number]];
+}> = ({ maxBounds }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!maxBounds) {
+      map.setMaxBounds(undefined);
+      return;
+    }
+
+    const bounds = L.latLngBounds(maxBounds);
+    map.setMaxBounds(bounds);
+    map.panInsideBounds(bounds, { animate: false });
+
+    const keepInsideBounds = () => {
+      map.panInsideBounds(bounds, { animate: false });
+    };
+
+    map.on("moveend", keepInsideBounds);
+    map.on("zoomend", keepInsideBounds);
+
+    return () => {
+      map.off("moveend", keepInsideBounds);
+      map.off("zoomend", keepInsideBounds);
+    };
+  }, [map, maxBounds]);
+
+  return null;
+};
+
+// Empêche les variations de zoom hors plage autorisée (notamment le dézoom)
+const MapZoomLock: React.FC<{
+  minZoom: number;
+  maxZoom: number;
+}> = ({ minZoom, maxZoom }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    map.setMinZoom(minZoom);
+    map.setMaxZoom(maxZoom);
+
+    if (map.getZoom() < minZoom) {
+      map.setZoom(minZoom, { animate: false });
+    } else if (map.getZoom() > maxZoom) {
+      map.setZoom(maxZoom, { animate: false });
+    }
+
+    const keepZoomInRange = () => {
+      const currentZoom = map.getZoom();
+      if (currentZoom < minZoom) {
+        map.setZoom(minZoom, { animate: false });
+      } else if (currentZoom > maxZoom) {
+        map.setZoom(maxZoom, { animate: false });
+      }
+    };
+
+    map.on("zoomend", keepZoomInRange);
+
+    return () => {
+      map.off("zoomend", keepZoomInRange);
+    };
+  }, [map, minZoom, maxZoom]);
+
+  return null;
+};
+
 const AirQualityMap: React.FC<AirQualityMapProps> = ({
   devices,
   reports,
   center,
   zoom,
+  minZoom = 1,
+  maxZoom = 18,
+  maxBounds,
   selectedPollutant,
   selectedSources,
   selectedTimeStep,
   currentModelingLayer,
   modelingHourIndex,
+  shouldOverrideDisplayedPeriod = false,
+  aircrowdWmsEnabled = false,
+  aircrowdWmsDate,
+  aircrowdWmsHour = 0,
   loading,
   signalAirPeriod,
   signalAirSelectedTypes,
@@ -222,7 +305,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
   onMapViewChange,
   mapBounds,
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   // AirQualityMap est rendu dans MapControlsProvider : il peut consommer le
   // contexte pour transmettre les notices applicatives à la pile unique.
   const mapControls = useMapControls();
@@ -312,6 +395,9 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
     selectedPollutant,
     currentModelingLayer,
     modelingHourIndex,
+    aircrowdWmsEnabled,
+    aircrowdWmsDate,
+    aircrowdWmsHour,
     isCommunalLayerEnabled,
     isEffisHotspotsEnabled:
       isEffisHotspotsEnabled && !isHotspotsBeyondRetention,
@@ -981,9 +1067,13 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           doubleClickZoom={true}
           dragging={true}
           touchZoom={true}
-          minZoom={1}
-          maxZoom={18}
+          minZoom={minZoom}
+          maxZoom={maxZoom}
+          maxBounds={maxBounds}
+          maxBoundsViscosity={maxBounds ? 1 : undefined}
         >
+          <MapBoundsLock maxBounds={maxBounds} />
+          <MapZoomLock minZoom={minZoom} maxZoom={maxZoom} />
           {/* Attribution sous la TimeBar, coin bas-droit — voir index.css. */}
           <AttributionControl position="bottomright" prefix={false} />
 
@@ -1115,6 +1205,13 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           selectedSources={selectedSources}
           selectedTimeStep={selectedTimeStep}
           historicalCurrentDate={historicalCurrentDate}
+          isPollutantForecastMode={currentModelingLayer === "pollutant"}
+          modelingHourIndex={modelingHourIndex ?? null}
+          aircrowdWmsEnabled={aircrowdWmsEnabled}
+          aircrowdWmsDate={aircrowdWmsDate}
+          aircrowdWmsHour={aircrowdWmsHour}
+          shouldOverrideDisplayedPeriod={shouldOverrideDisplayedPeriod}
+          locale={i18n.language}
           statistics={statistics}
           sourceStatistics={sourceStatistics}
         />

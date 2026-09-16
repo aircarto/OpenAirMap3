@@ -36,6 +36,8 @@ export interface MapControlsBrand {
   favicon: string;
   title: string;
   organization: string;
+  /** URL externe au clic sur le logo du rail ; absente = modale infos */
+  logoHref?: string;
 }
 
 export interface MapControlsFilters {
@@ -50,6 +52,20 @@ export interface MapControlsFilters {
 export interface MapControlsModeling {
   currentModelingLayer: ModelingLayerType | null;
   onModelingLayerChange: (layer: ModelingLayerType | null) => void;
+}
+
+/** PoC cartographie WMS AirCrowd (entrée UI séparée de la modélisation Azur). */
+export interface MapControlsAirCrowdWms {
+  /** La feature est proposée pour ce domaine */
+  featureEnabled: boolean;
+  /** Date de début du catalogue (YYYY-MM-DD) */
+  startDate: string;
+  enabled: boolean;
+  onEnabledChange: (enabled: boolean) => void;
+  date: string;
+  onDateChange: (date: string) => void;
+  hour: number;
+  onHourChange: (hour: number) => void;
 }
 
 export interface MapControlsRefresh {
@@ -153,6 +169,7 @@ export interface MapControlsValue {
   brand: MapControlsBrand;
   filters: MapControlsFilters;
   modeling: MapControlsModeling;
+  airCrowdWms: MapControlsAirCrowdWms;
   refresh: MapControlsRefresh;
   historical: MapControlsHistorical;
   timeBar: MapControlsTimeBar;

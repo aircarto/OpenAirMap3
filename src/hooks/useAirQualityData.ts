@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   AtmoMicroLikeService,
   MeasurementDevice,
@@ -12,6 +12,8 @@ interface UseAirQualityDataProps {
   selectedPollutant: string;
   selectedSources: string[];
   selectedTimeStep: string;
+  /** Whitelist optionnelle des sites AtmoMicro (ex. instance AirCrowd) */
+  atmoMicroAllowedSiteIds?: Array<string | number>;
   signalAirPeriod?: { startDate: string; endDate: string };
   mobileAirPeriod?: { startDate: string; endDate: string };
   selectedMobileAirSensor?: string | null;
@@ -57,6 +59,7 @@ export const useAirQualityData = ({
   selectedPollutant,
   selectedSources,
   selectedTimeStep,
+  atmoMicroAllowedSiteIds,
   signalAirPeriod,
   mobileAirPeriod,
   selectedMobileAirSensor,
@@ -79,6 +82,17 @@ export const useAirQualityData = ({
   const lastFetchParamsRef = useRef<string>("");
   // Référence pour stocker fetchData et éviter les dépendances circulaires
   const fetchDataRef = useRef<(() => Promise<void>) | undefined>(undefined);
+
+  const atmoMicroAllowedSiteIdsSet = useMemo(() => {
+    if (!atmoMicroAllowedSiteIds || atmoMicroAllowedSiteIds.length === 0) {
+      return null;
+    }
+    // Normalise en majuscules : microspot renvoie des device.id hexadécimaux
+    // parfois en casse mixte, alors que la whitelist est en majuscules.
+    return new Set(
+      atmoMicroAllowedSiteIds.map((id) => id.toString().toUpperCase())
+    );
+  }, [atmoMicroAllowedSiteIds]);
 
   const fetchData = useCallback(async () => {
     const now = new Date();
@@ -284,6 +298,14 @@ export const useAirQualityData = ({
               }
             });
 
+            // Filtre domaine: ne garder que certains sites AtmoMicro
+            const filteredMeasurementDevices =
+              mappedSourceCode === "atmoMicro" && atmoMicroAllowedSiteIdsSet
+                ? measurementDevices.filter((d) =>
+                    atmoMicroAllowedSiteIdsSet.has(d.id.toUpperCase())
+                  )
+                : measurementDevices;
+
             // Mettre à jour les appareils de mesure
             // Toujours filtrer les anciennes données de cette source, même si le service retourne un tableau vide
             // (par exemple, si NebuleAir ne supporte pas le polluant sélectionné)
@@ -293,7 +315,7 @@ export const useAirQualityData = ({
                 (device) => device.source !== mappedSourceCode
               );
               // Ajouter les nouvelles données (peut être un tableau vide)
-              return [...filteredDevices, ...measurementDevices];
+              return [...filteredDevices, ...filteredMeasurementDevices];
             });
 
             // Mettre à jour les signalements (uniquement pour SignalAir)
@@ -425,6 +447,7 @@ export const useAirQualityData = ({
     selectedPollutant,
     selectedSources,
     selectedTimeStep,
+    atmoMicroAllowedSiteIdsSet,
     signalAirPeriod,
     mobileAirPeriod,
     selectedMobileAirSensor,
@@ -477,6 +500,7 @@ export const useAirQualityData = ({
       selectedPollutant,
       selectedSources,
       selectedTimeStep,
+      atmoMicroAllowedSiteIds,
       signalAirPeriod,
       mobileAirPeriod,
       selectedMobileAirSensor,
@@ -506,6 +530,7 @@ export const useAirQualityData = ({
     selectedMobileAirSensor,
     signalAirOptions?.loadTrigger,
     signalAirOptions?.isSourceSelected,
+    atmoMicroAllowedSiteIds,
     // Note: on utilise les dépendances réelles au lieu de fetchData
     // pour éviter les appels multiples quand fetchData est recréé avec les mêmes paramètres
   ]);

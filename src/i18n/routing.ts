@@ -26,5 +26,13 @@ export const routing = defineRouting({
       de: '/impressum',
       ar: '/legal-notice',
     },
+    '/connexion': {
+      fr: '/connexion',
+      en: '/login',
+      es: '/inicio-sesion',
+      it: '/accesso',
+      de: '/anmelden',
+      ar: '/login',
+    },
   },
 });

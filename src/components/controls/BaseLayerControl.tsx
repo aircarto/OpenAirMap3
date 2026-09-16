@@ -127,6 +127,13 @@ interface BaseLayerControlProps {
   /** Vrai si une couche de modélisation est active, pour la pastille du sous-menu */
   isModelingActive?: boolean;
   /**
+   * Contenu du sous-menu « Cartographie AirCrowd » (PoC WMS).
+   * Entrée séparée de la modélisation Azur.
+   */
+  airCrowdSlot?: React.ReactNode;
+  /** Vrai si la carto AirCrowd est active */
+  isAirCrowdActive?: boolean;
+  /**
    * Déclencheur fourni par l'appelant, rendu dans un `<PopoverTrigger asChild>`.
    *
    * Il doit donc diffuser ses props et sa ref, et NE PAS gérer l'ouverture
@@ -162,6 +169,8 @@ const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
   panelClassName,
   modelingSlot,
   isModelingActive = false,
+  airCrowdSlot,
+  isAirCrowdActive = false,
   renderTrigger,
 }) => {
   const { t } = useTranslation();
@@ -347,6 +356,16 @@ const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
                 {modelingSlot}
               </LayerDisclosure>
             )}
+
+            {/* Sous-menu « Cartographie AirCrowd » (PoC WMS) */}
+            {airCrowdSlot ? (
+              <LayerDisclosure
+                label={t("aircrowdWms.title")}
+                active={isAirCrowdActive}
+              >
+                {airCrowdSlot}
+              </LayerDisclosure>
+            ) : null}
 
             {/* Sous-menu « Incendie » : points de chaleur, zones brûlées, feux en cours */}
             <LayerDisclosure

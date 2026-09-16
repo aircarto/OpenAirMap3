@@ -19,6 +19,8 @@ interface DeviceStatisticsProps {
   selectedSources?: string[];
   selectedTimeStep?: string;
   historicalCurrentDate?: string;
+  /** Remplace le libellé de période (ex. WMS AirCrowd / prévision Azur) */
+  displayedPeriodOverride?: string;
   statistics?: DeviceStatisticsType; // OPTIMISATION : Statistiques pré-calculées
   sourceStatistics?: SourceStatistics[]; // OPTIMISATION : Stats par source pré-calculées
   showDetails?: boolean;
@@ -36,6 +38,7 @@ const DeviceStatistics: React.FC<DeviceStatisticsProps> = ({
   selectedSources = [],
   selectedTimeStep = "",
   historicalCurrentDate,
+  displayedPeriodOverride,
   statistics, // OPTIMISATION : Utiliser les statistiques pré-calculées
   sourceStatistics, // OPTIMISATION : Stats par source pré-calculées
   showDetails = false,
@@ -43,8 +46,9 @@ const DeviceStatistics: React.FC<DeviceStatisticsProps> = ({
   const { t, i18n } = useTranslation();
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const displayedPeriod =
-    selectedTimeStep &&
-    getDisplayedPeriod(selectedTimeStep, historicalCurrentDate, i18n.language);
+    displayedPeriodOverride ||
+    (selectedTimeStep &&
+      getDisplayedPeriod(selectedTimeStep, historicalCurrentDate, i18n.language));
 
   // OPTIMISATION : Utiliser les statistiques pré-calculées si disponibles
   // Sinon, calculer localement (fallback pour compatibilité)
