@@ -265,63 +265,25 @@ Pour ajouter (ou retirer) un pas de temps sur une source donnee :
 
 Exemple concret : AtmoMicro n'expose pas encore `jour` cote API, donc ce pas est desactive tant que le service ne le supporte pas.
 
-## Deploiement production (Nginx)
+## Deploiement production (Next.js + Nginx)
 
-Ce projet se deploie comme une SPA statique :
-1) build Vite, 
-2) publication des fichiers `dist/`, 
-3) service par Nginx avec fallback SPA.
+Ce projet se deploie comme une app **Next.js standalone** (process Node) derriere Nginx.
+Guide detaille : [docs/DEPLOIEMENT_NEXT.md](docs/DEPLOIEMENT_NEXT.md).
 
-### 1. Build reproductible
+### 1. Build
 
 ```bash
 npm ci
 npm run build
+cp -r public .next/standalone/public
+mkdir -p .next/standalone/.next && cp -r .next/static .next/standalone/.next/static
 ```
 
-Le build genere `dist/`.
+### 2. Process Node + Nginx
 
-### 2. Copier le build sur le serveur
-
-Exemple :
-
-```bash
-rsync -avz --delete dist/ user@server:/var/www/openairmap/
-```
-
-### 3. Configuration Nginx (SPA)
-
-Exemple de serveur Nginx (`/etc/nginx/sites-available/openairmap.conf`) :
-
-```nginx
-server {
-  listen 80;
-  server_name openairmap.example.org;
-
-  root chemin-vers-dossier-build;
-  index index.html;
-
-  # Fallback SPA
-  location / {
-    try_files $uri $uri/ /index.html;
-  }
-
-  # Cache long pour assets versionnes
-  location ~* \.(js|mjs|css|png|jpg|jpeg|gif|svg|ico|webp|woff2?)$ {
-    expires 30d;
-    add_header Cache-Control "public, max-age=2592000, immutable";
-    try_files $uri =404;
-  }
-}
-```
-
-Activation (Debian/Ubuntu) :
-
-```bash
-sudo ln -s /etc/nginx/sites-available/openairmap.conf /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl reload nginx
-```
+- Unite systemd : [`deploy/openairmap.service`](deploy/openairmap.service)
+- Exemple Nginx : [`deploy/nginx-openairmap.conf.example`](deploy/nginx-openairmap.conf.example)
+- Gabarit env : [`.env.inc`](.env.inc) (`NEXT_PUBLIC_*`, `NOINDEX` en preprod)
 
 ## Documentation complementaire
 

@@ -3,16 +3,12 @@ name: preprod-deploy
 
 # Declencheurs
 on:
-  # Lance le workflow sur chaque push de la branche preprod
   push:
     branches:
       - preprod
-
-  # Permet un lancement manuel depuis l'UI Gitea
   workflow_dispatch:
 
 jobs:
-  # Job CI: verifie qualite avant deploiement
   ci:
     runs-on: ubuntu-latest
     steps:
@@ -28,24 +24,19 @@ jobs:
       - name: Executer les tests unitaires services/hooks
         run: npx vitest run src/services/__tests__ src/hooks/__tests__
 
-  # Job de deploiement preprod (seulement si CI vert)
   deploy-preprod:
     needs: ci
-    # Doit matcher un label disponible sur ton runner
     runs-on: ubuntu-latest
 
     steps:
-      # Recupere le code du repo
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Affiche le contexte utile pour les logs
       - name: Contexte run
         run: |
           echo "ref=${{ gitea.ref }}"
           echo "sha=${{ gitea.sha }}"
 
-      # Prepare la configuration SSH
       - name: Setup SSH
         shell: bash
         run: |
@@ -56,8 +47,7 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -p "${{ secrets.PREPROD_PORT }}" "${{ secrets.PREPROD_HOST }}" >> ~/.ssh/known_hosts
 
-      # Execute le deploiement sur la machine preprod via SSH
-      - name: Deploy preprod
+      - name: Deploy preprod (build Next + restart systemd)
         shell: bash
         run: |
           set -euo pipefail
@@ -69,5 +59,10 @@ jobs:
             git pull --ff-only origin preprod
             npm ci
             npm run build
+            # Copier les assets publics dans le standalone (requis par Next)
+            cp -r public .next/standalone/public 2>/dev/null || true
+            cp -r .next/static .next/standalone/.next/static 2>/dev/null || true
+            sudo systemctl restart openairmap
             echo 'SHA deploye:' \$(git rev-parse --short HEAD)
+            systemctl is-active openairmap
           "
