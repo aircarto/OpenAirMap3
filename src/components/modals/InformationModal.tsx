@@ -1,10 +1,11 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DomainConfig } from '../../config/domainConfig';
+import { Link } from '../../i18n/navigation';
+import { getMarkerPath } from '../../utils';
 
 const FOCUSABLE_SELECTOR =
   'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
-import { getMarkerPath } from '../../utils';
 
 type TimeStepStatus = 'available' | 'limited' | 'unavailable';
 
@@ -624,15 +625,31 @@ const InformationModal: React.FC<InformationModalProps> = ({
                   >
                     {t('infoModal.legal.link')}
                   </button>
+                  <Link
+                    href="/a-propos"
+                    className="text-left text-[#4271B3] hover:underline sm:border-l sm:border-slate-200 sm:pl-3"
+                    onClick={onClose}
+                  >
+                    {t('pages.about.metaTitle')}
+                  </Link>
                 </>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => setView('info')}
-                  className="text-left text-[#4271B3] hover:underline"
-                >
-                  {t('infoModal.legal.back')}
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setView('info')}
+                    className="text-left text-[#4271B3] hover:underline"
+                  >
+                    {t('infoModal.legal.back')}
+                  </button>
+                  <Link
+                    href="/mentions-legales"
+                    className="text-left text-[#4271B3] hover:underline sm:border-l sm:border-slate-200 sm:pl-3"
+                    onClick={onClose}
+                  >
+                    {t('pages.legal.metaTitle')}
+                  </Link>
+                </>
               )}
             </div>
             <button

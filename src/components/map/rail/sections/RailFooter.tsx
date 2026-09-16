@@ -1,5 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "../../../../i18n/navigation";
 import LanguageSwitcher from "../../../controls/LanguageSwitcher";
 import TourReplayButton from "../../../tour/TourReplayButton";
 import { useMapControls } from "../../../../contexts/mapControlsContext";
@@ -19,12 +20,7 @@ export interface RailFooterProps {
 }
 
 /**
- * Pied du rail : langue, tutoriel, informations.
- *
- * Ce groupe n'est PAS gelé pendant la lecture historique, contrairement au
- * header actuel qui atténuait aussi langue/tutoriel/infos (App.tsx:733).
- * Empêcher de changer de langue ou d'ouvrir les informations parce qu'une
- * animation temporelle est en cours n'a pas de justification.
+ * Pied du rail : langue, tutoriel, informations, liens pages SEO.
  */
 export const RailFooter: React.FC<RailFooterProps> = ({
   orientation,
@@ -79,7 +75,6 @@ export const RailFooter: React.FC<RailFooterProps> = ({
       <RailItem
         itemId="info"
         data-testid="rail-info-button"
-        // Libellé conservé mot pour mot : e2e/smoke.spec.ts cible ce nom
         aria-label={t("app.infoButton")}
         title={t("app.infoButton")}
         onClick={ui.onOpenInfoModal}
@@ -87,6 +82,21 @@ export const RailFooter: React.FC<RailFooterProps> = ({
         label={t("app.infoButton")}
         icon={<IconInfo />}
       />
+
+      <Link
+        href="/a-propos"
+        className="sr-only"
+        data-testid="rail-about-link"
+      >
+        {t("pages.about.metaTitle")}
+      </Link>
+      <Link
+        href="/mentions-legales"
+        className="sr-only"
+        data-testid="rail-legal-link"
+      >
+        {t("pages.legal.metaTitle")}
+      </Link>
     </RailSection>
   );
 };
