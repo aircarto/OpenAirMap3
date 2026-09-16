@@ -1,3 +1,5 @@
+import { readEnv } from '../lib/env';
+
 const parseBooleanFlag = (
   value: string | undefined,
   defaultValue: boolean
@@ -8,11 +10,11 @@ const parseBooleanFlag = (
 
   const normalized = value.trim().toLowerCase();
 
-  if (["false", "0", "off", "no", "disabled"].includes(normalized)) {
+  if (['false', '0', 'off', 'no', 'disabled'].includes(normalized)) {
     return false;
   }
 
-  if (["true", "1", "on", "yes", "enabled"].includes(normalized)) {
+  if (['true', '1', 'on', 'yes', 'enabled'].includes(normalized)) {
     return true;
   }
 
@@ -21,30 +23,32 @@ const parseBooleanFlag = (
 
 export const featureFlags = {
   maintenanceMode: parseBooleanFlag(
-    import.meta.env.VITE_MAINTENANCE_MODE as string | undefined,
+    readEnv('NEXT_PUBLIC_MAINTENANCE_MODE') ?? readEnv('VITE_MAINTENANCE_MODE'),
     false
   ),
   wildfireLayer: parseBooleanFlag(
-    import.meta.env.VITE_ENABLE_WILDFIRE_LAYER as string | undefined,
+    readEnv('NEXT_PUBLIC_ENABLE_WILDFIRE_LAYER') ??
+      readEnv('VITE_ENABLE_WILDFIRE_LAYER'),
     true
   ),
   solidLineNebuleAir: parseBooleanFlag(
-    ((import.meta.env as unknown as Record<string, string | undefined>)
-      .SOLID_LINE_NEBULEAIR ??
-      (import.meta.env.VITE_SOLID_LINE_NEBULEAIR as string | undefined)) ??
-      undefined,
+    readEnv('NEXT_PUBLIC_SOLID_LINE_NEBULEAIR') ??
+      readEnv('VITE_SOLID_LINE_NEBULEAIR') ??
+      readEnv('SOLID_LINE_NEBULEAIR'),
     false
   ),
   markerNebuleAir: parseBooleanFlag(
-    import.meta.env.VITE_MARKER_NEBULEAIR as string | undefined,
-    true // Par défaut, nebuleair a son propre marqueur (comportement d'origine)
+    readEnv('NEXT_PUBLIC_MARKER_NEBULEAIR') ??
+      readEnv('VITE_MARKER_NEBULEAIR'),
+    true
   ),
   useAdvertising: parseBooleanFlag(
-    import.meta.env.VITE_USE_ADVERTISING as string | undefined,
+    readEnv('NEXT_PUBLIC_USE_ADVERTISING') ?? readEnv('VITE_USE_ADVERTISING'),
     false
   ),
   historicalModeLogs: parseBooleanFlag(
-    import.meta.env.VITE_HISTORICAL_MODE_LOGS as string | undefined,
+    readEnv('NEXT_PUBLIC_HISTORICAL_MODE_LOGS') ??
+      readEnv('VITE_HISTORICAL_MODE_LOGS'),
     false
   ),
 
@@ -57,7 +61,8 @@ export const featureFlags = {
    * microspot, donc l'ancienne API reste le chemin de repli.
    */
   useMicrospotApi: parseBooleanFlag(
-    import.meta.env.VITE_USE_MICROSPOT_API as string | undefined,
+    readEnv('NEXT_PUBLIC_USE_MICROSPOT_API') ??
+      readEnv('VITE_USE_MICROSPOT_API'),
     false
   ),
 
@@ -67,12 +72,14 @@ export const featureFlags = {
    * number = tooltip uniquement quand zoom >= cette valeur.
    */
   tooltipMinZoom: ((): number | null => {
-    const raw = import.meta.env.VITE_TOOLTIP_MIN_ZOOM as string | undefined;
-    if (raw === undefined || raw === null || raw === "") return null;
+    const raw =
+      readEnv('NEXT_PUBLIC_TOOLTIP_MIN_ZOOM') ??
+      readEnv('VITE_TOOLTIP_MIN_ZOOM');
+    if (raw === undefined || raw === null || raw === '') return null;
     const normalized = raw.trim().toLowerCase();
-    if (["false", "0", "off", "no", "disabled"].includes(normalized)) return null;
+    if (['false', '0', 'off', 'no', 'disabled'].includes(normalized))
+      return null;
     const num = Number(raw);
     return Number.isInteger(num) && num >= 0 ? num : null;
   })(),
 };
-

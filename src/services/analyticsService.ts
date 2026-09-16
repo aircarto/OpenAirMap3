@@ -15,6 +15,8 @@ interface AnalyticsConfig {
   siteId: string;
 }
 
+import { readEnv } from '../lib/env';
+
 const parseBooleanFlag = (value: string | undefined, defaultValue = false): boolean => {
   if (value === undefined || value === null) {
     return defaultValue;
@@ -31,21 +33,34 @@ const parseBooleanFlag = (value: string | undefined, defaultValue = false): bool
 };
 
 const getAnalyticsConfig = (): AnalyticsConfig => {
-  const rawBaseUrl = (import.meta.env.VITE_MATOMO_URL as string | undefined)?.trim() ?? "";
+  const rawBaseUrl =
+    (
+      readEnv('NEXT_PUBLIC_MATOMO_URL') ?? readEnv('VITE_MATOMO_URL')
+    )?.trim() ?? '';
 
   return {
-    enabled: parseBooleanFlag(import.meta.env.VITE_MATOMO_ENABLED as string | undefined, false),
-    debug: parseBooleanFlag(import.meta.env.VITE_MATOMO_DEBUG as string | undefined, false),
+    enabled: parseBooleanFlag(
+      readEnv('NEXT_PUBLIC_MATOMO_ENABLED') ?? readEnv('VITE_MATOMO_ENABLED'),
+      false
+    ),
+    debug: parseBooleanFlag(
+      readEnv('NEXT_PUBLIC_MATOMO_DEBUG') ?? readEnv('VITE_MATOMO_DEBUG'),
+      false
+    ),
     sendToMatomo: parseBooleanFlag(
-      import.meta.env.VITE_MATOMO_SEND as string | undefined,
+      readEnv('NEXT_PUBLIC_MATOMO_SEND') ?? readEnv('VITE_MATOMO_SEND'),
       false
     ),
     stripQueryParams: parseBooleanFlag(
-      import.meta.env.VITE_MATOMO_STRIP_QUERY_PARAMS as string | undefined,
+      readEnv('NEXT_PUBLIC_MATOMO_STRIP_QUERY_PARAMS') ??
+        readEnv('VITE_MATOMO_STRIP_QUERY_PARAMS'),
       true
     ),
-    baseUrl: rawBaseUrl.endsWith("/") ? rawBaseUrl : `${rawBaseUrl}/`,
-    siteId: (import.meta.env.VITE_MATOMO_SITE_ID as string | undefined)?.trim() ?? "",
+    baseUrl: rawBaseUrl.endsWith('/') ? rawBaseUrl : `${rawBaseUrl}/`,
+    siteId:
+      (
+        readEnv('NEXT_PUBLIC_MATOMO_SITE_ID') ?? readEnv('VITE_MATOMO_SITE_ID')
+      )?.trim() ?? '',
   };
 };
 

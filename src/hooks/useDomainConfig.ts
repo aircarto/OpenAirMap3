@@ -1,9 +1,14 @@
-import { useState } from "react";
-import { getConfigForDomain, DomainConfig } from "../config/domainConfig";
+'use client';
+
+import { useState } from 'react';
+import { DomainConfig } from '../config/domainConfig';
+import { resolveDomainConfig } from '../lib/domain';
 
 export const useDomainConfig = (): DomainConfig => {
   const [config] = useState<DomainConfig>(() =>
-    getConfigForDomain(window.location.hostname)
+    resolveDomainConfig(
+      typeof window !== 'undefined' ? window.location.hostname : 'localhost'
+    )
   );
 
   return config;

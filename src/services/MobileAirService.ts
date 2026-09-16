@@ -10,6 +10,7 @@ import {
   MOBILEAIR_TIMESTEP_MAPPING,
 } from "../types";
 import { pollutants } from "../constants/pollutants";
+import { isDevRuntime } from "../lib/env";
 
 export class MobileAirService extends BaseDataService {
   private readonly baseUrl = this.getApiBaseUrl();
@@ -23,11 +24,9 @@ export class MobileAirService extends BaseDataService {
   }
 
   private getApiBaseUrl(): string {
-    // En développement, utiliser le proxy Vite
-    if (import.meta.env.DEV) {
+    if (isDevRuntime()) {
       return "/aircarto/capteurs";
     }
-    // En production, utiliser l'URL complète de l'API
     return "https://api.aircarto.fr/capteurs";
   }
 

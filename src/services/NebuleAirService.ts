@@ -1,5 +1,5 @@
-/// <reference types="vite/client" />
 import { BaseDataService } from "./BaseDataService";
+import { isDevRuntime } from "../lib/env";
 import {
   MeasurementDevice,
   NebuleAirSensor,
@@ -26,11 +26,11 @@ export class NebuleAirService extends BaseDataService {
   }
 
   private getApiBaseUrl(): string {
-    // En développement, utiliser le proxy Vite
-    if (import.meta.env.DEV) {
+    // En développement local, l'API peut être proxifiée côté reverse-proxy.
+    // En production, URL absolue (pas de proxy Next pour AirCarto).
+    if (isDevRuntime()) {
       return "/aircarto";
     }
-    // En production, utiliser l'URL complète de l'API
     return "https://api.aircarto.fr";
   }
 
