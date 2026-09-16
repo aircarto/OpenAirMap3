@@ -1015,6 +1015,42 @@ describe("AtmoMicroV2Service", () => {
       expect(result[0].devices.map((device) => device.id)).toEqual(["GARDE"]);
     });
 
+    it("lance les tranches d'observations en parallèle", async () => {
+      let inFlight = 0;
+      let maxInFlight = 0;
+      const releases: Array<() => void> = [];
+
+      vi.spyOn(
+        service as unknown as RequestingService,
+        "makeRequest"
+      ).mockImplementation(() => {
+        inFlight += 1;
+        maxInFlight = Math.max(maxInFlight, inFlight);
+        return new Promise((resolve) => {
+          releases.push(() => {
+            inFlight -= 1;
+            resolve([]);
+          });
+        });
+      });
+
+      const pending = service.fetchTemporalData({
+        pollutant: "pm25",
+        timeStep: "heure",
+        startDate: "2026-08-04",
+        endDate: "2026-09-03",
+      });
+
+      await vi.waitFor(() => {
+        expect(maxInFlight).toBeGreaterThan(1);
+      });
+
+      releases.forEach((release) => release());
+      await pending;
+
+      expect(maxInFlight).toBeGreaterThan(1);
+    });
+
     it("poursuit les autres tranches quand l'une échoue, en la journalisant", async () => {
       let call = 0;
       vi.spyOn(service as unknown as RequestingService, "makeRequest").mockImplementation(() => {

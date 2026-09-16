@@ -719,24 +719,16 @@
     },
     "historical": {
       "step1": {
-        "title": "Scopri la modalità storica",
-        "description": "Questa modalità consente di riprodurre la qualità dell'aria su un periodo passato. È disponibile solo per i passi 15 min, ora e giorno."
+        "title": "Time bar",
+        "description": "The bar at the bottom of the map lets you explore past measurements. It is available for 15-minute, hourly and daily time steps. “Now” returns to live data."
       },
       "step2": {
-        "title": "Attiva la modalità storica",
-        "description": "Fai clic su questo pulsante per attivare la modalità. I marcatori attuali saranno sostituiti dai dati del periodo selezionato."
+        "title": "Browse time",
+        "description": "Drag the slider, use play/pause and speed, or the arrows, to change slots. Each tick reloads measurements for that instant."
       },
       "step3": {
-        "title": "Scegli un periodo",
-        "description": "Seleziona una data di inizio e fine. Sono supportate le fonti AtmoRef, AtmoMicro e NebuleAir. La durata massima dipende dal passo temporale (7 giorni a 15 min, 30 giorni orari)."
-      },
-      "step4": {
-        "title": "Carica i dati",
-        "description": "Una volta scelto il periodo, fai clic qui per caricare le misure storiche sulla mappa."
-      },
-      "step5": {
-        "title": "Controlli di riproduzione",
-        "description": "Usa play/pausa, la timeline e la velocità per navigare nel tempo. Questo pannello è trascinabile; riapri il calendario con l'icona in alto a destra."
+        "title": "Go to a date",
+        "description": "Pick a date in the calendar (including pollution episodes) to jump there. Station charts open on this window, with a cursor on the current instant."
       }
     },
     "global": {
@@ -785,5 +777,41 @@
     "groupUtilities": "Utilità",
     "groupBaseLayer": "Mappa di base",
     "groupModes": "Modalità"
+  },
+  "timeBar": {
+    "now": "Adesso",
+    "live": "Tempo reale",
+    "past": "Passato",
+    "forecast": "Previsione",
+    "goTo": "Vai a…",
+    "goToTitle": "Vai a una data",
+    "previous": "Intervallo precedente",
+    "next": "Intervallo successivo",
+    "slider": "Posizione temporale",
+    "azurUnavailable": "La modellizzazione Azur è disponibile solo per le ultime 24 ore, più 24 h di previsione.",
+    "regionLabel": "Navigazione temporale",
+    "date": "Data",
+    "play": "Riproduci",
+    "pause": "Pausa",
+    "speed": "{{value}}×",
+    "speedLabel": "Velocità di riproduzione",
+    "speedMenu": "Velocità di riproduzione: {{value}}×",
+    "reducedMotionPlay": "La riproduzione automatica è ridotta: questo pulsante avanza di un intervallo."
+  },
+  "pages": {
+    "about": {
+      "metaTitle": "Informazioni",
+      "metaDescription": "Scopri OpenAirMap, mappa open source della qualità dell'aria di AirCarto e AtmoSud.",
+      "backToMap": "Torna alla mappa",
+      "ctaMap": "Apri la mappa",
+      "ctaLegal": "Note legali"
+    },
+    "legal": {
+      "metaTitle": "Note legali",
+      "metaDescription": "Note legali di questa istanza OpenAirMap.",
+      "backToMap": "Torna alla mappa",
+      "ctaMap": "Apri la mappa",
+      "ctaAbout": "Informazioni"
+    }
   }
 }

@@ -214,13 +214,20 @@ test.describe("Contrôles du rail de carte", () => {
     ).toBeVisible();
   });
 
-  test("mode historique : activation et panneau visible", async ({ page }) => {
-    const toggle = page.getByTestId("rail-historical-toggle");
-    await toggle.click();
-    await expect(toggle).toHaveAttribute("aria-pressed", "true");
-    await expect(
-      page.getByText(/load data|charger|date|période|period|plage/i).first()
-    ).toBeVisible({ timeout: 10000 });
+  test("TimeBar visible au pas horaire", async ({ page }) => {
+    const timebar = page.getByTestId("map-timebar");
+    await expect(timebar).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId("map-timebar-now")).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    await expect(page.getByTestId("map-timebar-slider")).toBeVisible();
+  });
+
+  test("TimeBar masquée au pas Scan", async ({ page }) => {
+    await page.getByTestId("rail-timestep-trigger").click();
+    await page.getByRole("menuitemradio", { name: /scan/i }).click();
+    await expect(page.getByTestId("map-timebar")).toHaveCount(0);
   });
 
   test("clavier : flèches, extrémités et ouverture", async ({ page }) => {

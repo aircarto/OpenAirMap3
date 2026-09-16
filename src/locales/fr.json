@@ -719,24 +719,16 @@
     },
     "historical": {
       "step1": {
-        "title": "Découvrir le mode historique",
-        "description": "Ce mode permet de connaître la qualité de l'air sur une période passée. Il est disponible uniquement aux pas de temps 15 min, heure et jour."
+        "title": "Barre temporelle",
+        "description": "La barre en bas de la carte permet d'explorer les mesures passées. Elle est disponible aux pas de temps 15 min, heure et jour. « Maintenant » revient au temps réel."
       },
       "step2": {
-        "title": "Activer le mode historique",
-        "description": "Cliquez sur ce bouton pour activer le mode. Les marqueurs actuels seront remplacés par les données de la période sélectionnée."
+        "title": "Parcourir le temps",
+        "description": "Faites glisser le curseur, utilisez lecture/pause et la vitesse, ou les flèches, pour changer de créneau. Chaque cran recharge les mesures de cet instant."
       },
       "step3": {
-        "title": "Choisir une période",
-        "description": "Sélectionnez une date de début et de fin. Les stations de référence AtmoSud, les microcapteurs qualifiés AtmoSud et les microcapteurs NebuleAir sont pris en charge. La durée maximale dépend du pas de temps (7 jours au pas de temps 15 min, 30 jours au pas de temps horaire)."
-      },
-      "step4": {
-        "title": "Charger les données",
-        "description": "Une fois la période choisie, cliquez ici pour charger les mesures historiques sur la carte."
-      },
-      "step5": {
-        "title": "Contrôles de lecture",
-        "description": "Utilisez lecture/pause, la timeline et la vitesse pour naviguer dans le temps. Ce panneau est déplaçable ; rouvrez le calendrier via l'icône en haut à droite."
+        "title": "Aller à une date",
+        "description": "Choisissez une date dans le calendrier (y compris les épisodes de pollution) pour recentrer la barre. Les graphiques des stations s'ouvrent sur cette fenêtre, avec un curseur sur l'instant."
       }
     },
     "global": {
@@ -785,5 +777,41 @@
     "groupUtilities": "Utilitaires",
     "groupBaseLayer": "Fond de carte",
     "groupModes": "Modes"
+  },
+  "timeBar": {
+    "now": "Maintenant",
+    "live": "Temps réel",
+    "past": "Passé",
+    "forecast": "Prévision",
+    "goTo": "Aller à…",
+    "goToTitle": "Aller à une date",
+    "previous": "Créneau précédent",
+    "next": "Créneau suivant",
+    "slider": "Position temporelle",
+    "azurUnavailable": "La modélisation Azur n'est disponible que sur les dernières 24 heures, plus 24 h de prévision.",
+    "regionLabel": "Navigation temporelle",
+    "date": "Date",
+    "play": "Lecture",
+    "pause": "Pause",
+    "speed": "{{value}}×",
+    "speedLabel": "Vitesse de lecture",
+    "speedMenu": "Vitesse de lecture : {{value}}×",
+    "reducedMotionPlay": "Les animations automatiques sont réduites : ce bouton avance d'un cran."
+  },
+  "pages": {
+    "about": {
+      "metaTitle": "À propos",
+      "metaDescription": "Découvrez OpenAirMap, carte open source de la qualité de l'air portée par AirCarto et AtmoSud.",
+      "backToMap": "Retour à la carte",
+      "ctaMap": "Ouvrir la carte",
+      "ctaLegal": "Mentions légales"
+    },
+    "legal": {
+      "metaTitle": "Mentions légales",
+      "metaDescription": "Mentions légales de cette instance OpenAirMap.",
+      "backToMap": "Retour à la carte",
+      "ctaMap": "Ouvrir la carte",
+      "ctaAbout": "À propos"
+    }
   }
 }

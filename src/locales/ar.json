@@ -735,24 +735,16 @@
     },
     "historical": {
       "step1": {
-        "title": "اكتشاف الوضع التاريخي",
-        "description": "يتيح هذا الوضع إعادة عرض جودة الهواء لفترة سابقة. وهو متاح فقط لخطوات 15 دقيقة والساعة واليوم."
+        "title": "Time bar",
+        "description": "The bar at the bottom of the map lets you explore past measurements. It is available for 15-minute, hourly and daily time steps. “Now” returns to live data."
       },
       "step2": {
-        "title": "تفعيل الوضع التاريخي",
-        "description": "انقر على هذا الزر لتفعيل الوضع. سيتم استبدال العلامات الحالية ببيانات الفترة المحددة."
+        "title": "Browse time",
+        "description": "Drag the slider, use play/pause and speed, or the arrows, to change slots. Each tick reloads measurements for that instant."
       },
       "step3": {
-        "title": "اختيار فترة",
-        "description": "حدد تاريخ البداية والنهاية. المصادر AtmoRef وAtmoMicro وNebuleAir مدعومة. تعتمد المدة القصوى على الخطوة الزمنية (7 أيام لـ 15 دقيقة، 30 يومًا بالساعة)."
-      },
-      "step4": {
-        "title": "تحميل البيانات",
-        "description": "بعد اختيار الفترة، انقر هنا لتحميل القياسات التاريخية على الخريطة."
-      },
-      "step5": {
-        "title": "عناصر التحكم في التشغيل",
-        "description": "استخدم التشغيل/الإيقاف والجدول الزمني والسرعة للتنقل عبر الزمن. هذه اللوحة قابلة للسحب؛ أعد فتح التقويم عبر الأيقونة أعلى اليمين."
+        "title": "Go to a date",
+        "description": "Pick a date in the calendar (including pollution episodes) to jump there. Station charts open on this window, with a cursor on the current instant."
       }
     },
     "global": {
@@ -801,5 +793,41 @@
     "groupUtilities": "أدوات",
     "groupBaseLayer": "خلفية الخريطة",
     "groupModes": "الأنماط"
+  },
+  "timeBar": {
+    "now": "الآن",
+    "live": "مباشر",
+    "past": "الماضي",
+    "forecast": "توقّع",
+    "goTo": "الانتقال إلى…",
+    "goToTitle": "الانتقال إلى تاريخ",
+    "previous": "الفاصل السابق",
+    "next": "الفاصل التالي",
+    "slider": "الموضع الزمني",
+    "azurUnavailable": "نمذجة Azur متاحة فقط لآخر 24 ساعة، بالإضافة إلى 24 ساعة من التوقعات.",
+    "regionLabel": "التنقّل الزمني",
+    "date": "التاريخ",
+    "play": "تشغيل",
+    "pause": "إيقاف مؤقت",
+    "speed": "{{value}}×",
+    "speedLabel": "سرعة التشغيل",
+    "speedMenu": "سرعة التشغيل: {{value}}×",
+    "reducedMotionPlay": "تم تقليل التشغيل التلقائي: هذا الزر يتقدم خطوة واحدة."
+  },
+  "pages": {
+    "about": {
+      "metaTitle": "حول",
+      "metaDescription": "اكتشف OpenAirMap، خريطة مفتوحة المصدر لجودة الهواء من AirCarto و AtmoSud.",
+      "backToMap": "العودة إلى الخريطة",
+      "ctaMap": "فتح الخريطة",
+      "ctaLegal": "إشعار قانوني"
+    },
+    "legal": {
+      "metaTitle": "إشعار قانوني",
+      "metaDescription": "الإشعار القانوني لهذه النسخة من OpenAirMap.",
+      "backToMap": "العودة إلى الخريطة",
+      "ctaMap": "فتح الخريطة",
+      "ctaAbout": "حول"
+    }
   }
 }

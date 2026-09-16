@@ -10,6 +10,9 @@ export type ToursCompletedMap = Partial<Record<TourId, TourCompletionRecord>>;
 export const TOUR_STORAGE_KEY = "openairmap-tours-completed";
 
 export const TOUR_SELECTORS = {
+  mapTimebar: '[data-tour="map-timebar"]',
+  mapTimebarGoto: '[data-tour="map-timebar-goto"]',
+  mapTimebarPlay: '[data-tour="map-timebar-play"]',
   historicalToggle: '[data-tour="historical-toggle"]',
   historicalDatePanel: '[data-tour="historical-date-panel"]',
   historicalDateRange: '[data-tour="historical-date-range"]',
@@ -23,11 +26,9 @@ export const TOUR_SELECTORS = {
 } as const;
 
 export const HISTORICAL_TOUR_STEP = {
-  discovery: 0,
-  activation: 1,
-  dateSelection: 2,
-  loadData: 3,
-  playback: 4,
+  timebar: 0,
+  playback: 1,
+  goto: 2,
 } as const;
 
 export type HistoricalTourStepIndex =

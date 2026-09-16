@@ -78,7 +78,7 @@ const Legend: React.FC<LegendProps> = ({
     // haut du bord gauche, il n'y a donc rien à compenser en bas — ce que faisait
     // approximativement le `ml-[-20px]` d'origine. La largeur maximale l'empêche
     // de passer sous la bande instrument à gauche et la colonne de stats à droite.
-    return "absolute bottom-3 right-2 lg:right-auto lg:left-1/2 lg:-translate-x-1/2 lg:max-w-[calc(100%-26rem)]";
+    return "absolute right-2 bottom-[calc(var(--rail-bottom-inset,0px)+var(--timebar-inset,0px)+0.75rem)] md:bottom-[calc(var(--rail-bottom-inset,0px)+var(--timebar-inset,0px)+0.75rem)] lg:right-auto lg:left-1/2 lg:-translate-x-1/2 lg:max-w-[calc(100%-26rem)]";
   };
 
   const visibilityClass =

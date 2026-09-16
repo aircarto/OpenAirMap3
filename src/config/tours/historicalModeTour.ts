@@ -32,77 +32,43 @@ const waitForTourElement = (
 
 export const buildHistoricalModeTourSteps = (t: TFunction): DriveStep[] => [
   {
-    element: () => getVisibleTourElement(TOUR_SELECTORS.historicalToggle),
-    popover: {
-      title: t("tour.historical.step1.title"),
-      description: t("tour.historical.step1.description"),
-      side: "right",
-      align: "start",
-      showButtons: ["close"],
-      popoverClass: "openairmap-tour-popover",
-    },
-    disableActiveInteraction: false,
-  },
-  {
-    element: () => getVisibleTourElement(TOUR_SELECTORS.historicalToggle),
-    popover: {
-      title: t("tour.historical.step2.title"),
-      description: t("tour.historical.step2.description"),
-      side: "right",
-      align: "start",
-      showButtons: ["close"],
-      popoverClass: "openairmap-tour-popover",
-    },
-    disableActiveInteraction: false,
-  },
-  {
-    element: TOUR_SELECTORS.historicalDatePanel,
+    element: () => getVisibleTourElement(TOUR_SELECTORS.mapTimebar),
     onHighlightStarted: (element, _step, { driver }) => {
       if (element) {
         return;
       }
 
-      waitForTourElement(TOUR_SELECTORS.historicalDatePanel)
+      waitForTourElement(TOUR_SELECTORS.mapTimebar)
         .then(() => driver.refresh())
         .catch(() => driver.destroy());
     },
     popover: {
-      title: t("tour.historical.step3.title"),
-      description: t("tour.historical.step3.description"),
-      side: "left",
-      align: "start",
+      title: t("tour.historical.step1.title"),
+      description: t("tour.historical.step1.description"),
+      side: "top",
+      align: "center",
       showButtons: ["next", "close"],
       popoverClass: "openairmap-tour-popover",
     },
   },
   {
-    element: TOUR_SELECTORS.historicalLoadData,
+    element: () => getVisibleTourElement(TOUR_SELECTORS.mapTimebarPlay),
     popover: {
-      title: t("tour.historical.step4.title"),
-      description: t("tour.historical.step4.description"),
+      title: t("tour.historical.step2.title"),
+      description: t("tour.historical.step2.description"),
       side: "top",
-      align: "center",
-      showButtons: ["close"],
+      align: "end",
+      showButtons: ["next", "close"],
       popoverClass: "openairmap-tour-popover",
     },
-    disableActiveInteraction: false,
   },
   {
-    element: TOUR_SELECTORS.historicalPlayback,
-    onHighlightStarted: (element, _step, { driver }) => {
-      if (element) {
-        return;
-      }
-
-      waitForTourElement(TOUR_SELECTORS.historicalPlayback)
-        .then(() => driver.refresh())
-        .catch(() => driver.destroy());
-    },
+    element: () => getVisibleTourElement(TOUR_SELECTORS.mapTimebarGoto),
     popover: {
-      title: t("tour.historical.step5.title"),
-      description: t("tour.historical.step5.description"),
-      side: "left",
-      align: "start",
+      title: t("tour.historical.step3.title"),
+      description: t("tour.historical.step3.description"),
+      side: "top",
+      align: "end",
       showButtons: ["close"],
       doneBtnText: t("tour.common.done"),
       popoverClass: "openairmap-tour-popover",

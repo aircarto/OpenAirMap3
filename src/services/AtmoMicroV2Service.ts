@@ -964,6 +964,45 @@ export class AtmoMicroV2Service
   // Mode temporel
   // ---------------------------------------------------------------------------
 
+  /** Une tranche `/observations` — les appels sont indépendants et parallélisables. */
+  private async fetchTemporalChunk(
+    chunk: { startMs: number; endMs: number },
+    timeStepConfig: TimeStepConfig,
+    variableIsoCode: string
+  ): Promise<MicrospotObservation[]> {
+    const url =
+      `${this.BASE_URL}/observations` +
+      `?aggregation=${timeStepConfig.aggregation}` +
+      `&variable=${variableIsoCode}` +
+      `&from_date_time=${new Date(chunk.startMs).toISOString()}` +
+      `&date_time=${new Date(chunk.endMs).toISOString()}` +
+      `&decimals=1` +
+      // include=raw_value même en mode temporel : sans lui, `value_raw` est
+      // absent et la détection de correction devient impossible. C'est
+      // précisément ce qui manquait à l'ancien service.
+      `&include=raw_value` +
+      `&limit=${MAX_LIMIT}`;
+
+    const response = await this.makeRequest(url);
+
+    if (!response || !Array.isArray(response)) {
+      console.warn(
+        `[AtmoMicro] Aucune donnée pour la tranche ${new Date(
+          chunk.startMs
+        ).toISOString()} -> ${new Date(chunk.endMs).toISOString()}`
+      );
+      return [];
+    }
+
+    this.warnIfTruncated(
+      response.length,
+      MAX_LIMIT,
+      `observations (tranche ${new Date(chunk.startMs).toISOString()})`
+    );
+
+    return response as MicrospotObservation[];
+  }
+
   /** Série de tous les capteurs sur une période, pour l'animation temporelle. */
   async fetchTemporalData(params: {
     pollutant: string;
@@ -995,72 +1034,58 @@ export class AtmoMicroV2Service
     const chunkDays = CHUNK_DAYS_BY_AGGREGATION[timeStepConfig.aggregation];
     const chunkMs = chunkDays * 24 * 60 * 60 * 1000;
 
-    const observationsByTimestamp = new Map<string, MicrospotObservation[]>();
-    const siteFilter = params.sites ? new Set(params.sites) : null;
-
+    const chunks: Array<{ startMs: number; endMs: number }> = [];
     for (
       let chunkStart = start.getTime();
       chunkStart < end.getTime();
       chunkStart += chunkMs
     ) {
-      const chunkEnd = Math.min(chunkStart + chunkMs, end.getTime());
+      chunks.push({
+        startMs: chunkStart,
+        endMs: Math.min(chunkStart + chunkMs, end.getTime()),
+      });
+    }
 
-      try {
-        const url =
-          `${this.BASE_URL}/observations` +
-          `?aggregation=${timeStepConfig.aggregation}` +
-          `&variable=${variableIsoCode}` +
-          `&from_date_time=${new Date(chunkStart).toISOString()}` +
-          `&date_time=${new Date(chunkEnd).toISOString()}` +
-          `&decimals=1` +
-          // include=raw_value même en mode temporel : sans lui, `value_raw` est
-          // absent et la détection de correction devient impossible. C'est
-          // précisément ce qui manquait à l'ancien service.
-          `&include=raw_value` +
-          `&limit=${MAX_LIMIT}`;
+    const observationsByTimestamp = new Map<string, MicrospotObservation[]>();
+    const siteFilter = params.sites ? new Set(params.sites) : null;
 
-        const response = await this.makeRequest(url);
+    // Les tranches n'ont aucune dépendance entre elles : les lancer ensemble
+    // plutôt qu'en boucle `await` évite de payer N fois la latence (~20 s
+    // chacune). Promise.allSettled conserve le contrat « une tranche en échec
+    // ne condamne pas la période ».
+    const chunkResults = await Promise.allSettled(
+      chunks.map((chunk) =>
+        this.fetchTemporalChunk(chunk, timeStepConfig, variableIsoCode)
+      )
+    );
 
-        if (!response || !Array.isArray(response)) {
-          console.warn(
-            `[AtmoMicro] Aucune donnée pour la tranche ${new Date(
-              chunkStart
-            ).toISOString()} -> ${new Date(chunkEnd).toISOString()}`
-          );
-          continue;
-        }
-
-        this.warnIfTruncated(
-          response.length,
-          MAX_LIMIT,
-          `observations (tranche ${new Date(chunkStart).toISOString()})`
-        );
-
-        for (const observation of response as MicrospotObservation[]) {
-          if (siteFilter && !siteFilter.has(observation.id)) continue;
-
-          const existing = observationsByTimestamp.get(observation.time);
-          if (existing) {
-            existing.push(observation);
-          } else {
-            observationsByTimestamp.set(observation.time, [observation]);
-          }
-        }
-      } catch (error) {
-        // Une tranche en échec ne doit pas condamner toute la période, mais
-        // elle doit être visible : l'ancien service avalait l'erreur en silence.
-        // Une erreur de parsing JSON signale ici une réponse coupée en cours de
-        // transfert (le serveur répond 200 puis interrompt le flux au-delà d'une
-        // vingtaine de mégaoctets) : c'est un trou dans le graphique, pas une panne.
+    chunkResults.forEach((result, index) => {
+      if (result.status === "rejected") {
+        const { startMs, endMs } = chunks[index];
+        // Une erreur de parsing JSON signale ici une réponse coupée en cours
+        // de transfert (le serveur répond 200 puis interrompt le flux au-delà
+        // d'une vingtaine de mégaoctets) : c'est un trou dans le graphique.
         console.warn(
           `[AtmoMicro] Échec de la tranche ${new Date(
-            chunkStart
-          ).toISOString()} -> ${new Date(chunkEnd).toISOString()} ` +
+            startMs
+          ).toISOString()} -> ${new Date(endMs).toISOString()} ` +
             `— ces pas de temps manqueront au graphique:`,
-          error
+          result.reason
         );
+        return;
       }
-    }
+
+      for (const observation of result.value) {
+        if (siteFilter && !siteFilter.has(observation.id)) continue;
+
+        const existing = observationsByTimestamp.get(observation.time);
+        if (existing) {
+          existing.push(observation);
+        } else {
+          observationsByTimestamp.set(observation.time, [observation]);
+        }
+      }
+    });
 
     const temporalDataPoints: TemporalDataPoint[] = [];
 

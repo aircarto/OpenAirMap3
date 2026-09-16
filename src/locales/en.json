@@ -719,24 +719,16 @@
     },
     "historical": {
       "step1": {
-        "title": "Discover historical mode",
-        "description": "This mode lets you replay air quality over a past period. It is only available for 15-minute, hourly and daily time steps."
+        "title": "Time bar",
+        "description": "The bar at the bottom of the map lets you explore past measurements. It is available for 15-minute, hourly and daily time steps. “Now” returns to live data."
       },
       "step2": {
-        "title": "Enable historical mode",
-        "description": "Click this button to enable the mode. Current markers will be replaced by data for the selected period."
+        "title": "Browse time",
+        "description": "Drag the slider, use play/pause and speed, or the arrows, to change slots. Each tick reloads measurements for that instant."
       },
       "step3": {
-        "title": "Choose a period",
-        "description": "Select a start and end date. AtmoRef, AtmoMicro and NebuleAir sources are supported. Maximum period length depends on the time step (7 days at 15 min, 30 days hourly)."
-      },
-      "step4": {
-        "title": "Load data",
-        "description": "Once the period is selected, click here to load historical measurements on the map."
-      },
-      "step5": {
-        "title": "Playback controls",
-        "description": "Use play/pause, the timeline and speed to navigate through time. This panel is draggable; reopen the calendar via the icon at the top right."
+        "title": "Go to a date",
+        "description": "Pick a date in the calendar (including pollution episodes) to jump there. Station charts open on this window, with a cursor on the current instant."
       }
     },
     "global": {
@@ -785,5 +777,41 @@
     "groupUtilities": "Utilities",
     "groupBaseLayer": "Base map",
     "groupModes": "Modes"
+  },
+  "timeBar": {
+    "now": "Now",
+    "live": "Live",
+    "past": "Past",
+    "forecast": "Forecast",
+    "goTo": "Go to…",
+    "goToTitle": "Go to a date",
+    "previous": "Previous slot",
+    "next": "Next slot",
+    "slider": "Time position",
+    "azurUnavailable": "Azur modelling is only available for the last 24 hours, plus 24 h of forecast.",
+    "regionLabel": "Time navigation",
+    "date": "Date",
+    "play": "Play",
+    "pause": "Pause",
+    "speed": "{{value}}×",
+    "speedLabel": "Playback speed",
+    "speedMenu": "Playback speed: {{value}}×",
+    "reducedMotionPlay": "Automatic playback is reduced: this button steps forward once."
+  },
+  "pages": {
+    "about": {
+      "metaTitle": "About",
+      "metaDescription": "Discover OpenAirMap, an open-source air quality map by AirCarto and AtmoSud.",
+      "backToMap": "Back to map",
+      "ctaMap": "Open the map",
+      "ctaLegal": "Legal notice"
+    },
+    "legal": {
+      "metaTitle": "Legal notice",
+      "metaDescription": "Legal notice for this OpenAirMap instance.",
+      "backToMap": "Back to map",
+      "ctaMap": "Open the map",
+      "ctaAbout": "About"
+    }
   }
 }

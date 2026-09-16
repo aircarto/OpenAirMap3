@@ -1,34 +1,19 @@
 import { useEffect, useRef } from "react";
-import { HISTORICAL_TOUR_STEP } from "../../config/tours/types";
 import { useFeatureTourContext } from "./featureTourContext";
 
 interface HistoricalModeTourControllerProps {
   isHistoricalModeAllowed: boolean;
-  isHistoricalModeActive: boolean;
-  hasHistoricalData: boolean;
-  isDatePanelVisible: boolean;
 }
 
+/**
+ * Tutoriel TimeBar : démarrage automatique au premier passage sur un pas
+ * de temps qui l'affiche (15 min / heure / jour).
+ */
 const HistoricalModeTourController: React.FC<
   HistoricalModeTourControllerProps
-> = ({
-  isHistoricalModeAllowed,
-  isHistoricalModeActive,
-  hasHistoricalData,
-  isDatePanelVisible,
-}) => {
-  const {
-    activeTourId,
-    activeStepIndex,
-    isTourActive,
-    isTourCompleted,
-    startTour,
-    driveToStep,
-  } = useFeatureTourContext();
-
+> = ({ isHistoricalModeAllowed }) => {
+  const { isTourActive, isTourCompleted, startTour } = useFeatureTourContext();
   const hasAutoStartedRef = useRef(false);
-  const previousHistoricalActiveRef = useRef(false);
-  const previousHasDataRef = useRef(false);
 
   useEffect(() => {
     if (
@@ -47,68 +32,6 @@ const HistoricalModeTourController: React.FC<
 
     return () => window.clearTimeout(timeoutId);
   }, [isHistoricalModeAllowed, isTourActive, isTourCompleted, startTour]);
-
-  useEffect(() => {
-    if (activeTourId !== "historical_mode" || activeStepIndex === null) {
-      return;
-    }
-
-    const wasActive = previousHistoricalActiveRef.current;
-    previousHistoricalActiveRef.current = isHistoricalModeActive;
-
-    if (
-      !wasActive &&
-      isHistoricalModeActive &&
-      activeStepIndex <= HISTORICAL_TOUR_STEP.activation
-    ) {
-      const timeoutId = window.setTimeout(() => {
-        driveToStep(HISTORICAL_TOUR_STEP.dateSelection);
-      }, 300);
-      return () => window.clearTimeout(timeoutId);
-    }
-  }, [
-    activeTourId,
-    activeStepIndex,
-    driveToStep,
-    isHistoricalModeActive,
-  ]);
-
-  useEffect(() => {
-    if (activeTourId !== "historical_mode") {
-      return;
-    }
-
-    const hadData = previousHasDataRef.current;
-    previousHasDataRef.current = hasHistoricalData;
-
-    if (
-      !hadData &&
-      hasHistoricalData &&
-      activeStepIndex !== null &&
-      activeStepIndex <= HISTORICAL_TOUR_STEP.loadData
-    ) {
-      const timeoutId = window.setTimeout(() => {
-        driveToStep(HISTORICAL_TOUR_STEP.playback);
-      }, 500);
-      return () => window.clearTimeout(timeoutId);
-    }
-  }, [activeStepIndex, activeTourId, driveToStep, hasHistoricalData]);
-
-  useEffect(() => {
-    if (
-      activeTourId !== "historical_mode" ||
-      activeStepIndex !== HISTORICAL_TOUR_STEP.dateSelection ||
-      !isDatePanelVisible
-    ) {
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      driveToStep(HISTORICAL_TOUR_STEP.dateSelection);
-    }, 100);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [activeStepIndex, activeTourId, driveToStep, isDatePanelVisible]);
 
   return null;
 };

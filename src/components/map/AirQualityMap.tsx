@@ -47,6 +47,7 @@ import MapControlRail from "./rail/MapControlRail";
 import { useMapControls } from "../../contexts/mapControlsContext";
 import ScaleControl from "../controls/ScaleControl";
 import NorthArrow from "../controls/NorthArrow";
+import MapTimeBar from "../controls/MapTimeBar";
 import Legend from "./Legend";
 import MapReadyNotifier from "./MapReadyNotifier";
 import MobileAirRoutes from "./MobileAirRoutes";
@@ -113,6 +114,8 @@ interface AirQualityMapProps {
   selectedSources: string[];
   selectedTimeStep: string;
   currentModelingLayer: ModelingLayerType | null;
+  /** Index Azur 0–47 ; `null` masque la couche (hors fenêtre) ; absent = heure live */
+  modelingHourIndex?: number | null;
   loading?: boolean;
   signalAirPeriod: { startDate: string; endDate: string };
   signalAirSelectedTypes: string[];
@@ -190,6 +193,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
   selectedSources,
   selectedTimeStep,
   currentModelingLayer,
+  modelingHourIndex,
   loading,
   signalAirPeriod,
   signalAirSelectedTypes,
@@ -307,6 +311,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
     selectedTimeStep,
     selectedPollutant,
     currentModelingLayer,
+    modelingHourIndex,
     isCommunalLayerEnabled,
     isEffisHotspotsEnabled:
       isEffisHotspotsEnabled && !isHotspotsBeyondRetention,
@@ -371,9 +376,6 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
     sidePanels.comparisonState.isComparisonMode &&
     sidePanels.comparisonState.comparedStations.length > 0;
 
-  // Référence pour suivre l'état précédent du mode historique
-  const prevHistoricalModeRef = useRef(isHistoricalModeActive);
-
   // Refs pour empêcher les clics multiples rapides
   const isProcessingClickRef = useRef(false);
   const lastClickedDeviceIdRef = useRef<string | null>(null);
@@ -407,23 +409,6 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
 
     return () => clearInterval(checkAndReset);
   }, []);
-
-  // Effet pour fermer tous les side panels quand le mode historique est activé
-  useEffect(() => {
-    // Ne fermer les panels que lors du passage de false à true
-    if (isHistoricalModeActive && !prevHistoricalModeRef.current) {
-      // Fermer complètement tous les side panels (pas juste rabattus)
-      sidePanels.handleCloseSidePanel();
-
-      signalAir.handleCloseSignalAirDetailPanel();
-      mobileAir.handleCloseMobileAirDetailPanel();
-    }
-
-    // Mettre à jour la référence
-    prevHistoricalModeRef.current = isHistoricalModeActive;
-    // On inclut les objets utilisés dans l'effet pour rester synchronisé
-    // avec leur état courant (règle exhaustive-deps).
-  }, [isHistoricalModeActive, sidePanels, signalAir, mobileAir]);
 
   /**
    * Un panneau, quelle que soit sa famille, occupe de la largeur dans la colonne
@@ -999,7 +984,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           minZoom={1}
           maxZoom={18}
         >
-          {/* Attribution sans le préfixe "Leaflet" pour laisser plus de place sur mobile */}
+          {/* Attribution sous la TimeBar, coin bas-droit — voir index.css. */}
           <AttributionControl position="bottomright" prefix={false} />
 
           {/* Gestionnaire d'événements pour les clics sur la carte */}
@@ -1096,6 +1081,8 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
               </Marker>
             ))}
         </MapContainer>
+
+        <MapTimeBar {...mapControls.timeBar} />
 
         <MapOverlays
           signalAir={signalAir}

@@ -1,9 +1,10 @@
+'use client';
+
 import React, {
   useState,
   useMemo,
   useEffect,
   useCallback,
-  useRef,
 } from "react";
 import AirQualityMap from "./components/map/AirQualityMap";
 import {
@@ -18,40 +19,54 @@ import type {
   MapControlsModeling,
   MapControlsRefresh,
   MapControlsCommunitySources,
+  MapControlsTimeBar,
   MapControlsUi,
   MapControlsValue,
 } from "./contexts/mapControlsContext";
 import { useAirQualityData } from "./hooks/useAirQualityData";
-import { useTemporalVisualization } from "./hooks/useTemporalVisualization";
+import { useMapInstant } from "./hooks/useMapInstant";
+import { useInstantSnapshot } from "./hooks/useInstantSnapshot";
 import { useDomainConfig } from "./hooks/useDomainConfig";
-import { useFavicon } from "./hooks/useFavicon";
-import { useDocumentTitle } from "./hooks/useDocumentTitle";
-import { useMetaDescription } from "./hooks/useMetaDescription";
-import { useCanonicalUrl } from "./hooks/useCanonicalUrl";
-import { useStructuredData } from "./hooks/useStructuredData";
 import {
   isPollutantSupportedForTimeStep,
   getSupportedPollutantsForTimeStep,
 } from "./constants/pollutants";
 import {
   pasDeTemps,
-  isHistoricalModeAllowedForTimeStep,
 } from "./constants/timeSteps";
-import { getConfigForDomain } from "./config/domainConfig";
+import { resolveDomainConfig } from "./lib/domain";
 import {
   buildAppUrlDefaults,
   parseAppUrlParams,
   AppUrlParams,
 } from "./utils/appUrlParams";
 import { useAppUrlSync } from "./hooks/useAppUrlSync";
-import HistoricalControlPanel from "./components/controls/HistoricalControlPanel";
-import HistoricalPlaybackControl from "./components/controls/HistoricalPlaybackControl";
 import InformationModal from "./components/modals/InformationModal";
-import AboutPanel from "./components/AboutPanel";
 import { ModelingLayerType } from "./constants/mapLayers";
+import {
+  getModelingLayerHour,
+  isModelingAvailable,
+} from "./services/ModelingLayerService";
+import {
+  adjacentInstantBeyondSlots,
+  buildChartRangeAroundInstant,
+  buildTimeBarWindow,
+  clampInstant,
+  findSlotIndex,
+  formatBlockRangeLabel,
+  getTimeBarGoToMinInstant,
+  instantToAzurIndex,
+  instantToIsoLocal,
+  isInstantInSlotRange,
+  isMapInstantAllowedForTimeStep,
+  lastCompletedSlotInstant,
+  normalizeInstant,
+  TIME_BAR_GO_TO_MIN_DATE,
+  type MapInstant,
+  type ModelingKind,
+} from "./utils/mapInstant";
 import { useToast } from "./hooks/useToast";
 import { ToastContainer } from "./components/ui/toast";
-import { cn } from "./lib/utils";
 import { useTranslation } from "react-i18next";
 import {
   initAnalytics,
@@ -79,7 +94,7 @@ const DEFAULT_ATMOMICRO_MAINTENANCE_BANNER: AtmoMicroMaintenanceBannerConfig = {
 };
 
 const getInitialAppUrlParams = (): AppUrlParams => {
-  const domainConfig = getConfigForDomain(window.location.hostname);
+  const domainConfig = resolveDomainConfig(window.location.hostname);
   const defaults = buildAppUrlDefaults({
     mapCenter: domainConfig.mapCenter,
     mapZoom: domainConfig.mapZoom,
@@ -95,16 +110,9 @@ const hadMapParamsInInitialUrl = ((): boolean => {
 })();
 
 const AppContent: React.FC = () => {
-  const { t } = useTranslation();
-  // Configuration basée sur le domaine
+  const { t, i18n } = useTranslation();
+  // Configuration basée sur le domaine (metadata SEO gérée côté Next serveur)
   const domainConfig = useDomainConfig();
-
-  // Gestion dynamique de la favicon et du titre
-  useFavicon(domainConfig.favicon);
-  useDocumentTitle(domainConfig.seoTitle ?? domainConfig.title);
-  useMetaDescription(domainConfig.description);
-  useCanonicalUrl();
-  useStructuredData(domainConfig);
 
   // Hook pour les notifications toast
   const { toasts, addToast, removeToast } = useToast();
@@ -373,83 +381,226 @@ const AppContent: React.FC = () => {
     }
   }, [selectedPollutant, selectedTimeStep]);
 
-  // État pour contrôler la visibilité du panel de sélection de date
-  // Note: Le panel ne se ferme plus complètement, il se rabat juste
-  const [isDatePanelVisible, setIsDatePanelVisible] = useState(true);
-  const expandPanelRef = useRef<(() => void) | null>(null);
-
-  // Hook pour la visualisation temporelle
   const {
-    state: temporalState,
-    controls: temporalControls,
-    toggleHistoricalMode,
-    exitHistoricalMode,
-    loadHistoricalData,
-    getCurrentDevices,
-    getCurrentSignalAirReports,
-    isHistoricalModeActive,
-    hasHistoricalData,
-    seekToDate,
-    goToPrevious,
-    goToNext,
-  } = useTemporalVisualization({
-    selectedPollutant,
-    selectedSources,
-    timeStep: selectedTimeStep,
-    signalAirEnabled: isSignalAirEnabled,
-    signalAirSelectedTypes,
-  });
+    mode: mapInstantMode,
+    instant: mapInstant,
+    isExploration,
+    goLive,
+    seekTo,
+  } = useMapInstant();
+  const [timeBarPlaying, setTimeBarPlaying] = useState(false);
 
-  // Mode historique autorisé uniquement pour les pas 15 min, heure et jour
-  const isHistoricalModeAllowed =
-    isHistoricalModeAllowedForTimeStep(selectedTimeStep);
+  const isTimeBarAllowed = isMapInstantAllowedForTimeStep(selectedTimeStep);
 
-  const handleHistoricalModeToggle = useCallback(() => {
-    toggleHistoricalMode();
-    trackFeatureUsage("historical_mode_toggle", {
-      from: isHistoricalModeActive,
-    });
-  }, [toggleHistoricalMode, isHistoricalModeActive]);
+  const modelingKind: ModelingKind =
+    currentModelingLayer === "pollutant" &&
+    isModelingAvailable(selectedTimeStep)
+      ? "azur"
+      : "none";
 
-  // Désactiver le mode historique si l'utilisateur passe sur Scan ou ≤2 min
+  const timeBarVisible = isTimeBarAllowed;
+  const includeForecast = modelingKind === "azur";
+  const liveInstant = useMemo(
+    () => lastCompletedSlotInstant(selectedTimeStep),
+    [selectedTimeStep],
+  );
+  const [blockFocus, setBlockFocus] = useState<MapInstant | null>(null);
+
+  const windowFocus =
+    isExploration && blockFocus ? blockFocus : liveInstant;
+
+  const timeBarWindow = useMemo(
+    () =>
+      buildTimeBarWindow({
+        kind: modelingKind,
+        timeStep: selectedTimeStep,
+        focus: windowFocus,
+      }),
+    [
+      modelingKind,
+      selectedTimeStep,
+      windowFocus.date,
+      windowFocus.hour,
+      windowFocus.minute,
+    ],
+  );
+
+  const defaultAzurHour = getModelingLayerHour(selectedTimeStep);
+  const liveSlotIndex = timeBarWindow.liveIndex;
+
+  const effectiveInstant: MapInstant =
+    isExploration && mapInstant ? mapInstant : liveInstant;
+
   useEffect(() => {
-    if (!isHistoricalModeAllowed && isHistoricalModeActive) {
-      exitHistoricalMode();
+    if (!isExploration) {
+      setBlockFocus(null);
+      return;
     }
-  }, [isHistoricalModeAllowed, isHistoricalModeActive, exitHistoricalMode]);
+    if (!mapInstant) return;
 
-  // Réinitialiser la visibilité du panel quand le mode historique est activé
-  useEffect(() => {
-    if (isHistoricalModeActive) {
-      setIsDatePanelVisible(true);
+    if (!blockFocus) {
+      setBlockFocus(liveInstant);
+      return;
     }
-  }, [isHistoricalModeActive]);
 
-  // Cacher le panel de sélection quand les données historiques sont chargées (sauf si explicitement réouvert)
-  useEffect(() => {
-    if (hasHistoricalData && isHistoricalModeActive) {
-      // Cacher le panel de sélection quand les données sont chargées pour la première fois
-      // (l'utilisateur peut le rouvrir via le bouton calendrier)
-      setIsDatePanelVisible(false);
-    }
-  }, [hasHistoricalData, isHistoricalModeActive]);
-
-  // En mode historique avec signalements chargés : afficher automatiquement les marqueurs SignalAir
-  useEffect(() => {
     if (
-      isHistoricalModeActive &&
-      hasHistoricalData &&
-      (temporalState.historicalSignalAirReports?.length ?? 0) > 0
+      !isInstantInSlotRange(
+        mapInstant,
+        timeBarWindow.slots,
+        selectedTimeStep,
+      )
     ) {
-      setIsSignalAirVisible(true);
+      setBlockFocus(mapInstant);
     }
   }, [
-    isHistoricalModeActive,
-    hasHistoricalData,
-    temporalState.historicalSignalAirReports?.length,
+    isExploration,
+    mapInstant,
+    blockFocus,
+    timeBarWindow.slots,
+    selectedTimeStep,
+    liveInstant,
   ]);
 
-  // Hook pour récupérer les données (mode normal)
+  useEffect(() => {
+    if (!isExploration || !mapInstant) return;
+    setBlockFocus(normalizeInstant(mapInstant, selectedTimeStep));
+    // Recentrer le bloc quand le pas de temps change, pas à chaque cran.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- selectedTimeStep only
+  }, [selectedTimeStep]);
+
+  const modelingHourIndex = useMemo(() => {
+    if (modelingKind !== "azur") return undefined;
+    if (!isExploration || !mapInstant) {
+      return defaultAzurHour >= 0 ? defaultAzurHour : undefined;
+    }
+    return instantToAzurIndex(mapInstant);
+  }, [modelingKind, isExploration, mapInstant, defaultAzurHour]);
+
+  const azurUnavailable =
+    modelingKind === "azur" &&
+    isExploration &&
+    modelingHourIndex === null;
+
+  useEffect(() => {
+    if (!timeBarVisible && isExploration) {
+      goLive();
+    }
+  }, [timeBarVisible, isExploration, goLive]);
+
+  const timeBarIndex =
+    isExploration && mapInstant
+      ? findSlotIndex(timeBarWindow.slots, mapInstant)
+      : Math.max(0, liveSlotIndex);
+
+  const handleTimeBarIndexChange = useCallback(
+    (index: number) => {
+      const slot = timeBarWindow.slots[index];
+      if (!slot) return;
+      if (liveSlotIndex >= 0 && index === liveSlotIndex) {
+        goLive();
+        return;
+      }
+      seekTo(slot, selectedTimeStep);
+      trackFeatureUsage("map_instant_seek", {
+        date: slot.date,
+        hour: slot.hour,
+        minute: slot.minute,
+        timeStep: selectedTimeStep,
+      });
+    },
+    [timeBarWindow.slots, liveSlotIndex, goLive, seekTo, selectedTimeStep],
+  );
+
+  const handleTimeBarGoLive = useCallback(() => {
+    goLive();
+    trackFeatureUsage("map_instant_live");
+  }, [goLive]);
+
+  const handleTimeBarGoToDate = useCallback(
+    (date: string) => {
+      const next = clampInstant(
+        normalizeInstant(
+          {
+            date,
+            hour: effectiveInstant.hour,
+            minute: effectiveInstant.minute,
+          },
+          selectedTimeStep,
+        ),
+        getTimeBarGoToMinInstant(selectedTimeStep),
+        liveInstant,
+        selectedTimeStep,
+      );
+      if (
+        next.date === liveInstant.date &&
+        next.hour === liveInstant.hour &&
+        (next.minute ?? 0) === (liveInstant.minute ?? 0)
+      ) {
+        goLive();
+        return;
+      }
+      setBlockFocus(next);
+      seekTo(next, selectedTimeStep);
+      trackFeatureUsage("map_instant_seek", {
+        date: next.date,
+        hour: next.hour,
+        minute: next.minute,
+        timeStep: selectedTimeStep,
+      });
+    },
+    [
+      effectiveInstant.hour,
+      effectiveInstant.minute,
+      selectedTimeStep,
+      liveInstant,
+      goLive,
+      seekTo,
+    ],
+  );
+
+  const handleTimeBarSeekBeyond = useCallback(
+    (direction: "past" | "future") => {
+      const next = adjacentInstantBeyondSlots(
+        timeBarWindow.slots,
+        direction,
+        selectedTimeStep,
+        new Date(),
+        includeForecast,
+      );
+      if (!next) return;
+      if (
+        liveSlotIndex >= 0 &&
+        next.date === liveInstant.date &&
+        next.hour === liveInstant.hour &&
+        (next.minute ?? 0) === (liveInstant.minute ?? 0)
+      ) {
+        goLive();
+        return;
+      }
+      setBlockFocus(next);
+      seekTo(next, selectedTimeStep);
+    },
+    [
+      timeBarWindow.slots,
+      selectedTimeStep,
+      includeForecast,
+      liveSlotIndex,
+      liveInstant,
+      goLive,
+      seekTo,
+    ],
+  );
+
+  const handleTimeBarPlayingChange = useCallback((playing: boolean) => {
+    setTimeBarPlaying(playing);
+  }, []);
+
+  const currentSlot = timeBarWindow.slots[timeBarIndex];
+  const hideMeasurementsForForecast = currentSlot?.kind === "forecast";
+
+  const snapshotEnabled =
+    timeBarVisible && isExploration && !hideMeasurementsForForecast;
+
   const {
     devices: normalDevices,
     reports,
@@ -466,8 +617,24 @@ const AppContent: React.FC = () => {
     mobileAirPeriod,
     selectedMobileAirSensor,
     signalAirOptions,
-    autoRefreshEnabled: autoRefreshEnabled && !isHistoricalModeActive, // Désactiver l'auto-refresh en mode historique
+    autoRefreshEnabled: autoRefreshEnabled && !isExploration,
   });
+
+  const {
+    devices: snapshotDevices,
+    reports: snapshotReports,
+    loading: snapshotLoading,
+    error: snapshotError,
+  } = useInstantSnapshot({
+    enabled: snapshotEnabled,
+    instant: effectiveInstant,
+    timeStep: selectedTimeStep,
+    pollutant: selectedPollutant,
+    selectedSources,
+    signalAirEnabled: isSignalAirEnabled,
+    signalAirSelectedTypes,
+  });
+
   const [atmoMicroMaintenanceBanner, setAtmoMicroMaintenanceBanner] =
     useState<AtmoMicroMaintenanceBannerConfig>(
       DEFAULT_ATMOMICRO_MAINTENANCE_BANNER,
@@ -519,37 +686,30 @@ const AppContent: React.FC = () => {
     }
   }, [atmoMicroOutage]);
 
-  // Déterminer quelles données utiliser selon le mode
-  const devices = isHistoricalModeActive ? getCurrentDevices() : normalDevices;
+  const devices = hideMeasurementsForForecast
+    ? []
+    : snapshotEnabled
+      ? snapshotDevices
+      : normalDevices;
 
-  const signalAirReports = useMemo(
-    () => reports.filter((report) => report.source === "signalair"),
-    [reports],
-  );
-
-  // En mode historique avec données : afficher les signalements filtrés par fenêtre temporelle (période locale)
   const reportsForMap = useMemo(() => {
-    if (isHistoricalModeActive && hasHistoricalData) {
-      return getCurrentSignalAirReports();
-    }
+    if (hideMeasurementsForForecast) return [];
+    if (snapshotEnabled) return snapshotReports;
     return reports;
   }, [
-    isHistoricalModeActive,
-    hasHistoricalData,
-    getCurrentSignalAirReports,
+    hideMeasurementsForForecast,
+    snapshotEnabled,
+    snapshotReports,
     reports,
   ]);
 
-  const isSignalAirLoading = loadingSources.includes("signalair");
-  // En mode historique : considérer "chargé" si des signalements ont été récupérés
+  const isSignalAirLoading =
+    loadingSources.includes("signalair") ||
+    (snapshotEnabled && isSignalAirEnabled && snapshotLoading);
   const hasSignalAirLoaded =
     signalAirLoadTrigger > 0 ||
-    (isHistoricalModeActive &&
-      hasHistoricalData &&
-      temporalState.historicalSignalAirReports?.length > 0);
+    (snapshotEnabled && snapshotReports.length > 0);
 
-  // Un seul filtre pour les deux usages : le compte affiché dans l'interface de
-  // sélection et le drapeau `hasSignalAirData` en dérivaient séparément.
   const signalAirReportsCount = useMemo(
     () => reportsForMap.filter((r) => r.source === "signalair").length,
     [reportsForMap],
@@ -558,31 +718,25 @@ const AppContent: React.FC = () => {
   const hasSignalAirData = hasSignalAirLoaded && signalAirReportsCount > 0;
   const hasMobileAirData = devices.some((d) => d.source === "mobileair");
 
-  // Fonction pour gérer le chargement des données historiques
-  const handleLoadHistoricalData = () => {
-    if (temporalState.startDate && temporalState.endDate) {
-      loadHistoricalData();
-    }
-  };
-
-  // Effet pour charger automatiquement les données quand les dates changent en mode historique
   useEffect(() => {
-    if (
-      isHistoricalModeActive &&
-      temporalState.startDate &&
-      temporalState.endDate &&
-      !temporalState.loading &&
-      temporalState.data.length === 0
-    ) {
-      // Ne pas charger automatiquement, laisser l'utilisateur décider
+    if (snapshotEnabled && snapshotReports.length > 0) {
+      setIsSignalAirVisible(true);
     }
-  }, [
-    isHistoricalModeActive,
-    temporalState.startDate,
-    temporalState.endDate,
-    temporalState.loading,
-    temporalState.data.length,
-  ]);
+  }, [snapshotEnabled, snapshotReports.length]);
+
+  const chartRange = useMemo(() => {
+    if (!isExploration) return null;
+    return buildChartRangeAroundInstant(windowFocus, selectedTimeStep);
+  }, [isExploration, windowFocus, selectedTimeStep]);
+
+  const historicalCurrentIso = isExploration
+    ? instantToIsoLocal(effectiveInstant)
+    : undefined;
+
+  const mapDataError = snapshotEnabled ? snapshotError ?? error : error;
+  const mapLoading = snapshotEnabled
+    ? snapshotLoading
+    : loading;
 
   // Configuration de la carte basée sur le domaine et l'URL
   const [mapCenter, setMapCenter] = useState<[number, number]>([
@@ -638,7 +792,7 @@ const AppContent: React.FC = () => {
 
   const handleOpenInfoModal = useCallback(() => setIsInfoModalOpen(true), []);
 
-  const headerDisabled = isHistoricalModeActive && temporalState.isPlaying;
+  const headerDisabled = timeBarPlaying;
 
   // ── Valeur du contexte de contrôles de carte ──────────────────────────────
   // Mémoïsée par groupe, et non d'un bloc : hasSignalAirData / hasMobileAirData
@@ -690,30 +844,89 @@ const AppContent: React.FC = () => {
 
   const refreshValue = useMemo<MapControlsRefresh>(
     () => ({
-      autoRefreshEnabled: autoRefreshEnabled && !isHistoricalModeActive,
+      autoRefreshEnabled: autoRefreshEnabled && !isExploration,
       onToggleAutoRefresh: handleAutoRefreshToggle,
-      loading,
+      loading: mapLoading,
       lastRefresh,
     }),
     [
       autoRefreshEnabled,
-      isHistoricalModeActive,
+      isExploration,
       handleAutoRefreshToggle,
-      loading,
+      mapLoading,
       lastRefresh,
     ],
   );
 
   const historicalValue = useMemo<MapControlsHistorical>(
     () => ({
-      isActive: isHistoricalModeActive,
-      isAllowed: isHistoricalModeAllowed,
-      onToggle: handleHistoricalModeToggle,
+      isActive: timeBarPlaying,
+      isAllowed: isTimeBarAllowed,
+      onToggle: goLive,
+    }),
+    [timeBarPlaying, isTimeBarAllowed, goLive],
+  );
+
+  const timeBarValue = useMemo<MapControlsTimeBar>(
+    () => ({
+      visible: timeBarVisible,
+      mode: mapInstantMode,
+      slots: timeBarWindow.slots,
+      index: timeBarIndex,
+      liveIndex: timeBarWindow.liveIndex,
+      showForecastZone: timeBarWindow.showForecastZone,
+      minDate: TIME_BAR_GO_TO_MIN_DATE,
+      maxDate: liveInstant.date,
+      blockRangeLabel: formatBlockRangeLabel(
+        timeBarWindow.startInstant,
+        timeBarWindow.endInstant,
+        i18n.language,
+      ),
+      canSeekPast:
+        adjacentInstantBeyondSlots(
+          timeBarWindow.slots,
+          "past",
+          selectedTimeStep,
+          undefined,
+          includeForecast,
+        ) !== null,
+      canSeekFuture:
+        adjacentInstantBeyondSlots(
+          timeBarWindow.slots,
+          "future",
+          selectedTimeStep,
+          undefined,
+          includeForecast,
+        ) !== null,
+      selectedPollutant,
+      timeStep: selectedTimeStep,
+      loading: snapshotLoading,
+      onIndexChange: handleTimeBarIndexChange,
+      onGoLive: handleTimeBarGoLive,
+      onGoToDate: handleTimeBarGoToDate,
+      onSeekBeyond: handleTimeBarSeekBeyond,
+      onPlayingChange: handleTimeBarPlayingChange,
     }),
     [
-      isHistoricalModeActive,
-      isHistoricalModeAllowed,
-      handleHistoricalModeToggle,
+      timeBarVisible,
+      mapInstantMode,
+      timeBarWindow.slots,
+      timeBarWindow.liveIndex,
+      timeBarWindow.showForecastZone,
+      timeBarWindow.startInstant,
+      timeBarWindow.endInstant,
+      timeBarIndex,
+      liveInstant.date,
+      i18n.language,
+      selectedTimeStep,
+      includeForecast,
+      selectedPollutant,
+      snapshotLoading,
+      handleTimeBarIndexChange,
+      handleTimeBarGoLive,
+      handleTimeBarGoToDate,
+      handleTimeBarSeekBeyond,
+      handleTimeBarPlayingChange,
     ],
   );
 
@@ -779,7 +992,7 @@ const AppContent: React.FC = () => {
           onDismiss: () => setIsAtmoMicroBannerDismissed(true),
           dismissLabel: t("common.close"),
         },
-        loading && {
+        mapLoading && {
           id: "loading",
           tone: "info" as const,
           busy: true,
@@ -796,19 +1009,25 @@ const AppContent: React.FC = () => {
                 })`
               : undefined,
         },
-        error && {
+        azurUnavailable && {
+          id: "azur-unavailable",
+          tone: "neutral" as const,
+          message: t("timeBar.azurUnavailable"),
+        },
+        mapDataError && {
           id: "data-error",
           tone: "error" as const,
-          message: `${t("common.error")} : ${error}`,
+          message: `${t("common.error")} : ${mapDataError}`,
         },
       ]),
     [
       shouldShowAtmoMicroOutageBanner,
       atmoMicroMaintenanceBanner.message,
-      loading,
+      mapLoading,
       devices.length,
       loadingSources,
-      error,
+      azurUnavailable,
+      mapDataError,
       t,
     ],
   );
@@ -830,6 +1049,7 @@ const AppContent: React.FC = () => {
       modeling: modelingValue,
       refresh: refreshValue,
       historical: historicalValue,
+      timeBar: timeBarValue,
       communitySources: communitySourcesValue,
       ui: uiValue,
     }),
@@ -839,6 +1059,7 @@ const AppContent: React.FC = () => {
       modelingValue,
       refreshValue,
       historicalValue,
+      timeBarValue,
       communitySourcesValue,
       uiValue,
     ],
@@ -849,8 +1070,6 @@ const AppContent: React.FC = () => {
       <a href="#main-content" className="skip-link" data-testid="skip-link">
         {t("app.skipToContent")}
       </a>
-
-      <AboutPanel domainConfig={domainConfig} />
 
       {/* Carte en plein écran */}
       {/* `id="main-content"` vit désormais sur la colonne carte, dans
@@ -878,7 +1097,8 @@ const AppContent: React.FC = () => {
             selectedSources={selectedSources}
             selectedTimeStep={selectedTimeStep}
             currentModelingLayer={currentModelingLayer}
-            loading={loading || temporalState.loading}
+            modelingHourIndex={modelingHourIndex}
+            loading={mapLoading}
             signalAirPeriod={signalAirDraftPeriod}
             signalAirSelectedTypes={signalAirSelectedTypes}
             onSignalAirPeriodChange={handleSignalAirDraftPeriodChange}
@@ -887,90 +1107,26 @@ const AppContent: React.FC = () => {
             signalAirHasLoaded={hasSignalAirLoaded}
             signalAirReportsCount={signalAirReportsCount}
             isHistoricalModeWithSignalAirData={
-              isHistoricalModeActive &&
-              hasHistoricalData &&
-              (temporalState.historicalSignalAirReports?.length ?? 0) > 0
+              snapshotEnabled && snapshotReports.length > 0
             }
             onSignalAirSourceDeselected={handleSignalAirSourceDeselected}
             onMobileAirSensorSelected={handleMobileAirSensorSelected}
             onMobileAirSourceDeselected={handleMobileAirSourceDeselected}
-            isHistoricalModeActive={isHistoricalModeActive}
+            isHistoricalModeActive={isExploration}
             isSignalAirEnabled={isSignalAirEnabled}
             isMobileAirEnabled={isMobileAirEnabled}
             isSignalAirVisible={isSignalAirVisible}
             isMobileAirVisible={isMobileAirVisible}
             onSignalAirToggle={handleSignalAirVisibilityToggle}
             onMobileAirToggle={handleMobileAirVisibilityToggle}
-            historicalCurrentDate={
-              isHistoricalModeActive && temporalState.isPlaying
-                ? temporalState.currentDate
-                : undefined
-            }
-            historicalStartDate={
-              isHistoricalModeActive ? temporalState.startDate : undefined
-            }
-            historicalEndDate={
-              isHistoricalModeActive ? temporalState.endDate : undefined
-            }
-            historicalTimeStep={
-              isHistoricalModeActive ? temporalState.timeStep : undefined
-            }
-            historicalPlaybackDate={
-              isHistoricalModeActive ? temporalState.currentDate : undefined
-            }
-            isHistoricalDatePanelVisible={
-              isHistoricalModeActive && isDatePanelVisible
-            }
+            historicalCurrentDate={historicalCurrentIso}
+            historicalStartDate={chartRange?.startDate}
+            historicalEndDate={chartRange?.endDate}
+            historicalTimeStep={isExploration ? selectedTimeStep : undefined}
+            historicalPlaybackDate={historicalCurrentIso}
+            isHistoricalDatePanelVisible={false}
           />
         </MapControlsProvider>
-
-        {/* Panel de contrôle historique (sélection de date) - Visible si mode historique actif ET panel de date visible */}
-        <HistoricalControlPanel
-          isVisible={isHistoricalModeActive && isDatePanelVisible}
-          onToggleHistoricalMode={toggleHistoricalMode}
-          state={temporalState}
-          controls={temporalControls}
-          onLoadData={handleLoadHistoricalData}
-          onSeekToDate={seekToDate}
-          onGoToPrevious={goToPrevious}
-          onGoToNext={goToNext}
-          onPanelVisibilityChange={(visible) => {
-            setIsDatePanelVisible(visible);
-          }}
-          onOpenPlaybackPanel={() => {
-            setIsDatePanelVisible(false);
-          }}
-          onExpandRequest={(expandFn) => {
-            expandPanelRef.current = expandFn;
-          }}
-          selectedPollutant={selectedPollutant}
-        />
-
-        {/* Panneau de lecture draggable - Visible si données historiques chargées ET panel de sélection caché */}
-        {isHistoricalModeActive && hasHistoricalData && !isDatePanelVisible && (
-          <HistoricalPlaybackControl
-            state={temporalState}
-            controls={temporalControls}
-            onToggleHistoricalMode={toggleHistoricalMode}
-            onOpenDatePanel={() => {
-              // Arrêter la lecture si elle est en cours
-              if (temporalState.isPlaying) {
-                temporalControls.onPlayPause();
-              }
-              // Ouvrir le panel de sélection
-              setIsDatePanelVisible(true);
-              // Développer le panel en grand (avec un délai pour s'assurer que le panel est visible)
-              setTimeout(() => {
-                if (expandPanelRef.current) {
-                  expandPanelRef.current();
-                }
-              }, 0);
-            }}
-            onSeekToDate={seekToDate}
-            onGoToPrevious={goToPrevious}
-            onGoToNext={goToNext}
-          />
-        )}
       </main>
 
       <InformationModal
@@ -983,10 +1139,7 @@ const AppContent: React.FC = () => {
       <ToastContainer toasts={toasts} onClose={removeToast} />
 
       <HistoricalModeTourController
-        isHistoricalModeAllowed={isHistoricalModeAllowed}
-        isHistoricalModeActive={isHistoricalModeActive}
-        hasHistoricalData={hasHistoricalData}
-        isDatePanelVisible={isDatePanelVisible}
+        isHistoricalModeAllowed={isTimeBarAllowed}
       />
       <GlobalAppTourController />
     </div>

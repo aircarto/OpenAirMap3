@@ -2,6 +2,7 @@ import { createContext, useContext } from "react";
 import { ModelingLayerType } from "../constants/mapLayers";
 import { Toast } from "../components/ui/toast";
 import type { Notice } from "../components/map/notifications/notice";
+import type { MapInstantMode, TimeBarSlot } from "../utils/mapInstant";
 
 /**
  * Transport d'état pour les contrôles de carte — pas un propriétaire d'état.
@@ -12,8 +13,8 @@ import type { Notice } from "../components/map/notifications/notice";
  * d'AirQualityMap (~47 props), après le header et MobileMenuBurger.
  *
  * Aucun useState ni useEffect ne vit ici : les invariants d'App.tsx (correction
- * automatique du polluant au changement de pas de temps, autorisation du mode
- * historique, verrouillage pendant la lecture) restent inchangés à leur place.
+ * automatique du polluant au changement de pas de temps, TimeBar, verrouillage
+ * pendant la lecture) restent inchangés à leur place.
  *
  * Règle de partage, valable pour tout contrôle futur :
  *   l'état applicatif passe par le contexte, l'état local à la carte passe par
@@ -52,7 +53,7 @@ export interface MapControlsModeling {
 }
 
 export interface MapControlsRefresh {
-  /** Déjà combiné avec !isHistoricalModeActive par l'appelant */
+  /** Déjà combiné avec !isExploration par l'appelant */
   autoRefreshEnabled: boolean;
   onToggleAutoRefresh: (enabled: boolean) => void;
   loading: boolean;
@@ -63,6 +64,28 @@ export interface MapControlsHistorical {
   isActive: boolean;
   isAllowed: boolean;
   onToggle: () => void;
+}
+
+export interface MapControlsTimeBar {
+  visible: boolean;
+  mode: MapInstantMode;
+  slots: TimeBarSlot[];
+  index: number;
+  liveIndex: number;
+  showForecastZone: boolean;
+  minDate: string;
+  maxDate: string;
+  blockRangeLabel: string;
+  canSeekPast: boolean;
+  canSeekFuture: boolean;
+  selectedPollutant: string;
+  timeStep: string;
+  loading: boolean;
+  onIndexChange: (index: number) => void;
+  onGoLive: () => void;
+  onGoToDate: (date: string) => void;
+  onSeekBeyond: (direction: 'past' | 'future') => void;
+  onPlayingChange: (playing: boolean) => void;
 }
 
 /**
@@ -112,7 +135,7 @@ export interface MapControlsCommunitySources {
 }
 
 export interface MapControlsUi {
-  /** Ex-`headerDisabled` : mode historique actif ET lecture en cours */
+  /** Ex-lecture historique : lecture TimeBar en cours */
   controlsLocked: boolean;
   onOpenInfoModal: () => void;
   onToast: (toast: Omit<Toast, "id">) => void;
@@ -132,6 +155,7 @@ export interface MapControlsValue {
   modeling: MapControlsModeling;
   refresh: MapControlsRefresh;
   historical: MapControlsHistorical;
+  timeBar: MapControlsTimeBar;
   communitySources: MapControlsCommunitySources;
   ui: MapControlsUi;
 }

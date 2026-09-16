@@ -36,7 +36,7 @@ export const RailFiltersSection: React.FC<RailFiltersSectionProps> = ({
   onItemFocus,
   communitySources,
 }) => {
-  const { filters, refresh, historical, ui, communitySources: community } =
+  const { filters, refresh, ui, communitySources: community } =
     useMapControls();
   const { t } = useTranslation();
 
@@ -95,7 +95,7 @@ export const RailFiltersSection: React.FC<RailFiltersSectionProps> = ({
         autoRefreshEnabled={refresh.autoRefreshEnabled}
         onToggleAutoRefresh={refresh.onToggleAutoRefresh}
         loading={refresh.loading}
-        isHistoricalModeActive={historical.isActive}
+        isHistoricalModeActive={ui.controlsLocked}
         controlsLocked={ui.controlsLocked}
         {...flyout}
         menuClassName={railFlyoutClass("wide")}

@@ -37,6 +37,7 @@ interface UseMapLayersProps {
   selectedTimeStep: string;
   selectedPollutant: string;
   currentModelingLayer: ModelingLayerType | null;
+  modelingHourIndex?: number | null;
   isCommunalLayerEnabled: boolean;
   isEffisHotspotsEnabled: boolean;
   isEffisBurnedAreasEnabled: boolean;
@@ -60,6 +61,7 @@ export const useMapLayers = ({
   selectedTimeStep,
   selectedPollutant,
   currentModelingLayer,
+  modelingHourIndex,
   isCommunalLayerEnabled,
   isEffisHotspotsEnabled,
   isEffisBurnedAreasEnabled,
@@ -234,16 +236,24 @@ export const useMapLayers = ({
     // Si un layer de modélisation WMTS est sélectionné (pollutant)
     if (currentModelingLayer === "pollutant") {
       try {
-        // Calculer l'heure à afficher
-        const hour = getModelingLayerHour(selectedTimeStep);
+        // null = hors fenêtre Azur : masquer la couche.
+        if (modelingHourIndex === null) {
+          return;
+        }
+        const fallbackHour = getModelingLayerHour(selectedTimeStep);
+        const hour =
+          typeof modelingHourIndex === "number"
+            ? modelingHourIndex
+            : fallbackHour;
 
         // Si l'heure est invalide (scan), ne pas charger
         if (hour < 0) {
           return;
         }
+        const clampedHour = Math.max(0, Math.min(47, hour));
 
         // Formater l'heure (h00, h01, ..., h47)
-        const hourFormatted = formatHourLayerName(hour);
+        const hourFormatted = formatHourLayerName(clampedHour);
         let layerName: string;
 
         // Déterminer le nom du layer selon le type
@@ -290,6 +300,7 @@ export const useMapLayers = ({
     currentModelingLayer,
     selectedTimeStep,
     selectedPollutant,
+    modelingHourIndex,
     loadWindModeling,
     mapRef,
   ]);
