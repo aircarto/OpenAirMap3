@@ -1,40 +1,32 @@
-import React from "react";
-import { useTranslation } from "react-i18next";
-import { supportedLanguages, type SupportedLocale } from "../../i18n";
+'use client';
+
+import React from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { usePathname, useRouter } from '../../i18n/navigation';
+import { supportedLanguages, type SupportedLocale } from '../../i18n';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
-import { DropdownButton } from "./DropdownButton";
-import type { CustomTriggerProps } from "./dropdownTriggerContract";
-import { cn } from "../../lib/utils";
+} from '../ui/dropdown-menu';
+import { DropdownButton } from './DropdownButton';
+import type { CustomTriggerProps } from './dropdownTriggerContract';
+import { cn } from '../../lib/utils';
 
 export interface LanguageSwitcherTriggerContext {
-  /** Libellé de la langue courante, ex. « Français » */
   displayText: string;
-  /** Code de locale en majuscules, ex. « FR » — seule forme tenant dans une caption */
   code: string;
 }
 
-type Props = Omit<CustomTriggerProps, "renderTrigger"> & {
+type Props = Omit<CustomTriggerProps, 'renderTrigger'> & {
   renderTrigger?: (context: LanguageSwitcherTriggerContext) => React.ReactNode;
 };
 
 /**
- * Sélecteur de langue.
- *
- * Bâti sur Radix `DropdownMenu` : l'implémentation précédente était un portail
- * fait main dont la position était calculée par `getBoundingClientRect`, avec un
- * `left: rect.right - 112` codé en dur qui supposait un alignement à droite —
- * dans un rail à gauche, le menu se serait posé par-dessus le rail. Radix gère
- * en plus le retour du focus au déclencheur et la fermeture par Échap, que
- * l'implémentation maison n'assurait pas.
- *
- * La sémantique passe de `listbox`/`option` à `menu`/`menuitemradio`, ce qui est
- * correct pour un déclencheur de menu et reste annoncé comme un choix unique.
+ * Sélecteur de langue : navigue vers le pathname localisé (next-intl),
+ * ce qui rend la langue crawlable (préfixe d'URL).
  */
 const LanguageSwitcher: React.FC<Props> = ({
   renderTrigger,
@@ -43,10 +35,31 @@ const LanguageSwitcher: React.FC<Props> = ({
   menuSideOffset,
   menuClassName,
 }) => {
-  const { t, i18n } = useTranslation();
+  const t = useTranslations('common');
+  const locale = useLocale() as SupportedLocale;
+  const router = useRouter();
+  const pathname = usePathname();
   const currentLang =
-    supportedLanguages.find((l) => l.code === i18n.language) ??
-    supportedLanguages[0];
+    supportedLanguages.find((l) => l.code === locale) ?? supportedLanguages[0];
+
+  const switchLocale = (code: string) => {
+    const next = code as SupportedLocale;
+    if (next === locale) return;
+    const search =
+      typeof window !== 'undefined' ? window.location.search : '';
+    router.replace(pathname, { locale: next });
+    if (search) {
+      requestAnimationFrame(() => {
+        if (window.location.search !== search) {
+          window.history.replaceState(
+            window.history.state,
+            '',
+            `${window.location.pathname}${search}`
+          );
+        }
+      });
+    }
+  };
 
   return (
     <DropdownMenu>
@@ -59,7 +72,7 @@ const LanguageSwitcher: React.FC<Props> = ({
         ) : (
           <DropdownButton
             id="language-switcher"
-            aria-label={t("common.chooseLanguage")}
+            aria-label={t('chooseLanguage')}
             title={currentLang.label}
             size="compact"
             variant="minimal"
@@ -72,21 +85,18 @@ const LanguageSwitcher: React.FC<Props> = ({
       </DropdownMenuTrigger>
       <DropdownMenuContent
         side={menuSide}
-        align={menuAlign ?? "end"}
+        align={menuAlign ?? 'end'}
         sideOffset={menuSideOffset}
-        className={cn("min-w-[7rem]", menuClassName)}
+        className={cn('min-w-[7rem]', menuClassName)}
       >
-        <DropdownMenuRadioGroup
-          value={i18n.language}
-          onValueChange={(code) => i18n.changeLanguage(code as SupportedLocale)}
-        >
+        <DropdownMenuRadioGroup value={locale} onValueChange={switchLocale}>
           {supportedLanguages.map((lang) => (
             <DropdownMenuRadioItem
               key={lang.code}
               value={lang.code}
               className={cn(
-                "py-2 pr-3 text-sm",
-                i18n.language === lang.code && "bg-[#e7eef8] text-[#1f3c6d]"
+                'py-2 pr-3 text-sm',
+                locale === lang.code && 'bg-[#e7eef8] text-[#1f3c6d]'
               )}
             >
               {lang.label}
