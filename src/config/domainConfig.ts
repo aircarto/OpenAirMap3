@@ -79,9 +79,16 @@ export interface DomainConfig {
   legal?: DomainLegalInfo;
 }
 
+/** Emprise campagne AirCrowd (overlays WMS / couverture données). */
 const GARDANNE_MEYREUIL_BOUNDS: [[number, number], [number, number]] = [
   [43.4, 5.38],
   [43.58, 5.62],
+];
+
+/** Emprise navigation : Gardanne/Meyreuil + dézoom jusqu'à Marseille. */
+const MARSEILLE_GARDANNE_BOUNDS: [[number, number], [number, number]] = [
+  [43.2, 5.25],
+  [43.6, 5.7],
 ];
 
 const defaultConfig: DomainConfig = {
@@ -190,12 +197,12 @@ const atmosudConfig: DomainConfig = {
 /** Instance AirCrowd : zone Gardanne/Meyreuil, whitelist AtmoMicro, logos AtmoSud. */
 const aircrowdConfig: DomainConfig = {
   ...atmosudConfig,
-  mapCenter: [43.494, 5.492],
-  mapZoom: 12,
-  mapMinZoom: 12,
+  mapCenter: [43.455, 5.475], // Gardanne
+  mapZoom: 14,
+  mapMinZoom: 10, // dézoom possible jusqu'à voir Marseille
   mapMaxZoom: 18,
   mapBounds: GARDANNE_MEYREUIL_BOUNDS,
-  mapMaxBounds: GARDANNE_MEYREUIL_BOUNDS,
+  mapMaxBounds: MARSEILLE_GARDANNE_BOUNDS,
   atmoMicroAllowedSiteIds: [
     // Ancienne API (id_site) — utile si VITE_USE_MICROSPOT_API=false
     1358, 1377, 1378, 1379, 1380, 1381, 1382, 1383, 1384, 1385, 1398, 1399,

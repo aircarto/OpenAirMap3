@@ -86,10 +86,19 @@ describe("getConfigForDomain", () => {
     const config = getConfigForDomain("aircrowd.atmosud.org");
     expect(config).toBe(DOMAIN_CONFIG["aircrowd.atmosud.org"]);
     expect(config.title).toBe("AirCrowd");
-    expect(config.mapMinZoom).toBe(12);
+    expect(config.mapZoom).toBe(14);
+    expect(config.mapMinZoom).toBe(10);
     expect(config.mapMaxZoom).toBe(18);
-    expect(config.mapBounds).toEqual(config.mapMaxBounds);
-    expect(config.mapCenter).toEqual([43.494, 5.492]);
+    // Overlays WMS restent sur la campagne ; la navigation s'étend jusqu'à Marseille
+    expect(config.mapBounds).toEqual([
+      [43.4, 5.38],
+      [43.58, 5.62],
+    ]);
+    expect(config.mapMaxBounds).toEqual([
+      [43.2, 5.25],
+      [43.6, 5.7],
+    ]);
+    expect(config.mapCenter).toEqual([43.455, 5.475]);
     expect(config.atmoMicroAllowedSiteIds?.length).toBeGreaterThan(0);
     // Microspot : IDs hexadécimaux de capteurs (pas les anciens id_site)
     expect(config.atmoMicroAllowedSiteIds).toEqual(
