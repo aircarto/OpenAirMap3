@@ -1,294 +1,119 @@
-# OpenAirMap
+# OpenAirMap — instance AirCrowd
 
-Application web React/TypeScript de visualisation de la qualite de l'air sur carte interactive (Leaflet), avec filtrage par polluant, sources et pas de temps.
+[OpenAirMap](https://openairmap.fr) est une application web de visualisation de la qualité de l’air sur carte interactive. Cette branche porte l’**instance AirCrowd** (secteur Gardanne / Meyreuil), opérée par AtmoSud.
 
-## Presentation rapide
+Site : [https://aircrowd.atmosud.org](https://aircrowd.atmosud.org)
 
-OpenAirMap permet de :
+## Table des matières
 
-- afficher des appareils de mesure sur une carte avec marqueurs thematiques 
-- croiser plusieurs sources de donnees (AtmoRef, AtmoMicro, NebuleAir, PurpleAir, SensorCommunity, etc.) 
-- consulter les details dans des panneaux lateraux 
-- utiliser un mode historique pour rejouer des periodes passees 
-- basculer de langue et adapter l'application selon le domaine (branding/config)
+- [Périmètre de l’instance](#périmètre-de-linstance)
+- [Stack](#stack)
+- [Prérequis](#prérequis)
+- [Installation et commandes](#installation-et-commandes)
+- [Configuration](#configuration)
+- [Déploiement](#déploiement)
+- [Structure du projet](#structure-du-projet)
 
-## Stack technique
+## Périmètre de l’instance
 
+Résolu par hostname via [`src/config/domainConfig.ts`](src/config/domainConfig.ts) (clé `aircrowd.atmosud.org`) et filtré côté UI par [`src/utils/domainDataScope.ts`](src/utils/domainDataScope.ts).
+
+| Élément | Comportement AirCrowd |
+| --- | --- |
+| Polluants | PM₂.₅ et PM₁₀ uniquement |
+| Sources de mesures | Stations de référence AtmoSud + microcapteurs qualifiés AtmoSud |
+| Modélisation | AzurH **et** cartographie WMS AirCrowd |
+| Pas de temps | **Horaire uniquement** |
+| Langue par défaut | Anglais |
+| À l’arrivée | Stations + microcapteurs + couche WMS AirCrowd activés |
+
+**Carte** : centrage / zoom sur Gardanne ; emprise données Gardanne–Meyreuil ; navigation limitée avec dézoom possible jusqu’à voir Marseille (`mapMinZoom` / `mapMaxBounds`).
+
+**Whitelist microcapteurs** : seuls les sites de la campagne (IDs API historique + `device.id` Microspot) sont affichés. Liste à jour dans `domainConfig` (`atmoMicroAllowedSiteIds`).
+
+**WMS AirCrowd** : couche de cartographie (geoservices preprod), exposée dans le menu fond de carte, pilotée par date et heure ; activée par défaut à l’arrivée (`aircrowdWmsEnabled`, `aircrowdWmsStartDate`).
+
+## Stack
+
+- **Next.js 15** (App Router, `output: 'standalone'`)
 - React 19 + TypeScript
-- Vite 7
 - Leaflet / React-Leaflet
 - Tailwind CSS
+- next-intl (i18n)
 
-## Prerequis
+## Prérequis
 
-- **Node.js** : `>= 20.19.0` (recommande) ou `>= 22.12.0`
-- **npm** : version recente (npm 10+ recommande)
+- **Node.js** : `>= 20.19.0` (recommandé) ou `>= 22.12.0`
+- **npm** 10+
 - **Git**
 
-La contrainte Node est alignee avec Vite 7 (`^20.19.0 || >=22.12.0`).
-
-## Installation locale
+## Installation et commandes
 
 ```bash
-git clone <url-du-repo>
-cd OpenAirMap3
+npm run lint
+npm run test:run
 npm ci
-npm run dev
+cp .env.inc .env
+npm run dev      # http://localhost:3000
+npm run build    # next build + préparation standalone
+npm start        # Node standalone (HOSTNAME/PORT via env)
 ```
-
-Application disponible sur `http://localhost:5173`.
 
 ## Configuration
 
-### Variables d'environnement
+Gabarit : [`.env.inc`](.env.inc). Copier vers `.env` puis adapter.
 
-Le projet fournit un gabarit `/.env.inc`.
-Copiez-le vers `.env` puis adaptez les valeurs selon votre environnement.
+### Auth partagée
 
-```bash
-cp .env.inc .env
-```
+Connexion par identifiant / mot de passe unique, optionnelle, via les variables serveur `SHARED_AUTH_*` (non exposées au client). Détail : [`docs/SHARED_AUTH.md`](docs/SHARED_AUTH.md).
 
+### Résumé des variables (`.env.inc`)
 
-Notes :
-- toutes les variables front doivent etre prefixees par `VITE_` ;
-- `VITE_MAINTENANCE_MODE=true` affiche une page de maintenance et empeche le chargement de la carte ;
-- `VITE_TOOLTIP_MIN_ZOOM` accepte un nombre (ex: `11`) ou `false` pour desactiver le seuil de zoom.
-- pour ajouter ou rendre optionnelle une fonctionnalite via feature flag, voir [docs/FEATURE_FLAGS.md](docs/FEATURE_FLAGS.md).
+| Variable | Rôle |
+| --- | --- |
+| `NEXT_PUBLIC_MAINTENANCE_MODE` | Page de maintenance (build / client) |
+| `NEXT_PUBLIC_FORCE_DOMAIN_CONFIG` | Forcer une entrée `domainConfig` (dev) |
+| `NOINDEX` | `noindex` + robots restrictifs + sitemap vide (serveur) |
+| `SHARED_AUTH_ENABLED` | Active l’écran de connexion (login / mot de passe) |
+| `SHARED_AUTH_USER` | Identifiant partagé |
+| `SHARED_AUTH_PASSWORD` | Mot de passe partagé |
+| `SHARED_AUTH_SECRET` | Secret HMAC du cookie de session |
+| `NEXT_PUBLIC_ENABLE_WILDFIRE_LAYER` | Couche feuxdeforet.fr |
+| `NEXT_PUBLIC_SOLID_LINE_NEBULEAIR` | Traces NebuleAir en ligne continue |
+| `NEXT_PUBLIC_MARKER_NEBULEAIR` | Marqueur dédié NebuleAir |
+| `NEXT_PUBLIC_TOOLTIP_MIN_ZOOM` | Zoom mini des tooltips (`number` ou `false`) |
+| `NEXT_PUBLIC_USE_ADVERTISING` | Encart promo capteurs |
+| `NEXT_PUBLIC_SENSOR_SHOP_URL` | URL du CTA boutique |
+| `NEXT_PUBLIC_MATOMO_*` | Analytics Matomo |
+| `NEXT_PUBLIC_USE_MICROSPOT_API` | Microspot à la place d’AtmoMicro legacy |
+| `NEXT_PUBLIC_HISTORICAL_MODE_LOGS` | Logs debug mode historique |
 
-### Mode maintenance
+Les `NEXT_PUBLIC_*` sont figées **au build**. Les variables serveur (`SHARED_AUTH_*`, `NOINDEX`) sont lues au **runtime** (redémarrage du process Node après modification).
 
-Le mode maintenance se pilote avec le feature flag `VITE_MAINTENANCE_MODE`.
-Quand il est actif, OpenAirMap affiche uniquement une page de maintenance et ne monte pas la carte Leaflet ni les appels de donnees.
+## Déploiement
 
-Valeurs acceptees :
-- actif : `true`, `1`, `on`, `yes`, `enabled` ;
-- inactif : `false`, `0`, `off`, `no`, `disabled`.
-
-Exemple :
-
-```bash
-VITE_MAINTENANCE_MODE=true
-```
-
-En developpement, redemarrez `npm run dev` apres modification du `.env`.
-En production, relancez un build puis redeployez les fichiers `dist/`.
-
-#### Personnaliser le message
-
-Le texte affiche sur la page se configure dans `public/maintenance.json`.
-Ce fichier permet au mainteneur de changer le contenu sans modifier le code React :
-
-```json
-{
-  "title": "Maintenance en cours",
-  "message": "La plateforme est temporairement indisponible pendant une opération de maintenance.",
-  "details": "Merci de réessayer un peu plus tard.",
-  "contactLabel": "Contacter l'équipe",
-  "atmoMicroQualifiedSensors": {
-    "enabled": true,
-    "message": "Suite a un probleme technique, les donnees des capteurs qualifies ne sont plus accessibles. AtmoSud met tout en oeuvre pour le resoudre."
-  }
-}
-```
-
-Champs disponibles :
-- `title` : titre principal de la page ;
-- `message` : message explicatif principal ;
-- `details` : texte court complementaire affiche sous le message ;
-- `contactLabel` : libelle du bouton de contact ;
-- `atmoMicroQualifiedSensors.enabled` : active/desactive le bandeau incident AtmoMicro ;
-- `atmoMicroQualifiedSensors.message` : texte du bandeau incident AtmoMicro.
-
-#### Bandeau incident AtmoMicro (mesures/dernieres)
-
-OpenAirMap gere un mode degradé pour AtmoMicro lorsque l'endpoint `mesures/dernieres` ne fournit pas de mesures exploitables, par exemple :
-- `204 No Content` ou corps vide (`null`) ;
-- reponse JSON vide (`[]`) ;
-- erreur reseau ou HTTP sur cet endpoint uniquement.
-
-Comportement applique :
-- un etat d'incident `atmoMicroOutage` est active dans le hook `useAirQualityData` (pour le bandeau) ;
-- les capteurs listes dans `capteurs/sites` pour le polluant demande restent affiches en **marqueurs inactifs** (gris, pas de valeur recente), positions issues des metadonnees sites ;
-- un bandeau d'information est affiche en haut de la carte si AtmoMicro est selectionnee ;
-- le texte du bandeau provient de `public/maintenance.json` (`atmoMicroQualifiedSensors.message`) ;
-- l'utilisateur peut fermer le bandeau via une croix (fermeture locale de session UI).
-
-Fichiers concernes :
-- `src/services/AtmoMicroService.ts` (fallback mesures -> sites, signal `isMeasuresUnavailableIncident`) ;
-- `src/hooks/useAirQualityData.ts` (propagation de `atmoMicroOutage`) ;
-- `src/App.tsx` (rendu du bandeau, texte centre, bouton de fermeture) ;
-- `public/maintenance.json` (configuration du message).
-
-
-Ce fichier est servi comme un fichier statique. En production, le mainteneur peut donc modifier `maintenance.json` dans les fichiers deployes sans modifier le code React. Les champs absents ou vides utilisent automatiquement le message par defaut.
-
-Procedure type :
-1. Activer `VITE_MAINTENANCE_MODE=true` dans l'environnement de build ;
-2. Builder et deployer l'application ;
-3. Modifier si besoin le fichier deploye `maintenance.json` pour adapter le message ;
-4. Desactiver la maintenance en repassant `VITE_MAINTENANCE_MODE=false`, puis rebuilder et redeployer.
-
-Note cache : `maintenance.json` est charge avec une strategie `no-store` cote navigateur pour faciliter les changements de message. Si un proxy, CDN ou Nginx applique un cache supplementaire, purgez ce cache ou configurez une duree courte pour ce fichier.
-
-### Configuration domaine (`src/config/domainConfig.ts`)
-
-Le branding, les liens institutionnels et les metadonnees SEO sont portes par `src/config/domainConfig.ts`.
-
-Structure principale :
-- `DOMAIN_CONFIG.default` contient la configuration par defaut (logo, favicon, centre/zoom/emprise de carte, titre, description, liens, organisation, mentions legales)
-- `getConfigForDomain(domain)` applique la config associee au domaine courant, avec repli automatique vers `DOMAIN_CONFIG.default` si le domaine n'a pas d'entree dediee
-- l'instance AtmoSud (`atmosud`) est un exemple d'entree dediee : elle est selectionnee pour tout hostname en `*.atmosud.org` (voir `isAtmoSudHost`), pas seulement une correspondance exacte — utile pour couvrir prod + preprod sans dupliquer la config.
-
-Champs disponibles sur une entree (`DomainConfig`) :
-
-| Champ | Usage |
-|---|---|
-| `logo`, `logo2`, `favicon` | Assets affiches dans le header et l'onglet du navigateur |
-| `mapCenter`, `mapZoom`, `mapBounds` | Vue initiale de la carte **et** emprise reelle de l'instance (voir section Referencement) |
-| `title` | Affiche dans la navbar — a garder court |
-| `seoTitle` (optionnel) | Utilise pour `<title>`/`document.title` a la place de `title` si plus descriptif est souhaite sans casser l'UI |
-| `description` | `<meta name="description">`, JSON-LD, et panneau "A propos" sous le header |
-| `earliestMeasurementDate` (optionnel, `YYYY-MM-DD`) | Date de premiere mesure exploitable du reseau de **cette** instance, pour `temporalCoverage` (JSON-LD) — ne renseigner que si connue et verifiee, sinon laisser absent |
-| `links.website/contact/about` | Liens institutionnels affiches dans l'app et les mentions legales |
-| `organization` | Nom de l'entite qui opere cette instance |
-| `legal` (optionnel) | Mentions legales (SIRET, forme juridique, adresse, representant legal, hebergeur, DPO...) affichees dans la modale d'information |
-
-Pour ajouter un nouveau domaine :
-1. Ajouter une entree dans `DOMAIN_CONFIG` avec une cle explicite (pas forcement le hostname exact, voir `atmosud` + `isAtmoSudHost`) ;
-2. Renseigner tous les champs du tableau ci-dessus avec les vraies valeurs de l'instance (voir checklist Referencement ci-dessous) ;
-3. Ajuster `getConfigForDomain` si necessaire pour que le(s) hostname(s) de cette instance y soient correctement resolus ;
-4. Verifier le rendu du header, du favicon, du centrage de carte, et le panneau "A propos".
-
-### Referencement (SEO) — checklist pour chaque instance
-
-Plusieurs organisations deploient OpenAirMap sur des domaines differents a partir du **meme code**. Sans differenciation, ces instances servent un contenu quasiment identique et Google les traite comme des doublons : il n'en montre qu'une dans les resultats de recherche generiques, au detriment des autres (c'est ce qui est arrive a `openairmap.atmosud.org`, invisible pendant plusieurs mois face a `openairmap.fr`).
-
-Ce que fait deja l'app **automatiquement**, sans configuration supplementaire, une fois qu'une instance a sa propre entree dans `DOMAIN_CONFIG` :
-- `<link rel="canonical">` auto-referent (voir `useCanonicalUrl`) ;
-- `<meta name="description">` (voir `useMetaDescription`) ;
-- JSON-LD `Dataset` (voir `useStructuredData` / `structuredData.ts`), avec `spatialCoverage` derive de `mapBounds` ;
-- panneau "A propos" toujours present dans le DOM, meme replie (voir `AboutPanel`), avec `description` en premier paragraphe.
-
-Ce que **chaque instance doit renseigner elle-meme** dans `domainConfig.ts` pour que cette differenciation soit reelle (pas juste copier la config d'une autre instance) :
-
-- [ ] **Une entree dediee dans `DOMAIN_CONFIG`** (ne pas rester sur `default`, qui est le repli generique/France) ;
-- [ ] **`title`/`seoTitle`** vraiment differents des autres instances — pas juste "OpenAirMap" partout ;
-- [ ] **`description`** qui decrit reellement ce que couvre *cette* instance (zone, public, source des donnees) — court, factuel, pas de bourrage de mots-cles ;
-- [ ] **`mapCenter`/`mapZoom`/`mapBounds`** correspondant a la vraie zone geographique couverte par cette instance (pas la region Sud, pas la France, si ce n'est pas son perimetre) — ca alimente aussi `spatialCoverage` du JSON-LD, c'est la difference la plus difficile a confondre avec une autre instance pour Google ;
-- [ ] **`organization`** = le nom reel de l'entite qui opere cette instance ;
-- [ ] **`links.website/contact/about`** = les vrais liens de cette organisation, pas ceux d'AtmoSud ;
-- [ ] **`legal`** = les vraies mentions legales de l'organisation qui opere l'instance (SIRET, forme juridique, adresse, representant legal, hebergeur, DPO...) — a renseigner par l'organisation elle-meme, personne d'autre ne peut le faire correctement a sa place ;
-- [ ] **`earliestMeasurementDate`** (optionnel) uniquement si la date de premiere mesure exploitable du reseau de cette instance est connue et verifiee ;
-- [ ] **`logo`/`logo2`/`favicon`** propres a l'instance, ajoutes dans `public/`.
-
-### Fond de carte StadiaMaps
-
-Le fond de carte par defaut (`Carte standard`) utilise StadiaMaps.
-
-Pre-requis operationnel :
-- creer un compte StadiaMaps 
-- declarer dans StadiaMaps la liste des domaines autorises (whitelist), incluant le domaine de production.
-
-Symptomes en cas de mauvaise configuration StadiaMaps :
-- erreurs reseau sur les tuiles dans la console navigateur
-- statut `401 Unauthorized` si le domaine courant n'est pas autorise
-- fond de carte absent.
-
-### Alternative de tuiles et procedure de bascule
-
-Une alternative est deja integree : `Carte OSM` (OpenStreetMap), en plus de `Carte standard` (StadiaMaps) et `Satellite IGN`.
-
-Procedure de bascule (sans redeploiement) :
-1. Ouvrir le menu des couches de fond dans l'interface carte ;
-2. Selectionner `Carte OSM` ;
-3. Verifier que les tuiles OSM s'affichent correctement.
-
-Cas d'usage recommande :
-- utiliser `Carte OSM` comme solution de continuite si StadiaMaps renvoie des `401` (ou indisponibilite temporaire).
-
-### Overlays feux / points chauds
-
-Le menu des fonds de carte propose aussi des couches d'incendie (independantes des sources de mesures) :
-
-- **EFFIS** : points de chaleur 7 jours (WFS GWIS + repli WMS) + zones brulees saison (pas de cle API)
-- **feuxdeforet.fr** : marqueurs de signalements (flag `VITE_ENABLE_WILDFIRE_LAYER`)
-
-Documentation technique : [`docs/features/DOCUMENTATION_COUCHES_FEUX.md`](docs/features/DOCUMENTATION_COUCHES_FEUX.md).
-
-
-## Commandes utiles
-
-```bash
-npm run dev      # serveur de dev
-npm run build    # build production
-npm run preview  # verification locale du build
-npm run lint     # verification ESLint
-```
-
-## Structure du projet (simplifiee)
-
-```text
-src/
-  components/
-    controls/      # menus et controles UI
-    map/           # carte, marqueurs, couches
-    panels/        # side panels par source
-    charts/        # visualisations historiques
-  services/        # acces et normalisation des donnees
-  hooks/           # logique metier partagee
-  constants/       # polluants, sources, pas de temps
-  config/          # config domaine / feature flags
-  locales/         # traductions i18n
-```
-
-## Compatibilite des pas de temps (regle generale)
-
-### Source de verite
-
-- La disponibilite des pas de temps dans l'UI est pilotee par `src/constants/sources.ts` via `supportedTimeSteps`.
-- Chaque service de donnees doit supporter effectivement les pas annonces (mapping, requetage API, transformation).
-- La configuration UI et l'implementation service doivent rester alignees pour eviter les etats incoherents (bouton actif mais donnees vides, ou inversement).
-
-### Comportement des ecrans
-
-- Les panneaux source-specifiques activent/desactivent les boutons selon la compatibilite de la source.
-- Le panneau de comparaison applique une regle d'intersection : un pas de temps n'est activable que s'il est supporte par toutes les sources comparees.
-- Un fallback automatique vers un pas valide prioritaire (`heure`, puis `quartHeure`, puis `instantane`) est applique si un pas courant devient invalide.
-
-### Evolution d'un pas de temps pour une source
-
-Pour ajouter (ou retirer) un pas de temps sur une source donnee :
-1. Mettre a jour `supportedTimeSteps` dans `src/constants/sources.ts`.
-2. Mettre a jour le service associe pour qu'il supporte reellement ce pas (mapping/config/requetes).
-3. Verifier les panneaux de source et de comparaison pour confirmer l'etat des boutons et le chargement des graphes.
-
-Exemple concret : AtmoMicro n'expose pas encore `jour` cote API, donc ce pas est desactive tant que le service ne le supporte pas.
-
-## Deploiement production (Next.js + Nginx)
-
-Ce projet se deploie comme une app **Next.js standalone** (process Node) derriere Nginx.
-Guide detaille : [docs/DEPLOIEMENT_NEXT.md](docs/DEPLOIEMENT_NEXT.md).
-
-### 1. Build
+Build Next **standalone** derrière un reverse-proxy Nginx. Guide détaillé : [`docs/DEPLOIEMENT_NEXT.md`](docs/DEPLOIEMENT_NEXT.md).
 
 ```bash
 npm ci
-npm run build
-cp -r public .next/standalone/public
-mkdir -p .next/standalone/.next && cp -r .next/static .next/standalone/.next/static
+npm run build    # inclut la copie des assets dans .next/standalone
+npm start        # ou service systemd équivalent
 ```
 
-### 2. Process Node + Nginx
+- Nginx : proxy vers le process Node (exemple générique [`deploy/nginx-openairmap.conf.example`](deploy/nginx-openairmap.conf.example)) — headers `Host` / `X-Forwarded-*` nécessaires pour `domainConfig` et l’auth.
+- **Runtime léger** : faire tourner le bundle `.next/standalone` (avec `public` et `.next/static`), pas le `node_modules` complet du dépôt (~1 Go). Le script `prepare-standalone` est enchaîné sur `npm run build`.
 
-- Unite systemd : [`deploy/openairmap.service`](deploy/openairmap.service)
-- Exemple Nginx : [`deploy/nginx-openairmap.conf.example`](deploy/nginx-openairmap.conf.example)
-- Gabarit env : [`.env.inc`](.env.inc) (`NEXT_PUBLIC_*`, `NOINDEX` en preprod)
+## Structure du projet
 
-## Documentation complementaire
-
-- [Documentation technique](docs/features/DOCUMENTATION_TECHNIQUE.md)
-- [Mode historique](docs/features/DOCUMENTATION_MODE_HISTORIQUE.md)
-- [Intercomparaison](docs/features/DOCUMENTATION_INTERCOMPARAISON.md)
-- [Feature recherche](docs/features/DOCUMENTATION_SEARCH_FEATURE.md)
-- [Hook useAirQualityData](docs/features/DOCUMENTATION_USE_AIR_QUALITY_DATA.md)
+```text
+app/                      # routes App Router (pages, API auth)
+middleware.ts             # i18n, cookie Host, gate SHARED_AUTH
+src/
+  config/domainConfig.ts  # branding + périmètre AirCrowd par hostname
+  utils/domainDataScope.ts
+  components/             # carte, contrôles, panneaux
+  services/               # APIs et couches (dont WMS AirCrowd)
+  constants/              # polluants, sources, pas de temps
+  locales/                # traductions
+deploy/                   # exemples Nginx / systemd
+```
