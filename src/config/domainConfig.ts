@@ -61,6 +61,26 @@ export interface DomainConfig {
    * - active la couche par défaut à l’arrivée sur l’instance.
    */
   aircrowdWmsEnabled?: boolean;
+  /**
+   * Polluants exposés dans l’UI (codes `pollutants`).
+   * Absent = tous les polluants activés du catalogue.
+   */
+  allowedPollutants?: string[];
+  /**
+   * Sources exposées (codes top-level ou `groupe.sousSource`).
+   * Absent = catalogue complet. Ex. AirCrowd : `atmoRef` + `atmoMicro` seuls.
+   */
+  allowedSources?: string[];
+  /**
+   * Pas de temps exposés (intersection avec `pasDeTemps[].activated`).
+   * Absent = tous les pas `activated`.
+   */
+  allowedTimeSteps?: string[];
+  /**
+   * Locale next-intl / i18n par défaut pour ce Host (ex. `en` sur AirCrowd).
+   * Absent = `fr` (routing.defaultLocale).
+   */
+  defaultLocale?: 'fr' | 'en' | 'es' | 'it' | 'de' | 'ar';
   title: string;
   /** Titre long utilisé uniquement pour <title>/document.title. Si absent, `title` sert de repli (voir useDocumentTitle). */
   seoTitle?: string;
@@ -226,6 +246,10 @@ const aircrowdConfig: DomainConfig = {
   markSquare: './branding/logo-aircrowd.png',
   aircrowdWmsEnabled: true,
   aircrowdWmsStartDate: '2026-09-02',
+  allowedPollutants: ['pm25', 'pm10'],
+  allowedSources: ['atmoRef', 'atmoMicro'],
+  allowedTimeSteps: ['heure'],
+  defaultLocale: 'en',
 };
 
 export const DOMAIN_CONFIG: Record<string, DomainConfig> = {

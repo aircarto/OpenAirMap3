@@ -777,7 +777,8 @@
     "groupUtilities": "Extras",
     "groupBaseLayer": "Kartenhintergrund",
     "groupModes": "Modi",
-    "brandWebsite": "{{organization}} website"
+    "brandWebsite": "{{organization}} website",
+    "hourlyOnly": "Auf dieser Karte ist nur der Stunden-Zeitschritt verfügbar"
   },
   "timeBar": {
     "now": "Jetzt",

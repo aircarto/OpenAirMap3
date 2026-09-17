@@ -1,11 +1,19 @@
+import type { DomainConfig } from "../config/domainConfig";
 import {
-  getDefaultPollutant,
   getSupportedPollutantsForTimeStep,
   isPollutantSupportedForTimeStep,
   pollutants,
 } from "../constants/pollutants";
-import { getDefaultSources, sources } from "../constants/sources";
+import { sources } from "../constants/sources";
 import { pasDeTemps } from "../constants/timeSteps";
+import {
+  getDefaultPollutantForDomain,
+  getDefaultSourcesForDomain,
+  getDefaultTimeStepForDomain,
+  isPollutantAllowedForDomain,
+  isSourceAllowedForDomain,
+  isTimeStepAllowedForDomain,
+} from "./domainDataScope";
 
 export interface AppUrlParams {
   lat: number;
@@ -28,23 +36,19 @@ const COORD_EPSILON = 1e-5;
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 18;
 
-const getDefaultTimeStep = (): string => {
-  const defaultTimeStep = Object.entries(pasDeTemps).find(
-    ([, timeStep]) => timeStep.activated
-  );
-  return defaultTimeStep ? defaultTimeStep[0] : "heure";
-};
-
-export const buildAppUrlDefaults = (mapDefaults: {
-  mapCenter: [number, number];
-  mapZoom: number;
-}): AppUrlDefaults => ({
+export const buildAppUrlDefaults = (
+  mapDefaults: {
+    mapCenter: [number, number];
+    mapZoom: number;
+  },
+  domainConfig: DomainConfig = {} as DomainConfig
+): AppUrlDefaults => ({
   lat: mapDefaults.mapCenter[0],
   lng: mapDefaults.mapCenter[1],
   zoom: mapDefaults.mapZoom,
-  pollutant: getDefaultPollutant(),
-  timeStep: getDefaultTimeStep(),
-  sources: getDefaultSources(),
+  pollutant: getDefaultPollutantForDomain(domainConfig),
+  timeStep: getDefaultTimeStepForDomain(domainConfig),
+  sources: getDefaultSourcesForDomain(domainConfig),
 });
 
 const getAllValidSourceCodes = (): string[] => {
@@ -84,7 +88,11 @@ const parseIntParam = (value: string | null): number | null => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
-const parseSourcesParam = (value: string | null, fallback: string[]): string[] => {
+const parseSourcesParam = (
+  value: string | null,
+  fallback: string[],
+  domainConfig?: DomainConfig
+): string[] => {
   if (value === null || value.trim() === "") {
     return fallback;
   }
@@ -92,7 +100,12 @@ const parseSourcesParam = (value: string | null, fallback: string[]): string[] =
   const parsedSources = value
     .split(",")
     .map((source) => source.trim())
-    .filter((source) => source.length > 0 && VALID_SOURCE_CODES.has(source));
+    .filter(
+      (source) =>
+        source.length > 0 &&
+        VALID_SOURCE_CODES.has(source) &&
+        (!domainConfig || isSourceAllowedForDomain(source, domainConfig))
+    );
 
   return parsedSources.length > 0 ? parsedSources : fallback;
 };
@@ -100,13 +113,22 @@ const parseSourcesParam = (value: string | null, fallback: string[]): string[] =
 const resolvePollutantForTimeStep = (
   pollutant: string,
   timeStep: string,
-  fallbackPollutant: string
+  fallbackPollutant: string,
+  domainConfig?: DomainConfig
 ): string => {
-  if (isPollutantSupportedForTimeStep(pollutant, timeStep)) {
+  const domainOk = (code: string) =>
+    !domainConfig || isPollutantAllowedForDomain(code, domainConfig);
+
+  if (
+    isPollutantSupportedForTimeStep(pollutant, timeStep) &&
+    domainOk(pollutant)
+  ) {
     return pollutant;
   }
 
-  const supportedPollutants = getSupportedPollutantsForTimeStep(timeStep);
+  const supportedPollutants = getSupportedPollutantsForTimeStep(timeStep).filter(
+    domainOk
+  );
   if (supportedPollutants.includes(fallbackPollutant)) {
     return fallbackPollutant;
   }
@@ -122,7 +144,8 @@ const arraysEqual = (a: string[], b: string[]): boolean =>
 
 export const parseAppUrlParams = (
   search: string,
-  defaults: AppUrlDefaults
+  defaults: AppUrlDefaults,
+  domainConfig?: DomainConfig
 ): AppUrlParams => {
   const params = new URLSearchParams(
     search.startsWith("?") ? search.slice(1) : search
@@ -147,17 +170,25 @@ export const parseAppUrlParams = (
 
   const pollutantParam = params.get("pollutant");
   const pollutant =
-    pollutantParam && VALID_POLLUTANTS.has(pollutantParam)
+    pollutantParam &&
+    VALID_POLLUTANTS.has(pollutantParam) &&
+    (!domainConfig || isPollutantAllowedForDomain(pollutantParam, domainConfig))
       ? pollutantParam
       : defaults.pollutant;
 
   const timeStepParam = params.get("timeStep");
   const timeStep =
-    timeStepParam && VALID_TIME_STEPS.has(timeStepParam)
+    timeStepParam &&
+    VALID_TIME_STEPS.has(timeStepParam) &&
+    (!domainConfig || isTimeStepAllowedForDomain(timeStepParam, domainConfig))
       ? timeStepParam
       : defaults.timeStep;
 
-  const parsedSources = parseSourcesParam(params.get("sources"), defaults.sources);
+  const parsedSources = parseSourcesParam(
+    params.get("sources"),
+    defaults.sources,
+    domainConfig
+  );
 
   return {
     lat,
@@ -166,7 +197,8 @@ export const parseAppUrlParams = (
     pollutant: resolvePollutantForTimeStep(
       pollutant,
       timeStep,
-      defaults.pollutant
+      defaults.pollutant,
+      domainConfig
     ),
     timeStep,
     sources: parsedSources,

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
+import type { DomainConfig } from "../config/domainConfig";
 import {
   AppUrlDefaults,
   AppUrlParams,
@@ -14,6 +15,7 @@ interface UseAppUrlSyncParams {
   defaults: AppUrlDefaults;
   onPopState: (params: AppUrlParams) => void;
   initialMapViewTouched?: boolean;
+  domainConfig?: DomainConfig;
 }
 
 interface UseAppUrlSyncResult {
@@ -25,15 +27,21 @@ export const useAppUrlSync = ({
   defaults,
   onPopState,
   initialMapViewTouched = false,
+  domainConfig,
 }: UseAppUrlSyncParams): UseAppUrlSyncResult => {
   const mapViewTouchedRef = useRef(initialMapViewTouched);
   const isApplyingFromUrlRef = useRef(false);
   const lastSyncedParamsRef = useRef<AppUrlParams | null>(null);
   const onPopStateRef = useRef(onPopState);
+  const domainConfigRef = useRef(domainConfig);
 
   useEffect(() => {
     onPopStateRef.current = onPopState;
   }, [onPopState]);
+
+  useEffect(() => {
+    domainConfigRef.current = domainConfig;
+  }, [domainConfig]);
 
   const markMapViewTouched = useCallback(() => {
     mapViewTouchedRef.current = true;
@@ -74,7 +82,11 @@ export const useAppUrlSync = ({
     const handlePopState = () => {
       isApplyingFromUrlRef.current = true;
 
-      const parsedParams = parseAppUrlParams(window.location.search, defaults);
+      const parsedParams = parseAppUrlParams(
+        window.location.search,
+        defaults,
+        domainConfigRef.current
+      );
       lastSyncedParamsRef.current = parsedParams;
       onPopStateRef.current(parsedParams);
 

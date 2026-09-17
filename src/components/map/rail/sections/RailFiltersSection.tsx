@@ -146,14 +146,16 @@ export const RailFiltersSection: React.FC<RailFiltersSectionProps> = ({
         onSourceChange={filters.onSourceChange}
         onToast={ui.onToast}
         {...flyout}
-        renderTrigger={({ displayText }) => (
+        renderTrigger={({ displayText, disabled }) => (
           <RailItem
             itemId="timestep"
             id="rail-timestep-trigger"
             data-testid="rail-timestep-trigger"
             data-tour="global-timestep"
             aria-labelledby="rail-timestep-label rail-timestep-value"
-            aria-haspopup="menu"
+            aria-haspopup={disabled ? undefined : "menu"}
+            disabled={disabled}
+            title={disabled ? t("rail.hourlyOnly") : undefined}
             onFocus={onItemFocus}
             label={t("controls.timeStep")}
             icon={<IconTimeStep />}

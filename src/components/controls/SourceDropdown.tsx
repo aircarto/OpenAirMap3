@@ -1,6 +1,12 @@
 import React, { useEffect, useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { COMMUNAUTAIRE_SOURCE_CODES } from "../../constants/sources";
+import { useDomainConfig } from "../../hooks/useDomainConfig";
+import {
+  domainShowsCommunitySources,
+  domainShowsSignalAir,
+  isSourceAllowedForDomain,
+} from "../../utils/domainDataScope";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Checkbox } from "../ui/checkbox";
 import { DropdownButton } from "./DropdownButton";
@@ -133,8 +139,19 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
   menuClassName,
 }) => {
   const { t } = useTranslation();
+  const domainConfig = useDomainConfig();
   const [isOpen, setIsOpen] = useState(false);
   const mainLabelId = useId();
+
+  const visibleMainSources = useMemo(
+    () =>
+      MAIN_SOURCE_CODES.filter((code) =>
+        isSourceAllowedForDomain(code, domainConfig)
+      ),
+    [domainConfig]
+  );
+  const showCommunity = domainShowsCommunitySources(domainConfig);
+  const showSignalAir = domainShowsSignalAir(domainConfig);
 
   const slotApi = useMemo<SourceSlotApi>(
     () => ({ close: () => setIsOpen(false) }),
@@ -304,7 +321,7 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
             >
               {t("controls.mainSources")}
             </div>
-            {MAIN_SOURCE_CODES.map((code) => (
+            {visibleMainSources.map((code) => (
               <SourceCheckboxRow
                 key={code}
                 code={code}
@@ -315,50 +332,54 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
             ))}
           </div>
 
-          <div
-            role="separator"
-            className="my-1.5 border-t border-black/[0.06]"
-          />
-
-          {/* Groupe communautaire */}
-          <div role="group" aria-label={t("controls.sourceCommunautaire")}>
-            <SourceGroupCheckbox
-              testId="sources-group-communautaire-all"
-              label={t("controls.sourceCommunautaire")}
-              scope={COMMUNAUTAIRE_SOURCE_CODES}
-              selectedSources={selectedSources}
-              onToggle={handleCommunautaireGroupToggle}
-              hint={t("controls.sourceGroupCount", {
-                selected: communautaireSelectedCount,
-                total: COMMUNAUTAIRE_SOURCE_CODES.length,
-              })}
-            />
-            {communautaireSubSources.map(({ code, label }) => (
-              <SourceCheckboxRow
-                key={code}
-                code={code}
-                label={label}
-                checked={selectedSources.includes(code)}
-                onToggle={() => handleSourceToggle(code)}
-                indented
+          {showCommunity ? (
+            <>
+              <div
+                role="separator"
+                className="my-1.5 border-t border-black/[0.06]"
               />
-            ))}
 
-            {mobileAirSlot && (
-              <>
-                {/* Filet fin : MobileAir est du groupe, mais hors du
-                    tout-cocher — sans cette césure, voir « tout coché » alors
-                    qu'il est éteint se lirait comme un bug. */}
-                <div
-                  aria-hidden="true"
-                  className="mx-2 my-1.5 border-t border-dashed border-black/[0.08]"
+              {/* Groupe communautaire */}
+              <div role="group" aria-label={t("controls.sourceCommunautaire")}>
+                <SourceGroupCheckbox
+                  testId="sources-group-communautaire-all"
+                  label={t("controls.sourceCommunautaire")}
+                  scope={COMMUNAUTAIRE_SOURCE_CODES}
+                  selectedSources={selectedSources}
+                  onToggle={handleCommunautaireGroupToggle}
+                  hint={t("controls.sourceGroupCount", {
+                    selected: communautaireSelectedCount,
+                    total: COMMUNAUTAIRE_SOURCE_CODES.length,
+                  })}
                 />
-                <div className="ml-4">{mobileAirSlot(slotApi)}</div>
-              </>
-            )}
-          </div>
+                {communautaireSubSources.map(({ code, label }) => (
+                  <SourceCheckboxRow
+                    key={code}
+                    code={code}
+                    label={label}
+                    checked={selectedSources.includes(code)}
+                    onToggle={() => handleSourceToggle(code)}
+                    indented
+                  />
+                ))}
 
-          {signalAirSlot && (
+                {mobileAirSlot && (
+                  <>
+                    {/* Filet fin : MobileAir est du groupe, mais hors du
+                        tout-cocher — sans cette césure, voir « tout coché » alors
+                        qu'il est éteint se lirait comme un bug. */}
+                    <div
+                      aria-hidden="true"
+                      className="mx-2 my-1.5 border-t border-dashed border-black/[0.08]"
+                    />
+                    <div className="ml-4">{mobileAirSlot(slotApi)}</div>
+                  </>
+                )}
+              </div>
+            </>
+          ) : null}
+
+          {showSignalAir && signalAirSlot ? (
             <>
               <div
                 role="separator"
@@ -375,7 +396,7 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
                 <div className="ml-1">{signalAirSlot(slotApi)}</div>
               </div>
             </>
-          )}
+          ) : null}
         </div>
       </PopoverContent>
     </Popover>

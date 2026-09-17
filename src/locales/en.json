@@ -766,6 +766,7 @@
     "groupTime": "Time",
     "groupPanels": "Panels",
     "frozenDuringPlayback": "Controls unavailable during historical playback",
+    "hourlyOnly": "Only the hourly time step is available on this map",
     "caption": {
       "sources_one": "{{count}} src",
       "sources_other": "{{count}} src",

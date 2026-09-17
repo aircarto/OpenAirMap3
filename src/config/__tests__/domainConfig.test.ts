@@ -106,5 +106,9 @@ describe("getConfigForDomain", () => {
     expect(config.aircrowdWmsStartDate).toBe("2026-09-02");
     expect(config.markSquare).toBe("./branding/logo-aircrowd.png");
     expect(config.logo).toBe(DOMAIN_CONFIG.atmosud.logo);
+    expect(config.allowedPollutants).toEqual(["pm25", "pm10"]);
+    expect(config.allowedSources).toEqual(["atmoRef", "atmoMicro"]);
+    expect(config.allowedTimeSteps).toEqual(["heure"]);
+    expect(config.defaultLocale).toBe("en");
   });
 });

@@ -777,7 +777,8 @@
     "groupUtilities": "Utilidades",
     "groupBaseLayer": "Mapa base",
     "groupModes": "Modos",
-    "brandWebsite": "{{organization}} website"
+    "brandWebsite": "{{organization}} website",
+    "hourlyOnly": "Solo el intervalo horario está disponible en este mapa"
   },
   "timeBar": {
     "now": "Ahora",

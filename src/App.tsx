@@ -42,6 +42,7 @@ import {
   parseAppUrlParams,
   AppUrlParams,
 } from "./utils/appUrlParams";
+import { isPollutantAllowedForDomain } from "./utils/domainDataScope";
 import { useAppUrlSync } from "./hooks/useAppUrlSync";
 import InformationModal from "./components/modals/InformationModal";
 import { ModelingLayerType } from "./constants/mapLayers";
@@ -105,11 +106,14 @@ const DEFAULT_ATMOMICRO_MAINTENANCE_BANNER: AtmoMicroMaintenanceBannerConfig = {
 
 const getInitialAppUrlParams = (): AppUrlParams => {
   const domainConfig = resolveDomainConfig(window.location.hostname);
-  const defaults = buildAppUrlDefaults({
-    mapCenter: domainConfig.mapCenter,
-    mapZoom: domainConfig.mapZoom,
-  });
-  return parseAppUrlParams(window.location.search, defaults);
+  const defaults = buildAppUrlDefaults(
+    {
+      mapCenter: domainConfig.mapCenter,
+      mapZoom: domainConfig.mapZoom,
+    },
+    domainConfig
+  );
+  return parseAppUrlParams(window.location.search, defaults, domainConfig);
 };
 
 const INITIAL_APP_URL_PARAMS = getInitialAppUrlParams();
@@ -421,9 +425,14 @@ const AppContent: React.FC = () => {
   );
 
   useEffect(() => {
-    if (!isPollutantSupportedForTimeStep(selectedPollutant, selectedTimeStep)) {
-      const supportedPollutants =
-        getSupportedPollutantsForTimeStep(selectedTimeStep);
+    const supportedPollutants = getSupportedPollutantsForTimeStep(
+      selectedTimeStep,
+    ).filter((code) => isPollutantAllowedForDomain(code, domainConfig));
+
+    if (
+      !isPollutantSupportedForTimeStep(selectedPollutant, selectedTimeStep) ||
+      !isPollutantAllowedForDomain(selectedPollutant, domainConfig)
+    ) {
       if (supportedPollutants.length > 0) {
         setSelectedPollutant((current) =>
           supportedPollutants.includes(current)
@@ -432,7 +441,7 @@ const AppContent: React.FC = () => {
         );
       }
     }
-  }, [selectedPollutant, selectedTimeStep]);
+  }, [selectedPollutant, selectedTimeStep, domainConfig]);
 
   const {
     mode: mapInstantMode,
@@ -831,11 +840,14 @@ const AppContent: React.FC = () => {
 
   const appUrlDefaults = useMemo(
     () =>
-      buildAppUrlDefaults({
-        mapCenter: domainConfig.mapCenter,
-        mapZoom: domainConfig.mapZoom,
-      }),
-    [domainConfig.mapCenter, domainConfig.mapZoom],
+      buildAppUrlDefaults(
+        {
+          mapCenter: domainConfig.mapCenter,
+          mapZoom: domainConfig.mapZoom,
+        },
+        domainConfig
+      ),
+    [domainConfig],
   );
 
   const appUrlState = useMemo(
@@ -863,6 +875,7 @@ const AppContent: React.FC = () => {
     defaults: appUrlDefaults,
     onPopState: handlePopStateFromUrl,
     initialMapViewTouched: hadMapParamsInInitialUrl,
+    domainConfig,
   });
 
   const handleMapViewChange = useCallback(

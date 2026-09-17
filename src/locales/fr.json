@@ -766,6 +766,7 @@
     "groupTime": "Temps",
     "groupPanels": "Panneaux",
     "frozenDuringPlayback": "Contrôles indisponibles pendant la lecture historique",
+    "hourlyOnly": "Seul le pas de temps horaire est disponible sur cette carte",
     "caption": {
       "sources_one": "{{count}} src",
       "sources_other": "{{count}} src",

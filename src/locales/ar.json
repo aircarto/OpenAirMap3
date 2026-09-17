@@ -793,7 +793,8 @@
     "groupUtilities": "أدوات",
     "groupBaseLayer": "خلفية الخريطة",
     "groupModes": "الأنماط",
-    "brandWebsite": "{{organization}} website"
+    "brandWebsite": "{{organization}} website",
+    "hourlyOnly": "خطوة الزمن الساعية فقط متاحة على هذه الخريطة"
   },
   "timeBar": {
     "now": "الآن",

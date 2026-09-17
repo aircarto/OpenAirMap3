@@ -4,6 +4,8 @@ import {
   pollutants,
   isPollutantSupportedForTimeStep,
 } from "../../constants/pollutants";
+import { useDomainConfig } from "../../hooks/useDomainConfig";
+import { isPollutantAllowedForDomain } from "../../utils/domainDataScope";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,20 +38,24 @@ const PollutantDropdown: React.FC<PollutantDropdownProps> = ({
   menuClassName,
 }) => {
   const { t } = useTranslation();
+  const domainConfig = useDomainConfig();
   const availablePollutants = useMemo(
     () =>
-      Object.entries(pollutants).filter(([code]) =>
-        selectedTimeStep
-          ? isPollutantSupportedForTimeStep(code, selectedTimeStep)
-          : true
+      Object.entries(pollutants).filter(
+        ([code]) =>
+          isPollutantAllowedForDomain(code, domainConfig) &&
+          (selectedTimeStep
+            ? isPollutantSupportedForTimeStep(code, selectedTimeStep)
+            : true)
       ),
-    [selectedTimeStep]
+    [selectedTimeStep, domainConfig]
   );
 
   const getDisplayText = () => {
     const pollutant = pollutants[selectedPollutant];
     const isSupported =
       pollutant &&
+      isPollutantAllowedForDomain(selectedPollutant, domainConfig) &&
       (!selectedTimeStep ||
         isPollutantSupportedForTimeStep(selectedPollutant, selectedTimeStep));
 
