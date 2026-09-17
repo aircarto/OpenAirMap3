@@ -47,7 +47,7 @@ describe('AirCrowdWmsLayerService', () => {
     expect(pickNearestAvailableAirCrowdHour([], 11)).toBeNull();
   });
 
-  it('honore VITE_AIRCROWD_WMS_URL absolue', () => {
+  it('honore NEXT_PUBLIC_AIRCROWD_WMS_URL / VITE_AIRCROWD_WMS_URL absolue', () => {
     vi.stubEnv(
       'VITE_AIRCROWD_WMS_URL',
       'https://preprod-geoservices.atmosud.org/aircrowd/wms'
@@ -55,5 +55,9 @@ describe('AirCrowdWmsLayerService', () => {
     expect(getAirCrowdWmsUrl()).toBe(
       'https://preprod-geoservices.atmosud.org/aircrowd/wms'
     );
+  });
+
+  it('utilise le proxy same-origin par défaut', () => {
+    expect(getAirCrowdWmsUrl()).toMatch(/\/aircrowd-wms\/wms$/);
   });
 });

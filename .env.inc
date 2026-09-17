@@ -33,6 +33,9 @@ SHARED_AUTH_SECRET=string
 # Active la couche feux de foret (marqueurs feuxdeforet.fr)
 NEXT_PUBLIC_ENABLE_WILDFIRE_LAYER=boolean
 
+# Endpoint WMS AirCrowd (défaut : /aircrowd-wms/wms via rewrite Next → preprod)
+# NEXT_PUBLIC_AIRCROWD_WMS_URL=/aircrowd-wms/wms
+
 # Affiche les traces NebuleAir en ligne continue
 NEXT_PUBLIC_SOLID_LINE_NEBULEAIR=boolean
 

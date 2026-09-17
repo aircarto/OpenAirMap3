@@ -1,4 +1,5 @@
 import L from 'leaflet';
+import { readEnv } from '../lib/env';
 
 /**
  * PoC : couches WMS cartographie AirCrowd (preprod GeoServer).
@@ -9,12 +10,11 @@ import L from 'leaflet';
  *   aircrowd:aircrowd_pm10_2026_09_02_11h
  *
  * URL de service :
- * - override : `VITE_AIRCROWD_WMS_URL` (absolu ou chemin same-origin)
- * - dev : `/aircrowd-wms/wms` via proxy Vite → preprod
- * - prod : GeoServer direct (CORS `*`) — le proxy Vite n’existe pas en build
+ * - override : `NEXT_PUBLIC_AIRCROWD_WMS_URL` (ou alias `VITE_AIRCROWD_WMS_URL`)
+ * - défaut : `/aircrowd-wms/wms` (rewrite Next → preprod-geoservices)
  *
- * Si le navigateur n’atteint pas preprod, configurer un reverse proxy nginx
- * sur `/aircrowd-wms` et fixer `VITE_AIRCROWD_WMS_URL=/aircrowd-wms/wms`.
+ * Dans l’onglet Réseau du navigateur, chercher `/aircrowd-wms` (same-origin),
+ * pas l’hôte upstream `preprod-geoservices` (proxy côté serveur).
  */
 
 export const AIRCROWD_WMS_UPSTREAM =
@@ -53,16 +53,17 @@ export type AirCrowdWmsAvailability = {
 };
 
 /**
- * Résout l’endpoint WMS (absolu) selon env / mode.
+ * Résout l’endpoint WMS (absolu) selon env / rewrite Next.
  * Exposé pour les tests.
  */
 export const getAirCrowdWmsUrl = (): string => {
-  const configured = import.meta.env.VITE_AIRCROWD_WMS_URL?.trim();
-  const raw =
-    configured ||
-    (import.meta.env.DEV
-      ? AIRCROWD_WMS_PROXY_PATH
-      : `${AIRCROWD_WMS_UPSTREAM}/wms`);
+  const configured = (
+    readEnv('NEXT_PUBLIC_AIRCROWD_WMS_URL') ??
+    readEnv('VITE_AIRCROWD_WMS_URL') ??
+    ''
+  ).trim();
+  // Toujours le proxy same-origin par défaut (rewrites Next en dev et standalone).
+  const raw = configured || AIRCROWD_WMS_PROXY_PATH;
 
   if (/^https?:\/\//i.test(raw) || raw.startsWith('//')) {
     return raw;
