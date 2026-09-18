@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import L from "leaflet";
 import {
   BaseLayerKey,
@@ -19,6 +20,7 @@ import {
 import {
   buildAirCrowdLayerName,
   createAirCrowdWMSLayer,
+  getAirCrowdWmsLegendTitle,
   getAirCrowdWmsLegendUrl,
   isAirCrowdWmsPollutantSupported,
 } from "../../../services/AirCrowdWmsLayerService";
@@ -83,6 +85,7 @@ export const useMapLayers = ({
   effisReferenceDate,
   mapBounds,
 }: UseMapLayersProps) => {
+  const { t } = useTranslation();
   const [currentTileLayer, setCurrentTileLayer] = useState<L.Layer | null>(
     null
   );
@@ -347,7 +350,14 @@ export const useMapLayers = ({
       wmsLayer.addTo(map);
       aircrowdWmsLayerRef.current = wmsLayer;
       setCurrentModelingLegendUrl(getAirCrowdWmsLegendUrl(layerName));
-      setCurrentModelingLegendTitle(`AirCrowd — ${layerName}`);
+      setCurrentModelingLegendTitle(
+        getAirCrowdWmsLegendTitle(
+          selectedPollutant,
+          aircrowdWmsDate,
+          aircrowdWmsHour,
+          t("aircrowdWms.legendTitle")
+        )
+      );
     } catch (error) {
       console.error(
         "❌ [AIRCROWD WMS] Erreur lors du chargement du layer:",
@@ -372,6 +382,7 @@ export const useMapLayers = ({
     selectedPollutant,
     mapReadyVersion,
     mapRef,
+    t,
   ]);
 
   // Effet pour gérer la couche communale (utilise GeoJSON pour un contrôle total du style)

@@ -1,5 +1,4 @@
 import type { MeasurementDevice, TemporalDataPoint } from '../types';
-import { getCustomRangeISO } from './historicalTimeRange';
 
 const TEMPORAL_MERGE_TOLERANCE_MS = 5 * 60 * 1000;
 
@@ -14,25 +13,26 @@ export type AirCrowdWmsTemporalSource =
   (typeof AIRCROWD_WMS_TEMPORAL_SOURCES)[number];
 
 /**
- * Fenêtre locale [HH:00, HH:59:59.999] convertie en ISO UTC pour les APIs.
+ * Fenêtre locale du créneau TimeBar [HH:00, (HH+1):00] en ISO UTC.
+ * targetMs = heure de fin locale (aligné timestamps API UTC en heure de fin).
  */
 export const buildAirCrowdWmsHourWindow = (
   dateIso: string,
-  hour: number
+  startHour: number
 ): { startDate: string; endDate: string; targetMs: number } => {
-  const clampedHour = Math.max(0, Math.min(23, Math.floor(hour)));
-  const hourPad = String(clampedHour).padStart(2, '0');
-  const { startDate, endDate } = getCustomRangeISO({
-    startDate: dateIso,
-    endDate: dateIso,
-    startTime: `${hourPad}:00`,
-    endTime: `${hourPad}:59`,
-  });
-
+  const clampedHour = Math.max(0, Math.min(23, Math.floor(startHour)));
   const [y, m, d] = dateIso.split('-').map(Number);
-  const targetMs = new Date(y, m - 1, d, clampedHour, 30, 0, 0).getTime();
+  const startLocal = new Date(y, m - 1, d, clampedHour, 0, 0, 0);
+  const endLocal =
+    clampedHour === 23
+      ? new Date(y, m - 1, d + 1, 0, 0, 0, 0)
+      : new Date(y, m - 1, d, clampedHour + 1, 0, 0, 0);
 
-  return { startDate, endDate, targetMs };
+  return {
+    startDate: startLocal.toISOString(),
+    endDate: endLocal.toISOString(),
+    targetMs: endLocal.getTime(),
+  };
 };
 
 export const isValidTemporalDevice = (
@@ -106,7 +106,7 @@ export const mergeTemporalDataPoints = (
   );
 };
 
-/** Point temporel le plus proche de targetMs (milieu d’heure WMS). */
+/** Point temporel le plus proche de targetMs (heure de fin du créneau). */
 export const pickClosestTemporalPoint = (
   points: TemporalDataPoint[],
   targetMs: number

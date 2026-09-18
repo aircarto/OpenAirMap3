@@ -55,6 +55,8 @@ import {
   clampAirCrowdWmsDate,
   getAirCrowdWmsToday,
   getAvailableHoursForAirCrowd,
+  mapInstantStartToAirCrowdEnd,
+  airCrowdEndToMapInstantStart,
   pickNearestAvailableAirCrowdHour,
 } from "./services/AirCrowdWmsLayerService";
 import {
@@ -505,15 +507,22 @@ const AppContent: React.FC = () => {
     if (!aircrowdWmsEnabled || !aircrowdAvailability) {
       return baseHour;
     }
-    const hours = getAvailableHoursForAirCrowd(
+    // Catalogue GeoServer = heures de fin ; TimeBar = heures de début.
+    const { dateIso: layerDate, endHour } = mapInstantStartToAirCrowdEnd(
+      displayedAircrowdDate,
+      baseHour,
+    );
+    const endHours = getAvailableHoursForAirCrowd(
       aircrowdAvailability,
       selectedPollutant,
-      displayedAircrowdDate,
+      layerDate,
     );
-    if (hours.length === 0 || hours.includes(baseHour)) {
+    if (endHours.length === 0 || endHours.includes(endHour)) {
       return baseHour;
     }
-    return pickNearestAvailableAirCrowdHour(hours, baseHour) ?? baseHour;
+    const nearestEnd =
+      pickNearestAvailableAirCrowdHour(endHours, endHour) ?? endHour;
+    return airCrowdEndToMapInstantStart(layerDate, nearestEnd).startHour;
   }, [
     aircrowdWmsEnabled,
     effectiveInstant.hour,

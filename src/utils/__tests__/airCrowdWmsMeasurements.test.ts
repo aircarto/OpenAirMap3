@@ -37,26 +37,26 @@ const point = (
 
 describe('airCrowdWmsMeasurements', () => {
   describe('buildAirCrowdWmsHourWindow', () => {
-    it('construit une fenêtre d’une heure locale en ISO', () => {
+    it('construit une fenêtre d’une heure locale bornée à l’heure de fin', () => {
       const { startDate, endDate, targetMs } = buildAirCrowdWmsHourWindow(
         '2026-09-02',
         11
       );
       const start = new Date(startDate);
       const end = new Date(endDate);
-      expect(end.getTime() - start.getTime()).toBeGreaterThan(50 * 60 * 1000);
-      expect(end.getTime() - start.getTime()).toBeLessThan(61 * 60 * 1000);
+      expect(end.getTime() - start.getTime()).toBe(60 * 60 * 1000);
 
-      const expectedTarget = new Date(2026, 8, 2, 11, 30, 0, 0).getTime();
+      const expectedTarget = new Date(2026, 8, 2, 12, 0, 0, 0).getTime();
       expect(targetMs).toBe(expectedTarget);
+      expect(end.getTime()).toBe(expectedTarget);
     });
 
     it('clamp l’heure entre 0 et 23', () => {
       expect(buildAirCrowdWmsHourWindow('2026-09-02', -3).targetMs).toBe(
-        new Date(2026, 8, 2, 0, 30, 0, 0).getTime()
+        new Date(2026, 8, 2, 1, 0, 0, 0).getTime()
       );
       expect(buildAirCrowdWmsHourWindow('2026-09-02', 99).targetMs).toBe(
-        new Date(2026, 8, 2, 23, 30, 0, 0).getTime()
+        new Date(2026, 8, 3, 0, 0, 0, 0).getTime()
       );
     });
   });

@@ -1,9 +1,12 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
+  airCrowdEndToMapInstantStart,
   buildAirCrowdLayerName,
   formatAirCrowdWmsHour,
+  getAirCrowdWmsLegendTitle,
   getAirCrowdWmsUrl,
   isAirCrowdWmsPollutantSupported,
+  mapInstantStartToAirCrowdEnd,
   parseAirCrowdWmsAvailability,
   pickNearestAvailableAirCrowdHour,
 } from '../AirCrowdWmsLayerService';
@@ -13,14 +16,32 @@ describe('AirCrowdWmsLayerService', () => {
     vi.unstubAllEnvs();
   });
 
-  it('construit le nom de layer attendu', () => {
-    expect(buildAirCrowdLayerName('pm10', '2026-09-02', 11)).toBe(
+  it('construit le nom de layer (début TimeBar → fin GeoServer)', () => {
+    // Créneau 10h–11h → suffixe 11h
+    expect(buildAirCrowdLayerName('pm10', '2026-09-02', 10)).toBe(
       'aircrowd:aircrowd_pm10_2026_09_02_11h'
+    );
+    // Créneau 23h–00h → lendemain 00h
+    expect(buildAirCrowdLayerName('pm25', '2026-09-02', 23)).toBe(
+      'aircrowd:aircrowd_pm25_2026_09_03_00h'
     );
   });
 
-  it('pad l’heure sur 2 chiffres', () => {
-    expect(formatAirCrowdWmsHour(9)).toBe('09h');
+  it('convertit début TimeBar ↔ fin layer', () => {
+    expect(mapInstantStartToAirCrowdEnd('2026-09-18', 14)).toEqual({
+      dateIso: '2026-09-18',
+      endHour: 15,
+    });
+    expect(airCrowdEndToMapInstantStart('2026-09-18', 15)).toEqual({
+      dateIso: '2026-09-18',
+      startHour: 14,
+    });
+  });
+
+  it('formate un titre de légende lisible', () => {
+    expect(getAirCrowdWmsLegendTitle('pm25', '2026-09-18', 14)).toBe(
+      'Cartographie AirCrowd\nPM₂.₅ · 18/09 · 14h–15h'
+    );
   });
 
   it('ne supporte que pm10/pm25 en PoC', () => {

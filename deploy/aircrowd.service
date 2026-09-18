@@ -1,0 +1,34 @@
+# AirCrowd – unité systemd **user** (pas besoin de sudo au quotidien)
+# Installé sur la VM dans : ~/.config/systemd/user/aircrowd.service
+#
+# Setup one-shot (root) :
+#   loginctl enable-linger airpaca
+#   # puis créer ce fichier sous /home/airpaca/.config/systemd/user/
+#   chown -R airpaca:airpaca /home/airpaca/.config/systemd
+#
+# Au quotidien (user airpaca) :
+#   export XDG_RUNTIME_DIR=/run/user/$(id -u)   # si session su / pas de bus
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now aircrowd
+#   systemctl --user restart aircrowd           # après chaque npm run build
+#   journalctl --user -u aircrowd -f
+#
+# Variante système (/etc/systemd/system/) : voir openairmap.service
+
+[Unit]
+Description=AirCrowd (Next.js standalone)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/airpaca/webapps/aircrowd.atmosud.org
+EnvironmentFile=-/home/airpaca/webapps/aircrowd.atmosud.org/.env
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=HOSTNAME=0.0.0.0
+ExecStart=/usr/bin/node .next/standalone/server.js
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

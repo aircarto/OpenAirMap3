@@ -846,6 +846,7 @@
   },
   "aircrowdWms": {
     "title": "AirCrowd cartography",
+    "legendTitle": "AirCrowd cartography",
     "date": "Day",
     "hour": "Hour",
     "unsupportedPollutant": "Available only for PM₁₀ and PM₂.₅",

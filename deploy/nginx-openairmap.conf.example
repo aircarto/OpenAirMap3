@@ -27,11 +27,15 @@ server {
     proxy_read_timeout 60s;
   }
 
-  # Assets Next (optionnel : servir via Node suffit aussi)
+  # Assets Next — proxy_pass SANS URI pour conserver l’encodage %5B/%5D
+  # (dossiers dynamiques [locale], sinon ChunkLoadError 400 en prod)
   location /_next/static/ {
     proxy_pass http://openairmap_next;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header Connection "";
     add_header Cache-Control "public, max-age=31536000, immutable";
   }
 }

@@ -830,6 +830,7 @@
   },
   "aircrowdWms": {
     "title": "Cartographie AirCrowd",
+    "legendTitle": "Cartographie AirCrowd",
     "date": "Jour",
     "hour": "Heure",
     "unsupportedPollutant": "Disponible uniquement pour PM₁₀ et PM₂.₅",

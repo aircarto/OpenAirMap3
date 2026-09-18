@@ -9,6 +9,11 @@ import { readEnv } from '../lib/env';
  * Exemple :
  *   aircrowd:aircrowd_pm10_2026_09_02_11h
  *
+ * Convention temporelle :
+ * - TimeBar / MapInstant : heure de **début** du créneau local (14 = 14h–15h)
+ * - Nom GeoServer AirCrowd : heure de **fin** locale (créneau 14h–15h → `15h`)
+ * - Mesures API : timestamps UTC en heure de fin (même créneau → 13:00Z en CEST)
+ *
  * URL de service :
  * - override : `NEXT_PUBLIC_AIRCROWD_WMS_URL` (ou alias `VITE_AIRCROWD_WMS_URL`)
  * - défaut : `/aircrowd-wms/wms` (rewrite Next → preprod-geoservices)
@@ -100,6 +105,35 @@ export const formatAirCrowdWmsHour = (hour: number): string => {
   return `${String(clamped).padStart(2, '0')}h`;
 };
 
+/**
+ * Titre de légende lisible (sans nom technique GeoServer).
+ * Ex. : "Cartographie AirCrowd\nPM₂.₅ · 18/09/2026 · 14h–15h"
+ */
+export const getAirCrowdWmsLegendTitle = (
+  pollutant: string,
+  dateIso: string,
+  startHour: number,
+  heading = 'Cartographie AirCrowd'
+): string => {
+  const pollutantLabel =
+    pollutant === 'pm25'
+      ? 'PM₂.₅'
+      : pollutant === 'pm10'
+        ? 'PM₁₀'
+        : pollutant.toUpperCase();
+
+  const clamped = Math.max(0, Math.min(23, Math.floor(startHour)));
+  const startLabel = formatAirCrowdWmsHour(clamped);
+  const endLabel =
+    clamped === 23 ? '00h' : formatAirCrowdWmsHour(clamped + 1);
+
+  const [, month, day] = dateIso.split('-');
+  const dateLabel =
+    month && day ? `${day}/${month}` : dateIso;
+
+  return `${heading}\n${pollutantLabel} · ${dateLabel} · ${startLabel}–${endLabel}`;
+};
+
 /** YYYY-MM-DD local (pas UTC) pour coller aux noms de layers. */
 export const formatLocalIsoDate = (date: Date): string => {
   const y = date.getFullYear();
@@ -121,25 +155,63 @@ export const clampAirCrowdWmsDate = (
 };
 
 /**
+ * TimeBar (début local) → suffixe / date du layer GeoServer (fin locale).
+ * Créneau 14h–15h → { dateIso, endHour: 15 } ; 23h–00h → lendemain 00h.
+ */
+export const mapInstantStartToAirCrowdEnd = (
+  dateIso: string,
+  startHour: number
+): { dateIso: string; endHour: number } => {
+  const h = Math.max(0, Math.min(23, Math.floor(startHour)));
+  if (h >= 23) {
+    const [y, m, d] = dateIso.split('-').map(Number);
+    const next = new Date(y, m - 1, d + 1);
+    return { dateIso: formatLocalIsoDate(next), endHour: 0 };
+  }
+  return { dateIso, endHour: h + 1 };
+};
+
+/**
+ * Suffixe layer GeoServer (fin locale) → heure de début TimeBar.
+ * `15h` le 18 → début 14 ; `00h` le 19 → début 23 le 18.
+ */
+export const airCrowdEndToMapInstantStart = (
+  dateIso: string,
+  endHour: number
+): { dateIso: string; startHour: number } => {
+  const h = Math.max(0, Math.min(23, Math.floor(endHour)));
+  if (h === 0) {
+    const [y, m, d] = dateIso.split('-').map(Number);
+    const prev = new Date(y, m - 1, d - 1);
+    return { dateIso: formatLocalIsoDate(prev), startHour: 23 };
+  }
+  return { dateIso, startHour: h - 1 };
+};
+
+/**
  * Construit le nom qualifié du layer WMS.
  * @param pollutant code UI (pm10, pm25, …)
- * @param dateIso YYYY-MM-DD
- * @param hour 0–23
+ * @param dateIso YYYY-MM-DD du créneau TimeBar (début)
+ * @param startHour heure de début locale 0–23 (TimeBar / MapInstant)
  */
 export const buildAirCrowdLayerName = (
   pollutant: string,
   dateIso: string,
-  hour: number
+  startHour: number
 ): string => {
   const segment = POLLUTANT_LAYER_SEGMENT[pollutant];
   if (!segment) {
     throw new Error(`Polluant non supporté pour AirCrowd WMS: ${pollutant}`);
   }
-  const [year, month, day] = dateIso.split('-');
+  const { dateIso: layerDate, endHour } = mapInstantStartToAirCrowdEnd(
+    dateIso,
+    startHour
+  );
+  const [year, month, day] = layerDate.split('-');
   if (!year || !month || !day) {
     throw new Error(`Date invalide pour AirCrowd WMS: ${dateIso}`);
   }
-  const hourSuffix = formatAirCrowdWmsHour(hour);
+  const hourSuffix = formatAirCrowdWmsHour(endHour);
   return `${WMS_CONFIG.workspace}:aircrowd_${segment}_${year}_${month}_${day}_${hourSuffix}`;
 };
 
@@ -225,15 +297,21 @@ export const isAirCrowdLayerAvailable = (
   availability: AirCrowdWmsAvailability | null,
   pollutant: string,
   dateIso: string,
-  hour: number
+  startHour: number
 ): boolean => {
   if (!availability) {
     // Sans catalogue : on ne bloque pas (fallback PoC).
     return true;
   }
-  return getAvailableHoursForAirCrowd(availability, pollutant, dateIso).includes(
-    hour
+  const { dateIso: layerDate, endHour } = mapInstantStartToAirCrowdEnd(
+    dateIso,
+    startHour
   );
+  return getAvailableHoursForAirCrowd(
+    availability,
+    pollutant,
+    layerDate
+  ).includes(endHour);
 };
 
 export const pickNearestAvailableAirCrowdHour = (

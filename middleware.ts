@@ -85,6 +85,25 @@ const maybeRedirectDomainDefaultLocale = (
  */
 export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Chunks App Router sous dossiers dynamiques ([locale], …) : certains proxies
+  // laissent %5B/%5D (parfois en minuscules). Next sert les fichiers avec [].
+  if (pathname.startsWith('/_next/static/')) {
+    const needsBracketFix =
+      pathname.includes('%5B') ||
+      pathname.includes('%5D') ||
+      pathname.includes('%5b') ||
+      pathname.includes('%5d');
+    if (needsBracketFix) {
+      const url = request.nextUrl.clone();
+      url.pathname = pathname
+        .replaceAll(/%5B/gi, '[')
+        .replaceAll(/%5D/gi, ']');
+      return NextResponse.rewrite(url);
+    }
+    return NextResponse.next();
+  }
+
   const hostname = resolveRequestHostname(request);
 
   if (isSharedAuthEnabled() && !isSharedAuthPublicPath(pathname)) {
@@ -136,6 +155,7 @@ export const config = {
     '/robots.txt',
     '/sitemap.xml',
     '/api/:path*',
+    '/_next/static/:path*',
     '/((?!_next|_vercel|.*\\..*).*)',
   ],
 };
