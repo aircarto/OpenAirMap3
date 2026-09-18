@@ -12,8 +12,7 @@ import type { AtmoMicroLikeService } from "../../types";
 import { ModelingService } from "../../services/ModelingService";
 import { DataServiceFactory } from "../../services/DataServiceFactory";
 import { getSensorModelImage } from "../../constants/sensorModels";
-import HistoricalChart from "../charts/HistoricalChart";
-import ChartLoadingOverlay from "../charts/ChartLoadingOverlay";
+import PanelChartBlock from "../charts/PanelChartBlock";
 import HistoricalTimeRangeSelector from "../controls/HistoricalTimeRangeSelector";
 import { getMaxHistoryDays, getCustomRangeISO, type TimeRange } from "../../utils/historicalTimeRange";
 import { ToggleGroup, ToggleGroupItem } from "../ui/button-group";
@@ -1231,32 +1230,30 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
               )}
 
               {/* Graphique */}
-              <div className="relative h-80 sm:h-72 md:h-80 lg:h-96 mb-2 sm:mb-3 md:mb-4">
-                <HistoricalChart
-                  data={state.historicalData}
-                  selectedPollutants={
-                    state.chartControls.selectedPollutants
-                  }
-                  source="atmoMicro"
-                  onHasCorrectedDataChange={handleHasCorrectedDataChange}
-                  showRawData={showRawData}
-                  stationInfo={selectedStation}
-                  timeStep={dataTimeStep}
-                  sensorTimeStep={sensorTimeStep}
-                  modelingData={
-                    showModeling && Object.keys(modelingData).length > 0
-                      ? modelingData
-                      : undefined
-                  }
-                  hideThresholdBackgroundForColorblind={
-                    hideThresholdBackgroundForColorblind
-                  }
-                  playbackMarkerDate={historicalMode?.currentDate}
-                  xAxisMin={historicalMode?.startDate}
-                  xAxisMax={historicalMode?.endDate}
-                />
-                {state.loading && <ChartLoadingOverlay />}
-              </div>
+              <PanelChartBlock
+                className="mb-2 sm:mb-3 md:mb-4"
+                heightClassName="h-80 sm:h-72 md:h-80 lg:h-96"
+                loading={state.loading}
+                data={state.historicalData}
+                selectedPollutants={state.chartControls.selectedPollutants}
+                source="atmoMicro"
+                onHasCorrectedDataChange={handleHasCorrectedDataChange}
+                showRawData={showRawData}
+                stationInfo={selectedStation}
+                timeStep={dataTimeStep}
+                sensorTimeStep={sensorTimeStep}
+                modelingData={
+                  showModeling && Object.keys(modelingData).length > 0
+                    ? modelingData
+                    : undefined
+                }
+                hideThresholdBackgroundForColorblind={
+                  hideThresholdBackgroundForColorblind
+                }
+                playbackMarkerDate={historicalMode?.currentDate}
+                xAxisMin={historicalMode?.startDate}
+                xAxisMax={historicalMode?.endDate}
+              />
 
               {/* Contrôles du graphique - en bas du graphique */}
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4">

@@ -15,52 +15,18 @@ interface AnalyticsConfig {
   siteId: string;
 }
 
-import { readEnv } from '../lib/env';
-
-const parseBooleanFlag = (value: string | undefined, defaultValue = false): boolean => {
-  if (value === undefined || value === null) {
-    return defaultValue;
-  }
-
-  const normalized = value.trim().toLowerCase();
-  if (["false", "0", "off", "no", "disabled"].includes(normalized)) {
-    return false;
-  }
-  if (["true", "1", "on", "yes", "enabled"].includes(normalized)) {
-    return true;
-  }
-  return defaultValue;
-};
+import { env, parseBooleanEnv } from '../lib/env';
 
 const getAnalyticsConfig = (): AnalyticsConfig => {
-  const rawBaseUrl =
-    (
-      readEnv('NEXT_PUBLIC_MATOMO_URL') ?? readEnv('VITE_MATOMO_URL')
-    )?.trim() ?? '';
+  const rawBaseUrl = env.matomoUrl?.trim() ?? '';
 
   return {
-    enabled: parseBooleanFlag(
-      readEnv('NEXT_PUBLIC_MATOMO_ENABLED') ?? readEnv('VITE_MATOMO_ENABLED'),
-      false
-    ),
-    debug: parseBooleanFlag(
-      readEnv('NEXT_PUBLIC_MATOMO_DEBUG') ?? readEnv('VITE_MATOMO_DEBUG'),
-      false
-    ),
-    sendToMatomo: parseBooleanFlag(
-      readEnv('NEXT_PUBLIC_MATOMO_SEND') ?? readEnv('VITE_MATOMO_SEND'),
-      false
-    ),
-    stripQueryParams: parseBooleanFlag(
-      readEnv('NEXT_PUBLIC_MATOMO_STRIP_QUERY_PARAMS') ??
-        readEnv('VITE_MATOMO_STRIP_QUERY_PARAMS'),
-      true
-    ),
+    enabled: parseBooleanEnv(env.matomoEnabled, false),
+    debug: parseBooleanEnv(env.matomoDebug, false),
+    sendToMatomo: parseBooleanEnv(env.matomoSend, false),
+    stripQueryParams: parseBooleanEnv(env.matomoStripQueryParams, true),
     baseUrl: rawBaseUrl.endsWith('/') ? rawBaseUrl : `${rawBaseUrl}/`,
-    siteId:
-      (
-        readEnv('NEXT_PUBLIC_MATOMO_SITE_ID') ?? readEnv('VITE_MATOMO_SITE_ID')
-      )?.trim() ?? '',
+    siteId: env.matomoSiteId?.trim() ?? '',
   };
 };
 

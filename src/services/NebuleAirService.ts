@@ -26,8 +26,8 @@ export class NebuleAirService extends BaseDataService {
   }
 
   private getApiBaseUrl(): string {
-    // En développement local, l'API peut être proxifiée côté reverse-proxy.
-    // En production, URL absolue (pas de proxy Next pour AirCarto).
+    // En développement, rewrite Next `/aircarto` → api.aircarto.fr.
+    // En production, URL absolue.
     if (isDevRuntime()) {
       return "/aircarto";
     }

@@ -190,7 +190,7 @@ const MarkerWithTooltip: React.FC<MarkerWithTooltipProps> = ({
     loadMetadata();
   }, [device, externalSensorMetadata]);
 
-  // Niveau de zoom minimum pour le tooltip (null = pas de restriction, contrôlé par VITE_TOOLTIP_MIN_ZOOM)
+  // Niveau de zoom minimum pour le tooltip (null = pas de restriction, NEXT_PUBLIC_TOOLTIP_MIN_ZOOM)
   // Ne pas utiliser ?? minZoom : quand le flag est null (false/vide), on veut aucune restriction.
   const effectiveMinZoom = featureFlags.tooltipMinZoom;
 

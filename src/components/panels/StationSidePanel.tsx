@@ -12,8 +12,7 @@ import { pasDeTemps } from "../../constants/timeSteps";
 import { AtmoRefService } from "../../services/AtmoRefService";
 import { ModelingService } from "../../services/ModelingService";
 import { DataServiceFactory } from "../../services/DataServiceFactory";
-import HistoricalChart from "../charts/HistoricalChart";
-import ChartLoadingOverlay from "../charts/ChartLoadingOverlay";
+import PanelChartBlock from "../charts/PanelChartBlock";
 import HistoricalTimeRangeSelector from "../controls/HistoricalTimeRangeSelector";
 import { getMaxHistoryDays, getCustomRangeISO, type TimeRange } from "../../utils/historicalTimeRange";
 import ExpertMenu from "../controls/ExpertMenu";
@@ -1249,29 +1248,27 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
               )}
 
               {/* Graphique */}
-              <div className="relative h-64 sm:h-80 md:h-96 lg:h-[28rem] mb-2 sm:mb-3 md:mb-4">
-                <HistoricalChart
-                  data={state.historicalData}
-                  selectedPollutants={
-                    state.chartControls.selectedPollutants
-                  }
-                  source="atmoRef"
-                  stationInfo={selectedStation}
-                  timeStep={dataTimeStep}
-                  modelingData={
-                    showModeling && Object.keys(modelingData).length > 0
-                      ? modelingData
-                      : undefined
-                  }
-                  hideThresholdBackgroundForColorblind={
-                    hideThresholdBackgroundForColorblind
-                  }
-                  playbackMarkerDate={historicalMode?.currentDate}
-                  xAxisMin={historicalMode?.startDate}
-                  xAxisMax={historicalMode?.endDate}
-                />
-                {state.loading && <ChartLoadingOverlay />}
-              </div>
+              <PanelChartBlock
+                className="mb-2 sm:mb-3 md:mb-4"
+                heightClassName="h-64 sm:h-80 md:h-96 lg:h-[28rem]"
+                loading={state.loading}
+                data={state.historicalData}
+                selectedPollutants={state.chartControls.selectedPollutants}
+                source="atmoRef"
+                stationInfo={selectedStation}
+                timeStep={dataTimeStep}
+                modelingData={
+                  showModeling && Object.keys(modelingData).length > 0
+                    ? modelingData
+                    : undefined
+                }
+                hideThresholdBackgroundForColorblind={
+                  hideThresholdBackgroundForColorblind
+                }
+                playbackMarkerDate={historicalMode?.currentDate}
+                xAxisMin={historicalMode?.startDate}
+                xAxisMax={historicalMode?.endDate}
+              />
 
               {/* Contrôles du graphique - en bas du graphique */}
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4">

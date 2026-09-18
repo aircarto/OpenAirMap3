@@ -12,6 +12,7 @@ import {
 } from "../../constants/qualityColors";
 import { AmChartsLineChart, AmChartsLineChartData, AmChartsLineSeries } from "../charts";
 import ExportMenu from "../charts/ExportMenu";
+import ChartThresholdLegend from "../charts/ChartThresholdLegend";
 import { getCommonThresholds } from "../charts/utils/historicalChartConfig";
 import { addThresholdZones } from "../charts/utils/amChartsHelpers";
 import {
@@ -769,34 +770,41 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
             </div>
           </div>
         ) : (
-          <div className="h-64 relative" ref={chartContainerRef}>
-            <ExportMenu
+          <>
+            <div className="h-64 relative" ref={chartContainerRef}>
+              <ExportMenu
+                hasData={amChartsData.length > 0}
+                onExportPNG={handleExportPNG}
+                onExportCSV={handleExportCSV}
+              />
+              <AmChartsLineChart
+                key={`mobileair-chart-${localSelectedPollutants.join("-")}`}
+                data={amChartsData}
+                series={series}
+                yAxes={[
+                  {
+                    id: "left",
+                    label: t("panels.mobileAirDetail.concentration"),
+                    unit: localSelectedPollutants.length > 0 && pollutants[localSelectedPollutants[0]]?.unit
+                      ? pollutants[localSelectedPollutants[0]].unit
+                      : "µg/m³",
+                  },
+                ]}
+                height="100%"
+                width="100%"
+                showGrid={true}
+                showLegend={true}
+                onChartReady={handleChartReady}
+                xAxisLabelFormatter={xAxisLabelFormatter}
+                tooltipFormatter={tooltipFormatter}
+              />
+            </div>
+            <ChartThresholdLegend
+              selectedPollutants={localSelectedPollutants}
+              source="mobileair"
               hasData={amChartsData.length > 0}
-              onExportPNG={handleExportPNG}
-              onExportCSV={handleExportCSV}
             />
-            <AmChartsLineChart
-              key={`mobileair-chart-${localSelectedPollutants.join("-")}`}
-              data={amChartsData}
-              series={series}
-              yAxes={[
-                {
-                  id: "left",
-                  label: t("panels.mobileAirDetail.concentration"),
-                  unit: localSelectedPollutants.length > 0 && pollutants[localSelectedPollutants[0]]?.unit 
-                    ? pollutants[localSelectedPollutants[0]].unit 
-                    : "µg/m³",
-                },
-              ]}
-              height="100%"
-              width="100%"
-              showGrid={true}
-              showLegend={true}
-              onChartReady={handleChartReady}
-              xAxisLabelFormatter={xAxisLabelFormatter}
-              tooltipFormatter={tooltipFormatter}
-            />
-          </div>
+          </>
         )}
       </div>
 

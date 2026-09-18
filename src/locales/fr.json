@@ -52,7 +52,8 @@
     "concentrationLabel": "Conc. ({{unit}})",
     "modelingSuffix": "(modélisation)",
     "rawSuffix": "(brute)",
-    "correctedSuffix": "(corrigé)"
+    "correctedSuffix": "(corrigé)",
+    "thresholdLegendAria": "Seuils de qualité ({{unit}})"
   },
   "controls": {
     "pollutant": "Polluant",

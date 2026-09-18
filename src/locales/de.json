@@ -52,7 +52,8 @@
     "concentrationLabel": "Konz. ({{unit}})",
     "modelingSuffix": "(Modellierung)",
     "rawSuffix": "(Rohdaten)",
-    "correctedSuffix": "(korrigiert)"
+    "correctedSuffix": "(korrigiert)",
+    "thresholdLegendAria": "Qualitätsschwellen ({{unit}})"
   },
   "controls": {
     "pollutant": "Schadstoff",

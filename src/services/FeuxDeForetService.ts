@@ -31,8 +31,7 @@ interface WildfireApiResponse {
 export class FeuxDeForetService {
   private static getBaseUrl(): string {
     // L'API feuxdeforet.fr bloque les requêtes navigateur (cookies + CORS).
-    // On passe par un proxy same-origin (/feuxdeforet) configuré dans Vite (dev)
-    // et dans le reverse proxy de production.
+    // Proxy same-origin `/feuxdeforet` : rewrite Next (voir next.config.ts).
     return "/feuxdeforet/fdf/cartographie/geojson?scope=web";
   }
 

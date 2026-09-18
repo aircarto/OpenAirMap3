@@ -3,7 +3,7 @@ import {
   DomainConfig,
   getConfigForDomain,
 } from '../config/domainConfig';
-import { readEnv } from '../lib/env';
+import { env } from '../lib/env';
 
 /**
  * Résout la config d'instance à partir du hostname HTTP,
@@ -11,7 +11,7 @@ import { readEnv } from '../lib/env';
  * (ex. "atmosud" ou "default") pour le local / la preprod.
  */
 export const resolveDomainConfig = (hostname: string): DomainConfig => {
-  const forced = readEnv('NEXT_PUBLIC_FORCE_DOMAIN_CONFIG')?.trim();
+  const forced = env.forceDomainConfig?.trim();
   if (forced) {
     if (DOMAIN_CONFIG[forced]) {
       return DOMAIN_CONFIG[forced];

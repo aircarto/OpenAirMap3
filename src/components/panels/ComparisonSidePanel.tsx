@@ -9,8 +9,7 @@ import {
 import { pollutants } from "../../constants/pollutants";
 import { MAX_COMPARISON_STATIONS } from "../../constants/comparison";
 import { AtmoRefService } from "../../services/AtmoRefService";
-import HistoricalChart from "../charts/HistoricalChart";
-import ChartLoadingOverlay from "../charts/ChartLoadingOverlay";
+import PanelChartBlock from "../charts/PanelChartBlock";
 import HistoricalTimeRangeSelector from "../controls/HistoricalTimeRangeSelector";
 import { getMaxHistoryDays, type TimeRange } from "../../utils/historicalTimeRange";
 import { sources } from "../../constants/sources";
@@ -695,8 +694,9 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
                   </p>
                 </div>
               )}
-              <div className="relative h-80 sm:h-96 md:h-[28rem]">
-              <HistoricalChart
+              <PanelChartBlock
+                heightClassName="h-80 sm:h-96 md:h-[28rem]"
+                loading={comparisonState.loading}
                 data={
                   comparisonState.comparisonData[
                     comparisonState.selectedPollutant
@@ -709,8 +709,6 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
                 onHasCorrectedDataChange={handleHasCorrectedDataChange}
                 showRawData={showRawData}
               />
-              {comparisonState.loading && <ChartLoadingOverlay />}
-              </div>
             </div>
 
             {/* Contrôles du graphique */}

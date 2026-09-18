@@ -24,6 +24,7 @@ export class MobileAirService extends BaseDataService {
   }
 
   private getApiBaseUrl(): string {
+    // Dev : rewrite Next `/aircarto` → api.aircarto.fr (voir next.config.ts).
     if (isDevRuntime()) {
       return "/aircarto/capteurs";
     }

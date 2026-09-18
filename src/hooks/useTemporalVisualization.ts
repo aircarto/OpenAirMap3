@@ -198,7 +198,7 @@ export const useTemporalVisualization = ({
 
       const results = await Promise.all(promises);
 
-      // DEBUG (VITE_HISTORICAL_MODE_LOGS): recherche de collision d'ID entre sources.
+      // DEBUG (NEXT_PUBLIC_HISTORICAL_MODE_LOGS): recherche de collision d'ID entre sources.
       // getMarkerKey (mapIconUtils.ts) utilise device.id brut, sans préfixe de source.
       // AtmoRef utilise id_station ; AtmoMicro utilise id_site.toString() sur l'ancienne
       // API, et l'identifiant capteur (hexadécimal) sur microspot. Ce sont deux
@@ -372,7 +372,7 @@ export const useTemporalVisualization = ({
             new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
         );
 
-      // DEBUG (VITE_HISTORICAL_MODE_LOGS): composition par source de chaque point temporel fusionné.
+      // DEBUG (NEXT_PUBLIC_HISTORICAL_MODE_LOGS): composition par source de chaque point temporel fusionné.
       // Si une ligne n'a jamais à la fois atmoRef>0 ET atmoMicro>0 alors que les deux
       // sources sont sélectionnées, ça indique que la fusion à 5 min ne marie pas
       // les deux séries et qu'elles alternent dans la timeline au lieu de fusionner.

@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { pollutants } from "../../constants/pollutants";
-import { QUALITY_COLORS } from "../../constants/qualityColors";
+import { getQualityThresholdLegendItems } from "../../utils/qualityLegend";
 
 interface LegendProps {
   selectedPollutant: string;
@@ -18,7 +18,6 @@ const Legend: React.FC<LegendProps> = ({
 }) => {
   const { t, i18n } = useTranslation();
   const isRtl = i18n.language === "ar";
-  const colors = QUALITY_COLORS;
 
   const pollutant = pollutants[selectedPollutant];
   const thresholds = pollutant?.thresholds;
@@ -27,49 +26,9 @@ const Legend: React.FC<LegendProps> = ({
     return null;
   }
 
-  const legendItems = [
-    {
-      label: t("quality.noData"),
-      shortLabel: "N/A",
-      color: colors.noData,
-    },
-    {
-      label: t("quality.bon"),
-      shortLabel: t("quality.bon"),
-      color: colors.bon,
-      range: `${thresholds.bon.min}-${thresholds.bon.max}`,
-    },
-    {
-      label: t("quality.moyen"),
-      shortLabel: t("quality.moyen"),
-      color: colors.moyen,
-      range: `${thresholds.moyen.min}-${thresholds.moyen.max}`,
-    },
-    {
-      label: t("quality.degrade"),
-      shortLabel: t("quality.degrade"),
-      color: colors.degrade,
-      range: `${thresholds.degrade.min}-${thresholds.degrade.max}`,
-    },
-    {
-      label: t("quality.mauvais"),
-      shortLabel: t("quality.mauvais"),
-      color: colors.mauvais,
-      range: `${thresholds.mauvais.min}-${thresholds.mauvais.max}`,
-    },
-    {
-      label: t("quality.tresMauvais"),
-      shortLabel: t("quality.tresMauvaisShort"),
-      color: colors.tresMauvais,
-      range: `${thresholds.tresMauvais.min}-${thresholds.tresMauvais.max}`,
-    },
-    {
-      label: t("quality.extrMauvais"),
-      shortLabel: t("quality.extrMauvaisShort"),
-      color: colors.extrMauvais,
-      range: `${thresholds.extrMauvais.min}+`,
-    },
-  ];
+  const legendItems = getQualityThresholdLegendItems(thresholds, t, {
+    includeNoData: true,
+  });
 
   // Position fixe de la légende pour éviter les décalages
   const getLegendPosition = () => {
@@ -96,9 +55,9 @@ const Legend: React.FC<LegendProps> = ({
       <div className="glass-3 rounded-[var(--r-md)] px-2 py-1.5 lg:px-3 lg:py-2">
         {/* Grille des seuils - verticale sur mobile et petits écrans, horizontale sur grands écrans */}
         <div className="flex flex-col gap-1 lg:flex-row lg:flex-wrap lg:gap-2 lg:justify-center">
-          {legendItems.map((item, index) => (
+          {legendItems.map((item) => (
             <div
-              key={index}
+              key={item.key}
               className="flex items-center space-x-1 lg:space-x-1.5 group relative"
               title={
                 item.range
