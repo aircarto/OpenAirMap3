@@ -15,7 +15,7 @@ OpenAirMap permet de :
 ## Stack technique
 
 - React 19 + TypeScript
-- Vite 7
+- Next.js 15 (App Router, standalone)
 - Leaflet / React-Leaflet
 - Tailwind CSS
 
@@ -25,7 +25,7 @@ OpenAirMap permet de :
 - **npm** : version recente (npm 10+ recommande)
 - **Git**
 
-La contrainte Node est alignee avec Vite 7 (`^20.19.0 || >=22.12.0`).
+La contrainte Node est alignee avec Next.js 15 (`>= 20.19.0` recommande, ou `>= 22.12.0`).
 
 ## Installation locale
 
@@ -36,7 +36,7 @@ npm ci
 npm run dev
 ```
 
-Application disponible sur `http://localhost:5173`.
+Application disponible sur `http://localhost:3000`.
 
 ## Configuration
 
@@ -51,14 +51,14 @@ cp .env.inc .env
 
 
 Notes :
-- toutes les variables front doivent etre prefixees par `VITE_` ;
-- `VITE_MAINTENANCE_MODE=true` affiche une page de maintenance et empeche le chargement de la carte ;
-- `VITE_TOOLTIP_MIN_ZOOM` accepte un nombre (ex: `11`) ou `false` pour desactiver le seuil de zoom.
+- toutes les variables front doivent etre prefixees par `NEXT_PUBLIC_` ;
+- `NEXT_PUBLIC_MAINTENANCE_MODE=true` affiche une page de maintenance et empeche le chargement de la carte ;
+- `NEXT_PUBLIC_TOOLTIP_MIN_ZOOM` accepte un nombre (ex: `11`) ou `false` pour desactiver le seuil de zoom.
 - pour ajouter ou rendre optionnelle une fonctionnalite via feature flag, voir [docs/FEATURE_FLAGS.md](docs/FEATURE_FLAGS.md).
 
 ### Mode maintenance
 
-Le mode maintenance se pilote avec le feature flag `VITE_MAINTENANCE_MODE`.
+Le mode maintenance se pilote avec le feature flag `NEXT_PUBLIC_MAINTENANCE_MODE`.
 Quand il est actif, OpenAirMap affiche uniquement une page de maintenance et ne monte pas la carte Leaflet ni les appels de donnees.
 
 Valeurs acceptees :
@@ -68,11 +68,11 @@ Valeurs acceptees :
 Exemple :
 
 ```bash
-VITE_MAINTENANCE_MODE=true
+NEXT_PUBLIC_MAINTENANCE_MODE=true
 ```
 
 En developpement, redemarrez `npm run dev` apres modification du `.env`.
-En production, relancez un build puis redeployez les fichiers `dist/`.
+En production, relancez un build puis redeployez le serveur standalone.
 
 #### Personnaliser le message
 
@@ -124,10 +124,10 @@ Fichiers concernes :
 Ce fichier est servi comme un fichier statique. En production, le mainteneur peut donc modifier `maintenance.json` dans les fichiers deployes sans modifier le code React. Les champs absents ou vides utilisent automatiquement le message par defaut.
 
 Procedure type :
-1. Activer `VITE_MAINTENANCE_MODE=true` dans l'environnement de build ;
+1. Activer `NEXT_PUBLIC_MAINTENANCE_MODE=true` dans l'environnement de build ;
 2. Builder et deployer l'application ;
 3. Modifier si besoin le fichier deploye `maintenance.json` pour adapter le message ;
-4. Desactiver la maintenance en repassant `VITE_MAINTENANCE_MODE=false`, puis rebuilder et redeployer.
+4. Desactiver la maintenance en repassant `NEXT_PUBLIC_MAINTENANCE_MODE=false`, puis rebuilder et redeployer.
 
 Note cache : `maintenance.json` est charge avec une strategie `no-store` cote navigateur pour faciliter les changements de message. Si un proxy, CDN ou Nginx applique un cache supplementaire, purgez ce cache ou configurez une duree courte pour ce fichier.
 
@@ -212,7 +212,7 @@ Cas d'usage recommande :
 Le menu des fonds de carte propose aussi des couches d'incendie (independantes des sources de mesures) :
 
 - **EFFIS** : points de chaleur 7 jours (WFS GWIS + repli WMS) + zones brulees saison (pas de cle API)
-- **feuxdeforet.fr** : marqueurs de signalements (flag `VITE_ENABLE_WILDFIRE_LAYER`)
+- **feuxdeforet.fr** : marqueurs de signalements (flag `NEXT_PUBLIC_ENABLE_WILDFIRE_LAYER`)
 
 Documentation technique : [`docs/features/DOCUMENTATION_COUCHES_FEUX.md`](docs/features/DOCUMENTATION_COUCHES_FEUX.md).
 
@@ -220,9 +220,9 @@ Documentation technique : [`docs/features/DOCUMENTATION_COUCHES_FEUX.md`](docs/f
 ## Commandes utiles
 
 ```bash
-npm run dev      # serveur de dev
-npm run build    # build production
-npm run preview  # verification locale du build
+npm run dev      # serveur de dev (http://localhost:3000)
+npm run build    # build production standalone
+npm run start    # serveur Node standalone
 npm run lint     # verification ESLint
 ```
 

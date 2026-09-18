@@ -28,7 +28,7 @@ Ou via systemd : `sudo systemctl restart openairmap`.
 
 | Variable | Rôle |
 |----------|------|
-| `NEXT_PUBLIC_*` | Flags client, injectés **au build** (comme l’ancien `VITE_*`) |
+| `NEXT_PUBLIC_*` | Flags client, injectés **au build** |
 | `NOINDEX=true` | Preprod : `noindex` + robots Disallow + sitemap vide |
 | `NEXT_PUBLIC_FORCE_DOMAIN_CONFIG` | Forcer `atmosud` / `default` sans DNS |
 

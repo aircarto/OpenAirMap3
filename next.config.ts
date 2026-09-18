@@ -15,6 +15,21 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   transpilePackages: ['geoportal-extensions-leaflet'],
+  // Proxies same-origin vers les APIs qui bloquent le CORS navigateur.
+  async rewrites() {
+    return {
+      beforeFiles: [
+        {
+          source: '/aircarto/:path*',
+          destination: 'https://api.aircarto.fr/:path*',
+        },
+        {
+          source: '/feuxdeforet/:path*',
+          destination: 'https://feuxdeforet.fr/:path*',
+        },
+      ],
+    };
+  },
 };
 
 export default withNextIntl(nextConfig);
