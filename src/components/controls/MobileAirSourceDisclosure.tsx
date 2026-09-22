@@ -8,6 +8,7 @@ import {
   type TimeRange,
 } from "../../utils/historicalTimeRange";
 import {
+  compareSensorsByActivity,
   getSensorAgeSeconds,
   RECENT_ACTIVITY_MAX_SECONDS,
 } from "../../utils/sensorLastSeen";
@@ -57,7 +58,14 @@ export const MobileAirSourceDisclosure: React.FC<
   });
 
   const { sensors, loading, error } = useMobileAirSensorCatalog();
-  const availableSensors = sensors.filter((sensor) => sensor.displayMap);
+  // Un seul instant de référence par rendu, pour que la liste ne se contredise
+  // pas d'une ligne à l'autre (statut, âge et ordre de tri).
+  const now = Date.now();
+  // Affichés sur la carte et triés : connectés → activité récente → inactifs.
+  // `filter` copie déjà le tableau ; `sort` ne mute donc pas le catalogue.
+  const availableSensors = sensors
+    .filter((sensor) => sensor.displayMap)
+    .sort((a, b) => compareSensorsByActivity(a, b, now));
   // Filtre local : le catalogue est déjà en mémoire, pas de debounce réseau.
   const normalizedQuery = sensorQuery.trim().toLowerCase();
   const filteredSensors =
@@ -70,9 +78,6 @@ export const MobileAirSourceDisclosure: React.FC<
     (sensor) => sensor.sensorId === selectedSensor
   );
   const label = getSourceDisplayName("communautaire.mobileair", t);
-  // Un seul instant de référence par rendu, pour que la liste ne se contredise
-  // pas d'une ligne à l'autre.
-  const now = Date.now();
 
   const listRef = useRef<HTMLDivElement>(null);
 

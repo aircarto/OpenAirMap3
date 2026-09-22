@@ -13,27 +13,30 @@
 
 ## Vue d'ensemble de l'architecture
 
-ReactOpenAirMap est une application React/TypeScript qui affiche des données de qualité de l'air sur une carte interactive. L'application utilise une architecture modulaire avec une séparation claire des responsabilités.
+OpenAirMap est une application React/TypeScript sur **Next.js 15** (App Router, standalone) qui affiche des données de qualité de l'air sur une carte interactive. L'application utilise une architecture modulaire avec une séparation claire des responsabilités.
 
 ### Composants principaux
 
 ```
-App.tsx (Composant racine)
-├── Hooks personnalisés
-│ ├── useAirQualityData (Gestion des données en temps réel)
-│ ├── useTemporalVisualization (Mode historique)
-│ └── useDomainConfig (Configuration par domaine)
-├── Services de données (Pattern Factory)
-│ ├── DataServiceFactory
-│ ├── AtmoRefService, AtmoMicroService
-│ ├── NebuleAirService, PurpleAirService
-│ └── SensorCommunityService, SignalAirService
-└── Composants UI
-├── AirQualityMap (Carte Leaflet)
-├── Controls (Menus déroulants)
-└── Panels (Affichage des détails)
+app/[locale]/…          (Next.js App Router — layouts, SEO, pages)
+└── MapAppEntry.tsx     (gate maintenance / chargement carte, ssr: false)
+    └── App.tsx         (shell carte — état UI des filtres)
+        ├── Hooks personnalisés
+        │   ├── useAirQualityData (données temps réel)
+        │   ├── useTemporalVisualization (mode historique)
+        │   └── useDomainConfig (configuration par domaine)
+        ├── Services de données (pattern Factory)
+        │   ├── DataServiceFactory
+        │   ├── AtmoRefService, AtmoMicroService / AtmoMicroV2Service
+        │   ├── NebuleAirService, PurpleAirService
+        │   └── SensorCommunityService, SignalAirService, MobileAirService
+        └── Composants UI
+            ├── AirQualityMap (carte Leaflet)
+            ├── Controls (menus)
+            └── Panels (détails)
 ```
 
+`App.tsx` n’est **pas** le root Next : le routage et les métadonnées passent par `app/`, puis `MapAppEntry` monte la carte côté client.
 ### Principe de fonctionnement
 
 1. **Configuration** : L'application se configure automatiquement selon le domaine d'accès
@@ -266,7 +269,7 @@ selectedSensors?: string[];
 
 ```mermaid
 graph TD
-A[App.tsx se monte] --> B[useDomainConfig détecte le domaine]
+A[MapAppEntry puis App.tsx] --> B[useDomainConfig détecte le domaine]
 B --> C[Configuration chargée]
 C --> D[États par défaut initialisés]
 D --> E[useAirQualityData se déclenche]

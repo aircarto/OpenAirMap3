@@ -4,7 +4,11 @@ export const RECENT_ACTIVITY_MAX_SECONDS = 24 * 60 * 60;
 export interface SensorActivity {
   timeUTC?: string | null;
   last_seen_sec?: number | null;
+  connected?: boolean;
 }
+
+/** Rang d'activité pour le tri des listes de sélection (plus petit = plus prioritaire). */
+export type SensorActivityRank = 0 | 1 | 2;
 
 /**
  * Lit un horodatage de capteur en millisecondes epoch.
@@ -47,4 +51,40 @@ export const getSensorAgeSeconds = (
   return typeof fallback === "number" && Number.isFinite(fallback)
     ? Math.max(0, Math.round(fallback))
     : null;
+};
+
+/**
+ * Classe un capteur pour le tri : connecté, activité récente (< 24 h), puis le reste.
+ */
+export const getSensorActivityRank = (
+  sensor: SensorActivity,
+  now: number = Date.now()
+): SensorActivityRank => {
+  if (sensor.connected) return 0;
+
+  const ageSeconds = getSensorAgeSeconds(sensor, now);
+  if (ageSeconds !== null && ageSeconds < RECENT_ACTIVITY_MAX_SECONDS) return 1;
+
+  return 2;
+};
+
+/**
+ * Compare deux capteurs pour un tri « activité d'abord » :
+ * connectés, puis activité récente, puis inactifs ; à rang égal, le plus
+ * récent en premier (âge inconnu en dernier).
+ */
+export const compareSensorsByActivity = (
+  a: SensorActivity,
+  b: SensorActivity,
+  now: number = Date.now()
+): number => {
+  const rankDiff = getSensorActivityRank(a, now) - getSensorActivityRank(b, now);
+  if (rankDiff !== 0) return rankDiff;
+
+  const ageA = getSensorAgeSeconds(a, now);
+  const ageB = getSensorAgeSeconds(b, now);
+  if (ageA === null && ageB === null) return 0;
+  if (ageA === null) return 1;
+  if (ageB === null) return -1;
+  return ageA - ageB;
 };

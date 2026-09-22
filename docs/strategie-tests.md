@@ -6,7 +6,7 @@
 
 ## 1. Contexte & objectifs
 
-OpenAirMap est une application React (Vite + TypeScript) qui agrège et visualise en temps réel des données de qualité de l’air, des signalements citoyens (SignalAir), des parcours MobileAir et des couches de modélisation (ICAiR'H, modélisation par polluant et vent). L’interface repose sur Leaflet et de multiples panneaux latéraux interactifs.
+OpenAirMap est une application React/TypeScript (Next.js 15 App Router) qui agrège et visualise en temps réel des données de qualité de l’air, des signalements citoyens (SignalAir), des parcours MobileAir et des couches de modélisation (ICAiR'H, modélisation par polluant et vent). L’interface repose sur Leaflet et de multiples panneaux latéraux interactifs.
 
 Objectifs de la stratégie :
 - Sécuriser les flux de données multi-sources et leur affichage cartographique.
@@ -62,7 +62,7 @@ CI (GitHub Actions/GitLab CI) : jobs parallèles `lint`, `unit`, `e2e`. Utilise
 - Utiliser **msw** pour simuler les sources (Atmo, SensorCommunity, SignalAir, MobileAir, Feux de Forêt).
 - Générer des fixtures réalistes (réponses valides, erreurs HTTP, payloads incomplets).
 - Pour Playwright :
-- Démarrer app avec `vite preview`.
+- Démarrer l’app avec `npm run build` puis `npm run start` (serveur Next standalone).
 - Intercepter requêtes externes via `page.route` et rejouer fixtures.
 - Prévoir datasets selon scénarios (ex. `signalAir_reports.json`, `mobileAir_routes.json`).
 - Tests historiques : mocker horloge (`vi.setSystemTime`) pour contrôler périodes.

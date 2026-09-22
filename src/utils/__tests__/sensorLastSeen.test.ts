@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  compareSensorsByActivity,
+  getSensorActivityRank,
   getSensorAgeSeconds,
   parseSensorTimestamp,
 } from "../sensorLastSeen";
@@ -62,5 +64,62 @@ describe("getSensorAgeSeconds", () => {
 
   it("rend null quand rien n'est exploitable", () => {
     expect(getSensorAgeSeconds({}, now)).toBeNull();
+  });
+});
+
+describe("getSensorActivityRank", () => {
+  const now = Date.UTC(2025, 8, 2, 16, 15, 0);
+
+  it("place les capteurs connectés en tête", () => {
+    expect(getSensorActivityRank({ connected: true }, now)).toBe(0);
+  });
+
+  it("classe l'activité récente sous les connectés", () => {
+    expect(
+      getSensorActivityRank(
+        { connected: false, timeUTC: "2025-09-02T10:15:00Z" },
+        now
+      )
+    ).toBe(1);
+  });
+
+  it("classe le reste comme inactif", () => {
+    expect(
+      getSensorActivityRank(
+        { connected: false, timeUTC: "2025-08-01T16:15:00Z" },
+        now
+      )
+    ).toBe(2);
+  });
+});
+
+describe("compareSensorsByActivity", () => {
+  const now = Date.UTC(2025, 8, 2, 16, 15, 0);
+
+  it("ordonne connectés, activité récente, puis inactifs", () => {
+    const connected = { connected: true, timeUTC: "2025-09-02T16:00:00Z" };
+    const recent = { connected: false, timeUTC: "2025-09-02T10:15:00Z" };
+    const inactive = { connected: false, timeUTC: "2025-08-01T16:15:00Z" };
+
+    expect(
+      [inactive, recent, connected].sort((a, b) =>
+        compareSensorsByActivity(a, b, now)
+      )
+    ).toEqual([connected, recent, inactive]);
+  });
+
+  it("à rang égal, place le plus récent en premier", () => {
+    const olderConnected = {
+      connected: true,
+      timeUTC: "2025-09-02T14:15:00Z",
+    };
+    const newerConnected = {
+      connected: true,
+      timeUTC: "2025-09-02T16:00:00Z",
+    };
+
+    expect(compareSensorsByActivity(olderConnected, newerConnected, now)).toBeGreaterThan(
+      0
+    );
   });
 });

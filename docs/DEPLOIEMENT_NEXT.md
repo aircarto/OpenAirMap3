@@ -1,28 +1,55 @@
 # Déploiement Next.js (standalone) derrière Nginx
 
-OpenAirMap n’est plus une SPA Vite (`dist/`). Le build produit un serveur Node
-(`output: 'standalone'`) que Nginx reverse-proxifie.
+OpenAirMap se déploie comme une application **Next.js standalone** (process Node)
+que Nginx reverse-proxifie. Le build n’écrit plus une SPA statique dans `dist/`.
 
 ## Prérequis
 
-- Node.js 20+ recommandé (18 minimum selon moteurs locaux)
-- Unité systemd : voir [`deploy/openairmap.service`](../deploy/openairmap.service)
-- Nginx : voir [`deploy/nginx-openairmap.conf.example`](../deploy/nginx-openairmap.conf.example)
+- Node.js `>= 20.19.0` (voir `engines.node` dans `package.json` ; Node 22 LTS recommandé)
+- Unité systemd : [`deploy/openairmap.service`](../deploy/openairmap.service)
+- Nginx : [`deploy/nginx-openairmap.conf.example`](../deploy/nginx-openairmap.conf.example)
 - Fichier `.env` sur la VM (gabarit [`.env.inc`](../.env.inc))
 
-## Build et démarrage manuel
+## Build et démarrage
+
+Les variables `NEXT_PUBLIC_*` (et `NOINDEX` pour la preprod) doivent être
+correctes **avant** le build : elles sont injectées à la compilation, pas au
+runtime navigateur.
 
 ```bash
 npm ci
 npm run build
-# Assets pour standalone :
-cp -r public .next/standalone/public
-mkdir -p .next/standalone/.next
-cp -r .next/static .next/standalone/.next/static
-NODE_ENV=production PORT=3000 node .next/standalone/server.js
 ```
 
-Ou via systemd : `sudo systemctl restart openairmap`.
+`npm run build` enchaîne :
+
+1. `next build` (`output: 'standalone'`) ;
+2. [`scripts/prepare-standalone.mjs`](../scripts/prepare-standalone.mjs), qui copie
+   `public/` et `.next/static` dans `.next/standalone`.
+
+**Aucun `cp` manuel n’est nécessaire** après le build.
+
+Démarrage :
+
+```bash
+# Manuel (équivalent au script npm)
+HOSTNAME=0.0.0.0 PORT=3000 node .next/standalone/server.js
+
+# Ou
+npm run start
+
+# Ou via systemd
+sudo systemctl restart openairmap
+```
+
+Points importants de l’unité systemd ([`deploy/openairmap.service`](../deploy/openairmap.service)) :
+
+- `WorkingDirectory` = racine du déploiement (là où se trouve `.next/standalone`) ;
+- `EnvironmentFile` pointe vers le `.env` de la VM ;
+- `HOSTNAME=0.0.0.0` (évite un bug standalone Next + next-intl `as-needed` avec `127.0.0.1`) ;
+- `ExecStart=… node .next/standalone/server.js`.
+
+Après tout changement de `NEXT_PUBLIC_*` : rebuild puis `systemctl restart openairmap`.
 
 ## Variables importantes
 
@@ -31,6 +58,8 @@ Ou via systemd : `sudo systemctl restart openairmap`.
 | `NEXT_PUBLIC_*` | Flags client, injectés **au build** |
 | `NOINDEX=true` | Preprod : `noindex` + robots Disallow + sitemap vide |
 | `NEXT_PUBLIC_FORCE_DOMAIN_CONFIG` | Forcer `atmosud` / `default` sans DNS |
+
+Liste complète des flags : [FEATURE_FLAGS.md](FEATURE_FLAGS.md).
 
 Le Host virtuel (multi-domaine) est propagé aux pages via le cookie `oam-host`
 posé par le middleware. `robots.txt` / `sitemap.xml` lisent directement le
@@ -45,9 +74,9 @@ curl -s -H 'Host: openairmap.fr' https://localhost/a-propos | head
 curl -s -H 'Host: preprod-openairmap.atmosud.org' https://localhost/robots.txt
 ```
 
-## Cutover depuis Vite
+## Migration depuis l’ancien déploiement Vite (historique)
 
-1. Installer Node + unité systemd + adapter Nginx (`proxy_pass` au lieu de `root dist/`).
-2. Déployer via le workflow Gitea (build + `systemctl restart`).
-3. Vérifier la carte, `/a-propos`, `/mentions-legales`, `/en`, metadata `curl`.
-4. Retirer l’ancien `try_files` SPA une fois validé.
+La migration vers Next.js standalone est la voie normale. Ne plus déployer
+`dist/` ni un `try_files` SPA : Nginx doit `proxy_pass` vers le process Node
+(port 3000). Vérifier carte, `/a-propos`, `/mentions-legales`, préfixe de locale
+(`/en`, …) et metadata via les `curl` ci-dessus.
