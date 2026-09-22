@@ -17,7 +17,7 @@ import { useHistoricalChartData } from "./hooks/useHistoricalChartData";
 import { useAmChartsChart } from "./hooks/useAmChartsChart";
 import { getChartMargins } from "./utils/historicalChartConfig";
 
-export interface HistoricalChartProps {
+interface HistoricalChartProps {
   data: Record<string, HistoricalDataPoint[]>;
   selectedPollutants: string[];
   source: string; // Source de données (atmoRef, atmoMicro, comparison, etc.)
@@ -242,14 +242,18 @@ const HistoricalChart: React.FC<HistoricalChartProps> = ({
 
   return (
     <div className="flex flex-col h-full relative">
-      {/* Bouton burger et menu d'export en haut à droite */}
-      <ExportMenu
-        hasData={chartData.length > 0}
-        onExportPNG={handleExportPNG}
-        onExportCSV={handleExportCSV}
-      />
+      <div
+        className="absolute top-2 right-2 z-10"
+        data-export-ignore="true"
+      >
+        <ExportMenu
+          hasData={chartData.length > 0}
+          onExportPNG={handleExportPNG}
+          onExportCSV={handleExportCSV}
+        />
+      </div>
 
-      {/* Graphique (zoom/pan axe Y via scrollbar Y native amCharts) */}
+      {/* Graphique (zoom Y via rail fin à gauche de l'axe) */}
       <div className="flex-1 min-h-0">
         <div
           ref={containerRef}
