@@ -152,6 +152,8 @@ interface AirQualityMapProps {
   onMobileAirSensorVisibilityChange?: (sensorId: string, visible: boolean) => void;
   /** Date actuellement affichée en mode historique (pour la période dans DeviceStatistics) */
   historicalCurrentDate?: string;
+  /** Plage formatée du mode « mesure en mobilité » (chip période) */
+  mobilityPeriodRange?: string;
   historicalStartDate?: string;
   historicalEndDate?: string;
   historicalTimeStep?: string;
@@ -231,6 +233,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
   onMobileAirSensorPeriodChange,
   onMobileAirSensorVisibilityChange,
   historicalCurrentDate,
+  mobilityPeriodRange,
   historicalStartDate,
   historicalEndDate,
   historicalTimeStep,
@@ -1152,6 +1155,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           selectedSources={selectedSources}
           selectedTimeStep={selectedTimeStep}
           historicalCurrentDate={historicalCurrentDate}
+          mobilityPeriodRange={mobilityPeriodRange}
           statistics={statistics}
           sourceStatistics={sourceStatistics}
         />

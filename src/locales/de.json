@@ -88,6 +88,8 @@
     "historicalModeUnavailableTooltip": "Historischer Modus nur für 15-Min-, Stunden- und Tageszeitschritt",
     "autoRefresh": "Auto-Aktualisierung",
     "period": "Zeitraum:",
+    "mobilityModePeriod": "Messung in Bewegung",
+    "mobilityModeHint": "Modus Messung in Bewegung: andere Messungen sind ausgeblendet, um Zeitachsen nicht zu vermischen. Klicken Sie eine Quelle, um den Modus zu verlassen.",
     "advancedOptions": "Erweiterte Optionen",
     "advancedOptionsShort": "Optionen",
     "modelingAzur": "AZUR-Modellierung",
@@ -740,7 +742,9 @@
     "firstSourceAvailableOnlyIn": "{{name}} ist nur verfügbar in: {{steps}}.",
     "disableIncompatibleSources": "Inkompatible Quellen deaktivieren",
     "sourceUnavailableShort": "Quelle nicht verfügbar",
-    "changeTimeStep": "Zeitschritt ändern"
+    "changeTimeStep": "Zeitschritt ändern",
+    "mobilityModeTitle": "Modus Messung in Bewegung",
+    "mobilityModeDescription": "Andere Messungen sind ausgeblendet, um Zeitachsen nicht zu vermischen."
   },
   "tour": {
     "common": {

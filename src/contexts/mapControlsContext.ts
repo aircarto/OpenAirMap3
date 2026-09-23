@@ -45,6 +45,13 @@ export interface MapControlsFilters {
   onPollutantChange: (pollutant: string) => void;
   onSourceChange: (sources: string[]) => void;
   onTimeStepChange: (timeStep: string) => void;
+  /**
+   * Mode carte exclusif tant que des parcours MobileAir sont chargés :
+   * autres sources grisées, clic = sortie du mode + activation de la source.
+   */
+  isMobileAirMobilityMode?: boolean;
+  /** Une source, ou plusieurs (ex. groupe communautaire). */
+  onExitMobilityModeViaSource?: (sourceCode: string | string[]) => void;
 }
 
 export interface MapControlsModeling {
@@ -149,6 +156,12 @@ export interface MapControlsCommunitySources {
   isSignalAirLoading: boolean;
   signalAirHasLoaded: boolean;
   signalAirReportsCount: number;
+
+  /**
+   * Mode « mesure en mobilité » : SignalAir grisé, clic = sortie + réactivation.
+   */
+  isMobileAirMobilityMode: boolean;
+  onExitMobilityModeViaSignalAir: () => void;
 }
 
 export interface MapControlsUi {

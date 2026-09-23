@@ -19,6 +19,8 @@ interface DeviceStatisticsProps {
   selectedSources?: string[];
   selectedTimeStep?: string;
   historicalCurrentDate?: string;
+  /** Plage formatée du mode « mesure en mobilité » (remplace la période TimeBar) */
+  mobilityPeriodRange?: string;
   statistics?: DeviceStatisticsType; // OPTIMISATION : Statistiques pré-calculées
   sourceStatistics?: SourceStatistics[]; // OPTIMISATION : Stats par source pré-calculées
   showDetails?: boolean;
@@ -36,15 +38,21 @@ const DeviceStatistics: React.FC<DeviceStatisticsProps> = ({
   selectedSources = [],
   selectedTimeStep = "",
   historicalCurrentDate,
+  mobilityPeriodRange,
   statistics, // OPTIMISATION : Utiliser les statistiques pré-calculées
   sourceStatistics, // OPTIMISATION : Stats par source pré-calculées
   showDetails = false,
 }) => {
   const { t, i18n } = useTranslation();
   const [isPanelOpen, setIsPanelOpen] = useState(false);
-  const displayedPeriod =
-    selectedTimeStep &&
-    getDisplayedPeriod(selectedTimeStep, historicalCurrentDate, i18n.language);
+  const isMobilityPeriod = Boolean(mobilityPeriodRange);
+  const displayedPeriod = isMobilityPeriod
+    ? mobilityPeriodRange
+    : selectedTimeStep &&
+      getDisplayedPeriod(selectedTimeStep, historicalCurrentDate, i18n.language);
+  const periodLabel = isMobilityPeriod
+    ? t("controls.mobilityModePeriod")
+    : t("controls.period");
 
   // OPTIMISATION : Utiliser les statistiques pré-calculées si disponibles
   // Sinon, calculer localement (fallback pour compatibilité)
@@ -159,13 +167,13 @@ const DeviceStatistics: React.FC<DeviceStatisticsProps> = ({
             <div
               className="flex w-full items-center justify-center rounded-r-md rounded-l border border-slate-200 border-l-4 border-l-blue-400 bg-white py-1.5 pl-2.5 pr-3 shadow-sm"
               role="status"
-              aria-label={`${t("controls.period")}: ${displayedPeriod}`}
+              aria-label={`${periodLabel}: ${displayedPeriod}`}
             >
               <span
                 className="text-sm text-slate-600"
                 dir={isRtl ? "rtl" : "ltr"}
               >
-                <span className="font-medium text-slate-700">{t("controls.period")}</span>
+                <span className="font-medium text-slate-700">{periodLabel}</span>
                 <span className="text-slate-400 mx-1" aria-hidden>·</span>
                 <span className="font-medium text-blue-600">{displayedPeriod}</span>
               </span>

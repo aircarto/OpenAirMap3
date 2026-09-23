@@ -34,6 +34,8 @@ const makeCommunity = (
   isSignalAirLoading: false,
   signalAirHasLoaded: true,
   signalAirReportsCount: 12,
+  isMobileAirMobilityMode: false,
+  onExitMobilityModeViaSignalAir: vi.fn(),
   ...overrides,
 });
 
@@ -156,5 +158,23 @@ describe("SignalAirSourceDisclosure", () => {
     );
 
     expect(community.onSignalAirTypesChange).toHaveBeenCalledWith([]);
+  });
+
+  it("en mode mobilité, un clic sur activer sort du mode", () => {
+    const { community, header } = renderDisclosure({
+      isMobileAirMobilityMode: true,
+      isSignalAirEnabled: false,
+      signalAirHasLoaded: false,
+    });
+
+    // Ouvrir le dépliant si besoin
+    if (header.getAttribute("aria-expanded") !== "true") {
+      fireEvent.click(header);
+    }
+
+    expect(screen.getByTestId("sources-signalair-mobility-hint")).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("sources-signalair-enable"));
+    expect(community.onExitMobilityModeViaSignalAir).toHaveBeenCalledTimes(1);
+    expect(community.onSignalAirEnabledChange).not.toHaveBeenCalled();
   });
 });

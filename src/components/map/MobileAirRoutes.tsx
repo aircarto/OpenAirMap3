@@ -29,7 +29,9 @@ const isSameRoute = (
   a: MobileAirRoute | null | undefined,
   b: MobileAirRoute
 ): boolean =>
-  !!a && a.sensorId === b.sensorId && a.sessionId === b.sessionId;
+  !!a &&
+  String(a.sensorId) === String(b.sensorId) &&
+  String(a.sessionId) === String(b.sessionId);
 
 const MobileAirRoutes: React.FC<MobileAirRoutesProps> = memo(
   ({

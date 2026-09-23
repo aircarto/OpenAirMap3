@@ -10,6 +10,8 @@ export interface SourceGroupCheckboxProps {
   /** Résumé `n/total`, sans quoi « tout coché » sur un périmètre partiel se lit comme un bug */
   hint?: string;
   testId?: string;
+  /** Apparence grisée (mode mobilité) tout en restant cliquable */
+  muted?: boolean;
 }
 
 /**
@@ -42,6 +44,7 @@ export const SourceGroupCheckbox: React.FC<SourceGroupCheckboxProps> = ({
   onToggle,
   hint,
   testId,
+  muted = false,
 }) => {
   const id = useId();
   const selectedCount = scope.filter((code) =>
@@ -56,16 +59,23 @@ export const SourceGroupCheckbox: React.FC<SourceGroupCheckboxProps> = ({
         : "indeterminate";
 
   return (
-    <div className="flex w-full items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-black/[0.04]">
+    <div
+      className={`flex w-full items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-black/[0.04]${
+        muted ? " opacity-50" : ""
+      }`}
+    >
       <Checkbox
         id={id}
         data-testid={testId}
         checked={checked}
         onCheckedChange={onToggle}
+        aria-disabled={muted || undefined}
       />
       <label
         htmlFor={id}
-        className="flex flex-1 cursor-pointer items-center gap-2 text-sm text-gray-700"
+        className={`flex flex-1 cursor-pointer items-center gap-2 text-sm ${
+          muted ? "text-gray-500" : "text-gray-700"
+        }`}
       >
         <span className="flex-1 font-medium">{label}</span>
         {hint && (

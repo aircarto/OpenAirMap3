@@ -65,6 +65,8 @@ interface MapOverlaysProps {
   selectedSources: string[];
   selectedTimeStep: string;
   historicalCurrentDate?: string;
+  /** Plage formatée du mode « mesure en mobilité » */
+  mobilityPeriodRange?: string;
   statistics: any;
   sourceStatistics: any;
 }
@@ -93,6 +95,7 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
   selectedSources,
   selectedTimeStep,
   historicalCurrentDate,
+  mobilityPeriodRange,
   statistics,
   sourceStatistics,
 }) => {
@@ -300,6 +303,7 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
               selectedSources={selectedSources}
               selectedTimeStep={selectedTimeStep}
               historicalCurrentDate={historicalCurrentDate}
+              mobilityPeriodRange={mobilityPeriodRange}
               statistics={statistics}
               sourceStatistics={sourceStatistics}
               showDetails={false}
@@ -315,6 +319,7 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
             selectedSources={selectedSources}
             selectedTimeStep={selectedTimeStep}
             historicalCurrentDate={historicalCurrentDate}
+            mobilityPeriodRange={mobilityPeriodRange}
             statistics={statistics}
             sourceStatistics={sourceStatistics}
             showDetails={false}

@@ -88,6 +88,8 @@
     "historicalModeUnavailableTooltip": "Modalità storica disponibile solo per passi 15 min, ora e giorno",
     "autoRefresh": "Aggiornamento automatico",
     "period": "Periodo:",
+    "mobilityModePeriod": "Misura in mobilità",
+    "mobilityModeHint": "Modalità misura in mobilità: le altre misure sono nascoste per non mescolare le temporalità. Clicca una fonte per uscire.",
     "advancedOptions": "Opzioni avanzate",
     "advancedOptionsShort": "Opzioni",
     "modelingAzur": "Modellizzazione AZUR",
@@ -740,7 +742,9 @@
     "firstSourceAvailableOnlyIn": "{{name}} è disponibile solo in: {{steps}}.",
     "disableIncompatibleSources": "Disattiva fonti incompatibili",
     "sourceUnavailableShort": "Fonte non disponibile",
-    "changeTimeStep": "Cambia passo temporale"
+    "changeTimeStep": "Cambia passo temporale",
+    "mobilityModeTitle": "Modalità misura in mobilità",
+    "mobilityModeDescription": "Le altre misure sono nascoste per non mescolare le temporalità."
   },
   "tour": {
     "common": {

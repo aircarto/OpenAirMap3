@@ -30,6 +30,10 @@ import { useInstantSnapshot } from "./hooks/useInstantSnapshot";
 import { useDomainConfig } from "./hooks/useDomainConfig";
 import { MAX_MOBILE_AIR_SENSORS } from "./constants/mobileAir";
 import {
+  formatMobileAirPeriodRange,
+  getMobileAirMapPeriod,
+} from "./utils/mobileAirPeriodUtils";
+import {
   isPollutantSupportedForTimeStep,
   getSupportedPollutantsForTimeStep,
 } from "./constants/pollutants";
@@ -200,6 +204,16 @@ const AppContent: React.FC = () => {
   const [isSignalAirVisible, setIsSignalAirVisible] = useState(true);
   const [isMobileAirVisible, setIsMobileAirVisible] = useState(true);
 
+  /** Snapshot des sources classiques au passage en mode mobilité (restauration à la sortie). */
+  type MobilitySnapshot = {
+    selectedSources: string[];
+    isSignalAirEnabled: boolean;
+    signalAirSelectedTypes: string[];
+    isSignalAirVisible: boolean;
+  };
+  const mobilitySnapshotRef = useRef<MobilitySnapshot | null>(null);
+  const mobilityToastShownRef = useRef(false);
+
   useEffect(() => {
     initAnalytics();
     trackPageView(domainConfig.title);
@@ -228,6 +242,99 @@ const AppContent: React.FC = () => {
       return sources;
     });
   }, []);
+
+  const clearMobileAirState = useCallback(() => {
+    setSelectedMobileAirSensors([]);
+    setMobileAirPeriod(defaultMobileAirPeriod);
+    setMobileAirSensorPeriods({});
+    setMobileAirSensorVisibility({});
+    setMobileAirPartialRefetchSensors([]);
+    setIsMobileAirEnabled(false);
+    setIsMobileAirVisible(false);
+  }, [defaultMobileAirPeriod]);
+
+  const captureMobilitySnapshotIfNeeded = useCallback(() => {
+    if (mobilitySnapshotRef.current) return;
+    mobilitySnapshotRef.current = {
+      selectedSources: [...selectedSources],
+      isSignalAirEnabled,
+      signalAirSelectedTypes: [...signalAirSelectedTypes],
+      isSignalAirVisible,
+    };
+    if (!mobilityToastShownRef.current) {
+      mobilityToastShownRef.current = true;
+      addToast({
+        title: t("toast.mobilityModeTitle"),
+        description: t("toast.mobilityModeDescription"),
+        variant: "info",
+      });
+    }
+  }, [
+    selectedSources,
+    isSignalAirEnabled,
+    signalAirSelectedTypes,
+    isSignalAirVisible,
+    addToast,
+    t,
+  ]);
+
+  const restoreMobilitySnapshot = useCallback(() => {
+    const snapshot = mobilitySnapshotRef.current;
+    mobilitySnapshotRef.current = null;
+    mobilityToastShownRef.current = false;
+    if (!snapshot) return;
+    setSelectedSources(snapshot.selectedSources);
+    setIsSignalAirEnabled(snapshot.isSignalAirEnabled);
+    setSignalAirSelectedTypes(snapshot.signalAirSelectedTypes);
+    setIsSignalAirVisible(snapshot.isSignalAirVisible);
+  }, []);
+
+  /** Sortie du mode mobilité en réactivant une source classique grisée. */
+  const handleExitMobilityModeViaSource = useCallback(
+    (sourceCode: string | string[]) => {
+      const codes = Array.isArray(sourceCode) ? sourceCode : [sourceCode];
+      const snapshot = mobilitySnapshotRef.current;
+      clearMobileAirState();
+      mobilitySnapshotRef.current = null;
+      mobilityToastShownRef.current = false;
+      const base = snapshot?.selectedSources ?? selectedSources;
+      let next = [...base];
+      for (const code of codes) {
+        if (!next.includes(code)) next.push(code);
+      }
+      setSelectedSources(next);
+      if (snapshot) {
+        setIsSignalAirEnabled(snapshot.isSignalAirEnabled);
+        setSignalAirSelectedTypes(snapshot.signalAirSelectedTypes);
+        setIsSignalAirVisible(snapshot.isSignalAirVisible);
+      }
+      trackFeatureUsage("mobility_mode_exit_source", {
+        source: codes.join(","),
+      });
+    },
+    [clearMobileAirState, selectedSources],
+  );
+
+  const handleExitMobilityModeViaSignalAir = useCallback(() => {
+    const snapshot = mobilitySnapshotRef.current;
+    clearMobileAirState();
+    mobilitySnapshotRef.current = null;
+    mobilityToastShownRef.current = false;
+    if (snapshot) {
+      setSelectedSources(snapshot.selectedSources);
+      setSignalAirSelectedTypes(
+        snapshot.signalAirSelectedTypes.length > 0
+          ? snapshot.signalAirSelectedTypes
+          : [...SIGNAL_AIR_DEFAULT_TYPES],
+      );
+      setIsSignalAirVisible(true);
+    }
+    setIsSignalAirEnabled(true);
+    setSignalAirFetchToken((prev) => prev + 1);
+    trackFeatureUsage("mobility_mode_exit_signalair");
+  }, [clearMobileAirState, SIGNAL_AIR_DEFAULT_TYPES]);
+
+  const isMobileAirMobilityMode = selectedMobileAirSensors.length > 0;
 
   const handleTimeStepChange = useCallback((timeStep: string) => {
     setSelectedTimeStep(timeStep);
@@ -263,6 +370,8 @@ const AppContent: React.FC = () => {
     period: { startDate: string; endDate: string },
   ) => {
     const limited = sensorIds.slice(0, MAX_MOBILE_AIR_SENSORS);
+    if (limited.length === 0) return;
+    captureMobilitySnapshotIfNeeded();
     const visibility: Record<string, boolean> = {};
     const periods: Record<string, { startDate: string; endDate: string }> = {};
     for (const id of limited) {
@@ -283,19 +392,32 @@ const AppContent: React.FC = () => {
     });
   };
 
-  const handleMobileAirSensorRemove = useCallback((sensorId: string) => {
-    setSelectedMobileAirSensors((prev) => prev.filter((id) => id !== sensorId));
-    setMobileAirSensorPeriods((prev) => {
-      const next = { ...prev };
-      delete next[sensorId];
-      return next;
-    });
-    setMobileAirSensorVisibility((prev) => {
-      const next = { ...prev };
-      delete next[sensorId];
-      return next;
-    });
-  }, []);
+  const handleMobileAirSensorRemove = useCallback(
+    (sensorId: string) => {
+      setSelectedMobileAirSensors((prev) => {
+        const next = prev.filter((id) => id !== sensorId);
+        if (next.length === 0) {
+          restoreMobilitySnapshot();
+          setMobileAirPeriod(defaultMobileAirPeriod);
+          setMobileAirPartialRefetchSensors([]);
+          setIsMobileAirEnabled(false);
+          setIsMobileAirVisible(false);
+        }
+        return next;
+      });
+      setMobileAirSensorPeriods((prev) => {
+        const next = { ...prev };
+        delete next[sensorId];
+        return next;
+      });
+      setMobileAirSensorVisibility((prev) => {
+        const next = { ...prev };
+        delete next[sensorId];
+        return next;
+      });
+    },
+    [defaultMobileAirPeriod, restoreMobilitySnapshot],
+  );
 
   const handleMobileAirSensorPeriodChange = useCallback(
     (sensorId: string, period: { startDate: string; endDate: string }) => {
@@ -315,14 +437,9 @@ const AppContent: React.FC = () => {
 
   // Fonction pour désélectionner la source MobileAir
   const handleMobileAirSourceDeselected = useCallback(() => {
-    setSelectedMobileAirSensors([]);
-    setMobileAirPeriod(defaultMobileAirPeriod);
-    setMobileAirSensorPeriods({});
-    setMobileAirSensorVisibility({});
-    setMobileAirPartialRefetchSensors([]);
-    setIsMobileAirEnabled(false);
-    setIsMobileAirVisible(false);
-  }, [defaultMobileAirPeriod]);
+    clearMobileAirState();
+    restoreMobilitySnapshot();
+  }, [clearMobileAirState, restoreMobilitySnapshot]);
 
   const handleSignalAirSourceDeselected = useCallback(() => {
     resetSignalAirSettings();
@@ -448,13 +565,16 @@ const AppContent: React.FC = () => {
       selectedTypes: signalAirSelectedTypes,
       fetchToken: signalAirFetchToken,
       // En exploration, useInstantSnapshot charge SignalAir ; ici seulement le live.
-      isSourceSelected: isSignalAirEnabled && !isExploration,
+      // En mode mobilité : fetch suspendu (temporalité incompatible).
+      isSourceSelected:
+        isSignalAirEnabled && !isExploration && !isMobileAirMobilityMode,
     }),
     [
       signalAirSelectedTypes,
       signalAirFetchToken,
       isSignalAirEnabled,
       isExploration,
+      isMobileAirMobilityMode,
     ],
   );
 
@@ -814,7 +934,7 @@ const AppContent: React.FC = () => {
     isMobileAirLoading,
   } = useAirQualityData({
     selectedPollutant,
-    selectedSources,
+    selectedSources: isMobileAirMobilityMode ? [] : selectedSources,
     selectedTimeStep,
     signalAirPeriod,
     mobileAirPeriod,
@@ -823,7 +943,7 @@ const AppContent: React.FC = () => {
     mobileAirPartialRefetchSensors,
     mobileAirPartialRefetchToken,
     signalAirOptions,
-    autoRefreshEnabled: autoRefreshEnabled && !isExploration,
+    autoRefreshEnabled: autoRefreshEnabled && !isExploration && !isMobileAirMobilityMode,
   });
 
   const {
@@ -832,12 +952,12 @@ const AppContent: React.FC = () => {
     loading: snapshotLoading,
     error: snapshotError,
   } = useInstantSnapshot({
-    enabled: snapshotWarmEnabled,
+    enabled: snapshotWarmEnabled && !isMobileAirMobilityMode,
     instant: effectiveInstant,
     timeStep: selectedTimeStep,
     pollutant: selectedPollutant,
-    selectedSources,
-    signalAirEnabled: isSignalAirEnabled,
+    selectedSources: isMobileAirMobilityMode ? [] : selectedSources,
+    signalAirEnabled: isSignalAirEnabled && !isMobileAirMobilityMode,
     signalAirSelectedTypes,
     navigableRange: customRange,
     playbackActive: timeBarPlaying,
@@ -900,8 +1020,13 @@ const AppContent: React.FC = () => {
       ? snapshotDevices
       : normalDevices;
 
+  const devicesForMap = useMemo(() => {
+    if (!isMobileAirMobilityMode) return devices;
+    return devices.filter((device) => device.source === "mobileair");
+  }, [devices, isMobileAirMobilityMode]);
+
   const reportsForMap = useMemo(() => {
-    if (hideMeasurementsForForecast) return [];
+    if (hideMeasurementsForForecast || isMobileAirMobilityMode) return [];
     const base = snapshotEnabled ? snapshotReports : reports;
     const selectedSet = new Set(signalAirSelectedTypes);
     const typeFiltered =
@@ -931,6 +1056,7 @@ const AppContent: React.FC = () => {
     return typeFiltered;
   }, [
     hideMeasurementsForForecast,
+    isMobileAirMobilityMode,
     snapshotEnabled,
     snapshotReports,
     reports,
@@ -939,6 +1065,22 @@ const AppContent: React.FC = () => {
     isSignalAirEnabled,
     effectiveInstant,
     selectedTimeStep,
+  ]);
+
+  const mobilityPeriodRange = useMemo(() => {
+    if (!isMobileAirMobilityMode) return undefined;
+    const envelope = getMobileAirMapPeriod(
+      mobileAirPeriod,
+      mobileAirSensorPeriods,
+      selectedMobileAirSensors,
+    );
+    return formatMobileAirPeriodRange(envelope, i18n.language);
+  }, [
+    isMobileAirMobilityMode,
+    mobileAirPeriod,
+    mobileAirSensorPeriods,
+    selectedMobileAirSensors,
+    i18n.language,
   ]);
 
   const isSignalAirLoading =
@@ -1154,6 +1296,8 @@ const AppContent: React.FC = () => {
       onPollutantChange: handlePollutantChange,
       onSourceChange: handleSourceChange,
       onTimeStepChange: handleTimeStepChange,
+      isMobileAirMobilityMode,
+      onExitMobilityModeViaSource: handleExitMobilityModeViaSource,
     }),
     [
       selectedPollutant,
@@ -1162,6 +1306,8 @@ const AppContent: React.FC = () => {
       handlePollutantChange,
       handleSourceChange,
       handleTimeStepChange,
+      isMobileAirMobilityMode,
+      handleExitMobilityModeViaSource,
     ],
   );
 
@@ -1211,7 +1357,7 @@ const AppContent: React.FC = () => {
 
   const timeBarValue = useMemo<MapControlsTimeBar>(
     () => ({
-      visible: timeBarVisible,
+      visible: timeBarVisible && !isMobileAirMobilityMode,
       mode: mapInstantMode,
       slots: timeBarWindow.slots,
       index: timeBarIndex,
@@ -1249,6 +1395,7 @@ const AppContent: React.FC = () => {
     }),
     [
       timeBarVisible,
+      isMobileAirMobilityMode,
       mapInstantMode,
       timeBarWindow.slots,
       timeBarWindow.liveIndex,
@@ -1295,6 +1442,8 @@ const AppContent: React.FC = () => {
       isSignalAirLoading,
       signalAirHasLoaded: hasSignalAirLoaded,
       signalAirReportsCount,
+      isMobileAirMobilityMode,
+      onExitMobilityModeViaSignalAir: handleExitMobilityModeViaSignalAir,
     }),
     [
       isSignalAirEnabled,
@@ -1321,6 +1470,8 @@ const AppContent: React.FC = () => {
       isSignalAirLoading,
       hasSignalAirLoaded,
       signalAirReportsCount,
+      isMobileAirMobilityMode,
+      handleExitMobilityModeViaSignalAir,
     ],
   );
 
@@ -1438,7 +1589,7 @@ const AppContent: React.FC = () => {
             applicatif par contexte au lieu d'un troisième chemin de props. */}
         <MapControlsProvider value={mapControlsValue}>
           <AirQualityMap
-            devices={devices}
+            devices={devicesForMap}
             reports={reportsForMap}
             center={mapCenter}
             zoom={mapZoom}
@@ -1447,6 +1598,7 @@ const AppContent: React.FC = () => {
             selectedPollutant={selectedPollutant}
             selectedSources={selectedSources}
             selectedTimeStep={selectedTimeStep}
+            mobilityPeriodRange={mobilityPeriodRange}
             currentModelingLayer={currentModelingLayer}
             modelingHourIndex={modelingHourIndex}
             loading={mapLoading}

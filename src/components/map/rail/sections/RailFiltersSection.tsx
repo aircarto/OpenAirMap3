@@ -97,6 +97,8 @@ export const RailFiltersSection: React.FC<RailFiltersSectionProps> = ({
         loading={refresh.loading}
         isHistoricalModeActive={ui.controlsLocked}
         controlsLocked={ui.controlsLocked}
+        isMobileAirMobilityMode={filters.isMobileAirMobilityMode}
+        onExitMobilityModeViaSource={filters.onExitMobilityModeViaSource}
         {...flyout}
         menuClassName={railFlyoutClass("wide")}
         mobileAirSlot={({ close }) => (

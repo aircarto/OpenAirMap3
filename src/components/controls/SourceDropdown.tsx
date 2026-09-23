@@ -57,6 +57,12 @@ interface SourceDropdownProps extends CustomTriggerProps {
   mobileAirSlot?: (api: SourceSlotApi) => React.ReactNode;
   /** Dépliant SignalAir, qui forme à lui seul le groupe « signalements » */
   signalAirSlot?: (api: SourceSlotApi) => React.ReactNode;
+  /**
+   * Mode « mesure en mobilité » : sources non-MobileAir grisées ;
+   * un clic sort du mode et réactive la source.
+   */
+  isMobileAirMobilityMode?: boolean;
+  onExitMobilityModeViaSource?: (sourceCode: string | string[]) => void;
 }
 
 export interface SourceSlotApi {
@@ -82,7 +88,9 @@ const SourceCheckboxRow: React.FC<{
   checked: boolean;
   onToggle: () => void;
   indented?: boolean;
-}> = ({ code, label, checked, onToggle, indented = false }) => {
+  /** Apparence grisée (mode mobilité) tout en restant cliquable */
+  muted?: boolean;
+}> = ({ code, label, checked, onToggle, indented = false, muted = false }) => {
   const id = useId();
 
   return (
@@ -90,7 +98,8 @@ const SourceCheckboxRow: React.FC<{
       className={cn(
         "flex w-full items-center gap-3 rounded-md px-2 py-2 transition-colors",
         indented && "ml-4",
-        checked ? "bg-[#e7eef8]" : "hover:bg-black/[0.04]"
+        muted && "opacity-50",
+        checked && !muted ? "bg-[#e7eef8]" : "hover:bg-black/[0.04]"
       )}
     >
       <Checkbox
@@ -98,12 +107,13 @@ const SourceCheckboxRow: React.FC<{
         data-testid={`source-${code}`}
         checked={checked}
         onCheckedChange={onToggle}
+        aria-disabled={muted || undefined}
       />
       <label
         htmlFor={id}
         className={cn(
           "flex-1 cursor-pointer text-sm",
-          checked ? "text-[#1f3c6d]" : "text-gray-700"
+          muted ? "text-gray-500" : checked ? "text-[#1f3c6d]" : "text-gray-700"
         )}
       >
         {label}
@@ -126,6 +136,8 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
   triggerId,
   mobileAirSlot,
   signalAirSlot,
+  isMobileAirMobilityMode = false,
+  onExitMobilityModeViaSource,
   renderTrigger,
   menuSide,
   menuAlign,
@@ -165,6 +177,11 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
     communautaireSelectedCount === COMMUNAUTAIRE_SOURCE_CODES.length;
 
   const handleSourceToggle = (sourceCode: string) => {
+    if (isMobileAirMobilityMode && onExitMobilityModeViaSource) {
+      onExitMobilityModeViaSource(sourceCode);
+      return;
+    }
+
     const isCurrentlySelected = selectedSources.includes(sourceCode);
 
     // Si on essaie d'activer une source
@@ -225,6 +242,11 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
    * pour ne pas mêler un changement de comportement à un portage de primitive.
    */
   const handleCommunautaireGroupToggle = () => {
+    if (isMobileAirMobilityMode && onExitMobilityModeViaSource) {
+      onExitMobilityModeViaSource([...COMMUNAUTAIRE_SOURCE_CODES]);
+      return;
+    }
+
     if (allCommunautaireSelected) {
       onSourceChange(
         selectedSources.filter(
@@ -296,6 +318,14 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
         )}
 
         <div className="min-h-0 flex-1 overflow-y-auto p-1.5">
+          {isMobileAirMobilityMode && (
+            <p
+              data-testid="sources-mobility-hint"
+              className="mb-2 rounded-md bg-blue-50 px-2 py-1.5 text-xs text-blue-800"
+            >
+              {t("controls.mobilityModeHint")}
+            </p>
+          )}
           {/* Sources principales */}
           <div role="group" aria-labelledby={mainLabelId}>
             <div
@@ -311,6 +341,7 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
                 label={getSourceDisplayName(code, t)}
                 checked={selectedSources.includes(code)}
                 onToggle={() => handleSourceToggle(code)}
+                muted={isMobileAirMobilityMode}
               />
             ))}
           </div>
@@ -328,6 +359,7 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
               scope={COMMUNAUTAIRE_SOURCE_CODES}
               selectedSources={selectedSources}
               onToggle={handleCommunautaireGroupToggle}
+              muted={isMobileAirMobilityMode}
               hint={t("controls.sourceGroupCount", {
                 selected: communautaireSelectedCount,
                 total: COMMUNAUTAIRE_SOURCE_CODES.length,
@@ -341,6 +373,7 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
                 checked={selectedSources.includes(code)}
                 onToggle={() => handleSourceToggle(code)}
                 indented
+                muted={isMobileAirMobilityMode}
               />
             ))}
 

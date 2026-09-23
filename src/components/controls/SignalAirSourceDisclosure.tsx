@@ -21,6 +21,7 @@ export interface SignalAirSourceDisclosureProps {
  * Activation immédiate (source classique) : cocher active la source et charge
  * les signalements sur la fenêtre TimeBar. Les types filtrents l’affichage ;
  * tout décocher désactive. Hors 15 min / heure / jour : grisé.
+ * En mode mobilité MobileAir : grisé, clic = sortie du mode + réactivation.
  */
 export const SignalAirSourceDisclosure: React.FC<
   SignalAirSourceDisclosureProps
@@ -38,14 +39,21 @@ export const SignalAirSourceDisclosure: React.FC<
     isSignalAirLoading,
     signalAirHasLoaded,
     signalAirReportsCount,
+    isMobileAirMobilityMode,
+    onExitMobilityModeViaSignalAir,
   } = community;
 
   const compatible = isMapInstantAllowedForTimeStep(selectedTimeStep);
   const label = getSourceDisplayName("signalair", t);
   const allTypesSelected =
     signalAirSelectedTypes.length === SIGNAL_TYPE_IDS.length;
+  const mutedByMobility = isMobileAirMobilityMode;
 
   const handleEnableToggle = () => {
+    if (mutedByMobility) {
+      onExitMobilityModeViaSignalAir();
+      return;
+    }
     if (!compatible) return;
     if (isSignalAirEnabled) {
       onSignalAirEnabledChange(false);
@@ -58,6 +66,10 @@ export const SignalAirSourceDisclosure: React.FC<
   };
 
   const handleTypeToggle = (id: string) => {
+    if (mutedByMobility) {
+      onExitMobilityModeViaSignalAir();
+      return;
+    }
     if (!compatible) return;
     const next = signalAirSelectedTypes.includes(id)
       ? signalAirSelectedTypes.filter((type) => type !== id)
@@ -68,10 +80,10 @@ export const SignalAirSourceDisclosure: React.FC<
   return (
     <LayerDisclosure
       label={label}
-      active={isSignalAirEnabled}
+      active={isSignalAirEnabled && !mutedByMobility}
       activeLabel={t("controls.specialSourcesActive")}
       hint={
-        signalAirHasLoaded && isSignalAirEnabled
+        signalAirHasLoaded && isSignalAirEnabled && !mutedByMobility
           ? String(signalAirReportsCount)
           : undefined
       }
@@ -81,29 +93,37 @@ export const SignalAirSourceDisclosure: React.FC<
         data-testid="sources-signalair-body"
         className={cn(
           "space-y-2 pl-4 pr-1 pt-1",
-          !compatible && "opacity-50"
+          (!compatible || mutedByMobility) && "opacity-50"
         )}
       >
-        {!compatible && (
+        {mutedByMobility ? (
+          <p
+            data-testid="sources-signalair-mobility-hint"
+            className="px-2 text-xs text-[color:var(--fg-muted)]"
+          >
+            {t("controls.mobilityModeHint")}
+          </p>
+        ) : null}
+        {!compatible && !mutedByMobility ? (
           <p
             data-testid="sources-signalair-incompatible"
             className="px-2 text-xs text-[color:var(--fg-muted)]"
           >
             {t("panels.signalAirSelection.incompatibleTimeStep")}
           </p>
-        )}
+        ) : null}
 
         <button
           type="button"
           data-testid="sources-signalair-enable"
           role="checkbox"
-          aria-checked={isSignalAirEnabled}
-          aria-disabled={!compatible}
-          disabled={!compatible}
+          aria-checked={isSignalAirEnabled && !mutedByMobility}
+          aria-disabled={!compatible && !mutedByMobility}
+          disabled={!compatible && !mutedByMobility}
           onClick={handleEnableToggle}
           className={cn(
             "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium transition-colors",
-            compatible
+            compatible || mutedByMobility
               ? "text-gray-700 hover:bg-black/[0.04]"
               : "cursor-not-allowed text-[color:var(--fg-muted)]"
           )}
@@ -112,12 +132,12 @@ export const SignalAirSourceDisclosure: React.FC<
             aria-hidden="true"
             className={cn(
               "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border",
-              isSignalAirEnabled
+              isSignalAirEnabled && !mutedByMobility
                 ? "border-blue-600 bg-blue-600 text-white"
                 : "border-gray-300 bg-white"
             )}
           >
-            {isSignalAirEnabled && (
+            {isSignalAirEnabled && !mutedByMobility ? (
               <svg className="h-2.5 w-2.5" viewBox="0 0 12 12" fill="none">
                 <path
                   d="M2.5 6.5L5 9l4.5-5.5"
@@ -127,12 +147,12 @@ export const SignalAirSourceDisclosure: React.FC<
                   strokeLinejoin="round"
                 />
               </svg>
-            )}
+            ) : null}
           </span>
           {t("panels.signalAirSelection.enable")}
         </button>
 
-        {hasSignalAirData && (
+        {hasSignalAirData && !mutedByMobility ? (
           <button
             type="button"
             data-testid="sources-signalair-visibility"
@@ -153,7 +173,7 @@ export const SignalAirSourceDisclosure: React.FC<
               ? t("panels.hideSignalAirAria")
               : t("panels.showSignalAirAria")}
           </button>
-        )}
+        ) : null}
 
         <div
           role="group"
@@ -168,12 +188,16 @@ export const SignalAirSourceDisclosure: React.FC<
             </span>
             <button
               type="button"
-              disabled={!compatible}
-              onClick={() =>
+              disabled={!compatible && !mutedByMobility}
+              onClick={() => {
+                if (mutedByMobility) {
+                  onExitMobilityModeViaSignalAir();
+                  return;
+                }
                 onSignalAirTypesChange(
                   allTypesSelected ? [] : [...SIGNAL_TYPE_IDS]
-                )
-              }
+                );
+              }}
               className="text-[10px] font-medium text-blue-600 hover:text-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {allTypesSelected
@@ -190,15 +214,15 @@ export const SignalAirSourceDisclosure: React.FC<
                   type="button"
                   data-testid={`sources-signalair-type-${id}`}
                   role="checkbox"
-                  aria-checked={checked}
-                  disabled={!compatible}
+                  aria-checked={checked && !mutedByMobility}
+                  disabled={!compatible && !mutedByMobility}
                   onClick={() => handleTypeToggle(id)}
                   className={cn(
                     "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] transition-colors",
-                    checked
+                    checked && !mutedByMobility
                       ? "border-blue-400/80 bg-blue-50 text-[#1f3c6d]"
                       : "border-transparent bg-black/[0.04] text-gray-600 hover:bg-black/[0.07]",
-                    !compatible && "cursor-not-allowed"
+                    !compatible && !mutedByMobility && "cursor-not-allowed"
                   )}
                 >
                   <img
@@ -218,11 +242,11 @@ export const SignalAirSourceDisclosure: React.FC<
           </div>
         </div>
 
-        {isSignalAirLoading && (
+        {isSignalAirLoading ? (
           <p className="px-2 text-xs text-[color:var(--fg-muted)]">
             {t("panels.loadingInProgress")}
           </p>
-        )}
+        ) : null}
       </div>
     </LayerDisclosure>
   );

@@ -88,6 +88,8 @@
     "historicalModeUnavailableTooltip": "Period available only for 15 min, hour and day steps",
     "autoRefresh": "Auto-refresh",
     "period": "Period:",
+    "mobilityModePeriod": "Mobile measurement",
+    "mobilityModeHint": "Mobile measurement mode: other measurements are hidden to avoid mixing time scales. Click a source to leave this mode.",
     "advancedOptions": "Advanced options",
     "advancedOptionsShort": "Options",
     "modelingAzur": "AZUR modeling",
@@ -740,7 +742,9 @@
     "firstSourceAvailableOnlyIn": "{{name}} is only available in: {{steps}}.",
     "disableIncompatibleSources": "Disable incompatible sources",
     "sourceUnavailableShort": "Source unavailable",
-    "changeTimeStep": "Change time step"
+    "changeTimeStep": "Change time step",
+    "mobilityModeTitle": "Mobile measurement mode",
+    "mobilityModeDescription": "Other measurements are hidden to avoid mixing time scales."
   },
   "tour": {
     "common": {

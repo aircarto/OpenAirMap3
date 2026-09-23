@@ -88,6 +88,8 @@
     "historicalModeUnavailableTooltip": "الوضع التاريخي متاح فقط لخطوات 15 دقيقة وساعة ويوم",
     "autoRefresh": "تحديث تلقائي",
     "period": "الفترة:",
+    "mobilityModePeriod": "قياس أثناء التنقل",
+    "mobilityModeHint": "وضع القياس أثناء التنقل: القياسات الأخرى مخفية لتجنب خلط الأزمنة. انقر على مصدر للخروج من هذا الوضع.",
     "advancedOptions": "خيارات متقدمة",
     "advancedOptionsShort": "خيارات",
     "modelingAzur": "نموذج AZUR",
@@ -756,7 +758,9 @@
     "firstSourceAvailableOnlyIn": "{{name}} متاح فقط في: {{steps}}.",
     "disableIncompatibleSources": "تعطيل المصادر غير المتوافقة",
     "sourceUnavailableShort": "المصدر غير متاح",
-    "changeTimeStep": "تغيير الخطوة الزمنية"
+    "changeTimeStep": "تغيير الخطوة الزمنية",
+    "mobilityModeTitle": "وضع القياس أثناء التنقل",
+    "mobilityModeDescription": "القياسات الأخرى مخفية لتجنب خلط الأزمنة."
   },
   "tour": {
     "common": {
