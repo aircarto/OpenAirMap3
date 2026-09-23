@@ -5,6 +5,7 @@ import React, {
   useMemo,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
 import AirQualityMap from "./components/map/AirQualityMap";
 import {
@@ -27,6 +28,7 @@ import { useAirQualityData } from "./hooks/useAirQualityData";
 import { useMapInstant } from "./hooks/useMapInstant";
 import { useInstantSnapshot } from "./hooks/useInstantSnapshot";
 import { useDomainConfig } from "./hooks/useDomainConfig";
+import { MAX_MOBILE_AIR_SENSORS } from "./constants/mobileAir";
 import {
   isPollutantSupportedForTimeStep,
   getSupportedPollutantsForTimeStep,
@@ -50,21 +52,26 @@ import {
 import {
   adjacentInstantBeyondSlots,
   buildChartRangeAroundInstant,
+  buildSnapshotBufferWindow,
   buildTimeBarWindow,
+  clampCustomRange,
   clampInstant,
+  compareInstants,
   findSlotIndex,
-  formatBlockRangeLabel,
-  getTimeBarGoToMinInstant,
+  formatExpandConfirmLabel,
   instantToAzurIndex,
   instantToIsoLocal,
   isInstantInSlotRange,
   isMapInstantAllowedForTimeStep,
   lastCompletedSlotInstant,
   normalizeInstant,
+  proposeExpandedRange,
   TIME_BAR_GO_TO_MIN_DATE,
   type MapInstant,
   type ModelingKind,
+  type TimeBarCustomRange,
 } from "./utils/mapInstant";
+import { filterReportsByDisplayWindow } from "./utils/signalAirDateUtils";
 import { useToast } from "./hooks/useToast";
 import { ToastContainer } from "./components/ui/toast";
 import { useTranslation } from "react-i18next";
@@ -125,8 +132,8 @@ const AppContent: React.FC = () => {
     return defaultTimeStep ? defaultTimeStep[0] : "heure";
   }, []);
 
-  // Calculer la période par défaut pour SignalAir (2 derniers jours)
-  const defaultSignalAirPeriod = useMemo(() => {
+  // Période par défaut MobileAir (SignalAir suit désormais la TimeBar)
+  const defaultMobileAirPeriod = useMemo(() => {
     const end = new Date();
     const start = new Date();
     start.setDate(start.getDate() - 2);
@@ -152,37 +159,39 @@ const AppContent: React.FC = () => {
   const [selectedTimeStep, setSelectedTimeStep] = useState<string>(
     INITIAL_APP_URL_PARAMS.timeStep,
   );
-  const [signalAirPeriod, setSignalAirPeriod] = useState(
-    defaultSignalAirPeriod,
-  );
-  const [signalAirDraftPeriod, setSignalAirDraftPeriod] = useState(
-    defaultSignalAirPeriod,
-  );
   const [signalAirSelectedTypes, setSignalAirSelectedTypes] = useState<
     string[]
   >(SIGNAL_AIR_DEFAULT_TYPES);
-  const [signalAirLoadTrigger, setSignalAirLoadTrigger] = useState(0);
+  const [signalAirFetchToken, setSignalAirFetchToken] = useState(0);
+  const [signalAirFetchedTypes, setSignalAirFetchedTypes] = useState<string[]>(
+    [],
+  );
   const [currentModelingLayer, setCurrentModelingLayer] =
     useState<ModelingLayerType | null>(null);
 
   const resetSignalAirSettings = useCallback(() => {
-    const resetPeriod = {
-      startDate: defaultSignalAirPeriod.startDate,
-      endDate: defaultSignalAirPeriod.endDate,
-    };
     setSignalAirSelectedTypes([...SIGNAL_AIR_DEFAULT_TYPES]);
-    setSignalAirLoadTrigger(0);
-    setSignalAirPeriod(resetPeriod);
-    setSignalAirDraftPeriod(resetPeriod);
-  }, [SIGNAL_AIR_DEFAULT_TYPES, defaultSignalAirPeriod]);
+    setSignalAirFetchToken(0);
+    setSignalAirFetchedTypes([]);
+  }, [SIGNAL_AIR_DEFAULT_TYPES]);
 
-  // États pour MobileAir
+  // États pour MobileAir (multi-capteurs, max 5)
   const [mobileAirPeriod, setMobileAirPeriod] = useState(
-    defaultSignalAirPeriod, // Utiliser la même période par défaut
+    defaultMobileAirPeriod,
   );
-  const [selectedMobileAirSensor, setSelectedMobileAirSensor] = useState<
-    string | null
-  >(null);
+  const [selectedMobileAirSensors, setSelectedMobileAirSensors] = useState<
+    string[]
+  >([]);
+  const [mobileAirSensorPeriods, setMobileAirSensorPeriods] = useState<
+    Record<string, { startDate: string; endDate: string }>
+  >({});
+  const [mobileAirSensorVisibility, setMobileAirSensorVisibility] = useState<
+    Record<string, boolean>
+  >({});
+  const [mobileAirPartialRefetchSensors, setMobileAirPartialRefetchSensors] =
+    useState<string[]>([]);
+  const [mobileAirPartialRefetchToken, setMobileAirPartialRefetchToken] =
+    useState(0);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
 
   // États pour gérer SignalAir et MobileAir indépendamment du système de sources
@@ -248,56 +257,72 @@ const AppContent: React.FC = () => {
     trackFeatureUsage("mobileair_visibility_toggle", { visible });
   }, []);
 
-  // Fonction wrapper pour gérer le changement de période SignalAir
-  const handleSignalAirDraftPeriodChange = useCallback(
-    (startDate: string, endDate: string) => {
-      setSignalAirDraftPeriod({ startDate, endDate });
+  // Chargement multi-capteurs MobileAir (remplace l'ensemble précédent)
+  const handleMobileAirSensorsSelected = (
+    sensorIds: string[],
+    period: { startDate: string; endDate: string },
+  ) => {
+    const limited = sensorIds.slice(0, MAX_MOBILE_AIR_SENSORS);
+    const visibility: Record<string, boolean> = {};
+    const periods: Record<string, { startDate: string; endDate: string }> = {};
+    for (const id of limited) {
+      visibility[id] = true;
+      periods[id] = period;
+    }
+    setSelectedMobileAirSensors(limited);
+    setMobileAirPeriod(period);
+    setMobileAirSensorPeriods(periods);
+    setMobileAirSensorVisibility(visibility);
+    setMobileAirPartialRefetchSensors([]);
+    setIsMobileAirEnabled(true);
+    setIsMobileAirVisible(true);
+    trackFeatureUsage("mobileair_load_request", {
+      sensorCount: limited.length,
+      startDate: period.startDate,
+      endDate: period.endDate,
+    });
+  };
+
+  const handleMobileAirSensorRemove = useCallback((sensorId: string) => {
+    setSelectedMobileAirSensors((prev) => prev.filter((id) => id !== sensorId));
+    setMobileAirSensorPeriods((prev) => {
+      const next = { ...prev };
+      delete next[sensorId];
+      return next;
+    });
+    setMobileAirSensorVisibility((prev) => {
+      const next = { ...prev };
+      delete next[sensorId];
+      return next;
+    });
+  }, []);
+
+  const handleMobileAirSensorPeriodChange = useCallback(
+    (sensorId: string, period: { startDate: string; endDate: string }) => {
+      setMobileAirSensorPeriods((prev) => ({ ...prev, [sensorId]: period }));
+      setMobileAirPartialRefetchSensors([sensorId]);
+      setMobileAirPartialRefetchToken((token) => token + 1);
     },
     [],
   );
 
-  const handleSignalAirTypesChange = useCallback((types: string[]) => {
-    setSignalAirSelectedTypes(types);
-  }, []);
-
-  const handleSignalAirLoadRequest = useCallback(() => {
-    if (signalAirSelectedTypes.length === 0) {
-      return;
-    }
-    setSignalAirPeriod({
-      startDate: signalAirDraftPeriod.startDate,
-      endDate: signalAirDraftPeriod.endDate,
-    });
-    setSignalAirLoadTrigger((prev) => prev + 1);
-    trackFeatureUsage("signalair_load_request", {
-      selectedTypes: signalAirSelectedTypes.join(","),
-      startDate: signalAirDraftPeriod.startDate,
-      endDate: signalAirDraftPeriod.endDate,
-    });
-  }, [signalAirSelectedTypes, signalAirDraftPeriod]);
-
-  // Fonction pour gérer la sélection d'un capteur MobileAir
-  const handleMobileAirSensorSelected = (
-    sensorId: string,
-    period: { startDate: string; endDate: string },
-  ) => {
-    // Toujours mettre à jour pour forcer le rechargement même si les valeurs sont identiques
-    // Cela permet de recharger les données qui remplaceront celles existantes
-    setSelectedMobileAirSensor(sensorId);
-    setMobileAirPeriod(period);
-    // Activer MobileAir
-    setIsMobileAirEnabled(true);
-    setIsMobileAirVisible(true);
-  };
+  const handleMobileAirSensorVisibilityChange = useCallback(
+    (sensorId: string, visible: boolean) => {
+      setMobileAirSensorVisibility((prev) => ({ ...prev, [sensorId]: visible }));
+    },
+    [],
+  );
 
   // Fonction pour désélectionner la source MobileAir
   const handleMobileAirSourceDeselected = useCallback(() => {
-    // Réinitialiser les états MobileAir
-    setSelectedMobileAirSensor(null);
-    setMobileAirPeriod(defaultSignalAirPeriod);
+    setSelectedMobileAirSensors([]);
+    setMobileAirPeriod(defaultMobileAirPeriod);
+    setMobileAirSensorPeriods({});
+    setMobileAirSensorVisibility({});
+    setMobileAirPartialRefetchSensors([]);
     setIsMobileAirEnabled(false);
     setIsMobileAirVisible(false);
-  }, [defaultSignalAirPeriod]);
+  }, [defaultMobileAirPeriod]);
 
   const handleSignalAirSourceDeselected = useCallback(() => {
     resetSignalAirSettings();
@@ -305,13 +330,40 @@ const AppContent: React.FC = () => {
     setIsSignalAirVisible(false);
   }, [resetSignalAirSettings]);
 
+  const handleSignalAirTypesChange = useCallback(
+    (types: string[]) => {
+      if (types.length === 0) {
+        resetSignalAirSettings();
+        setIsSignalAirEnabled(false);
+        setIsSignalAirVisible(false);
+        return;
+      }
+      setSignalAirSelectedTypes(types);
+      const missing = types.some(
+        (type) => !signalAirFetchedTypes.includes(type),
+      );
+      if (isSignalAirEnabled && missing) {
+        setSignalAirFetchToken((prev) => prev + 1);
+        trackFeatureUsage("signalair_types_refetch", {
+          selectedTypes: types.join(","),
+        });
+      }
+    },
+    [isSignalAirEnabled, signalAirFetchedTypes, resetSignalAirSettings],
+  );
+
   // Activation des deux sources. Les noms d'événement analytiques restent ceux
   // de l'époque des panneaux latéraux : les renommer romprait les séries déjà
   // collectées, alors que la mesure porte sur le même geste utilisateur.
   const handleSignalAirEnable = useCallback(() => {
     setIsSignalAirEnabled(true);
+    setIsSignalAirVisible(true);
+    if (signalAirSelectedTypes.length === 0) {
+      setSignalAirSelectedTypes([...SIGNAL_AIR_DEFAULT_TYPES]);
+    }
+    setSignalAirFetchToken((prev) => prev + 1);
     trackFeatureUsage("signalair_panel_open");
-  }, []);
+  }, [SIGNAL_AIR_DEFAULT_TYPES, signalAirSelectedTypes.length]);
 
   const handleMobileAirEnable = useCallback(() => {
     setIsMobileAirEnabled(true);
@@ -348,24 +400,8 @@ const AppContent: React.FC = () => {
     [handleMobileAirEnable, handleMobileAirSourceDeselected],
   );
 
-  // Gérer le chargement des données SignalAir quand activé
-  useEffect(() => {
-    if (isSignalAirEnabled && signalAirLoadTrigger > 0) {
-      // Les données seront chargées via useAirQualityData avec signalAirOptions
-    }
-  }, [isSignalAirEnabled, signalAirLoadTrigger]);
-
   // État pour l'auto-refresh - désactivé par défaut
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
-
-  const signalAirOptions = useMemo(
-    () => ({
-      selectedTypes: signalAirSelectedTypes,
-      loadTrigger: signalAirLoadTrigger,
-      isSourceSelected: isSignalAirEnabled, // Utiliser isSignalAirEnabled au lieu de selectedSources
-    }),
-    [signalAirSelectedTypes, signalAirLoadTrigger, isSignalAirEnabled],
-  );
 
   useEffect(() => {
     if (!isPollutantSupportedForTimeStep(selectedPollutant, selectedTimeStep)) {
@@ -389,6 +425,38 @@ const AppContent: React.FC = () => {
     seekTo,
   } = useMapInstant();
   const [timeBarPlaying, setTimeBarPlaying] = useState(false);
+  const [periodPickerOpen, setPeriodPickerOpen] = useState(false);
+
+  const initialCustomRange = useMemo((): TimeBarCustomRange | null => {
+    const { from, to, timeStep } = INITIAL_APP_URL_PARAMS;
+    if (!from || !to) return null;
+    return clampCustomRange(
+      {
+        start: { date: from, hour: 0, minute: 0 },
+        end: { date: to, hour: 23, minute: 45 },
+      },
+      timeStep
+    );
+  }, []);
+
+  const [customRange, setCustomRange] = useState<TimeBarCustomRange | null>(
+    initialCustomRange
+  );
+
+  const signalAirOptions = useMemo(
+    () => ({
+      selectedTypes: signalAirSelectedTypes,
+      fetchToken: signalAirFetchToken,
+      // En exploration, useInstantSnapshot charge SignalAir ; ici seulement le live.
+      isSourceSelected: isSignalAirEnabled && !isExploration,
+    }),
+    [
+      signalAirSelectedTypes,
+      signalAirFetchToken,
+      isSignalAirEnabled,
+      isExploration,
+    ],
+  );
 
   const isTimeBarAllowed = isMapInstantAllowedForTimeStep(selectedTimeStep);
 
@@ -406,6 +474,43 @@ const AppContent: React.FC = () => {
   );
   const [blockFocus, setBlockFocus] = useState<MapInstant | null>(null);
 
+  // Hydrate l’instant URL une seule fois au montage si from/to/at présents.
+  const urlHydratedRef = useRef(false);
+  useEffect(() => {
+    if (urlHydratedRef.current) return;
+    urlHydratedRef.current = true;
+    const { from, to, at, timeStep } = INITIAL_APP_URL_PARAMS;
+    if (!from || !to) return;
+    const range = clampCustomRange(
+      {
+        start: { date: from, hour: 0, minute: 0 },
+        end: { date: to, hour: 23, minute: 45 },
+      },
+      timeStep
+    );
+    setCustomRange(range);
+    let target: MapInstant = range.end;
+    if (at) {
+      const [datePart, timePart] = at.split("T");
+      const [hourStr, minuteStr] = (timePart ?? "0:0").split(":");
+      target = clampInstant(
+        normalizeInstant(
+          {
+            date: datePart,
+            hour: Number(hourStr) || 0,
+            minute: Number(minuteStr) || 0,
+          },
+          timeStep
+        ),
+        range.start,
+        range.end,
+        timeStep
+      );
+    }
+    setBlockFocus(target);
+    seekTo(target, timeStep);
+  }, [seekTo]);
+
   const windowFocus =
     isExploration && blockFocus ? blockFocus : liveInstant;
 
@@ -415,6 +520,7 @@ const AppContent: React.FC = () => {
         kind: modelingKind,
         timeStep: selectedTimeStep,
         focus: windowFocus,
+        customRange,
       }),
     [
       modelingKind,
@@ -422,6 +528,12 @@ const AppContent: React.FC = () => {
       windowFocus.date,
       windowFocus.hour,
       windowFocus.minute,
+      customRange?.start.date,
+      customRange?.start.hour,
+      customRange?.start.minute,
+      customRange?.end.date,
+      customRange?.end.hour,
+      customRange?.end.minute,
     ],
   );
 
@@ -430,6 +542,62 @@ const AppContent: React.FC = () => {
 
   const effectiveInstant: MapInstant =
     isExploration && mapInstant ? mapInstant : liveInstant;
+
+  const signalAirPeriod = useMemo(() => {
+    if (!isTimeBarAllowed) {
+      return { startDate: "", endDate: "" };
+    }
+    const buffer = buildSnapshotBufferWindow(
+      effectiveInstant,
+      selectedTimeStep,
+      new Date(),
+      customRange,
+    );
+    return {
+      startDate: buffer.startInstant.date,
+      endDate: buffer.endInstant.date,
+    };
+  }, [
+    isTimeBarAllowed,
+    effectiveInstant.date,
+    effectiveInstant.hour,
+    effectiveInstant.minute,
+    selectedTimeStep,
+    customRange?.start.date,
+    customRange?.start.hour,
+    customRange?.start.minute,
+    customRange?.end.date,
+    customRange?.end.hour,
+    customRange?.end.minute,
+  ]);
+
+  const signalAirPeriodKey = `${signalAirPeriod.startDate}|${signalAirPeriod.endDate}`;
+
+  // Refetch SignalAir en live quand la fenêtre TimeBar change.
+  // En exploration, useInstantSnapshot gère les miss de buffer.
+  useEffect(() => {
+    if (!isSignalAirEnabled || !isTimeBarAllowed || isExploration) return;
+    if (!signalAirPeriod.startDate || !signalAirPeriod.endDate) return;
+    setSignalAirFetchToken((prev) => prev + 1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- période live seule
+  }, [signalAirPeriodKey]);
+
+  // SignalAir incompatible avec Scan / ≤2 min : désactiver proprement.
+  useEffect(() => {
+    if (!isSignalAirEnabled) return;
+    if (isMapInstantAllowedForTimeStep(selectedTimeStep)) return;
+    handleSignalAirSourceDeselected();
+    addToast({
+      title: t("panels.signalAirSelection.incompatibleTimeStepToast"),
+      variant: "info",
+    });
+  }, [
+    selectedTimeStep,
+    isSignalAirEnabled,
+    handleSignalAirSourceDeselected,
+    addToast,
+    t,
+  ]);
 
   useEffect(() => {
     if (!isExploration) {
@@ -460,6 +628,14 @@ const AppContent: React.FC = () => {
     selectedTimeStep,
     liveInstant,
   ]);
+
+  // Conserver la plage custom au changement de pas de temps, clampée au nouveau plafond.
+  useEffect(() => {
+    setCustomRange((prev) => {
+      if (!prev) return null;
+      return clampCustomRange(prev, selectedTimeStep);
+    });
+  }, [selectedTimeStep]);
 
   useEffect(() => {
     if (!isExploration || !mapInstant) return;
@@ -497,6 +673,7 @@ const AppContent: React.FC = () => {
       const slot = timeBarWindow.slots[index];
       if (!slot) return;
       if (liveSlotIndex >= 0 && index === liveSlotIndex) {
+        setCustomRange(null);
         goLive();
         return;
       }
@@ -512,50 +689,50 @@ const AppContent: React.FC = () => {
   );
 
   const handleTimeBarGoLive = useCallback(() => {
+    setCustomRange(null);
+    setPeriodPickerOpen(false);
     goLive();
     trackFeatureUsage("map_instant_live");
   }, [goLive]);
 
-  const handleTimeBarGoToDate = useCallback(
-    (date: string) => {
-      const next = clampInstant(
-        normalizeInstant(
-          {
-            date,
-            hour: effectiveInstant.hour,
-            minute: effectiveInstant.minute,
-          },
-          selectedTimeStep,
-        ),
-        getTimeBarGoToMinInstant(selectedTimeStep),
-        liveInstant,
-        selectedTimeStep,
+  const confirmExpandRange = useCallback(
+    (target: MapInstant, current: TimeBarCustomRange): boolean => {
+      const clampedCurrent = clampCustomRange(current, selectedTimeStep);
+      const proposed = proposeExpandedRange(
+        clampedCurrent,
+        target,
+        selectedTimeStep
       );
-      if (
-        next.date === liveInstant.date &&
-        next.hour === liveInstant.hour &&
-        (next.minute ?? 0) === (liveInstant.minute ?? 0)
-      ) {
-        goLive();
+      const label = formatExpandConfirmLabel(
+        proposed,
+        target,
+        i18n.language,
+        selectedTimeStep
+      );
+      return window.confirm(
+        t("timeBar.expandConfirm", { range: label })
+      );
+    },
+    [selectedTimeStep, i18n.language, t]
+  );
+
+  const handleCustomRangeChange = useCallback(
+    (range: TimeBarCustomRange | null) => {
+      if (!range) {
+        setCustomRange(null);
         return;
       }
-      setBlockFocus(next);
-      seekTo(next, selectedTimeStep);
-      trackFeatureUsage("map_instant_seek", {
-        date: next.date,
-        hour: next.hour,
-        minute: next.minute,
+      const clamped = clampCustomRange(range, selectedTimeStep);
+      setCustomRange(clamped);
+      setBlockFocus(clamped.start);
+      seekTo(clamped.start, selectedTimeStep);
+      trackFeatureUsage("map_instant_custom_range", {
+        from: clamped.start.date,
+        to: clamped.end.date,
         timeStep: selectedTimeStep,
       });
     },
-    [
-      effectiveInstant.hour,
-      effectiveInstant.minute,
-      selectedTimeStep,
-      liveInstant,
-      goLive,
-      seekTo,
-    ],
+    [selectedTimeStep, seekTo]
   );
 
   const handleTimeBarSeekBeyond = useCallback(
@@ -565,15 +742,33 @@ const AppContent: React.FC = () => {
         direction,
         selectedTimeStep,
         new Date(),
-        includeForecast,
+        includeForecast && !customRange,
       );
       if (!next) return;
+
+      if (customRange) {
+        const clampedCurrent = clampCustomRange(customRange, selectedTimeStep);
+        const inRange =
+          compareInstants(next, clampedCurrent.start) >= 0 &&
+          compareInstants(next, clampedCurrent.end) <= 0;
+        if (!inRange) {
+          if (!confirmExpandRange(next, clampedCurrent)) return;
+          const expanded = proposeExpandedRange(
+            clampedCurrent,
+            next,
+            selectedTimeStep
+          );
+          setCustomRange(expanded);
+        }
+      }
+
       if (
         liveSlotIndex >= 0 &&
         next.date === liveInstant.date &&
         next.hour === liveInstant.hour &&
         (next.minute ?? 0) === (liveInstant.minute ?? 0)
       ) {
+        setCustomRange(null);
         goLive();
         return;
       }
@@ -584,10 +779,12 @@ const AppContent: React.FC = () => {
       timeBarWindow.slots,
       selectedTimeStep,
       includeForecast,
+      customRange,
       liveSlotIndex,
       liveInstant,
       goLive,
       seekTo,
+      confirmExpandRange,
     ],
   );
 
@@ -598,8 +795,12 @@ const AppContent: React.FC = () => {
   const currentSlot = timeBarWindow.slots[timeBarIndex];
   const hideMeasurementsForForecast = currentSlot?.kind === "forecast";
 
+  // Précharge le buffer lookback (24 h / 7 j) dès l’arrivée, pas seulement
+  // au premier seek en exploration — sinon la 1ʳᵉ navigation arrière bloque.
+  const snapshotWarmEnabled =
+    timeBarVisible && !hideMeasurementsForForecast;
   const snapshotEnabled =
-    timeBarVisible && isExploration && !hideMeasurementsForForecast;
+    snapshotWarmEnabled && isExploration;
 
   const {
     devices: normalDevices,
@@ -609,13 +810,18 @@ const AppContent: React.FC = () => {
     atmoMicroOutage,
     loadingSources,
     lastRefresh,
+    mobileAirSensorStatus,
+    isMobileAirLoading,
   } = useAirQualityData({
     selectedPollutant,
     selectedSources,
     selectedTimeStep,
     signalAirPeriod,
     mobileAirPeriod,
-    selectedMobileAirSensor,
+    mobileAirSensorPeriods,
+    selectedMobileAirSensors,
+    mobileAirPartialRefetchSensors,
+    mobileAirPartialRefetchToken,
     signalAirOptions,
     autoRefreshEnabled: autoRefreshEnabled && !isExploration,
   });
@@ -626,13 +832,15 @@ const AppContent: React.FC = () => {
     loading: snapshotLoading,
     error: snapshotError,
   } = useInstantSnapshot({
-    enabled: snapshotEnabled,
+    enabled: snapshotWarmEnabled,
     instant: effectiveInstant,
     timeStep: selectedTimeStep,
     pollutant: selectedPollutant,
     selectedSources,
     signalAirEnabled: isSignalAirEnabled,
     signalAirSelectedTypes,
+    navigableRange: customRange,
+    playbackActive: timeBarPlaying,
   });
 
   const [atmoMicroMaintenanceBanner, setAtmoMicroMaintenanceBanner] =
@@ -694,21 +902,77 @@ const AppContent: React.FC = () => {
 
   const reportsForMap = useMemo(() => {
     if (hideMeasurementsForForecast) return [];
-    if (snapshotEnabled) return snapshotReports;
-    return reports;
+    const base = snapshotEnabled ? snapshotReports : reports;
+    const selectedSet = new Set(signalAirSelectedTypes);
+    const typeFiltered =
+      selectedSet.size === 0
+        ? base
+        : base.filter(
+            (report) =>
+              report.source !== "signalair" ||
+              selectedSet.has(report.signalType),
+          );
+
+    // Live TimeBar : filtrer aussi sur l’instant courant (snapshot le fait déjà).
+    if (!snapshotEnabled && timeBarVisible && isSignalAirEnabled) {
+      const instantIso = instantToIsoLocal(effectiveInstant);
+      const signalReports = typeFiltered.filter((r) => r.source === "signalair");
+      const otherReports = typeFiltered.filter((r) => r.source !== "signalair");
+      return [
+        ...otherReports,
+        ...filterReportsByDisplayWindow(
+          signalReports,
+          instantIso,
+          selectedTimeStep,
+        ),
+      ];
+    }
+
+    return typeFiltered;
   }, [
     hideMeasurementsForForecast,
     snapshotEnabled,
     snapshotReports,
     reports,
+    signalAirSelectedTypes,
+    timeBarVisible,
+    isSignalAirEnabled,
+    effectiveInstant,
+    selectedTimeStep,
   ]);
 
   const isSignalAirLoading =
     loadingSources.includes("signalair") ||
     (snapshotEnabled && isSignalAirEnabled && snapshotLoading);
-  const hasSignalAirLoaded =
-    signalAirLoadTrigger > 0 ||
-    (snapshotEnabled && snapshotReports.length > 0);
+  const hasSignalAirLoaded = isSignalAirEnabled && signalAirFetchToken > 0;
+
+  // Mémoriser les types effectivement couverts après un fetch réussi.
+  useEffect(() => {
+    if (!isSignalAirEnabled || isSignalAirLoading) return;
+    const typesInReports = [
+      ...new Set(
+        (snapshotEnabled ? snapshotReports : reports)
+          .filter((r) => r.source === "signalair")
+          .map((r) => r.signalType),
+      ),
+    ];
+    // Inclure les types demandés même si 0 résultat (évite refetch infini).
+    const nextFetched = [
+      ...new Set([...signalAirSelectedTypes, ...typesInReports]),
+    ].sort();
+    setSignalAirFetchedTypes((prev) => {
+      const prevKey = [...prev].sort().join(",");
+      const nextKey = nextFetched.join(",");
+      return prevKey === nextKey ? prev : nextFetched;
+    });
+  }, [
+    isSignalAirEnabled,
+    isSignalAirLoading,
+    snapshotEnabled,
+    snapshotReports,
+    reports,
+    signalAirSelectedTypes,
+  ]);
 
   const signalAirReportsCount = useMemo(
     () => reportsForMap.filter((r) => r.source === "signalair").length,
@@ -726,16 +990,32 @@ const AppContent: React.FC = () => {
 
   const chartRange = useMemo(() => {
     if (!isExploration) return null;
-    return buildChartRangeAroundInstant(windowFocus, selectedTimeStep);
-  }, [isExploration, windowFocus, selectedTimeStep]);
+    return buildChartRangeAroundInstant(
+      windowFocus,
+      selectedTimeStep,
+      new Date(),
+      customRange,
+    );
+  }, [
+    isExploration,
+    windowFocus,
+    selectedTimeStep,
+    customRange?.start.date,
+    customRange?.start.hour,
+    customRange?.start.minute,
+    customRange?.end.date,
+    customRange?.end.hour,
+    customRange?.end.minute,
+  ]);
 
   const historicalCurrentIso = isExploration
     ? instantToIsoLocal(effectiveInstant)
     : undefined;
 
   const mapDataError = snapshotEnabled ? snapshotError ?? error : error;
+  // Pendant le play, les miss de buffer restent silencieux (pas d’overlay carte).
   const mapLoading = snapshotEnabled
-    ? snapshotLoading
+    ? snapshotLoading && !timeBarPlaying
     : loading;
 
   // Configuration de la carte basée sur le domaine et l'URL
@@ -762,8 +1042,26 @@ const AppContent: React.FC = () => {
       pollutant: selectedPollutant,
       timeStep: selectedTimeStep,
       sources: selectedSources,
+      from: customRange?.start.date ?? null,
+      to: customRange?.end.date ?? null,
+      at:
+        isExploration && mapInstant
+          ? selectedTimeStep === "jour"
+            ? mapInstant.date
+            : `${mapInstant.date}T${String(mapInstant.hour).padStart(2, "0")}:${String(mapInstant.minute ?? 0).padStart(2, "0")}`
+          : null,
     }),
-    [mapCenter, mapZoom, selectedPollutant, selectedTimeStep, selectedSources],
+    [
+      mapCenter,
+      mapZoom,
+      selectedPollutant,
+      selectedTimeStep,
+      selectedSources,
+      customRange?.start.date,
+      customRange?.end.date,
+      isExploration,
+      mapInstant,
+    ],
   );
 
   const handlePopStateFromUrl = useCallback((params: AppUrlParams) => {
@@ -772,7 +1070,40 @@ const AppContent: React.FC = () => {
     setSelectedPollutant(params.pollutant);
     setSelectedTimeStep(params.timeStep);
     setSelectedSources(params.sources);
-  }, []);
+    if (params.from && params.to) {
+      const range = clampCustomRange(
+        {
+          start: { date: params.from, hour: 0, minute: 0 },
+          end: { date: params.to, hour: 23, minute: 45 },
+        },
+        params.timeStep
+      );
+      setCustomRange(range);
+      let target = range.end;
+      if (params.at) {
+        const [datePart, timePart] = params.at.split("T");
+        const [hourStr, minuteStr] = (timePart ?? "0:0").split(":");
+        target = clampInstant(
+          normalizeInstant(
+            {
+              date: datePart,
+              hour: Number(hourStr) || 0,
+              minute: Number(minuteStr) || 0,
+            },
+            params.timeStep
+          ),
+          range.start,
+          range.end,
+          params.timeStep
+        );
+      }
+      setBlockFocus(target);
+      seekTo(target, params.timeStep);
+    } else {
+      setCustomRange(null);
+      goLive();
+    }
+  }, [seekTo, goLive]);
 
   const { markMapViewTouched } = useAppUrlSync({
     state: appUrlState,
@@ -860,11 +1191,22 @@ const AppContent: React.FC = () => {
 
   const historicalValue = useMemo<MapControlsHistorical>(
     () => ({
-      isActive: timeBarPlaying,
+      isActive: Boolean(customRange) || isExploration,
       isAllowed: isTimeBarAllowed,
-      onToggle: goLive,
+      onToggle: () => {
+        if (customRange || isExploration) {
+          handleTimeBarGoLive();
+          return;
+        }
+        setPeriodPickerOpen(true);
+      },
     }),
-    [timeBarPlaying, isTimeBarAllowed, goLive],
+    [
+      customRange,
+      isExploration,
+      isTimeBarAllowed,
+      handleTimeBarGoLive,
+    ],
   );
 
   const timeBarValue = useMemo<MapControlsTimeBar>(
@@ -877,18 +1219,13 @@ const AppContent: React.FC = () => {
       showForecastZone: timeBarWindow.showForecastZone,
       minDate: TIME_BAR_GO_TO_MIN_DATE,
       maxDate: liveInstant.date,
-      blockRangeLabel: formatBlockRangeLabel(
-        timeBarWindow.startInstant,
-        timeBarWindow.endInstant,
-        i18n.language,
-      ),
       canSeekPast:
         adjacentInstantBeyondSlots(
           timeBarWindow.slots,
           "past",
           selectedTimeStep,
           undefined,
-          includeForecast,
+          includeForecast && !customRange,
         ) !== null,
       canSeekFuture:
         adjacentInstantBeyondSlots(
@@ -896,14 +1233,17 @@ const AppContent: React.FC = () => {
           "future",
           selectedTimeStep,
           undefined,
-          includeForecast,
+          includeForecast && !customRange,
         ) !== null,
       selectedPollutant,
       timeStep: selectedTimeStep,
       loading: snapshotLoading,
+      customRange,
+      periodPickerOpen,
+      onPeriodPickerOpenChange: setPeriodPickerOpen,
+      onCustomRangeChange: handleCustomRangeChange,
       onIndexChange: handleTimeBarIndexChange,
       onGoLive: handleTimeBarGoLive,
-      onGoToDate: handleTimeBarGoToDate,
       onSeekBeyond: handleTimeBarSeekBeyond,
       onPlayingChange: handleTimeBarPlayingChange,
     }),
@@ -913,18 +1253,17 @@ const AppContent: React.FC = () => {
       timeBarWindow.slots,
       timeBarWindow.liveIndex,
       timeBarWindow.showForecastZone,
-      timeBarWindow.startInstant,
-      timeBarWindow.endInstant,
       timeBarIndex,
       liveInstant.date,
-      i18n.language,
       selectedTimeStep,
       includeForecast,
+      customRange,
       selectedPollutant,
       snapshotLoading,
+      periodPickerOpen,
+      handleCustomRangeChange,
       handleTimeBarIndexChange,
       handleTimeBarGoLive,
-      handleTimeBarGoToDate,
       handleTimeBarSeekBeyond,
       handleTimeBarPlayingChange,
     ],
@@ -942,11 +1281,17 @@ const AppContent: React.FC = () => {
       onMobileAirToggle: handleMobileAirVisibilityToggle,
       hasSignalAirData,
       hasMobileAirData,
+      selectedMobileAirSensors,
+      mobileAirDefaultPeriod: mobileAirPeriod,
+      mobileAirSensorPeriods,
+      mobileAirSensorVisibility,
+      mobileAirSensorStatus,
+      isMobileAirLoading,
+      onMobileAirSensorRemove: handleMobileAirSensorRemove,
+      onMobileAirSensorPeriodChange: handleMobileAirSensorPeriodChange,
+      onMobileAirSensorVisibilityChange: handleMobileAirSensorVisibilityChange,
       signalAirSelectedTypes,
       onSignalAirTypesChange: handleSignalAirTypesChange,
-      signalAirDraftPeriod,
-      onSignalAirDraftPeriodChange: handleSignalAirDraftPeriodChange,
-      onSignalAirLoadRequest: handleSignalAirLoadRequest,
       isSignalAirLoading,
       signalAirHasLoaded: hasSignalAirLoaded,
       signalAirReportsCount,
@@ -962,11 +1307,17 @@ const AppContent: React.FC = () => {
       handleMobileAirVisibilityToggle,
       hasSignalAirData,
       hasMobileAirData,
+      selectedMobileAirSensors,
+      mobileAirPeriod,
+      mobileAirSensorPeriods,
+      mobileAirSensorVisibility,
+      mobileAirSensorStatus,
+      isMobileAirLoading,
+      handleMobileAirSensorRemove,
+      handleMobileAirSensorPeriodChange,
+      handleMobileAirSensorVisibilityChange,
       signalAirSelectedTypes,
       handleSignalAirTypesChange,
-      signalAirDraftPeriod,
-      handleSignalAirDraftPeriodChange,
-      handleSignalAirLoadRequest,
       isSignalAirLoading,
       hasSignalAirLoaded,
       signalAirReportsCount,
@@ -1099,26 +1450,35 @@ const AppContent: React.FC = () => {
             currentModelingLayer={currentModelingLayer}
             modelingHourIndex={modelingHourIndex}
             loading={mapLoading}
-            signalAirPeriod={signalAirDraftPeriod}
             signalAirSelectedTypes={signalAirSelectedTypes}
-            onSignalAirPeriodChange={handleSignalAirDraftPeriodChange}
             onSignalAirTypesChange={handleSignalAirTypesChange}
             isSignalAirLoading={isSignalAirLoading}
             signalAirHasLoaded={hasSignalAirLoaded}
             signalAirReportsCount={signalAirReportsCount}
             isHistoricalModeWithSignalAirData={
-              snapshotEnabled && snapshotReports.length > 0
+              snapshotEnabled && isSignalAirEnabled
             }
             onSignalAirSourceDeselected={handleSignalAirSourceDeselected}
-            onMobileAirSensorSelected={handleMobileAirSensorSelected}
+            onMobileAirSensorSelected={handleMobileAirSensorsSelected}
             onMobileAirSourceDeselected={handleMobileAirSourceDeselected}
             isHistoricalModeActive={isExploration}
             isSignalAirEnabled={isSignalAirEnabled}
             isMobileAirEnabled={isMobileAirEnabled}
             isSignalAirVisible={isSignalAirVisible}
             isMobileAirVisible={isMobileAirVisible}
+            mobileAirSensorVisibility={mobileAirSensorVisibility}
             onSignalAirToggle={handleSignalAirVisibilityToggle}
             onMobileAirToggle={handleMobileAirVisibilityToggle}
+            onMobileAirSensorRemove={handleMobileAirSensorRemove}
+            onMobileAirSensorPeriodChange={handleMobileAirSensorPeriodChange}
+            onMobileAirSensorVisibilityChange={
+              handleMobileAirSensorVisibilityChange
+            }
+            selectedMobileAirSensors={selectedMobileAirSensors}
+            mobileAirSensorPeriods={mobileAirSensorPeriods}
+            mobileAirDefaultPeriod={mobileAirPeriod}
+            mobileAirSensorStatus={mobileAirSensorStatus}
+            isMobileAirLoading={isMobileAirLoading}
             historicalCurrentDate={historicalCurrentIso}
             historicalStartDate={chartRange?.startDate}
             historicalEndDate={chartRange?.endDate}

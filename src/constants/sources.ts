@@ -68,13 +68,7 @@ export const sources: Sources = {
     name: "SignalAir",
     code: "signalair",
     activated: false,
-    supportedTimeSteps: [
-      "instantane",
-      "deuxMin",
-      "quartHeure",
-      "heure",
-      "jour",
-    ],
+    supportedTimeSteps: ["quartHeure", "heure", "jour"],
   }, // Capteurs SignalAir
 };
 

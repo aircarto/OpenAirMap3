@@ -279,10 +279,10 @@
       "title": "اختيار SignalAir",
       "reopenButtonTooltip": "زر SignalAir لإعادة فتح اللوحة",
       "typesTitle": "أنواع التقارير ({{selected}}/{{total}})",
-      "selectAll": "تحديد الكل",
-      "deselectAll": "إلغاء تحديد الكل",
+      "selectAll": "الكل",
+      "deselectAll": "لا شيء",
       "loadReports": "تحميل التقارير",
-      "selectAtLeastOne": "حدد نوع تقرير واحد على الأقل للتحميل.",
+      "selectAtLeastOne": "حدد نوعًا واحدًا على الأقل من البلاغات.",
       "types": {
         "odeur": {
           "label": "الروائح",
@@ -311,7 +311,11 @@
         "quickRangeLast2Days": "آخر يومين",
         "quickRangeLastWeek": "آخر أسبوع",
         "quickRangeLastMonth": "آخر شهر"
-      }
+      },
+      "enable": "عرض البلاغات",
+      "typesShort": "الأنواع",
+      "incompatibleTimeStep": "متاح فقط لـ 15 دقيقة أو ساعة أو يوم.",
+      "incompatibleTimeStepToast": "تم تعطيل SignalAir: اختر الخطوة 15 دقيقة أو ساعة أو يوم."
     },
     "signalAirDetail": {
       "defaultReportName": "تقرير SignalAir",
@@ -348,11 +352,11 @@
     "mobileAirSelection": {
       "title": "اختيار MobileAir",
       "reopenButtonTooltip": "الزر الأخضر لإعادة فتح اللوحة",
-      "selectionLimitDescription": "لحماية واجهة Air Carto، يمكنك اختيار مقياس MobileAir واحد فقط في كل مرة.",
+      "selectionLimitDescription": "لحماية واجهة Air Carto، يمكنك اختيار حتى {{max}} مقاييس MobileAir في كل مرة.",
       "sensorsAvailable": "المقاييس المتاحة ({{count}})",
       "deselect": "إلغاء التحديد",
       "loadError": "خطأ في تحميل المقاييس",
-      "selectSensor": "اختر مقياساً",
+      "selectSensor": "حدد مقياسًا واحدًا على الأقل",
       "loadSensorRoute": "تحميل مسار المقياس {{sensorId}}",
       "statusConnected": "متصل",
       "statusInactive": "غير نشط",
@@ -366,7 +370,36 @@
       "lastSeenDays_one": "منذ {{count}} يوم",
       "lastSeenDays_other": "منذ {{count}} أيام",
       "searchPlaceholder": "البحث عن مستشعر…",
-      "noSearchResults": "لا يوجد مستشعر يطابق « {{query}} »"
+      "noSearchResults": "لا يوجد مستشعر يطابق « {{query}} »",
+      "selectionCounter": "{{count}} / {{max}} محدد",
+      "loadedHint": "{{count}}/{{max}}",
+      "loadingSensors": "جاري تحميل المسارات…",
+      "loadSensorsRoutes": "تحميل {{count}} مسارات"
+    },
+    "mobileAirManage": {
+      "panelTitle": "مسارات MobileAir",
+      "title": "المقاييس المحمّلة ({{count}})",
+      "expandSensor": "توسيع {{sensorId}}",
+      "hideSensor": "إخفاء {{sensorId}} على الخريطة",
+      "showSensor": "إظهار {{sensorId}} على الخريطة",
+      "removeSensor": "إزالة {{sensorId}}",
+      "periodLabel": "الفترة",
+      "applyPeriod": "تطبيق الفترة",
+      "sessionsOnMap": "الجلسات ({{count}})",
+      "toggleSessionMap": "إظهار الجلسة {{sessionId}} على الخريطة",
+      "noSessions": "لا توجد جلسات في هذه الفترة",
+      "sensorError": "فشل تحميل هذا المقياس",
+      "selectSessionHint": "حدد جلسة لعرض التفاصيل",
+      "status": {
+        "idle": "انتظار",
+        "loading": "تحميل",
+        "ready": "جاهز",
+        "error": "خطأ"
+      },
+      "selectAllSessions": "الكل",
+      "selectNoSessions": "لا شيء",
+      "onMapCount": "{{count}}/{{total}} على الخريطة",
+      "detailFocusBadge": "تفصيل"
     },
     "mobileAirDetail": {
       "sessionTitle": "الجلسة {{sessionId}}",
@@ -813,7 +846,17 @@
     "speed": "{{value}}×",
     "speedLabel": "سرعة التشغيل",
     "speedMenu": "سرعة التشغيل: {{value}}×",
-    "reducedMotionPlay": "تم تقليل التشغيل التلقائي: هذا الزر يتقدم خطوة واحدة."
+    "reducedMotionPlay": "تم تقليل التشغيل التلقائي: هذا الزر يتقدم خطوة واحدة.",
+    "period": "Period",
+    "periodTitle": "Choose a period",
+    "periodStart": "From",
+    "periodEnd": "To",
+    "periodApply": "Apply",
+    "periodClear": "Clear",
+    "periodInvalidOrder": "Start date must be before end date.",
+    "periodLimitDays": "Maximum {{count}} days for this time step.",
+    "periodLimitMonths": "Maximum {{count}} months for this time step.",
+    "expandConfirm": "Extend the period until {{range}}?"
   },
   "pages": {
     "about": {

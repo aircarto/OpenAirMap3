@@ -107,7 +107,11 @@ export const RailFiltersSection: React.FC<RailFiltersSectionProps> = ({
           />
         )}
         signalAirSlot={({ close }) => (
-          <SignalAirSourceDisclosure community={community} onLoaded={close} />
+          <SignalAirSourceDisclosure
+            community={community}
+            selectedTimeStep={filters.selectedTimeStep}
+            onLoaded={close}
+          />
         )}
         renderTrigger={() => (
           <RailItem

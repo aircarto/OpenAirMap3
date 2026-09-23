@@ -117,9 +117,7 @@ interface AirQualityMapProps {
   /** Index Azur 0–47 ; `null` masque la couche (hors fenêtre) ; absent = heure live */
   modelingHourIndex?: number | null;
   loading?: boolean;
-  signalAirPeriod: { startDate: string; endDate: string };
   signalAirSelectedTypes: string[];
-  onSignalAirPeriodChange: (startDate: string, endDate: string) => void;
   onSignalAirTypesChange: (types: string[]) => void;
   isSignalAirLoading?: boolean;
   signalAirHasLoaded?: boolean;
@@ -128,7 +126,7 @@ interface AirQualityMapProps {
   isHistoricalModeWithSignalAirData?: boolean;
   onSignalAirSourceDeselected?: () => void;
   onMobileAirSensorSelected?: (
-    sensorId: string,
+    sensorIds: string[],
     period: { startDate: string; endDate: string },
   ) => void;
   onMobileAirSourceDeselected?: () => void;
@@ -140,6 +138,18 @@ interface AirQualityMapProps {
   isMobileAirVisible?: boolean;
   onSignalAirToggle?: (visible: boolean) => void;
   onMobileAirToggle?: (visible: boolean) => void;
+  selectedMobileAirSensors?: string[];
+  mobileAirSensorVisibility?: Record<string, boolean>;
+  mobileAirSensorPeriods?: Record<string, { startDate: string; endDate: string }>;
+  mobileAirDefaultPeriod?: { startDate: string; endDate: string };
+  mobileAirSensorStatus?: Record<string, 'idle' | 'loading' | 'ready' | 'error'>;
+  isMobileAirLoading?: boolean;
+  onMobileAirSensorRemove?: (sensorId: string) => void;
+  onMobileAirSensorPeriodChange?: (
+    sensorId: string,
+    period: { startDate: string; endDate: string },
+  ) => void;
+  onMobileAirSensorVisibilityChange?: (sensorId: string, visible: boolean) => void;
   /** Date actuellement affichée en mode historique (pour la période dans DeviceStatistics) */
   historicalCurrentDate?: string;
   historicalStartDate?: string;
@@ -195,10 +205,8 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
   currentModelingLayer,
   modelingHourIndex,
   loading,
-  signalAirPeriod,
-  signalAirSelectedTypes,
-  onSignalAirPeriodChange,
-  onSignalAirTypesChange,
+  signalAirSelectedTypes: _signalAirSelectedTypes,
+  onSignalAirTypesChange: _onSignalAirTypesChange,
   isSignalAirLoading = false,
   signalAirHasLoaded = false,
   signalAirReportsCount = 0,
@@ -213,6 +221,15 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
   isMobileAirVisible = true,
   onSignalAirToggle,
   onMobileAirToggle,
+  selectedMobileAirSensors = [],
+  mobileAirSensorVisibility = {},
+  mobileAirSensorPeriods = {},
+  mobileAirDefaultPeriod,
+  mobileAirSensorStatus = {},
+  isMobileAirLoading = false,
+  onMobileAirSensorRemove,
+  onMobileAirSensorPeriodChange,
+  onMobileAirSensorVisibilityChange,
   historicalCurrentDate,
   historicalStartDate,
   historicalEndDate,
@@ -344,6 +361,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
     mapRef: mapView.mapRef,
     onMobileAirSensorSelected,
     isEnabled: isMobileAirEnabled,
+    sensorVisibility: mobileAirSensorVisibility,
   });
 
   // Hook pour gérer le tooltip au hover sur les marqueurs (désactivé - on utilise les tooltips Leaflet natifs maintenant)
@@ -438,19 +456,22 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
     const mapInstance = mapView.mapRef.current;
     if (!mapInstance) return;
 
-    // Appel immédiat pour les changements rapides
+    // Appel immédiat pour les changements rapides.
+    // `pan: false` : sinon Leaflet recentre à chaque resize pendant que le
+    // panneau pousse la colonne — en conflit avec un panTo éventuel et avec la
+    // sync moveend → setView, ce qui fait trembler la carte.
     const immediateTimeout = setTimeout(() => {
-      mapInstance.invalidateSize();
+      mapInstance.invalidateSize({ animate: false, pan: false });
     }, 0);
 
     // Appel après la transition CSS (300ms + marge)
     const transitionTimeout = setTimeout(() => {
-      mapInstance.invalidateSize();
+      mapInstance.invalidateSize({ animate: false, pan: false });
     }, 350);
 
     // Appel supplémentaire pour s'assurer que tout est bien redimensionné
     const finalTimeout = setTimeout(() => {
-      mapInstance.invalidateSize();
+      mapInstance.invalidateSize({ animate: false, pan: false });
     }, 500);
 
     return () => {
@@ -904,6 +925,16 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
         historicalEndDate={historicalEndDate}
         historicalTimeStep={historicalTimeStep}
         historicalPlaybackDate={historicalPlaybackDate}
+        selectedMobileAirSensors={selectedMobileAirSensors}
+        mobileAirSensorVisibility={mobileAirSensorVisibility}
+        mobileAirSensorStatus={mobileAirSensorStatus}
+        mobileAirSensorPeriods={mobileAirSensorPeriods}
+        mobileAirDefaultPeriod={
+          mobileAirDefaultPeriod ?? { startDate: "", endDate: "" }
+        }
+        onMobileAirSensorRemove={onMobileAirSensorRemove}
+        onMobileAirSensorPeriodChange={onMobileAirSensorPeriodChange}
+        onMobileAirSensorVisibilityChange={onMobileAirSensorVisibilityChange}
       />
 
       {/* Conteneur de la carte */}
@@ -927,6 +958,12 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           panelSize={sidePanels.panelSize}
         />
 
+        {/* Rail masqué en plein écran : le panneau le recouvre (fixed), et les
+            contrôles carte ne sont plus pertinents tant que le panneau occupe
+            tout le viewport. */}
+        {sidePanels.panelSize !== "fullscreen" &&
+          signalAir.signalAirDetailPanelSize !== "fullscreen" &&
+          mobileAir.mobileAirDetailPanelSize !== "fullscreen" && (
         <MapControlRail
           compact={isMapColumnSqueezed}
           baseLayer={{
@@ -955,7 +992,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
             onMobileAirLoadRoute: mobileAir.handleMobileAirSensorsSelected,
           }}
         />
-
+        )}
         {/* Contrôle de recherche personnalisé */}
         <CustomSearchControl
           devices={devices}

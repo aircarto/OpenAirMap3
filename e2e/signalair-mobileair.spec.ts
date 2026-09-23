@@ -72,7 +72,7 @@ test.describe("Dépliants SignalAir et MobileAir du menu Sources", () => {
     });
   });
 
-  test("SignalAir : sélection par défaut et bouton Charger actionnable", async ({
+  test("SignalAir : types cochés par défaut et activation immédiate", async ({
     page,
   }) => {
     await expandDisclosure(page, /^SignalAir/);
@@ -80,19 +80,18 @@ test.describe("Dépliants SignalAir et MobileAir du menu Sources", () => {
     const body = page.getByTestId("sources-signalair-body");
     await expect(body).toBeVisible({ timeout: 15000 });
 
-    // Les quatre types sont cochés par défaut (SIGNAL_AIR_DEFAULT_TYPES), le
-    // bouton doit donc être actionnable et pas seulement présent : c'est la
-    // longueur de la sélection qui décide, et un défaut vide passerait
-    // inaperçu sous un simple `toBeVisible`.
     for (const type of ["odeur", "bruit", "brulage", "visuel"]) {
       await expect(
         page.getByTestId(`sources-signalair-type-${type}`)
       ).toHaveAttribute("aria-checked", "true");
     }
 
-    const loadBtn = page.getByTestId("sources-signalair-load");
-    await expect(loadBtn).toBeVisible();
-    await expect(loadBtn).toBeEnabled();
+    const enable = page.getByTestId("sources-signalair-enable");
+    await expect(enable).toBeVisible();
+    await expect(enable).toBeEnabled();
+    await expect(enable).toHaveAttribute("aria-checked", "false");
+    await enable.click();
+    await expect(enable).toHaveAttribute("aria-checked", "true");
   });
 
   test("SignalAir : replier le dépliant ne touche pas à la sélection", async ({

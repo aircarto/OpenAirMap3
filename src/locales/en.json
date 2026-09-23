@@ -81,11 +81,11 @@
     "sourceSignalements": "Community reports",
     "disableSignalAir": "Disable SignalAir",
     "disableMobileAir": "Disable MobileAir",
-    "historicalMode": "Historical mode",
-    "historicalModeUnavailable": "Historical mode (unavailable)",
-    "historicalModeActivate": "Enable historical mode",
-    "historicalModeDeactivate": "Disable historical mode",
-    "historicalModeUnavailableTooltip": "Historical mode available only for 15 min, hour and day steps",
+    "historicalMode": "TimeBar period",
+    "historicalModeUnavailable": "Period (unavailable)",
+    "historicalModeActivate": "Choose a TimeBar period",
+    "historicalModeDeactivate": "Return to live",
+    "historicalModeUnavailableTooltip": "Period available only for 15 min, hour and day steps",
     "autoRefresh": "Auto-refresh",
     "period": "Period:",
     "advancedOptions": "Advanced options",
@@ -279,10 +279,10 @@
       "title": "SignalAir selection",
       "reopenButtonTooltip": "SignalAir button to reopen panel",
       "typesTitle": "Report types ({{selected}}/{{total}})",
-      "selectAll": "Select all",
-      "deselectAll": "Deselect all",
+      "selectAll": "All",
+      "deselectAll": "None",
       "loadReports": "Load reports",
-      "selectAtLeastOne": "Select at least one report type to load.",
+      "selectAtLeastOne": "Select at least one report type.",
       "types": {
         "odeur": {
           "label": "Odours",
@@ -311,7 +311,11 @@
         "quickRangeLast2Days": "Last 2 days",
         "quickRangeLastWeek": "Last week",
         "quickRangeLastMonth": "Last month"
-      }
+      },
+      "enable": "Show reports",
+      "typesShort": "Types",
+      "incompatibleTimeStep": "Available only for 15 min, hour or day.",
+      "incompatibleTimeStepToast": "SignalAir disabled: choose the 15 min, hour or day time step."
     },
     "signalAirDetail": {
       "defaultReportName": "SignalAir report",
@@ -348,12 +352,16 @@
     "mobileAirSelection": {
       "title": "MobileAir selection",
       "reopenButtonTooltip": "Green button to reopen panel",
-      "selectionLimitDescription": "To protect the Air Carto API, you can only select one MobileAir sensor at a time.",
+      "selectionLimitDescription": "To protect the Air Carto API, you can select up to {{max}} MobileAir sensors at a time.",
+      "selectionCounter": "{{count}} / {{max}} selected",
+      "loadedHint": "{{count}}/{{max}}",
+      "loadingSensors": "Loading routes…",
       "sensorsAvailable": "Available sensors ({{count}})",
       "deselect": "Deselect",
       "loadError": "Error loading sensors",
-      "selectSensor": "Select a sensor",
+      "selectSensor": "Select at least one sensor",
       "loadSensorRoute": "Load sensor {{sensorId}} route",
+      "loadSensorsRoutes": "Load {{count}} routes",
       "statusConnected": "Connected",
       "statusInactive": "Inactive",
       "lastActivity": "Last activity: {{value}}",
@@ -367,6 +375,31 @@
       "lastSeenDays_other": "{{count}} days ago",
       "searchPlaceholder": "Search for a sensor…",
       "noSearchResults": "No sensor matches “{{query}}”"
+    },
+    "mobileAirManage": {
+      "panelTitle": "MobileAir routes",
+      "title": "Loaded sensors ({{count}})",
+      "expandSensor": "Expand {{sensorId}}",
+      "hideSensor": "Hide {{sensorId}} on the map",
+      "showSensor": "Show {{sensorId}} on the map",
+      "removeSensor": "Remove {{sensorId}}",
+      "periodLabel": "Period",
+      "applyPeriod": "Apply period",
+      "sessionsOnMap": "Sessions ({{count}})",
+      "toggleSessionMap": "Show session {{sessionId}} on the map",
+      "noSessions": "No sessions for this period",
+      "sensorError": "Failed to load this sensor",
+      "selectSessionHint": "Select a session to view details",
+      "status": {
+        "idle": "Idle",
+        "loading": "Loading",
+        "ready": "Ready",
+        "error": "Error"
+      },
+      "selectAllSessions": "All",
+      "selectNoSessions": "None",
+      "onMapCount": "{{count}}/{{total}} on map",
+      "detailFocusBadge": "detail"
     },
     "mobileAirDetail": {
       "sessionTitle": "Session {{sessionId}}",
@@ -728,8 +761,8 @@
         "description": "Drag the slider, use play/pause and speed, or the arrows, to change slots. Each tick reloads measurements for that instant."
       },
       "step3": {
-        "title": "Go to a date",
-        "description": "Pick a date in the calendar (including pollution episodes) to jump there. Station charts open on this window, with a cursor on the current instant."
+        "title": "Choose a period",
+        "description": "The “Period” button sets the navigable bounds of the bar (calendar and pollution episodes). Station charts open on this window."
       }
     },
     "global": {
@@ -773,7 +806,7 @@
       "modeling": "MODEL",
       "modelingOff": "—",
       "baseLayer": "BASE",
-      "historical": "HIST"
+      "historical": "PER."
     },
     "groupUtilities": "Utilities",
     "groupBaseLayer": "Base map",
@@ -797,7 +830,17 @@
     "speed": "{{value}}×",
     "speedLabel": "Playback speed",
     "speedMenu": "Playback speed: {{value}}×",
-    "reducedMotionPlay": "Automatic playback is reduced: this button steps forward once."
+    "reducedMotionPlay": "Automatic playback is reduced: this button steps forward once.",
+    "period": "Period",
+    "periodTitle": "Choose a period",
+    "periodStart": "From",
+    "periodEnd": "To",
+    "periodApply": "Apply",
+    "periodClear": "Clear",
+    "periodInvalidOrder": "Start date must be before end date.",
+    "periodLimitDays": "Maximum {{count}} days for this time step.",
+    "periodLimitMonths": "Maximum {{count}} months for this time step.",
+    "expandConfirm": "Extend the period until {{range}}?"
   },
   "pages": {
     "about": {

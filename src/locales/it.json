@@ -279,10 +279,10 @@
       "title": "Selezione SignalAir",
       "reopenButtonTooltip": "Pulsante SignalAir per riaprire il pannello",
       "typesTitle": "Tipi di segnalazioni ({{selected}}/{{total}})",
-      "selectAll": "Seleziona tutto",
-      "deselectAll": "Deseleziona tutto",
+      "selectAll": "Tutti",
+      "deselectAll": "Nessuno",
       "loadReports": "Carica segnalazioni",
-      "selectAtLeastOne": "Seleziona almeno un tipo di segnalazione per caricare.",
+      "selectAtLeastOne": "Selezionare almeno un tipo di segnalazione.",
       "types": {
         "odeur": {
           "label": "Odori",
@@ -311,7 +311,11 @@
         "quickRangeLast2Days": "Ultimi 2 giorni",
         "quickRangeLastWeek": "Ultima settimana",
         "quickRangeLastMonth": "Ultimo mese"
-      }
+      },
+      "enable": "Mostra segnalazioni",
+      "typesShort": "Tipi",
+      "incompatibleTimeStep": "Disponibile solo a 15 min, ora o giorno.",
+      "incompatibleTimeStepToast": "SignalAir disattivato: scegliere il passo 15 min, ora o giorno."
     },
     "signalAirDetail": {
       "defaultReportName": "Segnalazione SignalAir",
@@ -348,11 +352,11 @@
     "mobileAirSelection": {
       "title": "Selezione MobileAir",
       "reopenButtonTooltip": "Pulsante verde per riaprire il pannello",
-      "selectionLimitDescription": "Per proteggere l'API Air Carto, è possibile selezionare un solo sensore MobileAir alla volta.",
+      "selectionLimitDescription": "Per proteggere l'API Air Carto, è possibile selezionare fino a {{max}} sensori MobileAir alla volta.",
       "sensorsAvailable": "Sensori disponibili ({{count}})",
       "deselect": "Deseleziona",
       "loadError": "Errore durante il caricamento dei sensori",
-      "selectSensor": "Seleziona un sensore",
+      "selectSensor": "Seleziona almeno un sensore",
       "loadSensorRoute": "Carica il percorso del sensore {{sensorId}}",
       "statusConnected": "Connesso",
       "statusInactive": "Inattivo",
@@ -366,7 +370,36 @@
       "lastSeenDays_one": "{{count}} giorno fa",
       "lastSeenDays_other": "{{count}} giorni fa",
       "searchPlaceholder": "Cerca un sensore…",
-      "noSearchResults": "Nessun sensore corrisponde a « {{query}} »"
+      "noSearchResults": "Nessun sensore corrisponde a « {{query}} »",
+      "selectionCounter": "{{count}} / {{max}} selezionati",
+      "loadedHint": "{{count}}/{{max}}",
+      "loadingSensors": "Caricamento percorsi…",
+      "loadSensorsRoutes": "Carica {{count}} percorsi"
+    },
+    "mobileAirManage": {
+      "panelTitle": "Percorsi MobileAir",
+      "title": "Sensori caricati ({{count}})",
+      "expandSensor": "Espandi {{sensorId}}",
+      "hideSensor": "Nascondi {{sensorId}} sulla mappa",
+      "showSensor": "Mostra {{sensorId}} sulla mappa",
+      "removeSensor": "Rimuovi {{sensorId}}",
+      "periodLabel": "Periodo",
+      "applyPeriod": "Applica periodo",
+      "sessionsOnMap": "Sessioni ({{count}})",
+      "toggleSessionMap": "Mostra la sessione {{sessionId}} sulla mappa",
+      "noSessions": "Nessuna sessione in questo periodo",
+      "sensorError": "Errore nel caricamento di questo sensore",
+      "selectSessionHint": "Seleziona una sessione per i dettagli",
+      "status": {
+        "idle": "In attesa",
+        "loading": "Caricamento",
+        "ready": "Pronto",
+        "error": "Errore"
+      },
+      "selectAllSessions": "Tutte",
+      "selectNoSessions": "Nessuna",
+      "onMapCount": "{{count}}/{{total}} sulla mappa",
+      "detailFocusBadge": "dettaglio"
     },
     "mobileAirDetail": {
       "sessionTitle": "Sessione {{sessionId}}",
@@ -797,7 +830,17 @@
     "speed": "{{value}}×",
     "speedLabel": "Velocità di riproduzione",
     "speedMenu": "Velocità di riproduzione: {{value}}×",
-    "reducedMotionPlay": "La riproduzione automatica è ridotta: questo pulsante avanza di un intervallo."
+    "reducedMotionPlay": "La riproduzione automatica è ridotta: questo pulsante avanza di un intervallo.",
+    "period": "Period",
+    "periodTitle": "Choose a period",
+    "periodStart": "From",
+    "periodEnd": "To",
+    "periodApply": "Apply",
+    "periodClear": "Clear",
+    "periodInvalidOrder": "Start date must be before end date.",
+    "periodLimitDays": "Maximum {{count}} days for this time step.",
+    "periodLimitMonths": "Maximum {{count}} months for this time step.",
+    "expandConfirm": "Extend the period until {{range}}?"
   },
   "pages": {
     "about": {

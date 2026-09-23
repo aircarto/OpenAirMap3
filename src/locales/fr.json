@@ -81,11 +81,11 @@
     "sourceSignalements": "Signalements communautaires",
     "disableSignalAir": "Désactiver SignalAir",
     "disableMobileAir": "Désactiver MobileAir",
-    "historicalMode": "Mode Historique",
-    "historicalModeUnavailable": "Mode Historique (indisponible)",
-    "historicalModeActivate": "Activer le mode historique",
-    "historicalModeDeactivate": "Désactiver le mode historique",
-    "historicalModeUnavailableTooltip": "Mode historique disponible uniquement pour les pas 15 min, heure et jour",
+    "historicalMode": "Période TimeBar",
+    "historicalModeUnavailable": "Période (indisponible)",
+    "historicalModeActivate": "Choisir une période sur la TimeBar",
+    "historicalModeDeactivate": "Revenir au temps réel",
+    "historicalModeUnavailableTooltip": "Période disponible uniquement pour les pas 15 min, heure et jour",
     "autoRefresh": "Actualisation auto",
     "period": "Période:",
     "advancedOptions": "Options avancées",
@@ -283,11 +283,15 @@
     "signalAirSelection": {
       "title": "Sélection SignalAir",
       "reopenButtonTooltip": "Bouton SignalAir pour rouvrir le panel",
+      "enable": "Afficher les signalements",
       "typesTitle": "Types de signalements ({{selected}}/{{total}})",
-      "selectAll": "Tout sélectionner",
-      "deselectAll": "Tout désélectionner",
+      "typesShort": "Types",
+      "selectAll": "Tout",
+      "deselectAll": "Aucun",
+      "incompatibleTimeStep": "Disponible uniquement en 15 min, heure ou jour.",
+      "incompatibleTimeStepToast": "SignalAir désactivé : choisissez le pas 15 min, heure ou jour.",
       "loadReports": "Charger les signalements",
-      "selectAtLeastOne": "Sélectionnez au moins un type de signalement pour lancer le chargement.",
+      "selectAtLeastOne": "Sélectionnez au moins un type de signalement.",
       "types": {
         "odeur": {
           "label": "Odeurs",
@@ -353,12 +357,16 @@
     "mobileAirSelection": {
       "title": "Sélection MobileAir",
       "reopenButtonTooltip": "Bouton vert pour rouvrir le panel",
-      "selectionLimitDescription": "Pour protéger l'API Air Carto, vous ne pouvez sélectionner qu'un seul capteur MobileAir à la fois.",
+      "selectionLimitDescription": "Pour protéger l'API Air Carto, vous pouvez sélectionner jusqu'à {{max}} capteurs MobileAir à la fois.",
+      "selectionCounter": "{{count}} / {{max}} sélectionnés",
+      "loadedHint": "{{count}}/{{max}}",
+      "loadingSensors": "Chargement des parcours…",
       "sensorsAvailable": "Capteurs disponibles ({{count}})",
       "deselect": "Désélectionner",
       "loadError": "Erreur lors du chargement des capteurs",
-      "selectSensor": "Sélectionnez un capteur",
+      "selectSensor": "Sélectionnez au moins un capteur",
       "loadSensorRoute": "Charger le parcours du capteur {{sensorId}}",
+      "loadSensorsRoutes": "Charger {{count}} parcours",
       "statusConnected": "Connecté",
       "statusInactive": "Inactif",
       "lastActivity": "Dernière activité: {{value}}",
@@ -372,6 +380,31 @@
       "lastSeenDays_other": "Il y a {{count}} jours",
       "searchPlaceholder": "Rechercher un capteur…",
       "noSearchResults": "Aucun capteur ne correspond à « {{query}} »"
+    },
+    "mobileAirManage": {
+      "panelTitle": "Parcours MobileAir",
+      "title": "Capteurs chargés ({{count}})",
+      "expandSensor": "Développer {{sensorId}}",
+      "hideSensor": "Masquer {{sensorId}} sur la carte",
+      "showSensor": "Afficher {{sensorId}} sur la carte",
+      "removeSensor": "Retirer {{sensorId}}",
+      "periodLabel": "Période",
+      "applyPeriod": "Appliquer la période",
+      "sessionsOnMap": "Sessions ({{count}})",
+      "toggleSessionMap": "Afficher la session {{sessionId}} sur la carte",
+      "noSessions": "Aucune session sur cette période",
+      "sensorError": "Erreur de chargement pour ce capteur",
+      "selectSessionHint": "Sélectionnez une session pour afficher le détail",
+      "status": {
+        "idle": "En attente",
+        "loading": "Chargement",
+        "ready": "Prêt",
+        "error": "Erreur"
+      },
+      "selectAllSessions": "Tout",
+      "selectNoSessions": "Aucune",
+      "onMapCount": "{{count}}/{{total}} sur la carte",
+      "detailFocusBadge": "détail"
     },
     "mobileAirDetail": {
       "sessionTitle": "Session {{sessionId}}",
@@ -728,8 +761,8 @@
         "description": "Faites glisser le curseur, utilisez lecture/pause et la vitesse, ou les flèches, pour changer de créneau. Chaque cran recharge les mesures de cet instant."
       },
       "step3": {
-        "title": "Aller à une date",
-        "description": "Choisissez une date dans le calendrier (y compris les épisodes de pollution) pour recentrer la barre. Les graphiques des stations s'ouvrent sur cette fenêtre, avec un curseur sur l'instant."
+        "title": "Choisir une période",
+        "description": "Le bouton « Période » définit les bornes navigables de la barre (calendrier et épisodes de pollution). Les graphiques des stations s'ouvrent sur cette fenêtre."
       }
     },
     "global": {
@@ -773,7 +806,7 @@
       "modeling": "MOD",
       "modelingOff": "—",
       "baseLayer": "FOND",
-      "historical": "HIST"
+      "historical": "PÉR."
     },
     "groupUtilities": "Utilitaires",
     "groupBaseLayer": "Fond de carte",
@@ -797,7 +830,17 @@
     "speed": "{{value}}×",
     "speedLabel": "Vitesse de lecture",
     "speedMenu": "Vitesse de lecture : {{value}}×",
-    "reducedMotionPlay": "Les animations automatiques sont réduites : ce bouton avance d'un cran."
+    "reducedMotionPlay": "Les animations automatiques sont réduites : ce bouton avance d'un cran.",
+    "period": "Période",
+    "periodTitle": "Choisir une période",
+    "periodStart": "Du",
+    "periodEnd": "Au",
+    "periodApply": "Appliquer",
+    "periodClear": "Effacer",
+    "periodInvalidOrder": "La date de début doit précéder la date de fin.",
+    "periodLimitDays": "Maximum {{count}} jours pour ce pas de temps.",
+    "periodLimitMonths": "Maximum {{count}} mois pour ce pas de temps.",
+    "expandConfirm": "Élargir la période jusqu'au {{range}} ?"
   },
   "pages": {
     "about": {

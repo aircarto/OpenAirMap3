@@ -2,7 +2,7 @@ import { createContext, useContext } from "react";
 import { ModelingLayerType } from "../constants/mapLayers";
 import { Toast } from "../components/ui/toast";
 import type { Notice } from "../components/map/notifications/notice";
-import type { MapInstantMode, TimeBarSlot } from "../utils/mapInstant";
+import type { MapInstantMode, TimeBarCustomRange, TimeBarSlot } from "../utils/mapInstant";
 
 /**
  * Transport d'état pour les contrôles de carte — pas un propriétaire d'état.
@@ -60,12 +60,6 @@ export interface MapControlsRefresh {
   lastRefresh: Date | null;
 }
 
-export interface MapControlsHistorical {
-  isActive: boolean;
-  isAllowed: boolean;
-  onToggle: () => void;
-}
-
 export interface MapControlsTimeBar {
   visible: boolean;
   mode: MapInstantMode;
@@ -75,17 +69,26 @@ export interface MapControlsTimeBar {
   showForecastZone: boolean;
   minDate: string;
   maxDate: string;
-  blockRangeLabel: string;
   canSeekPast: boolean;
   canSeekFuture: boolean;
   selectedPollutant: string;
   timeStep: string;
   loading: boolean;
+  customRange: TimeBarCustomRange | null;
+  periodPickerOpen: boolean;
+  onPeriodPickerOpenChange: (open: boolean) => void;
+  onCustomRangeChange: (range: TimeBarCustomRange | null) => void;
   onIndexChange: (index: number) => void;
   onGoLive: () => void;
-  onGoToDate: (date: string) => void;
   onSeekBeyond: (direction: 'past' | 'future') => void;
   onPlayingChange: (playing: boolean) => void;
+}
+
+export interface MapControlsHistorical {
+  isActive: boolean;
+  isAllowed: boolean;
+  /** Ouvre le sélecteur de période TimeBar / retour live si déjà en plage. */
+  onToggle: () => void;
 }
 
 /**
@@ -120,15 +123,29 @@ export interface MapControlsCommunitySources {
   hasMobileAirData: boolean;
 
   /**
-   * Brouillon de sélection SignalAir : modifié librement, puis validé par
-   * `onSignalAirLoadRequest`, qui seul déclenche une requête. Le découplage est
-   * volontaire — cocher un type ne doit pas relancer un chargement.
+   * Capteurs MobileAir chargés (max 5). Hors de `selectedSources` : l'activation
+   * passe par un chargement explicite (période + Charger).
+   */
+  selectedMobileAirSensors: string[];
+  mobileAirDefaultPeriod: { startDate: string; endDate: string };
+  mobileAirSensorPeriods: Record<string, { startDate: string; endDate: string }>;
+  mobileAirSensorVisibility: Record<string, boolean>;
+  mobileAirSensorStatus: Record<string, 'idle' | 'loading' | 'ready' | 'error'>;
+  isMobileAirLoading: boolean;
+  onMobileAirSensorRemove: (sensorId: string) => void;
+  onMobileAirSensorPeriodChange: (
+    sensorId: string,
+    period: { startDate: string; endDate: string }
+  ) => void;
+  onMobileAirSensorVisibilityChange: (sensorId: string, visible: boolean) => void;
+
+  /**
+   * Types SignalAir cochés. Cocher/décocher filtre l’affichage ; tout décocher
+   * désactive la source. Un type nouvellement coché absent du cache déclenche
+   * un refetch (géré dans App).
    */
   signalAirSelectedTypes: string[];
   onSignalAirTypesChange: (types: string[]) => void;
-  signalAirDraftPeriod: { startDate: string; endDate: string };
-  onSignalAirDraftPeriodChange: (startDate: string, endDate: string) => void;
-  onSignalAirLoadRequest: () => void;
   isSignalAirLoading: boolean;
   signalAirHasLoaded: boolean;
   signalAirReportsCount: number;
