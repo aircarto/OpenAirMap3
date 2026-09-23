@@ -10,6 +10,41 @@ import { getMarkerPath } from "../../../utils";
 import { QUALITY_COLORS } from "../../../constants/qualityColors";
 
 /**
+ * Coordonnées affichables sur Leaflet (évite `latlng is null` au seek TimeBar).
+ */
+export const isValidLatLng = (
+  lat: unknown,
+  lng: unknown
+): lat is number =>
+  typeof lat === "number" &&
+  typeof lng === "number" &&
+  Number.isFinite(lat) &&
+  Number.isFinite(lng) &&
+  Math.abs(lat) <= 90 &&
+  Math.abs(lng) <= 180;
+
+export const isValidLatLngPosition = (
+  position: L.LatLngExpression | null | undefined
+): boolean => {
+  if (position == null) return false;
+  if (Array.isArray(position)) {
+    return isValidLatLng(position[0], position[1]);
+  }
+  if (typeof position === "object") {
+    const lat =
+      "lat" in position
+        ? (position as L.LatLngLiteral).lat
+        : (position as L.LatLng).lat;
+    const lng =
+      "lng" in position
+        ? (position as L.LatLngLiteral).lng
+        : (position as L.LatLng).lng;
+    return isValidLatLng(lat, lng);
+  }
+  return false;
+};
+
+/**
  * Priorité des sources de données (plus le nombre est élevé, plus la priorité est haute)
  * Station de ref atmosud > Microcapteurs qualifiés atmosud > Nebuleair > le reste
  */

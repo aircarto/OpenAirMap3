@@ -208,12 +208,128 @@ export const clampInstant = (
 export const getLookbackDaysForTimeStep = (timeStep: string): number => {
   switch (timeStep) {
     case 'quartHeure':
-      return 7;
     case 'heure':
-      return 30;
+      return 1;
     default:
-      return 365;
+      return 7;
   }
+};
+
+/** Plage custom choisie par l’utilisateur (bornes TimeBar navigables). */
+export type TimeBarCustomRange = {
+  start: MapInstant;
+  end: MapInstant;
+};
+
+/**
+ * Plafond de durée d’une plage custom selon le pas de temps.
+ * qh = 5 j, heure = 14 j, jour = 6 mois calendaires.
+ */
+export const getMaxCustomRangeCalendarDays = (timeStep: string): number => {
+  switch (timeStep) {
+    case 'quartHeure':
+      return 5;
+    case 'heure':
+      return 14;
+    case 'jour':
+      return 183; // approx pour messages ; le clamp calendaire utilise subtractCalendarMonths
+    default:
+      return 14;
+  }
+};
+
+/** Soustrait N mois calendaires (même jour, clamp fin de mois). */
+export const subtractCalendarMonths = (date: Date, months: number): Date => {
+  const result = new Date(date.getTime());
+  const day = result.getDate();
+  result.setDate(1);
+  result.setMonth(result.getMonth() - months);
+  const lastDay = new Date(
+    result.getFullYear(),
+    result.getMonth() + 1,
+    0
+  ).getDate();
+  result.setDate(Math.min(day, lastDay));
+  return result;
+};
+
+/** Instant plancher max pour une plage se terminant à `end` (6 mois calendaires pour jour). */
+export const getMinInstantForCustomRangeEnd = (
+  end: MapInstant,
+  timeStep: string
+): MapInstant => {
+  const endDate = instantToLocalDate(end);
+  if (timeStep === 'jour') {
+    return toMapInstant(subtractCalendarMonths(endDate, 6), timeStep);
+  }
+  const days = getMaxCustomRangeCalendarDays(timeStep);
+  const start = new Date(endDate.getTime());
+  start.setDate(start.getDate() - days);
+  return toMapInstant(start, timeStep);
+};
+
+/**
+ * Clamp une plage custom : end ≤ live, start ≥ min(end), span ≤ plafond pas de temps.
+ * Si start > end après normalisation, start = end.
+ */
+export const clampCustomRange = (
+  range: TimeBarCustomRange,
+  timeStep: string,
+  now: Date = new Date()
+): TimeBarCustomRange => {
+  const live = lastCompletedSlotInstant(timeStep, now);
+  let end = normalizeInstant(range.end, timeStep);
+  if (compareInstants(end, live) > 0) end = live;
+  let start = normalizeInstant(range.start, timeStep);
+  const minStart = getMinInstantForCustomRangeEnd(end, timeStep);
+  if (compareInstants(start, minStart) < 0) start = minStart;
+  if (compareInstants(start, end) > 0) start = end;
+  return { start, end };
+};
+
+/**
+ * Propose une plage élargie pour couvrir `target` tout en respectant le plafond.
+ * Hors bornes : ajoute un bloc lookback (24 h en qh/heure, 7 j en jour)
+ * plutôt qu’un seul cran — la cible reste toujours incluse.
+ */
+export const proposeExpandedRange = (
+  current: TimeBarCustomRange,
+  targetInstant: MapInstant,
+  timeStep: string,
+  now: Date = new Date()
+): TimeBarCustomRange => {
+  const live = lastCompletedSlotInstant(timeStep, now);
+  const target = clampInstant(
+    normalizeInstant(targetInstant, timeStep),
+    getTimeBarGoToMinInstant(timeStep),
+    live,
+    timeStep
+  );
+  const clamped = clampCustomRange(current, timeStep, now);
+
+  if (
+    compareInstants(target, clamped.start) >= 0 &&
+    compareInstants(target, clamped.end) <= 0
+  ) {
+    return clamped;
+  }
+
+  const spanMinutes = getSnapshotBufferSpanMinutes(timeStep);
+
+  if (compareInstants(target, clamped.start) < 0) {
+    const chunkStart = addMinutesToInstant(
+      clamped.start,
+      -spanMinutes,
+      timeStep
+    );
+    const start =
+      compareInstants(target, chunkStart) < 0 ? target : chunkStart;
+    return clampCustomRange({ start, end: clamped.end }, timeStep, now);
+  }
+
+  const chunkEnd = addMinutesToInstant(clamped.end, spanMinutes, timeStep);
+  const end = compareInstants(target, chunkEnd) > 0 ? target : chunkEnd;
+  return clampCustomRange({ start: clamped.start, end }, timeStep, now);
 };
 
 export const minInstantForLookback = (
@@ -252,9 +368,9 @@ export const getTimeBarHorizonEnd = (
 };
 
 /**
- * Bornes d’un bloc TimeBar / snapshot autour d’un focus.
- * Pas de plafond de recul : seule la fin est coupée au live, et on étend
- * alors le début pour garder 7 j / 30 j / 365 j.
+ * Bornes d’un bloc TimeBar / snapshot en lookback depuis le focus.
+ * end = focus (clampé au live) ; start = end − span (24 h ou 7 j).
+ * Pas de centrage : à l’arrivée sur l’app, on navigue dans les dernières 24 h.
  */
 export const resolveBlockBounds = (
   focus: MapInstant,
@@ -262,23 +378,10 @@ export const resolveBlockBounds = (
   now: Date = new Date()
 ): { start: MapInstant; end: MapInstant } => {
   const live = lastCompletedSlotInstant(timeStep, now);
-  const clampedFocus =
+  const end =
     compareInstants(focus, live) > 0 ? live : normalizeInstant(focus, timeStep);
   const spanMinutes = getSnapshotBufferSpanMinutes(timeStep);
-  const halfMinutes = spanMinutes / 2;
-
-  let start = addMinutesToInstant(clampedFocus, -halfMinutes, timeStep);
-  let end = addMinutesToInstant(clampedFocus, halfMinutes, timeStep);
-  if (compareInstants(end, live) > 0) end = live;
-
-  const spanMs = spanMinutes * 60 * 1000;
-  const currentMs =
-    instantToLocalDate(end).getTime() - instantToLocalDate(start).getTime();
-  const missingMinutes = Math.round((spanMs - currentMs) / (60 * 1000));
-  if (missingMinutes > 0 && compareInstants(end, live) >= 0) {
-    start = addMinutesToInstant(start, -missingMinutes, timeStep);
-  }
-
+  const start = addMinutesToInstant(end, -spanMinutes, timeStep);
   return { start, end };
 };
 
@@ -297,35 +400,60 @@ const enumerateSlots = (
   to: MapInstant,
   timeStep: string
 ): MapInstant[] => {
+  const start = normalizeInstant(from, timeStep);
+  const end = normalizeInstant(to, timeStep);
+  if (compareInstants(start, end) > 0) return [start];
+
   const step = getSlotStepMinutes(timeStep);
   const result: MapInstant[] = [];
-  let cursor = from;
-  const guard = Math.ceil(
-    (instantToLocalDate(to).getTime() - instantToLocalDate(from).getTime()) /
-      (step * 60 * 1000)
-  );
-  const steps = Math.max(0, guard);
-  for (let i = 0; i <= steps; i += 1) {
+  let cursor = start;
+  // Garde-fou : ~6 mois au pas 15 min ≈ 17 500 crans.
+  const maxSteps = 20_000;
+  for (let i = 0; i < maxSteps; i += 1) {
     result.push(cursor);
-    if (isSameInstant(cursor, to)) break;
-    cursor = addMinutesToInstant(cursor, step, timeStep);
+    if (isSameInstant(cursor, end)) break;
+    const next = addMinutesToInstant(cursor, step, timeStep);
+    // Évite tout dépassement si le cran suivant saute au-delà de `end`.
+    if (compareInstants(next, end) > 0) break;
+    cursor = next;
   }
   return result;
 };
 
 /**
- * Fenêtre mesures : un bloc autour du focus (live par défaut).
- * 15 min → 7 j ; horaire → 30 j ; jour → 365 j. Pas de plafond depuis aujourd’hui :
- * une date ancienne ne s’étire pas jusqu’au live.
+ * Fenêtre mesures : lookback depuis le focus (live par défaut),
+ * ou plage custom complète si `customRange` est fourni (pas de forecast).
+ * 15 min / horaire → 24 h ; jour → 7 j. Une date ancienne ne s’étire pas jusqu’au live.
  * Si Azur est actif et que le bloc contient le live, 24 h de prévision suivent.
  */
 export const buildMeasurementsTimeBarWindow = (
   timeStep: string,
   now: Date = new Date(),
   includeForecast = false,
-  focus?: MapInstant
+  focus?: MapInstant,
+  customRange?: TimeBarCustomRange | null
 ): TimeBarWindow => {
   const live = lastCompletedSlotInstant(timeStep, now);
+
+  if (customRange) {
+    const range = clampCustomRange(customRange, timeStep, now);
+    const pastAndLive = enumerateSlots(range.start, range.end, timeStep);
+    const slots: TimeBarSlot[] = pastAndLive.map((instant) => ({
+      ...instant,
+      kind: isSameInstant(instant, live) ? 'live' : 'past',
+    }));
+    const liveIndex = slots.findIndex((slot) => slot.kind === 'live');
+    return {
+      slots,
+      liveIndex,
+      minDate: slots[0]?.date ?? range.start.date,
+      maxDate: slots[slots.length - 1]?.date ?? range.end.date,
+      showForecastZone: false,
+      startInstant: range.start,
+      endInstant: range.end,
+    };
+  }
+
   const { start, end } = resolveBlockBounds(focus ?? live, timeStep, now);
   const pastAndLive = enumerateSlots(start, end, timeStep);
   const slots: TimeBarSlot[] = pastAndLive.map((instant) => ({
@@ -378,14 +506,17 @@ export const buildTimeBarWindow = (args: {
   timeStep: string;
   now?: Date;
   focus?: MapInstant;
+  customRange?: TimeBarCustomRange | null;
 }): TimeBarWindow => {
   const now = args.now ?? new Date();
-  const includeForecast = args.kind === 'azur';
+  // Plage custom : borne haute ≤ live → jamais de zone forecast.
+  const includeForecast = args.kind === 'azur' && !args.customRange;
   return buildMeasurementsTimeBarWindow(
     args.timeStep,
     now,
     includeForecast,
-    args.focus
+    args.focus,
+    args.customRange
   );
 };
 
@@ -478,7 +609,7 @@ export const buildSlotFetchWindow = (
 export const getSnapshotBufferSpanMinutes = (timeStep: string): number =>
   getLookbackDaysForTimeStep(timeStep) * 24 * 60;
 
-/** Moitié de la fenêtre chargée (pour un centrage ±). */
+/** Moitié de la fenêtre chargée (prefetch près des bords). */
 export const getSnapshotBufferPadMinutes = (timeStep: string): number =>
   getSnapshotBufferSpanMinutes(timeStep) / 2;
 
@@ -490,14 +621,32 @@ export type SnapshotBufferWindow = {
 };
 
 /**
- * Fenêtre cache / graphique autour de l’instant : même bloc que la TimeBar
- * (7 j / 30 j / 365 j), sans plafond de recul, fin ≤ live.
+ * Fenêtre cache / graphique.
+ * - Sans plage custom : lookback 24 h / 7 j autour du focus.
+ * - Avec plage custom : toute la période navigable (un seul chargement).
  */
 export const buildSnapshotBufferWindow = (
   instant: MapInstant,
   timeStep: string,
-  now: Date = new Date()
+  now: Date = new Date(),
+  navigableRange?: TimeBarCustomRange | null
 ): SnapshotBufferWindow => {
+  if (navigableRange) {
+    const range = clampCustomRange(navigableRange, timeStep, now);
+    const endExclusive = addMinutesToInstant(
+      range.end,
+      getSlotStepMinutes(timeStep),
+      timeStep
+    );
+    const endDate = new Date(instantToLocalDate(endExclusive).getTime() - 1);
+    return {
+      startInstant: range.start,
+      endInstant: range.end,
+      startDate: instantToLocalDate(range.start).toISOString(),
+      endDate: endDate.toISOString(),
+    };
+  }
+
   const { start, end } = resolveBlockBounds(instant, timeStep, now);
   const endExclusive = addMinutesToInstant(
     end,
@@ -517,9 +666,15 @@ export const buildSnapshotBufferWindow = (
 export const buildChartRangeAroundInstant = (
   instant: MapInstant,
   timeStep: string,
-  now: Date = new Date()
+  now: Date = new Date(),
+  navigableRange?: TimeBarCustomRange | null
 ): { startDate: string; endDate: string } => {
-  const buffer = buildSnapshotBufferWindow(instant, timeStep, now);
+  const buffer = buildSnapshotBufferWindow(
+    instant,
+    timeStep,
+    now,
+    navigableRange
+  );
   return { startDate: buffer.startDate, endDate: buffer.endDate };
 };
 
@@ -546,15 +701,57 @@ export const shouldPrefetchBuffer = (
   buffer: Pick<SnapshotBufferWindow, 'startInstant' | 'endInstant'>,
   timeStep: string,
   margin = 0.25
-): boolean => {
-  if (!isInstantInBuffer(instant, buffer, timeStep)) return false;
+): boolean => getPrefetchEdgeDirection(instant, buffer, timeStep, margin) !== null;
+
+/**
+ * Direction du bord atteint pour le prefetch (null si loin des bords).
+ * `past` = près du début du buffer, `future` = près de la fin.
+ */
+export const getPrefetchEdgeDirection = (
+  instant: MapInstant,
+  buffer: Pick<SnapshotBufferWindow, 'startInstant' | 'endInstant'>,
+  timeStep: string,
+  margin = 0.25
+): 'past' | 'future' | null => {
+  if (!isInstantInBuffer(instant, buffer, timeStep)) return null;
   const t = instantToLocalDate(instant).getTime();
   const start = instantToLocalDate(buffer.startInstant).getTime();
   const end = instantToLocalDate(buffer.endInstant).getTime();
   const span = end - start;
-  if (span <= 0) return false;
+  if (span <= 0) return null;
   const ratio = (t - start) / span;
-  return ratio <= margin || ratio >= 1 - margin;
+  if (ratio <= margin) return 'past';
+  if (ratio >= 1 - margin) return 'future';
+  return null;
+};
+
+/**
+ * Fenêtre cache adjacente dans une direction (même span lookback),
+ * clampée optionnellement dans une plage navigable.
+ */
+export const buildAdjacentSnapshotBufferWindow = (
+  current: Pick<SnapshotBufferWindow, 'startInstant' | 'endInstant'>,
+  direction: 'past' | 'future',
+  timeStep: string,
+  now: Date = new Date(),
+  navigableRange?: TimeBarCustomRange | null
+): SnapshotBufferWindow => {
+  const spanMinutes = getSnapshotBufferSpanMinutes(timeStep);
+  const step = getSlotStepMinutes(timeStep);
+  let focus: MapInstant;
+  if (direction === 'past') {
+    focus = addMinutesToInstant(current.startInstant, -step, timeStep);
+  } else {
+    focus = addMinutesToInstant(current.endInstant, spanMinutes, timeStep);
+  }
+  const live = lastCompletedSlotInstant(timeStep, now);
+  if (compareInstants(focus, live) > 0) focus = live;
+  if (navigableRange) {
+    const range = clampCustomRange(navigableRange, timeStep, now);
+    if (compareInstants(focus, range.start) < 0) focus = range.start;
+    if (compareInstants(focus, range.end) > 0) focus = range.end;
+  }
+  return buildSnapshotBufferWindow(focus, timeStep, now, navigableRange);
 };
 
 export const snapshotBufferKey = (
@@ -591,10 +788,43 @@ export const formatInstantPeriod = (
     return dateFmt.format(start);
   }
 
-  const startTime = timeFmt.format(start).replace(':00', 'h');
-  const endTime = timeFmt.format(end).replace(':00', 'h');
+  const startTime = timeFmt.format(start).replace(/:00/g, 'h');
+  const endTime = timeFmt.format(end).replace(/:00/g, 'h');
   if (sameDay) return `${startTime}–${endTime}`;
   return `${dateFmt.format(start)} ${startTime}–${endTime}`;
+};
+
+/**
+ * Label de survol TimeBar : date toujours visible, formatée selon la locale
+ * (ex. « mer. 10 sept. · 14:00–15:00 »).
+ */
+export const formatInstantHoverLabel = (
+  instant: MapInstant,
+  locale: string,
+  timeStep: string = 'heure',
+  now: Date = new Date()
+): string => {
+  const start = instantToLocalDate(instant);
+  const step = getSlotStepMinutes(timeStep);
+  const end = new Date(start.getTime() + step * 60 * 1000);
+  const includeYear = start.getFullYear() !== now.getFullYear();
+
+  const dateFmt = new Intl.DateTimeFormat(locale, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    ...(includeYear || timeStep === 'jour' ? { year: 'numeric' as const } : {}),
+  });
+
+  if (timeStep === 'jour') {
+    return dateFmt.format(start);
+  }
+
+  const timeFmt = new Intl.DateTimeFormat(locale, {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  return `${dateFmt.format(start)} · ${timeFmt.format(start)}–${timeFmt.format(end)}`;
 };
 
 export const formatBlockRangeLabel = (
@@ -612,6 +842,35 @@ export const formatBlockRangeLabel = (
   )}`;
 };
 
+/**
+ * Libellé de confirmation d’extension : met en avant le cran cible
+ * (évite une plage date-seule qui paraît inchangée, ex. toujours « 27–29 août »).
+ */
+export const formatExpandConfirmLabel = (
+  proposed: TimeBarCustomRange,
+  target: MapInstant,
+  locale: string,
+  timeStep: string,
+  now: Date = new Date()
+): string => {
+  const until = formatInstantHoverLabel(target, locale, timeStep, now);
+  const range = formatBlockRangeLabel(proposed.start, proposed.end, locale);
+  return `${until} (${range})`;
+};
+
+/** Label court pour une borne TimeBar (extrémité de piste) — date seule. */
+export const formatBoundDateLabel = (
+  instant: MapInstant,
+  locale: string,
+  _timeStep: string = 'heure'
+): string => {
+  const date = instantToLocalDate(instant);
+  return new Intl.DateTimeFormat(locale, {
+    day: 'numeric',
+    month: 'short',
+  }).format(date);
+};
+
 export const getSlotBadge = (
   mode: MapInstantMode,
   slot: TimeBarSlot | undefined
@@ -620,3 +879,10 @@ export const getSlotBadge = (
   if (slot?.kind === 'forecast') return 'forecast';
   return 'past';
 };
+
+/**
+ * Évolutions futures (hors v0 TimeBar plage custom) :
+ * - Annotations TimeBar (pics polluant sélectionné, événements)
+ * - Couche incendie EFFIS synchronisée sur l’instant TimeBar
+ * - Azur : h23 = dernière heure pleine ; historique limité ~24 h
+ */

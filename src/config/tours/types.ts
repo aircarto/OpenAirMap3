@@ -11,7 +11,7 @@ export const TOUR_STORAGE_KEY = "openairmap-tours-completed";
 
 export const TOUR_SELECTORS = {
   mapTimebar: '[data-tour="map-timebar"]',
-  mapTimebarGoto: '[data-tour="map-timebar-goto"]',
+  mapTimebarPeriod: '[data-tour="map-timebar-period"]',
   mapTimebarPlay: '[data-tour="map-timebar-play"]',
   historicalToggle: '[data-tour="historical-toggle"]',
   historicalDatePanel: '[data-tour="historical-date-panel"]',
@@ -28,7 +28,7 @@ export const TOUR_SELECTORS = {
 export const HISTORICAL_TOUR_STEP = {
   timebar: 0,
   playback: 1,
-  goto: 2,
+  period: 2,
 } as const;
 
 export type HistoricalTourStepIndex =

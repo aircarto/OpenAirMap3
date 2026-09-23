@@ -1116,6 +1116,12 @@ export class AtmoMicroV2Service
         );
         qualityLevels[qualityLevel] = (qualityLevels[qualityLevel] || 0) + 1;
 
+        // Aligné sur le fetch live : écarter les observations sans coords valides
+        // (sinon crash Leaflet au seek TimeBar).
+        if (!this.isValidCoordinate(observation.lat, observation.lon)) {
+          continue;
+        }
+
         const hasCorrection = observation.value !== null;
         const displayName = this.buildDisplayName({
           id: observation.id,

@@ -921,6 +921,12 @@ export class AtmoMicroService extends BaseDataService {
                 pollutantConfig.thresholds
               );
 
+              // Même garde que le chemin live (mesures/dernieres) : sans lat/lon
+              // valides Leaflet plante (`latlng is null`) au seek TimeBar.
+              if (!this.isValidCoordinate(measure.lat, measure.lon)) {
+                return;
+              }
+
               // Compter les niveaux de qualité
               qualityLevels[qualityLevel] =
                 (qualityLevels[qualityLevel] || 0) + 1;

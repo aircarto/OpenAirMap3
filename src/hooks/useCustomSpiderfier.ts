@@ -74,6 +74,14 @@ export const useCustomSpiderfier = ({
   const devicesByPosition = useMemo(() => {
     const groups = new Map<string, MeasurementDevice[]>();
     devices.forEach((device) => {
+      if (
+        typeof device.latitude !== 'number' ||
+        typeof device.longitude !== 'number' ||
+        !Number.isFinite(device.latitude) ||
+        !Number.isFinite(device.longitude)
+      ) {
+        return;
+      }
       // Utiliser une clé normalisée pour éviter les problèmes de précision flottante
       const key = getPositionKey(device.latitude, device.longitude);
       if (!groups.has(key)) {

@@ -18,7 +18,11 @@ export const isValidTemporalDevice = (
       device.value !== null &&
       device.value !== undefined &&
       typeof device.value === 'number' &&
-      !Number.isNaN(device.value)
+      !Number.isNaN(device.value) &&
+      typeof device.latitude === 'number' &&
+      typeof device.longitude === 'number' &&
+      Number.isFinite(device.latitude) &&
+      Number.isFinite(device.longitude)
   );
 
 /** Fusionne plusieurs séries temporelles par timestamp (tolérance 5 min). */
@@ -98,6 +102,41 @@ export const pickClosestTemporalPoint = (
     }
   }
   return closest;
+};
+
+/**
+ * Devices à afficher pour un créneau TimeBar : tous les points dont le
+ * timestamp tombe dans [startMs, endMs], dédupliqués par id.
+ * Fallback : point le plus proche de targetMs si aucun dans la fenêtre
+ * (sources à pas plus grossier que le créneau, ex. AtmoRef vs NebuleAir).
+ */
+export const devicesForSlotWindow = (
+  points: TemporalDataPoint[],
+  startMs: number,
+  endMs: number,
+  targetMs: number
+): MeasurementDevice[] => {
+  const inWindow = points.filter((point) => {
+    const t = new Date(point.timestamp).getTime();
+    return t >= startMs && t <= endMs;
+  });
+
+  const sourcePoints =
+    inWindow.length > 0
+      ? inWindow
+      : (() => {
+          const closest = pickClosestTemporalPoint(points, targetMs);
+          return closest ? [closest] : [];
+        })();
+
+  const byId = new Map<string, MeasurementDevice>();
+  for (const point of sourcePoints) {
+    for (const device of point.devices) {
+      if (!isValidTemporalDevice(device)) continue;
+      byId.set(device.id, device);
+    }
+  }
+  return [...byId.values()];
 };
 
 export const isHttpNotFound = (error: unknown): boolean => {

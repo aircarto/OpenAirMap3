@@ -63,7 +63,7 @@ export const buildHistoricalModeTourSteps = (t: TFunction): DriveStep[] => [
     },
   },
   {
-    element: () => getVisibleTourElement(TOUR_SELECTORS.mapTimebarGoto),
+    element: () => getVisibleTourElement(TOUR_SELECTORS.mapTimebarPeriod),
     popover: {
       title: t("tour.historical.step3.title"),
       description: t("tour.historical.step3.description"),

@@ -4,7 +4,11 @@ import L from "leaflet";
 import { MeasurementDevice } from "../../types";
 import { useCustomSpiderfier } from "../../hooks/useCustomSpiderfier";
 import MarkerWithTooltip from "./MarkerWithTooltip";
-import { calculateZIndexOffset } from "./utils/mapIconUtils";
+import {
+  calculateZIndexOffset,
+  isValidLatLng,
+  isValidLatLngPosition,
+} from "./utils/mapIconUtils";
 
 interface CustomSpiderfiedMarkersProps {
   devices: MeasurementDevice[];
@@ -53,20 +57,21 @@ const CustomSpiderfiedMarkers: React.FC<CustomSpiderfiedMarkersProps> = ({
       if (!marker) return;
 
       const device = devices.find((d) => d.id === deviceId);
-      if (!device) return;
+      if (!device || !isValidLatLng(device.latitude, device.longitude)) return;
 
       const newPosition = getMarkerPosition(device);
+      if (!isValidLatLngPosition(newPosition)) return;
+
       const leafletMarker = (marker as any).leafletElement || marker;
 
       if (!leafletMarker || typeof leafletMarker.setLatLng !== "function")
         return;
 
-      const currentLatLng = leafletMarker.getLatLng();
+      const currentLatLng = leafletMarker.getLatLng?.();
       const newLatLng = L.latLng(newPosition[0], newPosition[1]);
 
       // Mettre à jour la position seulement si elle a changé
-      if (!currentLatLng || !currentLatLng.equals(newLatLng)) {
-        // Mettre à jour la position
+      if (!currentLatLng || !currentLatLng.equals?.(newLatLng)) {
         leafletMarker.setLatLng(newLatLng);
       }
     });
@@ -90,7 +95,15 @@ const CustomSpiderfiedMarkers: React.FC<CustomSpiderfiedMarkersProps> = ({
     <>
       {/* Marqueurs normaux ou éclatés */}
       {devices.map((device) => {
+        if (!isValidLatLng(device.latitude, device.longitude)) {
+          return null;
+        }
+
         const position = getMarkerPosition(device);
+        if (!isValidLatLngPosition(position)) {
+          return null;
+        }
+
         const isSpiderfied = isMarkerSpiderfied(device);
         const spiderfiedData = getSpiderfiedData(device);
         const markerKey = getMarkerKey ? getMarkerKey(device) : device.id;

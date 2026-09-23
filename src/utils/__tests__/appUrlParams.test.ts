@@ -29,7 +29,29 @@ describe("parseAppUrlParams", () => {
       pollutant: "no2",
       timeStep: "quartHeure",
       sources: ["atmoRef", "atmoMicro"],
+      from: null,
+      to: null,
+      at: null,
     });
+  });
+
+  it("parse from/to/at pour une plage TimeBar", () => {
+    const result = parseAppUrlParams(
+      "?from=2026-09-01&to=2026-09-10&at=2026-09-05T12:00&timeStep=heure",
+      defaults
+    );
+    expect(result.from).toBe("2026-09-01");
+    expect(result.to).toBe("2026-09-10");
+    expect(result.at).toBe("2026-09-05T12:00");
+  });
+
+  it("ignore une plage from/to mal ordonnée", () => {
+    const result = parseAppUrlParams(
+      "?from=2026-09-20&to=2026-09-10",
+      defaults
+    );
+    expect(result.from).toBeNull();
+    expect(result.to).toBeNull();
   });
 
   it("ignore les coordonnées invalides", () => {
@@ -65,6 +87,21 @@ describe("serializeAppUrlParams", () => {
     expect(
       serializeAppUrlParams(defaults, { defaults, includeMapView: false })
     ).toBe("");
+  });
+
+  it("inclut from/to/at quand une plage custom est active", () => {
+    const query = serializeAppUrlParams(
+      {
+        ...defaults,
+        from: "2026-09-01",
+        to: "2026-09-10",
+        at: "2026-09-05T12:00",
+      },
+      { defaults, includeMapView: false }
+    );
+    expect(query).toContain("from=2026-09-01");
+    expect(query).toContain("to=2026-09-10");
+    expect(query).toContain("at=2026-09-05T12%3A00");
   });
 
   it("inclut la vue carte quand includeMapView est true", () => {

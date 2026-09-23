@@ -14,6 +14,12 @@ export interface AppUrlParams {
   pollutant: string;
   timeStep: string;
   sources: string[];
+  /** Borne basse plage TimeBar (YYYY-MM-DD), null = pas de plage custom. */
+  from: string | null;
+  /** Borne haute plage TimeBar (YYYY-MM-DD). */
+  to: string | null;
+  /** Instant courant optionnel (YYYY-MM-DD ou YYYY-MM-DDTHH:mm). */
+  at: string | null;
 }
 
 export interface AppUrlDefaults extends AppUrlParams {}
@@ -27,6 +33,8 @@ export interface SerializeAppUrlOptions {
 const COORD_EPSILON = 1e-5;
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 18;
+const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
+const DATE_TIME_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
 
 const getDefaultTimeStep = (): string => {
   const defaultTimeStep = Object.entries(pasDeTemps).find(
@@ -45,6 +53,9 @@ export const buildAppUrlDefaults = (mapDefaults: {
   pollutant: getDefaultPollutant(),
   timeStep: getDefaultTimeStep(),
   sources: getDefaultSources(),
+  from: null,
+  to: null,
+  at: null,
 });
 
 const getAllValidSourceCodes = (): string[] => {
@@ -82,6 +93,31 @@ const parseIntParam = (value: string | null): number | null => {
   }
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) ? parsed : null;
+};
+
+const parseDateOnlyParam = (value: string | null): string | null => {
+  if (!value || !DATE_ONLY_RE.test(value)) return null;
+  const [y, m, d] = value.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  if (
+    date.getFullYear() !== y ||
+    date.getMonth() !== m - 1 ||
+    date.getDate() !== d
+  ) {
+    return null;
+  }
+  return value;
+};
+
+const parseAtParam = (value: string | null): string | null => {
+  if (!value) return null;
+  if (DATE_ONLY_RE.test(value)) return parseDateOnlyParam(value);
+  if (!DATE_TIME_RE.test(value)) return null;
+  const [datePart, timePart] = value.split("T");
+  if (!parseDateOnlyParam(datePart)) return null;
+  const [hh, mm] = timePart.split(":").map(Number);
+  if (hh < 0 || hh > 23 || mm < 0 || mm > 59) return null;
+  return value;
 };
 
 const parseSourcesParam = (value: string | null, fallback: string[]): string[] => {
@@ -159,6 +195,13 @@ export const parseAppUrlParams = (
 
   const parsedSources = parseSourcesParam(params.get("sources"), defaults.sources);
 
+  const from = parseDateOnlyParam(params.get("from"));
+  const to = parseDateOnlyParam(params.get("to"));
+  const at = parseAtParam(params.get("at"));
+
+  // Plage valide seulement si from et to sont présents et ordonnés.
+  const rangeValid = Boolean(from && to && from <= to);
+
   return {
     lat,
     lng,
@@ -170,6 +213,9 @@ export const parseAppUrlParams = (
     ),
     timeStep,
     sources: parsedSources,
+    from: rangeValid ? from : null,
+    to: rangeValid ? to : null,
+    at: at ?? null,
   };
 };
 
@@ -204,6 +250,15 @@ export const serializeAppUrlParams = (
     params.set("sources", state.sources.join(","));
   }
 
+  if (state.from && state.to) {
+    params.set("from", state.from);
+    params.set("to", state.to);
+  }
+
+  if (state.at) {
+    params.set("at", state.at);
+  }
+
   const query = params.toString();
   return query ? `?${query}` : "";
 };
@@ -217,7 +272,10 @@ export const areAppUrlParamsEqual = (
   a.zoom === b.zoom &&
   a.pollutant === b.pollutant &&
   a.timeStep === b.timeStep &&
-  arraysEqual(a.sources, b.sources);
+  arraysEqual(a.sources, b.sources) &&
+  a.from === b.from &&
+  a.to === b.to &&
+  a.at === b.at;
 
 export const buildAppUrl = (
   state: AppUrlParams,

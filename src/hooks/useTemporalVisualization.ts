@@ -23,6 +23,10 @@ interface UseTemporalVisualizationProps {
   signalAirSelectedTypes?: string[];
 }
 
+/**
+ * @deprecated Remplacé par la TimeBar (plage custom + cache glissant).
+ * Conservé pour référence / tours legacy — ne plus brancher dans App.
+ */
 export const useTemporalVisualization = ({
   selectedPollutant,
   selectedSources,

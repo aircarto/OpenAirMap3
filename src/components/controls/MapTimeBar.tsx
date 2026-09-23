@@ -8,9 +8,13 @@ import {
 import PollutionEpisodeCalendar from './PollutionEpisodeCalendar';
 import { cn } from '../../lib/utils';
 import {
+  formatBoundDateLabel,
+  formatInstantHoverLabel,
   formatInstantPeriod,
+  getMaxCustomRangeCalendarDays,
   getSlotBadge,
   type MapInstantMode,
+  type TimeBarCustomRange,
   type TimeBarSlot,
 } from '../../utils/mapInstant';
 
@@ -25,16 +29,19 @@ export interface MapTimeBarProps {
   showForecastZone: boolean;
   minDate: string;
   maxDate: string;
-  blockRangeLabel?: string;
   canSeekPast?: boolean;
   canSeekFuture?: boolean;
   selectedPollutant: string;
   timeStep: string;
   /** true seulement sur miss bloquant — le prefetch silencieux ne gèle pas le playback */
   loading?: boolean;
+  customRange?: TimeBarCustomRange | null;
+  /** Ouvre le sélecteur de période (ex. depuis le rail). */
+  periodPickerOpen?: boolean;
+  onPeriodPickerOpenChange?: (open: boolean) => void;
+  onCustomRangeChange?: (range: TimeBarCustomRange | null) => void;
   onIndexChange: (index: number) => void;
   onGoLive: () => void;
-  onGoToDate: (date: string) => void;
   onSeekBeyond?: (direction: 'past' | 'future') => void;
   onPlayingChange?: (playing: boolean) => void;
 }
@@ -43,6 +50,21 @@ const prefersReducedMotion = (): boolean => {
   if (typeof window === 'undefined' || !window.matchMedia) return false;
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 };
+
+/** Cible tactile ≥ 44px (skill ui-ux). */
+const iconBtnClass = cn(
+  'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full',
+  'text-[hsl(var(--brand-800))]',
+  'hover:bg-[hsl(var(--brand-100))]',
+  'disabled:cursor-not-allowed disabled:opacity-35',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand-500))]'
+);
+
+const seekBtnClass = cn(
+  iconBtnClass,
+  'bg-[hsl(var(--brand-100))]/70 ring-1 ring-[hsl(var(--brand-200))]/60',
+  'hover:bg-[hsl(var(--brand-200))] hover:ring-[hsl(var(--brand-300))]'
+);
 
 const MapTimeBar: React.FC<MapTimeBarProps> = ({
   visible,
@@ -53,39 +75,52 @@ const MapTimeBar: React.FC<MapTimeBarProps> = ({
   showForecastZone,
   minDate,
   maxDate,
-  blockRangeLabel,
   canSeekPast = false,
   canSeekFuture = false,
   selectedPollutant,
   timeStep,
   loading = false,
+  customRange = null,
+  periodPickerOpen,
+  onPeriodPickerOpenChange,
+  onCustomRangeChange,
   onIndexChange,
   onGoLive,
-  onGoToDate,
   onSeekBeyond,
   onPlayingChange,
 }) => {
   const { t, i18n } = useTranslation();
   const barRef = useRef<HTMLElement | null>(null);
-  const [goToOpen, setGoToOpen] = useState(false);
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const [periodOpenInternal, setPeriodOpenInternal] = useState(false);
+  const periodOpen =
+    periodPickerOpen !== undefined ? periodPickerOpen : periodOpenInternal;
+  const setPeriodOpen = (open: boolean) => {
+    onPeriodPickerOpenChange?.(open);
+    if (periodPickerOpen === undefined) setPeriodOpenInternal(open);
+  };
   const [speedOpen, setSpeedOpen] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [reduceMotion, setReduceMotion] = useState(prefersReducedMotion);
+  const [draftStart, setDraftStart] = useState('');
+  const [draftEnd, setDraftEnd] = useState('');
+  const [rangeError, setRangeError] = useState<string | null>(null);
+  const [hoverPreview, setHoverPreview] = useState<{
+    label: string;
+    xPct: number;
+  } | null>(null);
   const loadingRef = useRef(loading);
   const indexRef = useRef(index);
   const slotsLengthRef = useRef(slots.length);
   const onIndexChangeRef = useRef(onIndexChange);
-  const onSeekBeyondRef = useRef(onSeekBeyond);
-  const canSeekFutureRef = useRef(canSeekFuture);
   const lastSeekAtRef = useRef(0);
+  const pausedForLoadRef = useRef(false);
 
   loadingRef.current = loading;
   indexRef.current = index;
   slotsLengthRef.current = slots.length;
   onIndexChangeRef.current = onIndexChange;
-  onSeekBeyondRef.current = onSeekBeyond;
-  canSeekFutureRef.current = canSeekFuture;
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return;
@@ -123,6 +158,7 @@ const MapTimeBar: React.FC<MapTimeBarProps> = ({
 
   useEffect(() => {
     if (mode === 'live' && isPlaying) {
+      pausedForLoadRef.current = false;
       setIsPlaying(false);
     }
   }, [mode, isPlaying]);
@@ -132,24 +168,35 @@ const MapTimeBar: React.FC<MapTimeBarProps> = ({
   }, [isPlaying, onPlayingChange]);
 
   useEffect(() => {
+    // Pendant le play : ne pas couper la lecture — le tick attend déjà
+    // via loadingRef. Un pause manuel reste possible via le bouton.
+    if (loading && isPlaying) return;
+    if (!loading && pausedForLoadRef.current) {
+      pausedForLoadRef.current = false;
+      setIsPlaying(true);
+    }
+  }, [loading, isPlaying]);
+
+  useEffect(() => {
+    if (!periodOpen) return;
+    setDraftStart(customRange?.start.date ?? slots[0]?.date ?? '');
+    setDraftEnd(
+      customRange?.end.date ?? slots[slots.length - 1]?.date ?? maxDate
+    );
+    setRangeError(null);
+  }, [periodOpen, customRange, slots, maxDate]);
+
+  useEffect(() => {
     if (!isPlaying || reduceMotion) return;
 
     let cancelled = false;
     const tick = () => {
       if (cancelled) return;
-      // loading = miss bloquant uniquement : un prefetch silencieux ne gèle pas le playback
       if (loadingRef.current) return;
-      const maxIndex = Math.max(0, slotsLengthRef.current - 1);
+      const maxIdx = Math.max(0, slotsLengthRef.current - 1);
       const current = indexRef.current;
-      if (current >= maxIndex) {
-        if (canSeekFutureRef.current && onSeekBeyondRef.current) {
-          const minDelay = Math.max(500, 1000 / playbackSpeed);
-          const elapsed = Date.now() - lastSeekAtRef.current;
-          if (elapsed < minDelay) return;
-          lastSeekAtRef.current = Date.now();
-          onSeekBeyondRef.current('future');
-          return;
-        }
+      // Play ne doit jamais étendre la plage (confirm réservé aux boutons prev/next).
+      if (current >= maxIdx) {
         setIsPlaying(false);
         return;
       }
@@ -157,7 +204,7 @@ const MapTimeBar: React.FC<MapTimeBarProps> = ({
       const skip = Math.max(1, Math.round(Math.max(playbackSpeed * 0.5, 1)));
       const elapsed = Date.now() - lastSeekAtRef.current;
       if (elapsed < minDelay) return;
-      const next = Math.min(maxIndex, current + skip);
+      const next = Math.min(maxIdx, current + skip);
       lastSeekAtRef.current = Date.now();
       onIndexChangeRef.current(next);
     };
@@ -175,6 +222,8 @@ const MapTimeBar: React.FC<MapTimeBarProps> = ({
 
   const safeIndex = Math.max(0, Math.min(slots.length - 1, index));
   const slot = slots[safeIndex];
+  const startSlot = slots[0];
+  const endSlot = slots[slots.length - 1];
   const badge = getSlotBadge(mode, slot);
   const maxIndex = Math.max(0, slots.length - 1);
   const forecastStart =
@@ -187,9 +236,21 @@ const MapTimeBar: React.FC<MapTimeBarProps> = ({
       : 100;
 
   const periodLabel = formatInstantPeriod(slot, i18n.language, timeStep);
+  const startBoundLabel = formatBoundDateLabel(
+    startSlot,
+    i18n.language,
+    timeStep
+  );
+  const endBoundLabel = formatBoundDateLabel(endSlot, i18n.language, timeStep);
   const sliderLabel = `${t('timeBar.slider')}: ${periodLabel}`;
+  // Pendant le play, un miss de buffer ne doit pas geler les contrôles ni afficher de spinner.
+  const showLoadingUi = loading && !isPlaying;
+  const controlsDisabled = showLoadingUi;
+  const maxRangeDays =
+    timeStep === 'jour' ? null : getMaxCustomRangeCalendarDays(timeStep);
 
   const goPrev = () => {
+    if (controlsDisabled) return;
     if (safeIndex > 0) {
       onIndexChange(safeIndex - 1);
       return;
@@ -197,6 +258,7 @@ const MapTimeBar: React.FC<MapTimeBarProps> = ({
     onSeekBeyond?.('past');
   };
   const goNext = () => {
+    if (controlsDisabled) return;
     if (safeIndex < maxIndex) {
       onIndexChange(safeIndex + 1);
       return;
@@ -204,29 +266,72 @@ const MapTimeBar: React.FC<MapTimeBarProps> = ({
     onSeekBeyond?.('future');
   };
 
-  const handleGoToDate = (date: string) => {
-    onGoToDate(date);
-    setGoToOpen(false);
+  const updateHoverPreview = (clientX: number) => {
+    const track = trackRef.current;
+    if (!track || slots.length === 0) {
+      setHoverPreview(null);
+      return;
+    }
+    const rect = track.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+    const hoverIndex = Math.round(ratio * maxIndex);
+    const hovered = slots[hoverIndex];
+    if (!hovered) {
+      setHoverPreview(null);
+      return;
+    }
+    setHoverPreview({
+      label: formatInstantHoverLabel(hovered, i18n.language, timeStep),
+      xPct: maxIndex > 0 ? (hoverIndex / maxIndex) * 100 : 0,
+    });
   };
 
+  const clearHoverPreview = () => setHoverPreview(null);
+
   const handlePlayToggle = () => {
+    if (controlsDisabled) return;
     if (reduceMotion) {
       goNext();
       return;
     }
-    if (safeIndex >= maxIndex) {
-      if (canSeekFuture) {
-        onSeekBeyond?.('future');
-      } else {
-        onIndexChange(0);
-      }
+    if (isPlaying) {
+      pausedForLoadRef.current = false;
+      setIsPlaying(false);
+      return;
     }
-    setIsPlaying((prev) => !prev);
+    // Reprise depuis le début si déjà en fin de plage (pas d’extension auto).
+    if (safeIndex >= maxIndex) {
+      onIndexChange(0);
+    }
+    setIsPlaying(true);
   };
 
   const handleSliderChange = (nextIndex: number) => {
-    if (isPlaying) setIsPlaying(false);
+    if (controlsDisabled) return;
+    if (isPlaying) {
+      pausedForLoadRef.current = false;
+      setIsPlaying(false);
+    }
     onIndexChange(nextIndex);
+  };
+
+  const applyDraftRange = () => {
+    if (!onCustomRangeChange || !draftStart || !draftEnd) return;
+    if (draftStart > draftEnd) {
+      setRangeError(t('timeBar.periodInvalidOrder'));
+      return;
+    }
+    onCustomRangeChange({
+      start: { date: draftStart, hour: 0, minute: 0 },
+      end: { date: draftEnd, hour: 23, minute: 45 },
+    });
+    setPeriodOpen(false);
+  };
+
+  const clearCustomRange = () => {
+    onCustomRangeChange?.(null);
+    setPeriodOpen(false);
   };
 
   return (
@@ -235,10 +340,12 @@ const MapTimeBar: React.FC<MapTimeBarProps> = ({
       data-testid="map-timebar"
       data-tour="map-timebar"
       aria-label={t('timeBar.regionLabel')}
+      aria-busy={loading || undefined}
       className={cn(
         'glass-1 pointer-events-auto absolute z-map-search',
         'right-2',
-        'flex items-center gap-1.5 px-2 py-1.5 sm:gap-2 sm:px-3'
+        'flex items-center gap-1 px-2 py-1 sm:gap-1.5 sm:px-2.5',
+        loading && 'opacity-90'
       )}
       style={{
         borderRadius: 'var(--r-lg)',
@@ -247,256 +354,421 @@ const MapTimeBar: React.FC<MapTimeBarProps> = ({
         left: 'max(0.5rem, calc(var(--rail-inset, 0px) + 0.35rem), var(--instrument-band, 0px))',
       }}
     >
-      <button
-        type="button"
-        onClick={onGoLive}
-        aria-pressed={mode === 'live'}
-        data-testid="map-timebar-now"
-        className={cn(
-          'inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-[var(--r-md)] px-2.5 text-xs font-semibold',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand-500))] focus-visible:ring-offset-2',
-          mode === 'live'
-            ? 'bg-[hsl(var(--brand-700))] text-white'
-            : 'border border-[hsl(var(--brand-200))] bg-white/80 text-[hsl(var(--brand-800))] hover:bg-[hsl(var(--brand-100))]'
-        )}
-      >
-        <span
-          aria-hidden="true"
-          className={cn(
-            'h-2 w-2 rounded-full',
-            mode === 'live'
-              ? 'bg-emerald-300 motion-safe:animate-pulse'
-              : 'bg-gray-400'
-          )}
-        />
-        {t('timeBar.now')}
-      </button>
-
-      <span
-        data-testid="map-timebar-badge"
-        className={cn(
-          'hidden shrink-0 rounded-sm px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide sm:inline',
-          badge === 'live' &&
-            'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200/80',
-          badge === 'past' &&
-            'bg-slate-100 text-slate-700 ring-1 ring-slate-200/80',
-          badge === 'forecast' &&
-            'bg-amber-50 text-amber-900 ring-1 ring-amber-200/80'
-        )}
-      >
-        {badge === 'live'
-          ? t('timeBar.live')
-          : badge === 'forecast'
-            ? t('timeBar.forecast')
-            : t('timeBar.past')}
-      </span>
-
-      <button
-        type="button"
-        onClick={goPrev}
-        disabled={safeIndex <= 0 && !canSeekPast}
-        aria-label={t('timeBar.previous')}
-        className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-[var(--r-md)] text-[hsl(var(--brand-800))] hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand-500))] sm:inline-flex"
-      >
-        <span aria-hidden="true" className="text-base leading-none">
-          ‹
-        </span>
-      </button>
-
-      <div className="relative min-w-0 flex-1">
-        {forecastStart !== null ? (
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-y-1 left-0 right-0 overflow-hidden rounded-full"
-          >
-            <div
-              className="h-full bg-[hsl(var(--brand-200))]/70"
-              style={{ width: `${forecastPct}%` }}
-            />
-            <div
-              className="absolute inset-y-0 bg-amber-200/70"
-              style={{ left: `${forecastPct}%`, right: 0 }}
-            />
-          </div>
-        ) : null}
-        <input
-          type="range"
-          min={0}
-          max={maxIndex}
-          step={1}
-          value={safeIndex}
-          aria-valuemin={0}
-          aria-valuemax={maxIndex}
-          aria-valuenow={safeIndex}
-          aria-valuetext={periodLabel}
-          aria-label={sliderLabel}
-          data-testid="map-timebar-slider"
-          onChange={(event) => handleSliderChange(Number(event.target.value))}
-          className={cn(
-            'relative z-[1] h-11 w-full cursor-pointer accent-[hsl(var(--brand-600))]',
-            loading && 'opacity-60'
-          )}
-        />
-      </div>
-
-      <button
-        type="button"
-        onClick={goNext}
-        disabled={safeIndex >= maxIndex && !canSeekFuture}
-        aria-label={t('timeBar.next')}
-        className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-[var(--r-md)] text-[hsl(var(--brand-800))] hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand-500))] sm:inline-flex"
-      >
-        <span aria-hidden="true" className="text-base leading-none">
-          ›
-        </span>
-      </button>
-
-      <p
-        className="hidden min-w-[7.5rem] shrink-0 text-right text-xs font-medium tabular-nums text-[color:var(--fg)] md:block"
-        data-testid="map-timebar-label"
-        aria-live={isPlaying ? 'polite' : 'off'}
-      >
-        <span className="block">{periodLabel}</span>
-        {blockRangeLabel ? (
-          <span
-            className="block text-[10px] font-normal text-[color:var(--fg-muted)]"
-            data-testid="map-timebar-block-range"
-          >
-            {blockRangeLabel}
-          </span>
-        ) : null}
-      </p>
-
-      <button
-        type="button"
-        onClick={handlePlayToggle}
-        aria-pressed={isPlaying}
-        aria-label={
-          reduceMotion
-            ? t('timeBar.next')
-            : isPlaying
-              ? t('timeBar.pause')
-              : t('timeBar.play')
-        }
-        title={
-          reduceMotion ? t('timeBar.reducedMotionPlay') : undefined
-        }
-        data-testid="map-timebar-play"
-        data-tour="map-timebar-play"
-        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--r-md)] text-[hsl(var(--brand-800))] hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand-500))]"
-      >
-        {isPlaying ? (
-          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-            <rect x="6" y="5" width="4" height="14" rx="1" />
-            <rect x="14" y="5" width="4" height="14" rx="1" />
-          </svg>
-        ) : (
-          <svg className="h-4 w-4 ml-0.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-            <path d="M8 5v14l11-7z" />
-          </svg>
-        )}
-      </button>
-
-      {!reduceMotion ? (
-        <Popover open={speedOpen} onOpenChange={setSpeedOpen}>
+      {/* Passé → Période (gauche) */}
+      {onCustomRangeChange ? (
+        <Popover
+          open={periodOpen && !controlsDisabled}
+          onOpenChange={(open) => {
+            if (controlsDisabled) return;
+            setPeriodOpen(open);
+          }}
+        >
           <PopoverTrigger asChild>
             <button
               type="button"
-              aria-label={t('timeBar.speedMenu', { value: playbackSpeed })}
-              data-testid="map-timebar-speed"
-              className="hidden min-h-11 min-w-11 shrink-0 items-center justify-center rounded-[var(--r-md)] px-2 text-xs font-semibold tabular-nums text-[hsl(var(--brand-800))] hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand-500))] sm:inline-flex"
+              disabled={controlsDisabled}
+              data-testid="map-timebar-period"
+              data-tour="map-timebar-period"
+              aria-label={t('timeBar.period')}
+              aria-pressed={Boolean(customRange)}
+              className={cn(
+                'inline-flex h-11 shrink-0 items-center justify-center rounded-[var(--r-md)] border px-2.5 text-xs font-medium',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand-500))]',
+                'disabled:cursor-not-allowed disabled:opacity-40',
+                customRange
+                  ? 'border-[hsl(var(--brand-400))] bg-[hsl(var(--brand-100))] text-[hsl(var(--brand-800))]'
+                  : 'border-gray-200/80 bg-white/80 text-[color:var(--fg)] hover:bg-white'
+              )}
             >
-              {playbackSpeed}×
+              <span className="hidden sm:inline">{t('timeBar.period')}</span>
+              <svg
+                className="h-4 w-4 sm:hidden"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
+                <rect x="3" y="5" width="18" height="16" rx="2" />
+                <path d="M3 11h18M8 3v4M16 3v4" />
+              </svg>
             </button>
           </PopoverTrigger>
           <PopoverContent
             side="top"
-            align="end"
+            align="start"
             sideOffset={8}
-            className="glass-1 w-auto p-2"
+            className="glass-1 w-[min(22rem,calc(100vw-2rem))] p-3"
           >
-            <div className="flex flex-col gap-1" role="group" aria-label={t('timeBar.speedLabel')}>
-              {PLAYBACK_SPEEDS.map((speed) => (
-                <button
-                  key={speed}
-                  type="button"
-                  aria-pressed={playbackSpeed === speed}
-                  onClick={() => {
-                    setPlaybackSpeed(speed);
-                    setSpeedOpen(false);
+            <div className="flex flex-col gap-3">
+              <p className="text-sm font-semibold text-[color:var(--fg)]">
+                {t('timeBar.periodTitle')}
+              </p>
+              <p className="text-[11px] text-[color:var(--fg-muted)]">
+                {timeStep === 'jour'
+                  ? t('timeBar.periodLimitMonths', { count: 6 })
+                  : t('timeBar.periodLimitDays', { count: maxRangeDays ?? 14 })}
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="flex flex-col gap-1 text-xs text-[color:var(--fg-muted)]">
+                  <span>{t('timeBar.periodStart')}</span>
+                  <input
+                    type="date"
+                    min={minDate}
+                    max={draftEnd || maxDate}
+                    value={draftStart}
+                    onChange={(event) => {
+                      setDraftStart(event.target.value);
+                      setRangeError(null);
+                    }}
+                    className="min-h-11 rounded-[var(--r-md)] border border-gray-200 bg-white px-2 text-sm text-[color:var(--fg)]"
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-xs text-[color:var(--fg-muted)]">
+                  <span>{t('timeBar.periodEnd')}</span>
+                  <input
+                    type="date"
+                    min={draftStart || minDate}
+                    max={maxDate}
+                    value={draftEnd}
+                    onChange={(event) => {
+                      setDraftEnd(event.target.value);
+                      setRangeError(null);
+                    }}
+                    className="min-h-11 rounded-[var(--r-md)] border border-gray-200 bg-white px-2 text-sm text-[color:var(--fg)]"
+                  />
+                </label>
+              </div>
+              {rangeError ? (
+                <p className="text-xs text-red-600" role="alert">
+                  {rangeError}
+                </p>
+              ) : null}
+              <div className="max-h-[36vh] overflow-y-auto">
+                <PollutionEpisodeCalendar
+                  selectedPollutant={selectedPollutant}
+                  selectedStartDate={draftStart || undefined}
+                  selectedEndDate={draftEnd || undefined}
+                  maxDateRange={maxRangeDays ?? undefined}
+                  onDateRangeChange={(start, end) => {
+                    setDraftStart(start);
+                    setDraftEnd(end);
+                    setRangeError(null);
                   }}
-                  className={cn(
-                    'inline-flex min-h-11 items-center rounded-[var(--r-md)] px-3 text-xs font-medium',
-                    playbackSpeed === speed
-                      ? 'bg-[hsl(var(--brand-700))] text-white'
-                      : 'text-[color:var(--fg)] hover:bg-black/5'
-                  )}
+                />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  data-testid="map-timebar-period-apply"
+                  onClick={applyDraftRange}
+                  className="inline-flex min-h-11 flex-1 items-center justify-center rounded-[var(--r-md)] bg-[hsl(var(--brand-700))] px-3 text-xs font-semibold text-white"
                 >
-                  {t('timeBar.speed', { value: speed })}
+                  {t('timeBar.periodApply')}
                 </button>
-              ))}
+                {customRange ? (
+                  <button
+                    type="button"
+                    data-testid="map-timebar-period-clear"
+                    onClick={clearCustomRange}
+                    className="inline-flex min-h-11 items-center justify-center rounded-[var(--r-md)] border border-gray-200 px-3 text-xs font-medium text-[color:var(--fg)] hover:bg-black/5"
+                  >
+                    {t('timeBar.periodClear')}
+                  </button>
+                ) : null}
+              </div>
             </div>
           </PopoverContent>
         </Popover>
       ) : null}
 
-      <Popover open={goToOpen} onOpenChange={setGoToOpen}>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            data-testid="map-timebar-goto"
-            data-tour="map-timebar-goto"
-            aria-label={t('timeBar.goTo')}
-            className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-[var(--r-md)] border border-gray-200/80 bg-white/80 px-2 text-xs font-medium text-[color:var(--fg)] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand-500))] sm:min-w-0 sm:px-2.5"
-          >
-            <svg
-              className="h-4 w-4 sm:hidden"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              aria-hidden="true"
-            >
-              <rect x="3" y="5" width="18" height="16" rx="2" />
-              <path d="M8 3v4M16 3v4M3 11h18" />
-            </svg>
-            <span className="hidden sm:inline">{t('timeBar.goTo')}</span>
-          </button>
-        </PopoverTrigger>
-        <PopoverContent
-          side="top"
-          align="end"
-          sideOffset={8}
-          className="glass-1 w-[min(22rem,calc(100vw-2rem))] p-3"
+      {/* Piste : borne · prev · slider · next · borne · créneau · play · speed */}
+      <div className="flex min-w-0 flex-1 items-center gap-0.5 sm:gap-1">
+        <span
+          data-testid="map-timebar-bound-start"
+          className="hidden w-[3.25rem] shrink-0 text-right text-[10px] font-medium tabular-nums leading-tight text-[color:var(--fg-muted)] sm:block"
+          title={startBoundLabel}
         >
-          <div className="flex flex-col gap-3">
-            <p className="text-sm font-semibold text-[color:var(--fg)]">
-              {t('timeBar.goToTitle')}
-            </p>
-            <label className="flex flex-col gap-1 text-xs text-[color:var(--fg-muted)]">
-              <span>{t('timeBar.date')}</span>
-              <input
-                type="date"
-                min={minDate}
-                max={maxDate}
-                value={slot.date}
-                onChange={(event) => {
-                  if (event.target.value) handleGoToDate(event.target.value);
-                }}
-                className="min-h-11 rounded-[var(--r-md)] border border-gray-200 bg-white px-2 text-sm text-[color:var(--fg)]"
+          {startBoundLabel}
+        </span>
+
+        <button
+          type="button"
+          onClick={goPrev}
+          disabled={controlsDisabled || (safeIndex <= 0 && !canSeekPast)}
+          aria-label={t('timeBar.previous')}
+          data-testid="map-timebar-prev"
+          className={seekBtnClass}
+        >
+          <svg
+            className="h-4 w-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+        </button>
+
+        <div
+          ref={trackRef}
+          className="relative min-w-0 flex-1 px-0.5"
+          onMouseMove={(event) => updateHoverPreview(event.clientX)}
+          onMouseLeave={clearHoverPreview}
+        >
+          {hoverPreview ? (
+            <div
+              role="tooltip"
+              data-testid="map-timebar-hover-tooltip"
+              className={cn(
+                'pointer-events-none absolute bottom-[calc(100%+0.15rem)] z-20',
+                '-translate-x-1/2 whitespace-nowrap',
+                'rounded-md bg-slate-900 px-2.5 py-1.5',
+                'text-xs font-semibold tabular-nums tracking-wide text-white',
+                'shadow-lg ring-1 ring-white/20'
+              )}
+              style={{ left: `${hoverPreview.xPct}%` }}
+            >
+              {hoverPreview.label}
+            </div>
+          ) : null}
+          {forecastStart !== null ? (
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-2 left-0 right-0 overflow-hidden rounded-full"
+            >
+              <div
+                className="h-full bg-[hsl(var(--brand-200))]/70"
+                style={{ width: `${forecastPct}%` }}
               />
-            </label>
-            <div className="max-h-[40vh] overflow-y-auto">
-              <PollutionEpisodeCalendar
-                selectedPollutant={selectedPollutant}
-                selectedStartDate={slot.date}
-                selectedEndDate={slot.date}
-                onDateSelect={handleGoToDate}
+              <div
+                className="absolute inset-y-0 bg-amber-200/70"
+                style={{ left: `${forecastPct}%`, right: 0 }}
               />
             </div>
-          </div>
-        </PopoverContent>
-      </Popover>
+          ) : null}
+          <input
+            type="range"
+            min={0}
+            max={maxIndex}
+            step={1}
+            value={safeIndex}
+            disabled={controlsDisabled}
+            aria-valuemin={0}
+            aria-valuemax={maxIndex}
+            aria-valuenow={safeIndex}
+            aria-valuetext={periodLabel}
+            aria-label={sliderLabel}
+            data-testid="map-timebar-slider"
+            onChange={(event) =>
+              handleSliderChange(Number(event.target.value))
+            }
+            className={cn(
+              'relative z-[1] h-11 w-full cursor-pointer accent-[hsl(var(--brand-600))]',
+              (loading || controlsDisabled) && 'cursor-not-allowed opacity-60'
+            )}
+          />
+        </div>
+
+        <button
+          type="button"
+          onClick={goNext}
+          disabled={
+            controlsDisabled || (safeIndex >= maxIndex && !canSeekFuture)
+          }
+          aria-label={t('timeBar.next')}
+          data-testid="map-timebar-next"
+          className={seekBtnClass}
+        >
+          <svg
+            className="h-4 w-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+        </button>
+
+        <span
+          data-testid="map-timebar-bound-end"
+          className="hidden w-[3.25rem] shrink-0 text-left text-[10px] font-medium tabular-nums leading-tight text-[color:var(--fg-muted)] sm:block"
+          title={endBoundLabel}
+        >
+          {endBoundLabel}
+        </span>
+
+        {/* Créneau courant — seule info horaire primaire */}
+        <p
+          className="hidden min-w-[4.5rem] shrink-0 text-center text-[11px] font-semibold tabular-nums text-[color:var(--fg)] md:block"
+          data-testid="map-timebar-label"
+          aria-live={isPlaying ? 'polite' : 'off'}
+        >
+          {periodLabel}
+        </p>
+
+        {showLoadingUi ? (
+          <span
+            data-testid="map-timebar-spinner"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center"
+            aria-hidden="true"
+          >
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-[hsl(var(--brand-600))] border-t-transparent" />
+          </span>
+        ) : null}
+
+        <button
+          type="button"
+          onClick={handlePlayToggle}
+          disabled={controlsDisabled}
+          aria-pressed={isPlaying}
+          aria-label={
+            reduceMotion
+              ? t('timeBar.next')
+              : isPlaying
+                ? t('timeBar.pause')
+                : t('timeBar.play')
+          }
+          title={reduceMotion ? t('timeBar.reducedMotionPlay') : undefined}
+          data-testid="map-timebar-play"
+          data-tour="map-timebar-play"
+          className={iconBtnClass}
+        >
+          {isPlaying ? (
+            <svg
+              className="h-4 w-4"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden
+            >
+              <rect x="6" y="5" width="4" height="14" rx="1" />
+              <rect x="14" y="5" width="4" height="14" rx="1" />
+            </svg>
+          ) : (
+            <svg
+              className="ml-0.5 h-4 w-4"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden
+            >
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          )}
+        </button>
+
+        {!reduceMotion ? (
+          <Popover
+            open={speedOpen && !controlsDisabled}
+            onOpenChange={(open) => !controlsDisabled && setSpeedOpen(open)}
+          >
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                disabled={controlsDisabled}
+                aria-label={t('timeBar.speedMenu', { value: playbackSpeed })}
+                data-testid="map-timebar-speed"
+                className={cn(
+                  iconBtnClass,
+                  'min-w-11 px-1 text-xs font-semibold tabular-nums'
+                )}
+              >
+                {playbackSpeed}×
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              side="top"
+              align="center"
+              sideOffset={8}
+              className="glass-1 w-auto p-2"
+            >
+              <div
+                className="flex flex-col gap-1"
+                role="group"
+                aria-label={t('timeBar.speedLabel')}
+              >
+                {PLAYBACK_SPEEDS.map((speed) => (
+                  <button
+                    key={speed}
+                    type="button"
+                    aria-pressed={playbackSpeed === speed}
+                    onClick={() => {
+                      setPlaybackSpeed(speed);
+                      setSpeedOpen(false);
+                    }}
+                    className={cn(
+                      'inline-flex min-h-11 items-center rounded-[var(--r-md)] px-3 text-xs font-medium',
+                      playbackSpeed === speed
+                        ? 'bg-[hsl(var(--brand-700))] text-white'
+                        : 'text-[color:var(--fg)] hover:bg-black/5'
+                    )}
+                  >
+                    {t('timeBar.speed', { value: speed })}
+                  </button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        ) : null}
+      </div>
+
+      {/* Présent → Maintenant (droite, près de la borne haute) */}
+      <div className="flex shrink-0 items-center gap-1">
+        {!showLoadingUi ? (
+          <span
+            data-testid="map-timebar-badge"
+            className={cn(
+              'hidden shrink-0 rounded-sm px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide lg:inline',
+              badge === 'live' &&
+                'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200/80',
+              badge === 'past' &&
+                'bg-slate-100 text-slate-700 ring-1 ring-slate-200/80',
+              badge === 'forecast' &&
+                'bg-amber-50 text-amber-900 ring-1 ring-amber-200/80'
+            )}
+          >
+            {badge === 'live'
+              ? t('timeBar.live')
+              : badge === 'forecast'
+                ? t('timeBar.forecast')
+                : t('timeBar.past')}
+          </span>
+        ) : null}
+
+        <button
+          type="button"
+          onClick={onGoLive}
+          disabled={controlsDisabled}
+          aria-pressed={mode === 'live'}
+          data-testid="map-timebar-now"
+          className={cn(
+            'inline-flex h-11 shrink-0 items-center gap-1.5 rounded-[var(--r-md)] px-2.5 text-xs font-semibold',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand-500))] focus-visible:ring-offset-2',
+            'disabled:cursor-not-allowed disabled:opacity-40',
+            mode === 'live'
+              ? 'bg-[hsl(var(--brand-700))] text-white'
+              : 'border border-[hsl(var(--brand-200))] bg-white/80 text-[hsl(var(--brand-800))] hover:bg-[hsl(var(--brand-100))]'
+          )}
+        >
+          <span
+            aria-hidden="true"
+            className={cn(
+              'h-2 w-2 rounded-full',
+              mode === 'live'
+                ? 'bg-emerald-300 motion-safe:animate-pulse'
+                : 'bg-gray-400'
+            )}
+          />
+          <span className="hidden sm:inline">{t('timeBar.now')}</span>
+        </button>
+      </div>
     </section>
   );
 };

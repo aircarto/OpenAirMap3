@@ -11,6 +11,17 @@ interface UseMapViewProps {
   };
 }
 
+/** Tolérance anti-boucle setView ↔ moveend (dérive flottante Leaflet). */
+const CENTER_EPS = 1e-7;
+
+const centersDiffer = (
+  a: [number, number] | null,
+  b: [number, number]
+): boolean => {
+  if (!a) return true;
+  return Math.abs(a[0] - b[0]) > CENTER_EPS || Math.abs(a[1] - b[1]) > CENTER_EPS;
+};
+
 export const useMapView = ({
   center,
   zoom,
@@ -25,15 +36,11 @@ export const useMapView = ({
   // Effet pour mettre à jour la vue de la carte
   useEffect(() => {
     if (mapRef.current) {
-      // Vérifier si les valeurs ont réellement changé
-      const centerChanged =
-        !previousCenterRef.current ||
-        previousCenterRef.current[0] !== center[0] ||
-        previousCenterRef.current[1] !== center[1];
+      const centerChanged = centersDiffer(previousCenterRef.current, center);
       const zoomChanged = previousZoomRef.current !== zoom;
 
       if (centerChanged || zoomChanged) {
-        mapRef.current.setView(center, zoom);
+        mapRef.current.setView(center, zoom, { animate: false });
         previousCenterRef.current = center;
         previousZoomRef.current = zoom;
         setCurrentZoom(zoom);

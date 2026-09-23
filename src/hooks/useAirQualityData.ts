@@ -7,17 +7,31 @@ import {
 import { DataServiceFactory } from "../services/DataServiceFactory";
 import { AtmoMicroMeasuresUnavailableError } from "../services/AtmoMicroService";
 import { pasDeTemps } from "../constants/timeSteps";
+import type {
+  MobileAirPeriod,
+  MobileAirSensorStatus,
+} from "../constants/mobileAir";
 
 interface UseAirQualityDataProps {
   selectedPollutant: string;
   selectedSources: string[];
   selectedTimeStep: string;
   signalAirPeriod?: { startDate: string; endDate: string };
-  mobileAirPeriod?: { startDate: string; endDate: string };
-  selectedMobileAirSensor?: string | null;
+  /** Période par défaut (chargement initial multi-capteurs). */
+  mobileAirPeriod?: MobileAirPeriod;
+  /** Périodes override par capteur (panneau de gestion). */
+  mobileAirSensorPeriods?: Record<string, MobileAirPeriod>;
+  selectedMobileAirSensors?: string[];
+  /**
+   * Capteurs à refetch de façon partielle (période ajustée dans le panneau).
+   * Consommé une fois le fetch lancé (via mobileAirPartialRefetchToken).
+   */
+  mobileAirPartialRefetchSensors?: string[];
+  mobileAirPartialRefetchToken?: number;
   signalAirOptions?: {
     selectedTypes: string[];
-    loadTrigger: number;
+    /** Incrémenté pour forcer un fetch (activation, période TimeBar, type ajouté). */
+    fetchToken: number;
     isSourceSelected?: boolean;
   };
   autoRefreshEnabled?: boolean;
@@ -59,7 +73,10 @@ export const useAirQualityData = ({
   selectedTimeStep,
   signalAirPeriod,
   mobileAirPeriod,
-  selectedMobileAirSensor,
+  mobileAirSensorPeriods = {},
+  selectedMobileAirSensors = [],
+  mobileAirPartialRefetchSensors = [],
+  mobileAirPartialRefetchToken = 0,
   signalAirOptions,
   autoRefreshEnabled = true,
 }: UseAirQualityDataProps) => {
@@ -70,15 +87,21 @@ export const useAirQualityData = ({
   const [atmoMicroOutage, setAtmoMicroOutage] = useState(false);
   const [loadingSources, setLoadingSources] = useState<string[]>([]);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [mobileAirSensorStatus, setMobileAirSensorStatus] = useState<
+    Record<string, MobileAirSensorStatus>
+  >({});
 
   // Référence pour stocker l'intervalle
   const intervalRef = useRef<number | null>(null);
   const signalAirLastTriggerRef = useRef(0);
+  const mobileAirPartialTokenRef = useRef(0);
   // Référence pour éviter les appels multiples au montage initial
   const hasMountedRef = useRef(false);
   const lastFetchParamsRef = useRef<string>("");
   // Référence pour stocker fetchData et éviter les dépendances circulaires
   const fetchDataRef = useRef<(() => Promise<void>) | undefined>(undefined);
+
+  const hasMobileAirSensors = selectedMobileAirSensors.length > 0;
 
   const fetchData = useCallback(async () => {
     const now = new Date();
@@ -105,17 +128,17 @@ export const useAirQualityData = ({
       const shouldFetchSignalAir =
         isSignalAirSourceSelected &&
         !!signalAirOptions &&
-        signalAirOptions.loadTrigger > signalAirLastTriggerRef.current;
+        signalAirOptions.fetchToken > signalAirLastTriggerRef.current;
 
-      if (filteredSources.length === 0 && !shouldFetchSignalAir && !selectedMobileAirSensor) {
+      if (filteredSources.length === 0 && !shouldFetchSignalAir && !hasMobileAirSensors) {
         // Ne pas réinitialiser si on charge SignalAir ou MobileAir séparément
-        if (!isSignalAirSourceSelected && !selectedMobileAirSensor) {
+        if (!isSignalAirSourceSelected && !hasMobileAirSensors) {
           setDevices([]);
           setReports([]);
         }
         setLoading(false);
         setLoadingSources([]);
-        if (filteredSources.length === 0 && !isSignalAirSourceSelected && !selectedMobileAirSensor) {
+        if (filteredSources.length === 0 && !isSignalAirSourceSelected && !hasMobileAirSensors) {
           return;
         }
       }
@@ -154,11 +177,14 @@ export const useAirQualityData = ({
         (index) => filteredSources[index]
       );
 
-      // NETTOYER LES ROUTES ET DEVICES MOBILEAIR EN PREMIER, AVANT TOUTE AUTRE OPÉRATION
-      // Cela garantit que le nettoyage se fait au bon moment, même lors d'un rechargement
-      // MobileAir est maintenant géré séparément, donc on vérifie directement selectedMobileAirSensor
-      if (selectedMobileAirSensor) {
-        // Nettoyer les routes dans le service MobileAir en PREMIER
+      // Détecter un refetch partiel MobileAir avant le nettoyage global
+      const pendingPartialToken = mobileAirPartialRefetchToken;
+      const isPartialMobileAirRefetch =
+        pendingPartialToken > mobileAirPartialTokenRef.current &&
+        mobileAirPartialRefetchSensors.length > 0;
+
+      // NETTOYER LES ROUTES ET DEVICES MOBILEAIR EN PREMIER (plein remplacement uniquement)
+      if (hasMobileAirSensors && !isPartialMobileAirRefetch) {
         try {
           const mobileAirService = DataServiceFactory.getService("mobileair") as any;
           if (mobileAirService && typeof mobileAirService.clearRoutes === "function") {
@@ -168,16 +194,11 @@ export const useAirQualityData = ({
           console.error("Erreur lors du nettoyage des routes MobileAir:", error);
         }
         
-        // Nettoyer les devices MobileAir en PREMIER (utiliser callback pour garantir l'état actuel)
         setDevices((prevDevices) => {
           const hasMobileAirDevices = prevDevices.some((d) => d.source === "mobileair");
           
           if (hasMobileAirDevices) {
-            const filteredDevices = prevDevices.filter((device) => {
-              return device.source !== "mobileair";
-            });
-            
-            return filteredDevices;
+            return prevDevices.filter((device) => device.source !== "mobileair");
           }
           
           return prevDevices;
@@ -193,7 +214,7 @@ export const useAirQualityData = ({
       if (shouldFetchSignalAir) {
         allSourcesToLoad.push("signalair");
       }
-      if (selectedMobileAirSensor) {
+      if (hasMobileAirSensors) {
         allSourcesToLoad.push("mobileair");
       }
 
@@ -241,7 +262,7 @@ export const useAirQualityData = ({
       });
 
       // Supprimer explicitement les devices MobileAir si MobileAir n'est pas activé
-      if (!selectedMobileAirSensor) {
+      if (!hasMobileAirSensors) {
         setDevices((prevDevices) => {
           const filteredDevices = prevDevices.filter((device) => {
             return device.source !== "mobileair";
@@ -249,6 +270,7 @@ export const useAirQualityData = ({
 
           return filteredDevices;
         });
+        setMobileAirSensorStatus({});
       }
 
 
@@ -266,9 +288,7 @@ export const useAirQualityData = ({
             signalAirPeriod,
             signalAirSelectedTypes: signalAirOptions?.selectedTypes,
             mobileAirPeriod,
-            selectedSensors: selectedMobileAirSensor
-              ? [selectedMobileAirSensor]
-              : [],
+            selectedSensors: selectedMobileAirSensors,
           });
 
           // Séparer les appareils de mesure des signalements
@@ -350,7 +370,7 @@ export const useAirQualityData = ({
 
       // Charger SignalAir si nécessaire
       if (shouldFetchSignalAir && signalAirOptions) {
-        signalAirLastTriggerRef.current = signalAirOptions.loadTrigger;
+        signalAirLastTriggerRef.current = signalAirOptions.fetchToken;
         try {
           const signalAirService = DataServiceFactory.getService("signalair");
           if (signalAirService) {
@@ -381,35 +401,102 @@ export const useAirQualityData = ({
         }
       }
 
-      // Charger MobileAir si nécessaire
-      if (selectedMobileAirSensor) {
+      // Charger MobileAir si nécessaire (plein remplacement ou refetch partiel)
+      const isPartialRefetch = isPartialMobileAirRefetch;
+      const sensorsToFetch = isPartialRefetch
+        ? mobileAirPartialRefetchSensors
+        : selectedMobileAirSensors;
+
+      if (sensorsToFetch.length > 0) {
+        if (isPartialRefetch) {
+          mobileAirPartialTokenRef.current = pendingPartialToken;
+        }
+
         try {
           const mobileAirService = DataServiceFactory.getService("mobileair");
           if (mobileAirService) {
-            setLoadingSources((prev) => [...prev, "mobileair"]);
+            setLoadingSources((prev) =>
+              prev.includes("mobileair") ? prev : [...prev, "mobileair"]
+            );
+            setMobileAirSensorStatus((prev) => {
+              const next = { ...prev };
+              for (const id of sensorsToFetch) {
+                next[id] = "loading";
+              }
+              return next;
+            });
+
             const data = await mobileAirService.fetchData({
               pollutant: selectedPollutant,
               timeStep: selectedTimeStep,
               sources: ["mobileair"],
               mobileAirPeriod,
-              selectedSensors: [selectedMobileAirSensor],
+              mobileAirPeriods: mobileAirSensorPeriods,
+              mobileAirPartialReplace: isPartialRefetch,
+              selectedSensors: sensorsToFetch,
             });
 
             if (Array.isArray(data)) {
-              const measurementDevices: MeasurementDevice[] = data.filter(isMeasurementDevice);
+              const measurementDevices: MeasurementDevice[] =
+                data.filter(isMeasurementDevice);
 
               setDevices((prevDevices) => {
+                if (isPartialRefetch) {
+                  const removeIds = new Set(sensorsToFetch);
+                  const kept = prevDevices.filter((device) => {
+                    if (device.source !== "mobileair") return true;
+                    const route = (device as MeasurementDevice & {
+                      mobileAirRoute?: { sensorId: string };
+                    }).mobileAirRoute;
+                    return !route || !removeIds.has(route.sensorId);
+                  });
+                  return [...kept, ...measurementDevices];
+                }
                 const filteredDevices = prevDevices.filter(
                   (device) => device.source !== "mobileair"
                 );
                 return [...filteredDevices, ...measurementDevices];
               });
+
+              setMobileAirSensorStatus((prev) => {
+                const next = { ...prev };
+                for (const id of sensorsToFetch) {
+                  const hasRoutes = measurementDevices.some((device) => {
+                    const route = (device as MeasurementDevice & {
+                      mobileAirRoute?: { sensorId: string };
+                    }).mobileAirRoute;
+                    return route?.sensorId === id;
+                  });
+                  next[id] = hasRoutes ? "ready" : "error";
+                }
+                // Capteurs hors du fetch partiel : conserver le statut
+                if (!isPartialRefetch) {
+                  for (const id of Object.keys(next)) {
+                    if (!sensorsToFetch.includes(id)) {
+                      delete next[id];
+                    }
+                  }
+                }
+                return next;
+              });
             }
           }
         } catch (err) {
-          console.error("❌ Erreur lors de la récupération des données MobileAir:", err);
+          console.error(
+            "❌ Erreur lors de la récupération des données MobileAir:",
+            err
+          );
+          setMobileAirSensorStatus((prev) => {
+            const next = { ...prev };
+            for (const id of sensorsToFetch) {
+              next[id] = "error";
+            }
+            return next;
+          });
         } finally {
-          setLoadingSources((prev) => prev.filter((source) => source !== "mobileair"));
+          setLoadingSources((prev) =>
+            prev.filter((source) => source !== "mobileair")
+          );
         }
       }
     } catch (err) {
@@ -427,7 +514,11 @@ export const useAirQualityData = ({
     selectedTimeStep,
     signalAirPeriod,
     mobileAirPeriod,
-    selectedMobileAirSensor,
+    mobileAirSensorPeriods,
+    selectedMobileAirSensors,
+    hasMobileAirSensors,
+    mobileAirPartialRefetchSensors,
+    mobileAirPartialRefetchToken,
     signalAirOptions,
   ]);
 
@@ -479,8 +570,9 @@ export const useAirQualityData = ({
       selectedTimeStep,
       signalAirPeriod,
       mobileAirPeriod,
-      selectedMobileAirSensor,
-      signalAirLoadTrigger: signalAirOptions?.loadTrigger,
+      selectedMobileAirSensors,
+      mobileAirPartialRefetchToken,
+      signalAirFetchToken: signalAirOptions?.fetchToken,
       signalAirIsSelected: signalAirOptions?.isSourceSelected,
     });
 
@@ -503,12 +595,17 @@ export const useAirQualityData = ({
     selectedTimeStep,
     signalAirPeriod,
     mobileAirPeriod,
-    selectedMobileAirSensor,
-    signalAirOptions?.loadTrigger,
+    selectedMobileAirSensors,
+    mobileAirPartialRefetchToken,
+    signalAirOptions?.fetchToken,
     signalAirOptions?.isSourceSelected,
     // Note: on utilise les dépendances réelles au lieu de fetchData
     // pour éviter les appels multiples quand fetchData est recréé avec les mêmes paramètres
   ]);
+
+  const isMobileAirLoading = selectedMobileAirSensors.some(
+    (id) => mobileAirSensorStatus[id] === "loading"
+  ) || loadingSources.includes("mobileair");
 
   return {
     devices,
@@ -518,5 +615,7 @@ export const useAirQualityData = ({
     atmoMicroOutage,
     loadingSources,
     lastRefresh,
+    mobileAirSensorStatus,
+    isMobileAirLoading,
   };
 };

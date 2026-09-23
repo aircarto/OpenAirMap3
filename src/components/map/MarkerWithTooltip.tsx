@@ -6,6 +6,7 @@ import { MeasurementDevice } from "../../types";
 import { pollutants } from "../../constants/pollutants";
 import { formatTooltipDate } from "../../utils/dateUtils";
 import { featureFlags } from "../../config/featureFlags";
+import { isValidLatLngPosition } from "./utils/mapIconUtils";
 
 interface MarkerWithTooltipProps extends MarkerProps {
   device: MeasurementDevice;
@@ -253,6 +254,10 @@ const MarkerWithTooltip: React.FC<MarkerWithTooltipProps> = ({
   }, [effectiveMinZoom, mapRef]);
 
   const sensorMetadata = externalSensorMetadata || loadedSensorMetadata;
+
+  if (!isValidLatLngPosition(markerProps.position)) {
+    return null;
+  }
 
   // Fusionner les eventHandlers existants avec nos handlers pour le tooltip
   const mergedEventHandlers = {

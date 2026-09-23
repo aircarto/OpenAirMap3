@@ -646,6 +646,14 @@ export class AtmoRefService extends BaseDataService {
                 measure.valeur,
                 pollutantConfig.thresholds
               );
+              if (
+                typeof station.latitude !== "number" ||
+                typeof station.longitude !== "number" ||
+                Number.isNaN(station.latitude) ||
+                Number.isNaN(station.longitude)
+              ) {
+                return;
+              }
               qualityLevels[qualityLevel] =
                 (qualityLevels[qualityLevel] || 0) + 1;
               totalValue += measure.valeur;

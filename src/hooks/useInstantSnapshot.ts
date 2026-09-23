@@ -10,22 +10,28 @@ import type {
   TemporalDataPoint,
 } from '../types';
 import {
+  buildAdjacentSnapshotBufferWindow,
   buildSlotFetchWindow,
   buildSnapshotBufferWindow,
+  getPrefetchEdgeDirection,
   instantToIsoLocal,
   isInstantInBuffer,
-  shouldPrefetchBuffer,
   snapshotBufferKey,
   type MapInstant,
   type SnapshotBufferWindow,
+  type TimeBarCustomRange,
 } from '../utils/mapInstant';
 import {
+  devicesForSlotWindow,
   isHttpNotFound,
   mergeTemporalDataPoints,
-  pickClosestTemporalPoint,
   resolveSnapshotTemporalSources,
 } from '../utils/instantSnapshot';
 import { filterReportsByDisplayWindow } from '../utils/signalAirDateUtils';
+import {
+  chunkDatePeriod,
+  mergeSignalAirReportsById,
+} from '../utils/signalAirChunks';
 
 const NETWORK_DEBOUNCE_MS = 300;
 
@@ -37,6 +43,13 @@ export interface UseInstantSnapshotProps {
   selectedSources: string[];
   signalAirEnabled?: boolean;
   signalAirSelectedTypes?: string[];
+  /** Plage navigable (custom) : borne le prefetch adjacent. */
+  navigableRange?: TimeBarCustomRange | null;
+  /**
+   * Lecture auto TimeBar : prefetch vers le futur dès 25 % du buffer,
+   * et `loading` reste false pour l’UI (le tick attend via un flag interne).
+   */
+  playbackActive?: boolean;
 }
 
 export interface UseInstantSnapshotResult {
@@ -56,12 +69,23 @@ type SnapshotBufferCache = SnapshotBufferWindow & {
   reports: SignalAirReport[];
 };
 
+const typesCoveredByCache = (
+  cacheTypesKey: string,
+  selectedTypes: string[],
+  signalAirEnabled: boolean
+): boolean => {
+  if (!signalAirEnabled) return true;
+  if (selectedTypes.length === 0) return true;
+  const cached = new Set(cacheTypesKey.split(',').filter(Boolean));
+  return selectedTypes.every((type) => cached.has(type));
+};
+
 const identityMatchesCache = (
   cache: SnapshotBufferCache | null,
   pollutant: string,
   timeStep: string,
   sourcesKey: string,
-  typesKey: string,
+  selectedTypes: string[],
   signalAirEnabled: boolean
 ): cache is SnapshotBufferCache =>
   Boolean(
@@ -69,8 +93,8 @@ const identityMatchesCache = (
       cache.pollutant === pollutant &&
       cache.timeStep === timeStep &&
       cache.sourcesKey === sourcesKey &&
-      cache.typesKey === typesKey &&
-      cache.signalAirEnabled === signalAirEnabled
+      cache.signalAirEnabled === signalAirEnabled &&
+      typesCoveredByCache(cache.typesKey, selectedTypes, signalAirEnabled)
   );
 
 const windowKeyFor = (
@@ -78,16 +102,16 @@ const windowKeyFor = (
   pollutant: string,
   timeStep: string,
   sourcesKey: string,
-  typesKey: string,
   signalAirEnabled: boolean
 ): string =>
-  `${snapshotBufferKey(buffer, pollutant, timeStep, sourcesKey)}|${typesKey}|${signalAirEnabled}`;
+  `${snapshotBufferKey(buffer, pollutant, timeStep, sourcesKey)}|${signalAirEnabled}`;
 
 /**
  * Snapshot capteurs + SignalAir autour de l’instant TimeBar.
- * Charge un bloc (7 j / 30 j / 365 j), pick local au slider.
- * Prefetch silencieux au bord : le cache affiché n’est remplacé que si l’instant
- * quitte le bloc (ou sur miss bloquant).
+ * Charge un bloc lookback (24 h / 7 j), pick local au slider.
+ * Prefetch silencieux aux deux bords (fenêtre adjacente).
+ * Types SignalAir : un sous-ensemble des types en cache ne refetch pas ;
+ * un type ajouté force un nouveau fetch.
  */
 export const useInstantSnapshot = ({
   enabled,
@@ -97,6 +121,8 @@ export const useInstantSnapshot = ({
   selectedSources,
   signalAirEnabled = false,
   signalAirSelectedTypes = [],
+  navigableRange = null,
+  playbackActive = false,
 }: UseInstantSnapshotProps): UseInstantSnapshotResult => {
   const [cache, setCache] = useState<SnapshotBufferCache | null>(null);
   const [loading, setLoading] = useState(false);
@@ -109,6 +135,8 @@ export const useInstantSnapshot = ({
   const prefetchInFlightRef = useRef(false);
   const instantRef = useRef(instant);
   instantRef.current = instant;
+  const navigableRangeRef = useRef(navigableRange);
+  navigableRangeRef.current = navigableRange;
 
   const atmoMicroService = useRef(
     DataServiceFactory.getService('atmoMicro') as AtmoMicroService
@@ -143,6 +171,41 @@ export const useInstantSnapshot = ({
     setCache(next);
   }, []);
 
+  const fetchSignalAirChunked = useCallback(
+    async (args: {
+      pollutant: string;
+      timeStep: string;
+      startDate: string;
+      endDate: string;
+      selectedTypes: string[];
+      onChunk?: (reports: SignalAirReport[]) => void;
+    }): Promise<SignalAirReport[]> => {
+      const chunks = chunkDatePeriod({
+        startDate: args.startDate,
+        endDate: args.endDate,
+      });
+      const batches: SignalAirReport[][] = [];
+      for (const chunk of chunks) {
+        try {
+          const raw = await signalAirService.current.fetchData({
+            pollutant: args.pollutant,
+            timeStep: args.timeStep,
+            sources: ['signalair'],
+            signalAirPeriod: chunk,
+            signalAirSelectedTypes: args.selectedTypes,
+          });
+          const batch = Array.isArray(raw) ? raw : [];
+          batches.push(batch);
+          args.onChunk?.(mergeSignalAirReportsById(batches));
+        } catch (err) {
+          console.warn('SignalAir: erreur chunk snapshot:', err);
+        }
+      }
+      return mergeSignalAirReportsById(batches);
+    },
+    []
+  );
+
   const fetchBufferWindow = useCallback(
     async (
       window: SnapshotBufferWindow,
@@ -162,6 +225,7 @@ export const useInstantSnapshot = ({
         : ++prefetchIdRef.current;
 
       if (context.blocking) {
+        // Annule tout prefetch en cours : le miss bloquant prime.
         prefetchIdRef.current += 1;
         prefetchInFlightRef.current = false;
         setLoading(true);
@@ -220,22 +284,13 @@ export const useInstantSnapshot = ({
 
         const signalAirPromise: Promise<SignalAirReport[]> =
           context.signalAirEnabled
-            ? signalAirService.current
-                .fetchData({
-                  pollutant: context.pollutant,
-                  timeStep: context.timeStep,
-                  sources: ['signalair'],
-                  signalAirPeriod: {
-                    startDate: window.startInstant.date,
-                    endDate: window.endInstant.date,
-                  },
-                  signalAirSelectedTypes: signalAirTypes,
-                })
-                .then((raw) => (Array.isArray(raw) ? raw : []))
-                .catch((err) => {
-                  console.warn('SignalAir: erreur snapshot:', err);
-                  return [];
-                })
+            ? fetchSignalAirChunked({
+                pollutant: context.pollutant,
+                timeStep: context.timeStep,
+                startDate: window.startInstant.date,
+                endDate: window.endInstant.date,
+                selectedTypes: signalAirTypes,
+              })
             : Promise.resolve([]);
 
         const [sourceSettled, signalAirReports] = await Promise.all([
@@ -313,7 +368,15 @@ export const useInstantSnapshot = ({
             pendingCacheRef.current = null;
           }
         }
-        setError(null);
+
+        // Données partielles : afficher + message soft.
+        if (failures.length > 0 && series.length > 0) {
+          setError(
+            `${failures.length} source(s) indisponible(s) — données partielles affichées`
+          );
+        } else {
+          setError(null);
+        }
       } catch (err) {
         const isStale = context.blocking
           ? requestId !== blockingIdRef.current
@@ -338,7 +401,7 @@ export const useInstantSnapshot = ({
         }
       }
     },
-    [applyCache]
+    [applyCache, fetchSignalAirChunked]
   );
 
   const fetchBufferWindowRef = useRef(fetchBufferWindow);
@@ -370,36 +433,23 @@ export const useInstantSnapshot = ({
       return;
     }
 
-    const desired = buildSnapshotBufferWindow(instant, timeStep);
+    const desired = buildSnapshotBufferWindow(
+      instant,
+      timeStep,
+      new Date(),
+      navigableRange
+    );
     const current = cacheRef.current;
     const identityOk = identityMatchesCache(
       current,
       pollutant,
       timeStep,
       sourcesKey,
-      typesKey,
+      signalAirSelectedTypes,
       signalAirEnabled
     );
     const inBuffer =
       identityOk && isInstantInBuffer(instant, current, timeStep);
-    const desiredKey = windowKeyFor(
-      desired,
-      pollutant,
-      timeStep,
-      sourcesKey,
-      typesKey,
-      signalAirEnabled
-    );
-    const cachedKey = identityOk
-      ? windowKeyFor(
-          current,
-          pollutant,
-          timeStep,
-          sourcesKey,
-          typesKey,
-          signalAirEnabled
-        )
-      : '';
 
     const fetchContext = {
       pollutant,
@@ -413,6 +463,27 @@ export const useInstantSnapshot = ({
 
     if (inBuffer) {
       setLoading(false);
+      // Pendant le play : prefetch systématique vers le futur (le début
+      // de plage ne doit pas déclencher un prefetch « past » inutile).
+      const edge = playbackActive
+        ? 'future'
+        : getPrefetchEdgeDirection(instant, current, timeStep);
+      if (!edge || prefetchInFlightRef.current) return;
+
+      const adjacent = buildAdjacentSnapshotBufferWindow(
+        current,
+        edge,
+        timeStep,
+        new Date(),
+        navigableRangeRef.current
+      );
+      const adjacentKey = windowKeyFor(
+        adjacent,
+        pollutant,
+        timeStep,
+        sourcesKey,
+        signalAirEnabled
+      );
       const pending = pendingCacheRef.current;
       const pendingReady =
         pending &&
@@ -421,7 +492,7 @@ export const useInstantSnapshot = ({
           pollutant,
           timeStep,
           sourcesKey,
-          typesKey,
+          signalAirSelectedTypes,
           signalAirEnabled
         ) &&
         windowKeyFor(
@@ -429,25 +500,26 @@ export const useInstantSnapshot = ({
           pollutant,
           timeStep,
           sourcesKey,
-          typesKey,
           signalAirEnabled
-        ) === desiredKey;
-      const nearEdge = shouldPrefetchBuffer(instant, current, timeStep);
-      const shouldPrefetch =
-        nearEdge &&
-        desiredKey !== cachedKey &&
-        !pendingReady &&
-        !prefetchInFlightRef.current;
+        ) === adjacentKey;
+      const sameAsCurrent =
+        windowKeyFor(
+          current,
+          pollutant,
+          timeStep,
+          sourcesKey,
+          signalAirEnabled
+        ) === adjacentKey;
 
-      if (!shouldPrefetch) return;
+      if (pendingReady || sameAsCurrent) return;
 
       const timer = window.setTimeout(() => {
         if (prefetchInFlightRef.current) return;
-        void fetchBufferWindowRef.current(desired, {
+        void fetchBufferWindowRef.current(adjacent, {
           ...fetchContext,
           blocking: false,
         });
-      }, NETWORK_DEBOUNCE_MS);
+      }, playbackActive ? 0 : NETWORK_DEBOUNCE_MS);
 
       return () => {
         window.clearTimeout(timer);
@@ -462,7 +534,7 @@ export const useInstantSnapshot = ({
         pollutant,
         timeStep,
         sourcesKey,
-        typesKey,
+        signalAirSelectedTypes,
         signalAirEnabled
       ) &&
       isInstantInBuffer(instant, pending, timeStep)
@@ -481,7 +553,7 @@ export const useInstantSnapshot = ({
         ...fetchContext,
         blocking: true,
       });
-    }, NETWORK_DEBOUNCE_MS);
+    }, playbackActive ? 0 : NETWORK_DEBOUNCE_MS);
 
     return () => {
       window.clearTimeout(timer);
@@ -498,6 +570,11 @@ export const useInstantSnapshot = ({
     sourcesKey,
     signalAirEnabled,
     typesKey,
+    playbackActive,
+    navigableRange?.start.date,
+    navigableRange?.start.hour,
+    navigableRange?.end.date,
+    navigableRange?.end.hour,
   ]);
 
   const devices = useMemo(() => {
@@ -508,23 +585,39 @@ export const useInstantSnapshot = ({
         pollutant,
         timeStep,
         sourcesKey,
-        typesKey,
+        signalAirSelectedTypes,
         signalAirEnabled
       )
     ) {
       return [];
     }
-    if (!isInstantInBuffer(instant, cache, timeStep)) return [];
-    const { targetMs } = buildSlotFetchWindow(instant, timeStep);
-    return pickClosestTemporalPoint(cache.points, targetMs)?.devices ?? [];
+    if (!isInstantInBuffer(instant, cache, timeStep)) {
+      // Play : garder un frame figé pendant le miss silencieux (évite carte vide).
+      if (playbackActive && loading && cache.points.length > 0) {
+        return cache.points[cache.points.length - 1].devices;
+      }
+      return [];
+    }
+    const { startDate, endDate, targetMs } = buildSlotFetchWindow(
+      instant,
+      timeStep
+    );
+    return devicesForSlotWindow(
+      cache.points,
+      new Date(startDate).getTime(),
+      new Date(endDate).getTime(),
+      targetMs
+    );
   }, [
     cache,
     instant,
     pollutant,
     timeStep,
     sourcesKey,
-    typesKey,
+    signalAirSelectedTypes,
     signalAirEnabled,
+    playbackActive,
+    loading,
   ]);
 
   const reports = useMemo(() => {
@@ -535,17 +628,22 @@ export const useInstantSnapshot = ({
         pollutant,
         timeStep,
         sourcesKey,
-        typesKey,
+        signalAirSelectedTypes,
         signalAirEnabled
       )
     ) {
       return [];
     }
     if (!isInstantInBuffer(instant, cache, timeStep)) return [];
-    return filterReportsByDisplayWindow(
+    const selectedSet = new Set(signalAirSelectedTypes);
+    const windowFiltered = filterReportsByDisplayWindow(
       cache.reports,
       instantToIsoLocal(instant),
       timeStep
+    );
+    if (selectedSet.size === 0) return windowFiltered;
+    return windowFiltered.filter((report) =>
+      selectedSet.has(report.signalType)
     );
   }, [
     cache,
@@ -553,7 +651,7 @@ export const useInstantSnapshot = ({
     pollutant,
     timeStep,
     sourcesKey,
-    typesKey,
+    signalAirSelectedTypes,
     signalAirEnabled,
   ]);
 
