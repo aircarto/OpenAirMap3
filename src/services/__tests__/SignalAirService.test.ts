@@ -93,6 +93,30 @@ describe("SignalAirService", () => {
     expect((service as any).fetchSignalAirData).toHaveBeenCalled();
   });
 
+  it("rafraîchit les données quand les types changent", async () => {
+    (service as any).fetchSignalAirData.mockResolvedValue(buildGeoJson());
+
+    await service.fetchData({
+      pollutant: "pm25",
+      timeStep: "heure",
+      sources: ["signalair"],
+      signalAirSelectedTypes: ["odeur"],
+      signalAirPeriod: { startDate: "2025-02-01", endDate: "2025-02-02" },
+    });
+
+    (service as any).fetchSignalAirData.mockClear();
+
+    await service.fetchData({
+      pollutant: "pm25",
+      timeStep: "heure",
+      sources: ["signalair"],
+      signalAirSelectedTypes: ["odeur", "bruit"],
+      signalAirPeriod: { startDate: "2025-02-01", endDate: "2025-02-02" },
+    });
+
+    expect((service as any).fetchSignalAirData).toHaveBeenCalled();
+  });
+
   it("filtre les types de signalements selon la sélection", async () => {
     (service as any).fetchSignalAirData.mockImplementation(
       async (type: string) => {

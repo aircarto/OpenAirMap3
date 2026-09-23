@@ -92,13 +92,9 @@ export const useSignalAir = ({
     setSelectedSignalAirReport(report);
     setIsSignalAirDetailPanelOpen(true);
     setSignalAirDetailPanelSize("normal");
-
-    if (mapRef.current) {
-      mapRef.current.panTo([report.latitude, report.longitude], {
-        animate: true,
-        duration: 0.5,
-      });
-    }
+    // Pas de panTo ici : le marqueur est déjà sous le curseur, et un pan
+    // concurrent avec invalidateSize (ouverture du panneau) faisait trembler
+    // toute la carte. « Centrer sur la carte » reste disponible dans le panneau.
   };
 
   const handleCloseSignalAirDetailPanel = () => {

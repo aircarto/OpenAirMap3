@@ -59,11 +59,15 @@ export function parseSignalDuration(duration: string): number {
 
 /**
  * Calcule la période du signalement en temps local (millisecondes).
- * Utilise signalDate ou signalCreatedAt comme début, + signalDuration pour la fin.
+ * Début = date déclarée de la nuisance (`signalDate`) uniquement ;
+ * fin = début + `signalDuration`.
  */
 export function getReportPeriodInLocal(report: SignalAirReport): PeriodMs {
-  // Priorité : signalDate (date de la nuisance) > signalCreatedAt (date de création)
-  const startStr = report.signalDate || report.signalCreatedAt || report.timestamp;
+  const startStr = report.signalDate?.trim();
+  if (!startStr) {
+    return { startMs: 0, endMs: 0 };
+  }
+
   const startDate = new Date(startStr);
 
   if (isNaN(startDate.getTime())) {
@@ -129,7 +133,8 @@ export function doPeriodsOverlap(a: PeriodMs, b: PeriodMs): boolean {
 }
 
 /**
- * Filtre les signalements dont la période chevauche la fenêtre d'affichage courante.
+ * Filtre les signalements dont la période (date déclarée de nuisance) chevauche
+ * la fenêtre d'affichage courante. Sans `signalDate` valide : exclu.
  */
 export function filterReportsByDisplayWindow(
   reports: SignalAirReport[],
@@ -142,9 +147,7 @@ export function filterReportsByDisplayWindow(
   return reports.filter((report) => {
     const reportPeriod = getReportPeriodInLocal(report);
     if (reportPeriod.startMs === 0 && reportPeriod.endMs === 0) {
-      // Période invalide : inclure si le timestamp au moins est dans la fenêtre
-      const ts = new Date(report.timestamp || report.signalCreatedAt).getTime();
-      return ts >= window.startMs && ts <= window.endMs;
+      return false;
     }
     return doPeriodsOverlap(window, reportPeriod);
   });

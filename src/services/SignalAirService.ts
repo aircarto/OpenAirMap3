@@ -1,11 +1,7 @@
 /// <reference types="vite/client" />
 
 import { BaseDataService } from "./BaseDataService";
-import {
-  MeasurementDevice,
-  SignalAirProperties,
-  SignalAirReport,
-} from "../types";
+import { SignalAirReport } from "../types";
 
 // Types spécifiques pour SignalAir
 interface SignalAirFeature {
@@ -48,6 +44,31 @@ interface SignalAirGeoJSON {
   features: SignalAirFeature[];
 }
 
+const SIGNAL_AIR_MAX_DAYS = 30;
+
+const clampPeriodToMaxDays = (period: {
+  startDate: string;
+  endDate: string;
+}): { startDate: string; endDate: string } => {
+  const end = new Date(`${period.endDate}T00:00:00`);
+  const start = new Date(`${period.startDate}T00:00:00`);
+  if (Number.isNaN(end.getTime()) || Number.isNaN(start.getTime())) {
+    return period;
+  }
+  const maxStart = new Date(end);
+  maxStart.setDate(maxStart.getDate() - SIGNAL_AIR_MAX_DAYS);
+  if (start < maxStart) {
+    const y = maxStart.getFullYear();
+    const m = String(maxStart.getMonth() + 1).padStart(2, "0");
+    const d = String(maxStart.getDate()).padStart(2, "0");
+    return { startDate: `${y}-${m}-${d}`, endDate: period.endDate };
+  }
+  return period;
+};
+
+const typesCacheKey = (types: string[]): string =>
+  [...types].sort().join(",");
+
 export class SignalAirService extends BaseDataService {
   // URLs pour chaque type de signalement
   private readonly SIGNAL_URLS = {
@@ -66,10 +87,9 @@ export class SignalAirService extends BaseDataService {
     yib5aa1n: "brulage",
   };
 
-
-  // Cache pour les signalements
   private signalCache: SignalAirReport[] = [];
   private lastPeriod: { startDate: string; endDate: string } | null = null;
+  private lastTypesKey = "";
 
   constructor() {
     super("signalair");
@@ -85,36 +105,42 @@ export class SignalAirService extends BaseDataService {
     signalAirSelectedTypes?: string[];
   }): Promise<SignalAirReport[]> {
     try {
-      // Utiliser la période par défaut si non fournie (2 derniers jours)
-      const period = params.signalAirPeriod || this.getDefaultPeriod();
+      const period = clampPeriodToMaxDays(
+        params.signalAirPeriod || this.getDefaultPeriod()
+      );
 
-      // Vérifier si la période a changé
+      const selectedTypes =
+        params.signalAirSelectedTypes && params.signalAirSelectedTypes.length > 0
+          ? params.signalAirSelectedTypes.filter(
+              (type) => type in this.SIGNAL_URLS
+            )
+          : Object.keys(this.SIGNAL_URLS);
+
+      const nextTypesKey = typesCacheKey(selectedTypes);
+
       const periodChanged =
         !this.lastPeriod ||
         this.lastPeriod.startDate !== period.startDate ||
         this.lastPeriod.endDate !== period.endDate;
+      const typesChanged = this.lastTypesKey !== nextTypesKey;
 
-      // Si la période n'a pas changé et qu'on a des données en cache, les retourner
-      if (!periodChanged && this.signalCache.length > 0) {
+      if (
+        !periodChanged &&
+        !typesChanged &&
+        this.signalCache.length > 0
+      ) {
         return this.signalCache;
       }
 
-      // Si la période a changé, vider le cache et récupérer les nouvelles données
-      if (periodChanged) {
-        this.signalCache = [];
-        this.lastPeriod = period;
-      }
+      this.signalCache = [];
+      this.lastPeriod = period;
+      this.lastTypesKey = nextTypesKey;
 
-      // Récupérer tous les types de signalements
       const allReports: SignalAirReport[] = [];
 
-      const selectedTypes =
-        params.signalAirSelectedTypes && params.signalAirSelectedTypes.length > 0
-          ? params.signalAirSelectedTypes
-          : Object.keys(this.SIGNAL_URLS);
-
       for (const signalTypeKey of selectedTypes) {
-        const baseUrl = this.SIGNAL_URLS[signalTypeKey as keyof typeof this.SIGNAL_URLS];
+        const baseUrl =
+          this.SIGNAL_URLS[signalTypeKey as keyof typeof this.SIGNAL_URLS];
         if (!baseUrl) {
           continue;
         }
@@ -131,7 +157,6 @@ export class SignalAirService extends BaseDataService {
             Array.isArray(response.features) &&
             response.features.length > 0
           ) {
-            // Extraire le type de signalement depuis l'URL
             const urlCode = baseUrl.split("/").pop() || "";
             const extractedSignalType =
               this.URL_TO_TYPE_MAPPING[urlCode] || signalTypeKey;
@@ -142,13 +167,11 @@ export class SignalAirService extends BaseDataService {
             );
             allReports.push(...reports);
           }
-        } catch (error) {
-          // Erreur silencieuse pour ce type, continuer avec les autres
+        } catch {
           // Continuer avec les autres types même si un échoue
         }
       }
 
-      // Mettre à jour le cache
       this.signalCache = allReports;
 
       return allReports;
@@ -164,7 +187,7 @@ export class SignalAirService extends BaseDataService {
   private getDefaultPeriod(): { startDate: string; endDate: string } {
     const end = new Date();
     const start = new Date();
-    start.setDate(start.getDate() - 2); // 2 derniers jours par défaut
+    start.setDate(start.getDate() - 1);
 
     return {
       startDate: start.toISOString().split("T")[0],
@@ -207,7 +230,6 @@ export class SignalAirService extends BaseDataService {
     for (const feature of geoJson.features) {
       const { geometry, properties } = feature;
 
-      // Extraire les coordonnées (GeoJSON utilise [longitude, latitude])
       const [longitude, latitude] = geometry.coordinates;
 
       reports.push({
@@ -226,11 +248,9 @@ export class SignalAirService extends BaseDataService {
         signalType,
         timestamp: properties.created_at || new Date().toISOString(),
         status: "active",
-        // Propriétés supplémentaires pour le marqueur
-        qualityLevel: signalType, // Utiliser le type de signalement pour le marqueur
+        qualityLevel: signalType,
         address: properties.address || properties.lieu || "",
         departmentId: properties.department || "",
-        // Propriétés spécifiques à SignalAir
         signalCreatedAt: properties.created_at || "",
         signalDate: properties.date || "",
         signalDuration: properties["duree-de-la-nuisance"] || "",
@@ -267,7 +287,7 @@ export class SignalAirService extends BaseDataService {
     signalType: string,
     period: { startDate: string; endDate: string }
   ): Promise<SignalAirGeoJSON | null> {
-    const url = `${this.SIGNAL_URLS[signalType]}/${period.startDate}/${period.endDate}`;
+    const url = `${this.SIGNAL_URLS[signalType as keyof typeof this.SIGNAL_URLS]}/${period.startDate}/${period.endDate}`;
 
     try {
       const response = await this.makeRequest(url, {
@@ -279,7 +299,6 @@ export class SignalAirService extends BaseDataService {
         credentials: "omit",
       });
 
-      // Vérifier que la réponse est bien du JSON
       if (
         response &&
         typeof response === "object" &&

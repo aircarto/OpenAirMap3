@@ -1,8 +1,8 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import LayerDisclosure from "./LayerDisclosure";
-import SignalAirPeriodSelector from "./SignalAirPeriodSelector";
 import { getSourceDisplayName } from "../../utils/sourceCompatibility";
+import { isMapInstantAllowedForTimeStep } from "../../utils/mapInstant";
 import { cn } from "../../lib/utils";
 import type { MapControlsCommunitySources } from "../../contexts/mapControlsContext";
 
@@ -10,29 +10,21 @@ const SIGNAL_TYPE_IDS = ["odeur", "bruit", "brulage", "visuel"] as const;
 
 export interface SignalAirSourceDisclosureProps {
   community: MapControlsCommunitySources;
-  /** Le menu se referme après un chargement : voir onLoaded */
-  onLoaded: () => void;
+  selectedTimeStep: string;
+  /** Conservé pour l’API du slot Sources ; plus de fermeture forcée au chargement */
+  onLoaded?: () => void;
 }
 
 /**
  * Sous-groupe SignalAir du menu Sources.
  *
- * Un dépliant et non une case à cocher : une case promet un changement immédiat
- * et réversible, or activer SignalAir n'affiche rien tant qu'un jeu de types et
- * une période n'ont pas été validés par un chargement. Le dépliant énonce qu'il
- * y a une étape.
- *
- * Trois actions distinctes, là où `onSignalAirClick` en confondait deux :
- * replier (sans effet), masquer les marqueurs (réversible, sans perte), et
- * désactiver (réinitialise la sélection). Sans cette séparation, chaque repli
- * accidentel jetait les signalements chargés.
- *
- * Le bouton de visibilité est la première ligne du CORPS et non l'en-tête : un
- * bouton imbriqué dans un bouton est du HTML invalide.
+ * Activation immédiate (source classique) : cocher active la source et charge
+ * les signalements sur la fenêtre TimeBar. Les types filtrents l’affichage ;
+ * tout décocher désactive. Hors 15 min / heure / jour : grisé.
  */
 export const SignalAirSourceDisclosure: React.FC<
   SignalAirSourceDisclosureProps
-> = ({ community, onLoaded }) => {
+> = ({ community, selectedTimeStep }) => {
   const { t } = useTranslation();
 
   const {
@@ -43,30 +35,34 @@ export const SignalAirSourceDisclosure: React.FC<
     hasSignalAirData,
     signalAirSelectedTypes,
     onSignalAirTypesChange,
-    signalAirDraftPeriod,
-    onSignalAirDraftPeriodChange,
-    onSignalAirLoadRequest,
     isSignalAirLoading,
     signalAirHasLoaded,
     signalAirReportsCount,
   } = community;
 
+  const compatible = isMapInstantAllowedForTimeStep(selectedTimeStep);
   const label = getSourceDisplayName("signalair", t);
   const allTypesSelected =
     signalAirSelectedTypes.length === SIGNAL_TYPE_IDS.length;
 
-  const handleTypeToggle = (id: string) => {
-    onSignalAirTypesChange(
-      signalAirSelectedTypes.includes(id)
-        ? signalAirSelectedTypes.filter((type) => type !== id)
-        : [...signalAirSelectedTypes, id]
-    );
+  const handleEnableToggle = () => {
+    if (!compatible) return;
+    if (isSignalAirEnabled) {
+      onSignalAirEnabledChange(false);
+      return;
+    }
+    if (signalAirSelectedTypes.length === 0) {
+      onSignalAirTypesChange([...SIGNAL_TYPE_IDS]);
+    }
+    onSignalAirEnabledChange(true);
   };
 
-  const handleLoad = () => {
-    if (!isSignalAirEnabled) onSignalAirEnabledChange(true);
-    onSignalAirLoadRequest();
-    onLoaded();
+  const handleTypeToggle = (id: string) => {
+    if (!compatible) return;
+    const next = signalAirSelectedTypes.includes(id)
+      ? signalAirSelectedTypes.filter((type) => type !== id)
+      : [...signalAirSelectedTypes, id];
+    onSignalAirTypesChange(next);
   };
 
   return (
@@ -74,19 +70,68 @@ export const SignalAirSourceDisclosure: React.FC<
       label={label}
       active={isSignalAirEnabled}
       activeLabel={t("controls.specialSourcesActive")}
-      // Le nombre brut de signalements chargés, sans nouvelle clé : un
-      // `n/total` n'aurait pas de total à énoncer ici.
       hint={
         signalAirHasLoaded && isSignalAirEnabled
           ? String(signalAirReportsCount)
           : undefined
       }
-      // Le contenu du popover est démonté à la fermeture : ce `defaultOpen`
-      // reproduit exactement l'effet d'auto-ouverture qu'il remplace, sans
-      // aucune ref de garde — le démontage fait le travail des trois refs.
       defaultOpen={isSignalAirEnabled && !signalAirHasLoaded}
     >
-      <div data-testid="sources-signalair-body" className="space-y-2 pl-4 pr-1 pt-1">
+      <div
+        data-testid="sources-signalair-body"
+        className={cn(
+          "space-y-2 pl-4 pr-1 pt-1",
+          !compatible && "opacity-50"
+        )}
+      >
+        {!compatible && (
+          <p
+            data-testid="sources-signalair-incompatible"
+            className="px-2 text-xs text-[color:var(--fg-muted)]"
+          >
+            {t("panels.signalAirSelection.incompatibleTimeStep")}
+          </p>
+        )}
+
+        <button
+          type="button"
+          data-testid="sources-signalair-enable"
+          role="checkbox"
+          aria-checked={isSignalAirEnabled}
+          aria-disabled={!compatible}
+          disabled={!compatible}
+          onClick={handleEnableToggle}
+          className={cn(
+            "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium transition-colors",
+            compatible
+              ? "text-gray-700 hover:bg-black/[0.04]"
+              : "cursor-not-allowed text-[color:var(--fg-muted)]"
+          )}
+        >
+          <span
+            aria-hidden="true"
+            className={cn(
+              "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border",
+              isSignalAirEnabled
+                ? "border-blue-600 bg-blue-600 text-white"
+                : "border-gray-300 bg-white"
+            )}
+          >
+            {isSignalAirEnabled && (
+              <svg className="h-2.5 w-2.5" viewBox="0 0 12 12" fill="none">
+                <path
+                  d="M2.5 6.5L5 9l4.5-5.5"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            )}
+          </span>
+          {t("panels.signalAirSelection.enable")}
+        </button>
+
         {hasSignalAirData && (
           <button
             type="button"
@@ -117,28 +162,26 @@ export const SignalAirSourceDisclosure: React.FC<
             total: SIGNAL_TYPE_IDS.length,
           })}
         >
-          <div className="mb-1 flex items-center justify-between px-2">
-            <span className="text-xs text-[color:var(--fg-muted)]">
-              {t("panels.signalAirSelection.typesTitle", {
-                selected: signalAirSelectedTypes.length,
-                total: SIGNAL_TYPE_IDS.length,
-              })}
+          <div className="mb-1.5 flex items-center justify-between px-2">
+            <span className="text-[10px] font-medium uppercase tracking-wide text-[color:var(--fg-muted)]">
+              {t("panels.signalAirSelection.typesShort")}
             </span>
             <button
               type="button"
+              disabled={!compatible}
               onClick={() =>
                 onSignalAirTypesChange(
                   allTypesSelected ? [] : [...SIGNAL_TYPE_IDS]
                 )
               }
-              className="text-xs font-medium text-blue-600 hover:text-blue-800"
+              className="text-[10px] font-medium text-blue-600 hover:text-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {allTypesSelected
                 ? t("panels.signalAirSelection.deselectAll")
                 : t("panels.signalAirSelection.selectAll")}
             </button>
           </div>
-          <div className="grid grid-cols-2 gap-1">
+          <div className="flex flex-wrap gap-1 px-1">
             {SIGNAL_TYPE_IDS.map((id) => {
               const checked = signalAirSelectedTypes.includes(id);
               return (
@@ -148,12 +191,14 @@ export const SignalAirSourceDisclosure: React.FC<
                   data-testid={`sources-signalair-type-${id}`}
                   role="checkbox"
                   aria-checked={checked}
+                  disabled={!compatible}
                   onClick={() => handleTypeToggle(id)}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-md border px-2 py-1.5 text-left text-xs transition-colors",
+                    "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] transition-colors",
                     checked
-                      ? "border-blue-300 bg-blue-50 text-[#1f3c6d]"
-                      : "border-black/[0.09] bg-white text-gray-700 hover:bg-black/[0.04]"
+                      ? "border-blue-400/80 bg-blue-50 text-[#1f3c6d]"
+                      : "border-transparent bg-black/[0.04] text-gray-600 hover:bg-black/[0.07]",
+                    !compatible && "cursor-not-allowed"
                   )}
                 >
                   <img
@@ -162,9 +207,9 @@ export const SignalAirSourceDisclosure: React.FC<
                     }.png`}
                     alt=""
                     aria-hidden="true"
-                    className="h-4 w-4 shrink-0 object-contain"
+                    className="h-3.5 w-3.5 shrink-0 object-contain opacity-90"
                   />
-                  <span className="truncate">
+                  <span>
                     {t(`panels.signalAirSelection.types.${id}.label`)}
                   </span>
                 </button>
@@ -173,44 +218,10 @@ export const SignalAirSourceDisclosure: React.FC<
           </div>
         </div>
 
-        <SignalAirPeriodSelector
-          startDate={signalAirDraftPeriod.startDate}
-          endDate={signalAirDraftPeriod.endDate}
-          onPeriodChange={onSignalAirDraftPeriodChange}
-          layout="stacked"
-        />
-
-        <button
-          type="button"
-          data-testid="sources-signalair-load"
-          onClick={handleLoad}
-          disabled={signalAirSelectedTypes.length === 0 || isSignalAirLoading}
-          className={cn(
-            "w-full rounded-md px-3 py-2 text-xs font-medium transition-colors",
-            signalAirSelectedTypes.length === 0 || isSignalAirLoading
-              ? "cursor-not-allowed bg-black/[0.06] text-[color:var(--fg-muted)]"
-              : "bg-blue-600 text-white hover:bg-blue-700"
-          )}
-        >
-          {isSignalAirLoading
-            ? t("panels.loadingInProgress")
-            : t("panels.signalAirSelection.loadReports")}
-        </button>
-        {signalAirSelectedTypes.length === 0 && (
-          <p className="px-2 text-xs text-red-600">
-            {t("panels.signalAirSelection.selectAtLeastOne")}
+        {isSignalAirLoading && (
+          <p className="px-2 text-xs text-[color:var(--fg-muted)]">
+            {t("panels.loadingInProgress")}
           </p>
-        )}
-
-        {isSignalAirEnabled && (
-          <button
-            type="button"
-            data-testid="sources-signalair-disable"
-            onClick={() => onSignalAirEnabledChange(false)}
-            className="w-full rounded-md px-2 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
-          >
-            {t("controls.disableSignalAir")}
-          </button>
         )}
       </div>
     </LayerDisclosure>
