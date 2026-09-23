@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   MobileAirRoute,
   MobileAirDataPoint,
@@ -6,23 +6,38 @@ import {
 } from "../../../types";
 import { DataServiceFactory } from "../../../services/DataServiceFactory";
 import { MobileAirService } from "../../../services/MobileAirService";
+import { mobileAirRouteKey } from "../../../constants/mobileAir";
 import L from "leaflet";
 
 interface UseMobileAirProps {
   devices: MeasurementDevice[];
   mapRef: React.RefObject<L.Map | null>;
   onMobileAirSensorSelected?: (
-    sensorId: string,
+    sensorIds: string[],
     period: { startDate: string; endDate: string }
   ) => void;
-  isEnabled?: boolean; // Nouveau prop pour contrôler si MobileAir est activé
+  isEnabled?: boolean;
+  /** Visibilité par capteur (masquer sans retirer les données). */
+  sensorVisibility?: Record<string, boolean>;
 }
 
+const mostRecentRoute = (routes: MobileAirRoute[]): MobileAirRoute | null => {
+  if (routes.length === 0) return null;
+  return routes.reduce((latest, current) =>
+    new Date(current.startTime) > new Date(latest.startTime) ? current : latest
+  );
+};
+
+/**
+ * Libre choix des sessions sur la carte : un Set de clés visibles.
+ * Au chargement, on seed la session la plus récente par capteur.
+ */
 export const useMobileAir = ({
   devices,
   mapRef,
   onMobileAirSensorSelected,
   isEnabled = false,
+  sensorVisibility = {},
 }: UseMobileAirProps) => {
   const [mobileAirRoutes, setMobileAirRoutes] = useState<MobileAirRoute[]>([]);
   const [isMobileAirDetailPanelOpen, setIsMobileAirDetailPanelOpen] =
@@ -36,109 +51,132 @@ export const useMobileAir = ({
     useState<MobileAirDataPoint | null>(null);
   const [highlightedMobileAirPoint, setHighlightedMobileAirPoint] =
     useState<MobileAirDataPoint | null>(null);
-  const [activeMobileAirRoute, setActiveMobileAirRoute] =
-    useState<MobileAirRoute | null>(null);
+  /** Sessions affichées sur la carte (`sensorId-sessionId`). */
+  const [visibleSessionKeys, setVisibleSessionKeys] = useState<Set<string>>(
+    () => new Set()
+  );
   const [userClosedDetailPanel, setUserClosedDetailPanel] = useState(false);
-  const [forceNewChoice, setForceNewChoice] = useState(false);
   const prevMobileAirRoutesLengthRef = useRef<number>(0);
-  const [routesJustLoaded, setRoutesJustLoaded] = useState<boolean>(false);
+  const [routesJustLoaded, setRoutesJustLoaded] = useState(false);
+  const hasFittedBoundsRef = useRef(false);
+  /** Capteurs pour lesquels on a déjà seedé une session visible. */
+  const seededSensorIdsRef = useRef<Set<string>>(new Set());
 
-  // Effet pour extraire les routes MobileAir des devices
+  // Extraire les routes des devices + seed / purge des clés visibles
   useEffect(() => {
     if (!isEnabled) {
-      setMobileAirRoutes([]);
-      setForceNewChoice(false);
-      return;
-    }
-
-    // Si on force un nouveau choix, ne pas créer de routes
-    if (forceNewChoice) {
       setMobileAirRoutes([]);
       return;
     }
 
     const routes: MobileAirRoute[] = [];
-
     devices.forEach((device) => {
       if (device.source === "mobileair" && (device as any).mobileAirRoute) {
         routes.push((device as any).mobileAirRoute);
       }
     });
 
-    // Détecter si de nouvelles routes viennent d'être chargées
-    // (passage de 0 routes à >0 routes)
     const hadNoRoutes = prevMobileAirRoutesLengthRef.current === 0;
     const hasRoutesNow = routes.length > 0;
-    const routesJustLoaded = hadNoRoutes && hasRoutesNow;
+    const justLoaded = hadNoRoutes && hasRoutesNow;
 
-    // Si de nouvelles routes viennent d'être chargées, réinitialiser les flags
-    // pour permettre le comportement automatique des panels
-    if (routesJustLoaded) {
+    if (justLoaded) {
       setUserClosedDetailPanel(false);
       setRoutesJustLoaded(true);
+      hasFittedBoundsRef.current = false;
+      seededSensorIdsRef.current = new Set();
     }
-    // Ne pas mettre routesJustLoaded à false ici, il sera réinitialisé
-    // dans l'effet qui ouvre le panel de détail
 
     setMobileAirRoutes(routes);
-
-    // Mettre à jour la référence pour la prochaine fois
     prevMobileAirRoutesLengthRef.current = routes.length;
 
-    // Définir automatiquement la route la plus récente comme active
-    // UNIQUEMENT lors du chargement initial ou si le capteur a changé
-    // Ne PAS écraser la sélection manuelle de l'utilisateur pour une autre session
-    if (routes.length > 0) {
-      const mostRecentRoute = routes.reduce((latest, current) => {
-        return new Date(current.startTime) > new Date(latest.startTime)
-          ? current
-          : latest;
-      });
+    if (routes.length === 0) {
+      setVisibleSessionKeys(new Set());
+      seededSensorIdsRef.current = new Set();
+      return;
+    }
 
-      // Vérifier si on doit définir automatiquement la route active :
-      // 1. Aucune route n'est active (chargement initial)
-      // 2. Le capteur a changé (la route active actuelle n'existe plus dans les routes ou a un sensorId différent)
-      // Mais PAS si l'utilisateur a sélectionné manuellement une autre session du même capteur
-      const shouldSetActive =
-        !activeMobileAirRoute ||
-        activeMobileAirRoute.sensorId !== mostRecentRoute.sensorId ||
-        !routes.some(
-          (r) =>
-            r.sensorId === activeMobileAirRoute.sensorId &&
-            r.sessionId === activeMobileAirRoute.sessionId
+    const validKeys = new Set(
+      routes.map((r) => mobileAirRouteKey(r.sensorId, r.sessionId))
+    );
+
+    const bySensor = new Map<string, MobileAirRoute[]>();
+    for (const route of routes) {
+      const list = bySensor.get(route.sensorId) ?? [];
+      list.push(route);
+      bySensor.set(route.sensorId, list);
+    }
+
+    setVisibleSessionKeys((prev) => {
+      const next = new Set<string>();
+      for (const key of prev) {
+        if (validKeys.has(key)) next.add(key);
+      }
+
+      for (const [sensorId, sensorRoutes] of bySensor) {
+        const hasVisible = sensorRoutes.some((r) =>
+          next.has(mobileAirRouteKey(r.sensorId, r.sessionId))
+        );
+        const prefix = `${sensorId}-`;
+        const prevHadKeysForSensor = [...prev].some((k) => k.startsWith(prefix));
+        const prevKeysStillValid = [...prev].some(
+          (k) => k.startsWith(prefix) && validKeys.has(k)
         );
 
-      if (shouldSetActive) {
-        setActiveMobileAirRoute(mostRecentRoute);
-        // Réinitialiser aussi la route sélectionnée si elle était liée à l'ancienne route active
-        if (
-          selectedMobileAirRoute &&
-          selectedMobileAirRoute.sensorId !== mostRecentRoute.sensorId
-        ) {
-          setSelectedMobileAirRoute(null);
+        const isNewSensor = !seededSensorIdsRef.current.has(sensorId);
+        // Refetch a remplacé les sessions : anciens choix invalides → re-seed.
+        // Si l'utilisateur a tout décoché, prev n'a plus de clés pour ce capteur → ne pas re-seed.
+        const lostAllToRefetch =
+          !isNewSensor &&
+          !hasVisible &&
+          prevHadKeysForSensor &&
+          !prevKeysStillValid;
+
+        if (isNewSensor || lostAllToRefetch) {
+          const recent = mostRecentRoute(sensorRoutes);
+          if (recent) {
+            next.add(mobileAirRouteKey(recent.sensorId, recent.sessionId));
+          }
+          seededSensorIdsRef.current.add(sensorId);
         }
       }
-    }
-  }, [
-    devices,
-    isEnabled,
-    forceNewChoice,
-    activeMobileAirRoute,
-    selectedMobileAirRoute,
-  ]);
 
-  // Effet pour ouvrir automatiquement le side panel de détail quand les routes sont chargées
+      for (const id of [...seededSensorIdsRef.current]) {
+        if (!bySensor.has(id)) seededSensorIdsRef.current.delete(id);
+      }
+      return next;
+    });
+  }, [devices, isEnabled]);
+
+  const visibleRoutes = useMemo(() => {
+    return mobileAirRoutes.filter((route) => {
+      if (sensorVisibility[route.sensorId] === false) return false;
+      return visibleSessionKeys.has(
+        mobileAirRouteKey(route.sensorId, route.sessionId)
+      );
+    });
+  }, [mobileAirRoutes, visibleSessionKeys, sensorVisibility]);
+
+  // Focus graphique : sélection explicite, sinon session visible la plus récente
+  const focusRoute = useMemo(() => {
+    if (selectedMobileAirRoute) {
+      const stillThere = mobileAirRoutes.some(
+        (r) =>
+          r.sensorId === selectedMobileAirRoute.sensorId &&
+          r.sessionId === selectedMobileAirRoute.sessionId
+      );
+      if (stillThere) return selectedMobileAirRoute;
+    }
+    return mostRecentRoute(visibleRoutes) ?? mostRecentRoute(mobileAirRoutes);
+  }, [selectedMobileAirRoute, mobileAirRoutes, visibleRoutes]);
+
+  const activeMobileAirRoute = focusRoute;
+
   useEffect(() => {
-    // Ouvrir le panel de détail si :
-    // 1. MobileAir est activé
-    // 2. Il y a des routes
-    // 3. Il y a une route active
-    // 4. Le panel n'est pas déjà ouvert OU de nouvelles routes viennent d'être chargées (pour forcer la réouverture)
-    // 5. L'utilisateur n'a pas fermé manuellement le panel (sauf si de nouvelles routes viennent d'être chargées)
     const shouldOpen =
       isEnabled &&
       mobileAirRoutes.length > 0 &&
-      activeMobileAirRoute &&
+      focusRoute &&
       (!isMobileAirDetailPanelOpen || routesJustLoaded) &&
       (!userClosedDetailPanel || routesJustLoaded);
 
@@ -146,7 +184,6 @@ export const useMobileAir = ({
       const timer = setTimeout(() => {
         setIsMobileAirDetailPanelOpen(true);
         setMobileAirDetailPanelSize("normal");
-        // Réinitialiser le flag après l'ouverture
         setRoutesJustLoaded(false);
       }, 200);
       return () => clearTimeout(timer);
@@ -154,58 +191,51 @@ export const useMobileAir = ({
   }, [
     isEnabled,
     mobileAirRoutes.length,
-    activeMobileAirRoute,
+    focusRoute,
     isMobileAirDetailPanelOpen,
     userClosedDetailPanel,
     routesJustLoaded,
   ]);
 
-  // Effet pour centrer la carte sur la route active
   useEffect(() => {
     if (
-      activeMobileAirRoute &&
-      activeMobileAirRoute.points.length > 0 &&
-      mapRef.current
+      visibleRoutes.length > 0 &&
+      mapRef.current &&
+      !hasFittedBoundsRef.current &&
+      isEnabled
     ) {
-      const bounds = activeMobileAirRoute.points.map(
-        (point) => [point.lat, point.lon] as [number, number]
-      );
-      mapRef.current.fitBounds(bounds, { padding: [20, 20] });
+      const bounds: [number, number][] = [];
+      for (const route of visibleRoutes) {
+        for (const point of route.points) {
+          bounds.push([point.lat, point.lon]);
+        }
+      }
+      if (bounds.length > 0) {
+        mapRef.current.fitBounds(bounds, { padding: [20, 20] });
+        hasFittedBoundsRef.current = true;
+      }
     }
-  }, [activeMobileAirRoute, mapRef]);
+  }, [visibleRoutes, mapRef, isEnabled]);
 
-  // Effet pour réinitialiser les états de fermeture manuelle quand l'activation change
   useEffect(() => {
-    if (!isEnabled) {
-      // Nettoyer IMMÉDIATEMENT les routes pour éviter les conflits
-      setActiveMobileAirRoute(null);
-      setSelectedMobileAirRoute(null);
-      setHoveredMobileAirPoint(null);
-      setHighlightedMobileAirPoint(null);
-      setMobileAirRoutes([]);
-      setUserClosedDetailPanel(false);
-      setIsMobileAirDetailPanelOpen(false);
-      prevMobileAirRoutesLengthRef.current = 0;
-    } else {
-      // Réinitialiser les états pour permettre à l'utilisateur de choisir à nouveau
-      setActiveMobileAirRoute(null);
-      setSelectedMobileAirRoute(null);
-      setHoveredMobileAirPoint(null);
-      setHighlightedMobileAirPoint(null);
-      setUserClosedDetailPanel(false);
-      setIsMobileAirDetailPanelOpen(false);
-      setMobileAirRoutes([]);
-      setForceNewChoice(true);
-      prevMobileAirRoutesLengthRef.current = 0;
-    }
+    if (isEnabled) return;
+
+    setVisibleSessionKeys(new Set());
+    seededSensorIdsRef.current = new Set();
+    setSelectedMobileAirRoute(null);
+    setHoveredMobileAirPoint(null);
+    setHighlightedMobileAirPoint(null);
+    setMobileAirRoutes([]);
+    setUserClosedDetailPanel(false);
+    setIsMobileAirDetailPanelOpen(false);
+    prevMobileAirRoutesLengthRef.current = 0;
+    hasFittedBoundsRef.current = false;
   }, [isEnabled]);
 
-  // Handlers
   const handleMobileAirSensorsSelected = (
-    sensorId: string,
+    sensorIds: string[],
     period: { startDate: string; endDate: string }
   ) => {
-    // Nettoyer les routes existantes pour permettre le rechargement avec remplacement
     try {
       const mobileAirService = DataServiceFactory.getService(
         "mobileair"
@@ -215,24 +245,17 @@ export const useMobileAir = ({
       console.error("Erreur lors du nettoyage des routes MobileAir:", error);
     }
 
-    // Nettoyer les routes et la route active dans le composant
     setMobileAirRoutes([]);
-    setActiveMobileAirRoute(null);
+    setVisibleSessionKeys(new Set());
+    seededSensorIdsRef.current = new Set();
     setSelectedMobileAirRoute(null);
-    
-    // Réinitialiser la référence pour détecter le prochain chargement de routes
     prevMobileAirRoutesLengthRef.current = 0;
-
-    // Réinitialiser les flags pour permettre l'ouverture automatique du panneau
-    // de détail lors du chargement des nouvelles données
     setUserClosedDetailPanel(false);
     setRoutesJustLoaded(false);
-
-    // Désactiver le flag de forçage de nouveau choix quand l'utilisateur fait un choix
-    setForceNewChoice(false);
+    hasFittedBoundsRef.current = false;
 
     if (onMobileAirSensorSelected) {
-      onMobileAirSensorSelected(sensorId, period);
+      onMobileAirSensorSelected(sensorIds, period);
     }
   };
 
@@ -247,22 +270,25 @@ export const useMobileAir = ({
     newSize: "normal" | "fullscreen" | "hidden"
   ) => {
     setMobileAirDetailPanelSize(newSize);
-
     if (newSize === "hidden") {
       setUserClosedDetailPanel(true);
     }
   };
 
+  /** Focus détail uniquement — n'impose pas la session sur la carte. */
   const openMobileAirDetailPanelForRoute = (
     route: MobileAirRoute,
     options?: { highlightedPoint?: MobileAirDataPoint | null }
   ) => {
-    setActiveMobileAirRoute(route);
     setSelectedMobileAirRoute(route);
     setHighlightedMobileAirPoint(options?.highlightedPoint ?? null);
     setUserClosedDetailPanel(false);
     setMobileAirDetailPanelSize("normal");
     setIsMobileAirDetailPanelOpen(true);
+  };
+
+  const focusRouteForDetail = (route: MobileAirRoute) => {
+    openMobileAirDetailPanelForRoute(route);
   };
 
   const handleMobileAirPointClick = (
@@ -282,8 +308,6 @@ export const useMobileAir = ({
   const handleMobileAirPointHighlight = useCallback(
     (point: MobileAirDataPoint | null) => {
       setHighlightedMobileAirPoint(point);
-
-      // Centrer la carte sur le point mis en surbrillance sans changer le zoom
       if (point && mapRef.current) {
         mapRef.current.panTo([point.lat, point.lon], {
           animate: true,
@@ -296,8 +320,6 @@ export const useMobileAir = ({
 
   const handleMobileAirRouteClick = (route: MobileAirRoute) => {
     openMobileAirDetailPanelForRoute(route);
-
-    // Centrer la carte sur la route sélectionnée
     if (route.points.length > 0 && mapRef.current) {
       const bounds = route.points.map(
         (point) => [point.lat, point.lon] as [number, number]
@@ -312,25 +334,68 @@ export const useMobileAir = ({
     setMobileAirDetailPanelSize("normal");
   };
 
+  const setSessionVisible = useCallback(
+    (route: MobileAirRoute, visible: boolean) => {
+      const key = mobileAirRouteKey(route.sensorId, route.sessionId);
+      setVisibleSessionKeys((prev) => {
+        const next = new Set(prev);
+        if (visible) next.add(key);
+        else next.delete(key);
+        return next;
+      });
+    },
+    []
+  );
+
+  const setSensorSessionsVisible = useCallback(
+    (sensorId: string, visible: boolean) => {
+      setVisibleSessionKeys((prev) => {
+        const next = new Set(prev);
+        for (const route of mobileAirRoutes) {
+          if (route.sensorId !== sensorId) continue;
+          const key = mobileAirRouteKey(route.sensorId, route.sessionId);
+          if (visible) next.add(key);
+          else next.delete(key);
+        }
+        return next;
+      });
+    },
+    [mobileAirRoutes]
+  );
+
+  const isSessionOnMap = useCallback(
+    (route: MobileAirRoute): boolean => {
+      return visibleSessionKeys.has(
+        mobileAirRouteKey(route.sensorId, route.sessionId)
+      );
+    },
+    [visibleSessionKeys]
+  );
+
   return {
-    // États
     mobileAirRoutes,
+    visibleRoutes,
     isMobileAirDetailPanelOpen,
     mobileAirDetailPanelSize,
     selectedMobileAirRoute,
     hoveredMobileAirPoint,
     highlightedMobileAirPoint,
     activeMobileAirRoute,
-
-    // Handlers
+    visibleSessionKeys,
     handleMobileAirSensorsSelected,
     handleCloseMobileAirDetailPanel,
     handleMobileAirDetailPanelSizeChange,
     openMobileAirDetailPanelForRoute,
+    focusRouteForDetail,
     handleMobileAirPointClick,
     handleMobileAirPointHover,
     handleMobileAirPointHighlight,
     handleMobileAirRouteClick,
     handleOpenMobileAirDetailPanel,
+    setSessionVisible,
+    setSensorSessionsVisible,
+    /** Alias pour le panneau (même API que toggle précédent). */
+    toggleSessionOnMap: setSessionVisible,
+    isSessionOnMap,
   };
 };

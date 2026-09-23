@@ -78,13 +78,14 @@ const MapDataMarkers: React.FC<MapDataMarkersProps> = ({
 
       {isMobileAirVisible && (
         <MobileAirRoutes
-          routes={mobileAir.activeMobileAirRoute ? [mobileAir.activeMobileAirRoute] : []}
+          routes={mobileAir.visibleRoutes ?? []}
           selectedPollutant={selectedPollutant}
           onPointClick={handleMobileAirPointClickWrapper}
           onPointHover={mobileAir.handleMobileAirPointHover}
           onRouteClick={handleMobileAirRouteClickWrapper}
           highlightedPoint={mobileAir.highlightedMobileAirPoint}
           hoveredPoint={mobileAir.hoveredMobileAirPoint}
+          focusedRoute={mobileAir.activeMobileAirRoute ?? null}
         />
       )}
 

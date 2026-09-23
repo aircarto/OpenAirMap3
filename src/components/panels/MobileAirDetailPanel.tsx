@@ -21,8 +21,15 @@ import {
 } from "../../utils/exportUtils";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
-import SidePanelShell, { type PanelSize } from "./SidePanelShell";
+import SidePanelShell, {
+  CHART_PANEL_BODY_CLASS,
+  CHART_PANEL_HEIGHT_CLASS,
+  type PanelSize,
+} from "./SidePanelShell";
+import CollapsiblePanelSection from "./CollapsiblePanelSection";
 import PanelReopenBadge from "./PanelReopenBadge";
+import MobileAirManageSection from "./MobileAirManageSection";
+import type { MobileAirSensorStatus } from "../../constants/mobileAir";
 
 interface MobileAirDetailPanelProps {
   isOpen: boolean;
@@ -38,6 +45,21 @@ interface MobileAirDetailPanelProps {
   onPointHighlight?: (point: MobileAirDataPoint | null) => void;
   onRouteSelect?: (route: MobileAirRoute) => void;
   panelSize: PanelSize;
+  /** Gestion multi-capteurs (solution D) */
+  loadedSensorIds?: string[];
+  sensorVisibility?: Record<string, boolean>;
+  sensorStatus?: Record<string, MobileAirSensorStatus>;
+  sensorPeriods?: Record<string, { startDate: string; endDate: string }>;
+  defaultPeriod?: { startDate: string; endDate: string };
+  isSessionOnMap?: (route: MobileAirRoute) => boolean;
+  onSensorVisibilityChange?: (sensorId: string, visible: boolean) => void;
+  onSensorRemove?: (sensorId: string) => void;
+  onSensorPeriodChange?: (
+    sensorId: string,
+    period: { startDate: string; endDate: string }
+  ) => void;
+  onToggleSessionOnMap?: (route: MobileAirRoute, visible: boolean) => void;
+  onSetSensorSessionsVisible?: (sensorId: string, visible: boolean) => void;
 }
 
 const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
@@ -54,6 +76,17 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
   onPointHighlight,
   onRouteSelect,
   panelSize,
+  loadedSensorIds = [],
+  sensorVisibility = {},
+  sensorStatus = {},
+  sensorPeriods = {},
+  defaultPeriod = { startDate: "", endDate: "" },
+  isSessionOnMap,
+  onSensorVisibilityChange,
+  onSensorRemove,
+  onSensorPeriodChange,
+  onToggleSessionOnMap,
+  onSetSensorSessionsVisible,
 }) => {
   const { t, i18n } = useTranslation();
   const [hoveredPoint, setHoveredPoint] = useState<MobileAirDataPoint | null>(
@@ -579,7 +612,7 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
   ]);
 
   // Return conditionnel APRÈS tous les hooks
-  if (!isOpen || !routeToUse) {
+  if (!isOpen) {
     return null;
   }
 
@@ -588,6 +621,15 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
     Object.values(MOBILEAIR_POLLUTANT_MAPPING).includes(p)
   );
 
+  const hasManage =
+    loadedSensorIds.length > 0 &&
+    onSensorVisibilityChange &&
+    onSensorRemove &&
+    onSensorPeriodChange &&
+    onToggleSessionOnMap &&
+    onSetSensorSessionsVisible &&
+    isSessionOnMap;
+
   return (
     <SidePanelShell
       isOpen={isOpen}
@@ -595,13 +637,26 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
       onSizeChange={onSizeChange}
       onHidden={onHidden}
       width="compact"
+      bodyClassName={CHART_PANEL_BODY_CLASS}
       testId="mobileair-detail-panel"
-      title={t("panels.mobileAirDetail.sessionTitle", {
-        sessionId: routeToUse.sessionId,
-      })}
-      subtitle={t("panels.mobileAirDetail.sensorLabel", {
-        sensorId: routeToUse.sensorId,
-      })}
+      title={
+        routeToUse
+          ? t("panels.mobileAirDetail.sessionTitle", {
+              sessionId: routeToUse.sessionId,
+            })
+          : t("panels.mobileAirManage.panelTitle")
+      }
+      subtitle={
+        routeToUse
+          ? t("panels.mobileAirDetail.sensorLabel", {
+              sensorId: routeToUse.sensorId,
+            })
+          : loadedSensorIds.length > 0
+            ? t("panels.mobileAirManage.title", {
+                count: loadedSensorIds.length,
+              })
+            : undefined
+      }
       badge={
         <PanelReopenBadge
           label={t("panels.mobileAirSelection.reopenButtonTooltip")}
@@ -609,12 +664,39 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
         />
       }
     >
-      {/* Sélection de polluants */}
-      <div className="border border-[rgb(16_32_56_/_0.09)] rounded-[var(--r-md)] p-3 sm:p-4">
-        <h3 className="text-sm font-medium text-[color:var(--fg-muted)] mb-3 text-center">
+      {hasManage && (
+        <MobileAirManageSection
+          sensorIds={loadedSensorIds}
+          allRoutes={allRoutes}
+          sensorVisibility={sensorVisibility}
+          sensorStatus={sensorStatus}
+          sensorPeriods={sensorPeriods}
+          defaultPeriod={defaultPeriod}
+          focusRoute={routeToUse}
+          isSessionOnMap={isSessionOnMap}
+          onSensorVisibilityChange={onSensorVisibilityChange}
+          onSensorRemove={onSensorRemove}
+          onSensorPeriodChange={onSensorPeriodChange}
+          onToggleSessionOnMap={onToggleSessionOnMap}
+          onSetSensorSessionsVisible={onSetSensorSessionsVisible}
+          onFocusRoute={(route) => onRouteSelect?.(route)}
+        />
+      )}
+
+      {!routeToUse && (
+        <p className="rounded-[var(--r-md)] border border-[rgb(16_32_56_/_0.09)] p-4 text-center text-sm text-[color:var(--fg-muted)]">
+          {t("panels.mobileAirManage.selectSessionHint")}
+        </p>
+      )}
+
+      {routeToUse && (
+        <>
+      {/* Sélection de polluants — compacte */}
+      <div className="shrink-0 rounded-[var(--r-md)] border border-[rgb(16_32_56_/_0.09)] p-2 sm:p-2.5">
+        <div className="mb-2 text-center text-xs font-medium text-[color:var(--fg-muted)]">
           {t("panels.mobileAirDetail.pollutantsDisplayed", { count: localSelectedPollutants.length })}
-        </h3>
-        <div className="flex flex-wrap gap-2 justify-center">
+        </div>
+        <div className="flex flex-wrap justify-center gap-1.5">
           {supportedPollutants.map((pollutant) => {
             const isSelected = localSelectedPollutants.includes(pollutant.code);
             const colorIndex = localSelectedPollutants.indexOf(pollutant.code);
@@ -636,7 +718,7 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
                     }
                   });
                 }}
-                className={`px-4 py-2 rounded-[var(--r-md)] text-sm font-medium transition-all duration-200 ${
+                className={`min-h-11 rounded-[var(--r-md)] px-3 py-1.5 text-sm font-medium transition-all duration-200 motion-reduce:transition-none ${
                   isSelected
                     ? "text-white shadow-md"
                     : "bg-[rgb(16_32_56_/_0.06)] text-[color:var(--fg-muted)] hover:bg-black/10"
@@ -669,13 +751,14 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
         </div>
       </div>
 
-      {/* Sessions disponibles */}
-      {allRoutes.length > 0 && (
-        <div className="border border-[rgb(16_32_56_/_0.09)] rounded-[var(--r-md)] p-3 sm:p-4">
-          <h3 className="text-sm font-medium text-[color:var(--fg-muted)] mb-3 text-center">
-            {t("panels.mobileAirDetail.sessionsAvailable", { count: allRoutes.length })}
-          </h3>
-          <div className="space-y-2 max-h-48 overflow-y-auto">
+      {/* Sessions du capteur focus — repliées par défaut */}
+      {!hasManage && allRoutes.length > 0 && (
+        <CollapsiblePanelSection
+          title={t("panels.mobileAirDetail.sessionsAvailable", { count: allRoutes.length })}
+          defaultOpen={false}
+          storageKey="mobileair-sessions"
+        >
+          <div className="max-h-48 space-y-2 overflow-y-auto">
             {allRoutes
               .sort(
                 (a, b) =>
@@ -731,16 +814,13 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
                 );
               })}
           </div>
-        </div>
+        </CollapsiblePanelSection>
       )}
 
-      {/* Graphique */}
-      <div className="border border-[rgb(16_32_56_/_0.09)] rounded-[var(--r-md)] p-3 sm:p-4">
-        <h3 className="text-sm font-medium text-[color:var(--fg-muted)] mb-3 text-center">
-          {t("panels.mobileAirDetail.temporalEvolution")}
-        </h3>
+      {/* Graphique — zone dominante */}
+      <div className="flex min-h-0 flex-1 flex-col rounded-[var(--r-md)] border border-[rgb(16_32_56_/_0.09)] p-2 sm:p-3">
         {!isPollutantSupported ? (
-          <div className="h-64 flex items-center justify-center">
+          <div className={`flex items-center justify-center ${CHART_PANEL_HEIGHT_CLASS}`}>
             <div className="text-center">
               <svg
                 className="w-12 h-12 text-red-400 mx-auto mb-3"
@@ -769,7 +849,7 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
             </div>
           </div>
         ) : (
-          <div className="h-64 relative" ref={chartContainerRef}>
+          <div className={`relative ${CHART_PANEL_HEIGHT_CLASS}`} ref={chartContainerRef}>
             <div
               className="absolute top-2 right-2 z-10"
               data-export-ignore="true"
@@ -890,11 +970,11 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
           </div>
         </div>
       )}
-      {/* Informations de la session */}
-      <div className="border border-[rgb(16_32_56_/_0.09)] rounded-[var(--r-md)] p-3 sm:p-4">
-        <h3 className="text-sm font-medium text-[color:var(--fg-muted)] mb-3 text-center">
-          {t("panels.mobileAirDetail.sessionInfoTitle")}
-        </h3>
+      <CollapsiblePanelSection
+        title={t("panels.mobileAirDetail.sessionInfoTitle")}
+        defaultOpen={false}
+        storageKey="mobileair-session-info"
+      >
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div>
             <span className="text-[color:var(--fg-muted)]">{t("panels.mobileAirDetail.startLabel")}</span>
@@ -917,13 +997,13 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
             <p className="font-medium">{routeToUse.points.length}</p>
           </div>
         </div>
-      </div>
+      </CollapsiblePanelSection>
 
-      {/* Statistiques */}
-      <div className="border border-[rgb(16_32_56_/_0.09)] rounded-[var(--r-md)] p-3 sm:p-4">
-        <h3 className="text-sm font-medium text-[color:var(--fg-muted)] mb-3 text-center">
-          {t("panels.mobileAirDetail.statsTitle")}
-        </h3>
+      <CollapsiblePanelSection
+        title={t("panels.mobileAirDetail.statsTitle")}
+        defaultOpen={false}
+        storageKey="mobileair-stats"
+      >
         <div className="grid grid-cols-3 gap-3 text-sm">
           <div className="text-center">
             <span className="text-[color:var(--fg-muted)] block">{t("panels.mobileAirDetail.average")}</span>
@@ -959,7 +1039,9 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
             </p>
           </div>
         </div>
-      </div>
+      </CollapsiblePanelSection>
+        </>
+      )}
     </SidePanelShell>
   );
 };

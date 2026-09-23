@@ -37,6 +37,8 @@ export class MobileAirService extends BaseDataService {
     sources: string[];
     signalAirPeriod?: { startDate: string; endDate: string };
     mobileAirPeriod?: { startDate: string; endDate: string };
+    mobileAirPeriods?: Record<string, { startDate: string; endDate: string }>;
+    mobileAirPartialReplace?: boolean;
     selectedSensors?: string[];
     signalAirSelectedTypes?: string[];
   }): Promise<MeasurementDevice[]> {
@@ -64,7 +66,14 @@ export class MobileAirService extends BaseDataService {
 
       // Si des capteurs spécifiques sont sélectionnés, récupérer leurs données
       if (params.selectedSensors && params.selectedSensors.length > 0) {
-        return await this.fetchSensorData(params);
+        return await this.fetchSensorData({
+          pollutant: params.pollutant,
+          timeStep: params.timeStep,
+          selectedSensors: params.selectedSensors,
+          mobileAirPeriod: params.mobileAirPeriod,
+          mobileAirPeriods: params.mobileAirPeriods,
+          mobileAirPartialReplace: params.mobileAirPartialReplace,
+        });
       }
 
       // Sinon, retourner un device factice pour indiquer que MobileAir est sélectionné
@@ -119,48 +128,83 @@ export class MobileAirService extends BaseDataService {
     timeStep: string;
     selectedSensors: string[];
     mobileAirPeriod?: { startDate: string; endDate: string };
+    mobileAirPeriods?: Record<string, { startDate: string; endDate: string }>;
+    mobileAirPartialReplace?: boolean;
   }): Promise<MeasurementDevice[]> {
-    const devices: MeasurementDevice[] = [];
-    // Nettoyer une seule fois avant de reconstruire les routes demandées.
-    // Evite de perdre les routes précédemment ajoutées lorsqu'il y a plusieurs capteurs.
-    this.clearRoutes();
+    // Refetch partiel : ne retirer que les capteurs demandés, pour ne pas
+    // effacer les parcours des autres capteurs déjà chargés.
+    if (params.mobileAirPartialReplace) {
+      this.removeRoutesForSensors(params.selectedSensors);
+    } else {
+      this.clearRoutes();
+    }
 
-    for (const sensorId of params.selectedSensors) {
-      try {
+    const results = await Promise.all(
+      params.selectedSensors.map(async (sensorId) => {
         const sensor = this.sensors.find((s) => s.sensorId === sensorId);
-        if (!sensor) continue;
-
-        // Construire l'URL avec les paramètres de période
-        const timeRange = this.buildTimeRange(
-          params.mobileAirPeriod,
-          params.timeStep
-        );
-        const url = `${this.baseUrl}/dataMobileAir?capteurID=${sensor.sensorToken}&start=${timeRange.start}&end=${timeRange.end}&GPSnull=false&format=JSON`;
-
-        const response = await this.makeRequest(url);
-
-        if (Array.isArray(response)) {
-          const routes = this.processSensorData(
-            response,
+        if (!sensor) {
+          return {
             sensorId,
-            params.pollutant
-          );
-          this.routes.push(...routes);
-
-          // Créer des devices pour chaque route
-          routes.forEach((route) => {
-            devices.push(this.createRouteDevice(route, params.pollutant));
-          });
+            routes: [] as MobileAirRoute[],
+            error: false as const,
+          };
         }
-      } catch (error) {
-        console.error(
-          `Erreur lors de la récupération des données pour le capteur ${sensorId}:`,
-          error
-        );
+
+        try {
+          const period =
+            params.mobileAirPeriods?.[sensorId] ?? params.mobileAirPeriod;
+          const timeRange = this.buildTimeRange(period, params.timeStep);
+          const url = `${this.baseUrl}/dataMobileAir?capteurID=${sensor.sensorToken}&start=${timeRange.start}&end=${timeRange.end}&GPSnull=false&format=JSON`;
+
+          const response = await this.makeRequest(url);
+
+          if (!Array.isArray(response)) {
+            return {
+              sensorId,
+              routes: [] as MobileAirRoute[],
+              error: false as const,
+            };
+          }
+
+          return {
+            sensorId,
+            routes: this.processSensorData(
+              response,
+              sensorId,
+              params.pollutant
+            ),
+            error: false as const,
+          };
+        } catch (error) {
+          console.error(
+            `Erreur lors de la récupération des données pour le capteur ${sensorId}:`,
+            error
+          );
+          return {
+            sensorId,
+            routes: [] as MobileAirRoute[],
+            error: true as const,
+          };
+        }
+      })
+    );
+
+    // Merge séquentiel après Promise.all pour éviter les courses sur this.routes.
+    const devices: MeasurementDevice[] = [];
+    for (const result of results) {
+      this.routes.push(...result.routes);
+      for (const route of result.routes) {
+        devices.push(this.createRouteDevice(route, params.pollutant));
       }
     }
 
     return devices;
+  }
+
+  /** Retire les routes (et uniquement celles) des capteurs indiqués. */
+  removeRoutesForSensors(sensorIds: string[]): void {
+    const toRemove = new Set(sensorIds);
+    this.routes = this.routes.filter((route) => !toRemove.has(route.sensorId));
   }
 
   private buildTimeRange(

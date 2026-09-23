@@ -21,7 +21,15 @@ interface MobileAirRoutesProps {
   onRouteClick?: (route: MobileAirRoute) => void;
   highlightedPoint?: MobileAirDataPoint | null;
   hoveredPoint?: MobileAirDataPoint | null;
+  /** Session affichée dans le graphique — mise en évidence sur la carte. */
+  focusedRoute?: MobileAirRoute | null;
 }
+
+const isSameRoute = (
+  a: MobileAirRoute | null | undefined,
+  b: MobileAirRoute
+): boolean =>
+  !!a && a.sensorId === b.sensorId && a.sessionId === b.sessionId;
 
 const MobileAirRoutes: React.FC<MobileAirRoutesProps> = memo(
   ({
@@ -32,6 +40,7 @@ const MobileAirRoutes: React.FC<MobileAirRoutesProps> = memo(
     onRouteClick,
     highlightedPoint,
     hoveredPoint,
+    focusedRoute = null,
   }) => {
     // Vérifier si le polluant est supporté par MobileAir
     const isPollutantSupported = Object.values(
@@ -174,21 +183,58 @@ const MobileAirRoutes: React.FC<MobileAirRoutesProps> = memo(
 
     return (
       <>
-        {routes.map((route) => {
+        {[...routes]
+          .sort((a, b) => {
+            // Dessiner le trajet focus au-dessus des autres
+            const aFocus = isSameRoute(focusedRoute, a) ? 1 : 0;
+            const bFocus = isSameRoute(focusedRoute, b) ? 1 : 0;
+            return aFocus - bFocus;
+          })
+          .map((route) => {
           const segments = createColoredSegments(route);
-          const pollutantConfig = pollutants[selectedPollutant];
+          const isFocused = isSameRoute(focusedRoute, route);
+          const hasFocus = focusedRoute != null;
+          // Style B — contour blanc GPS : focus lisible, autres colorés mais plus fins
+          const lineWeight = isFocused ? 4 : hasFocus ? 2.5 : 3;
+          const lineOpacity = isFocused ? 0.92 : hasFocus ? 0.45 : 0.6;
+          const pointRadius = isFocused ? 7 : 5.5;
+          const pointOpacity = isFocused ? 1 : hasFocus ? 0.65 : 0.8;
 
           return (
             <React.Fragment key={`${route.sensorId}-${route.sessionId}`}>
+              {/* Contour blanc sous le trajet focus (lecture type GPS) */}
+              {isFocused &&
+                segments.map((segment, index) => (
+                  <Polyline
+                    key={`${route.sensorId}-${route.sessionId}-outline-${index}`}
+                    positions={segment.positions}
+                    pathOptions={{
+                      color: "#ffffff",
+                      weight: lineWeight + 3,
+                      opacity: 0.9,
+                      lineCap: "round",
+                      lineJoin: "round",
+                    }}
+                    interactive={false}
+                  />
+                ))}
+
               {/* Lignes de connexion entre les points */}
               {segments.map((segment, index) => (
                 <Polyline
                   key={`${route.sensorId}-${route.sessionId}-${index}`}
                   positions={segment.positions}
                   color={segment.color}
-                  weight={3}
-                  opacity={0.6}
+                  weight={lineWeight}
+                  opacity={lineOpacity}
                   smoothFactor={1}
+                  eventHandlers={
+                    onRouteClick
+                      ? {
+                          click: () => onRouteClick(route),
+                        }
+                      : undefined
+                  }
                 />
               ))}
 
@@ -198,32 +244,22 @@ const MobileAirRoutes: React.FC<MobileAirRoutesProps> = memo(
                 const rawValue = point[
                   pollutantKey as keyof MobileAirDataPoint
                 ] as number;
-                // Forcer les valeurs négatives à 0 avant de calculer les couleurs
                 const correctedValue = ensureNonNegativeValue(rawValue) || 0;
                 const color = getQualityColor(
                   correctedValue,
                   selectedPollutant,
                   pollutants
                 );
-                const quality = getQualityLevel(
-                  correctedValue,
-                  selectedPollutant,
-                  pollutants
-                );
 
-                // Vérifier si ce point est survolé
                 const isHovered =
                   hoveredPoint && isSamePoint(hoveredPoint, point);
-
 
                 return (
                   <React.Fragment
                     key={`${route.sensorId}-${route.sessionId}-point-${index}`}
                   >
-                    {/* Ombre portée pour l'effet de relief (seulement si survolé) */}
                     {isHovered && (
                       <>
-                        {/* Ombre externe (grande, très transparente) */}
                         <CircleMarker
                           center={[point.lat, point.lon]}
                           radius={18}
@@ -236,7 +272,6 @@ const MobileAirRoutes: React.FC<MobileAirRoutesProps> = memo(
                           }}
                           interactive={false}
                         />
-                        {/* Ombre moyenne */}
                         <CircleMarker
                           center={[point.lat, point.lon]}
                           radius={14}
@@ -249,7 +284,6 @@ const MobileAirRoutes: React.FC<MobileAirRoutesProps> = memo(
                           }}
                           interactive={false}
                         />
-                        {/* Halo gris foncé autour du point */}
                         <CircleMarker
                           center={[point.lat, point.lon]}
                           radius={12}
@@ -265,15 +299,18 @@ const MobileAirRoutes: React.FC<MobileAirRoutesProps> = memo(
                       </>
                     )}
 
-                    {/* Point principal */}
                     <CircleMarker
                       center={[point.lat, point.lon]}
-                      radius={isHovered ? 12 : 6}
+                      radius={isHovered ? 12 : pointRadius}
                       pathOptions={{
-                        color: isHovered ? "#FFFF00" : color, // Bordure jaune pour hover
-                        fillColor: color, // Garder la couleur de qualité
-                        fillOpacity: isHovered ? 1 : 0.8,
-                        weight: isHovered ? 3 : 2, // Bordure plus épaisse pour le hover
+                        color: isHovered
+                          ? "#FFFF00"
+                          : isFocused
+                            ? "#ffffff"
+                            : color,
+                        fillColor: color,
+                        fillOpacity: isHovered ? 1 : pointOpacity,
+                        weight: isHovered ? 3 : isFocused ? 2.5 : 1.5,
                         opacity: 1,
                       }}
                       eventHandlers={{

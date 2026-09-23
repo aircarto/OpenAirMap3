@@ -188,6 +188,114 @@ describe("MobileAirService", () => {
     expect((firstDevice as any).mobileAirRoute.points).toHaveLength(1);
   });
 
+  it("récupère plusieurs capteurs en parallèle", async () => {
+    (service as any).sensors = [
+      buildSensor({ sensorId: "mob-001", sensorToken: "token-001" }),
+      buildSensor({ sensorId: "mob-002", sensorToken: "token-002" }),
+    ];
+
+    const makeRequestSpy = vi
+      .spyOn(service as any, "makeRequest")
+      .mockImplementation(async (url: string) => {
+        if (url.includes("token-001")) {
+          return [buildDataPoint({ sensorId: "mob-001", sessionId: 1 })];
+        }
+        if (url.includes("token-002")) {
+          return [
+            buildDataPoint({
+              sensorId: "mob-002",
+              sessionId: 2,
+              time: "2025-02-15T12:00:00Z",
+            }),
+          ];
+        }
+        return [];
+      });
+
+    const result = await service.fetchData({
+      ...baseParams,
+      selectedSensors: ["mob-001", "mob-002"],
+    });
+
+    expect(makeRequestSpy).toHaveBeenCalledTimes(2);
+    expect(result).toHaveLength(2);
+    expect(service.getRoutes()).toHaveLength(2);
+  });
+
+  it("applique une période par capteur", async () => {
+    (service as any).sensors = [
+      buildSensor({ sensorId: "mob-001", sensorToken: "token-001" }),
+      buildSensor({ sensorId: "mob-002", sensorToken: "token-002" }),
+    ];
+
+    const makeRequestSpy = vi
+      .spyOn(service as any, "makeRequest")
+      .mockResolvedValue([buildDataPoint()]);
+
+    await service.fetchData({
+      ...baseParams,
+      selectedSensors: ["mob-001", "mob-002"],
+      mobileAirPeriod: { startDate: "2025-01-01", endDate: "2025-01-07" },
+      mobileAirPeriods: {
+        "mob-002": { startDate: "2025-02-01", endDate: "2025-02-14" },
+      },
+    });
+
+    const urls = makeRequestSpy.mock.calls.map((call) => String(call[0]));
+    expect(urls.some((url) => url.includes("start=2025-01-01"))).toBe(true);
+    expect(urls.some((url) => url.includes("start=2025-02-01"))).toBe(true);
+  });
+
+  it("refetch partiel conserve les routes des autres capteurs", async () => {
+    (service as any).sensors = [
+      buildSensor({ sensorId: "mob-001", sensorToken: "token-001" }),
+      buildSensor({ sensorId: "mob-002", sensorToken: "token-002" }),
+    ];
+
+    vi.spyOn(service as any, "makeRequest").mockImplementation(
+      async (url: string) => {
+        if (url.includes("token-001")) {
+          return [buildDataPoint({ sensorId: "mob-001", sessionId: 1 })];
+        }
+        return [
+          buildDataPoint({
+            sensorId: "mob-002",
+            sessionId: 2,
+            time: "2025-02-15T12:00:00Z",
+            PM25: 20,
+          }),
+        ];
+      }
+    );
+
+    await service.fetchData({
+      ...baseParams,
+      selectedSensors: ["mob-001", "mob-002"],
+    });
+    expect(service.getRoutes()).toHaveLength(2);
+
+    vi.spyOn(service as any, "makeRequest").mockResolvedValue([
+      buildDataPoint({
+        sensorId: "mob-002",
+        sessionId: 99,
+        time: "2025-03-01T10:00:00Z",
+        PM25: 30,
+      }),
+    ]);
+
+    const partial = await service.fetchData({
+      ...baseParams,
+      selectedSensors: ["mob-002"],
+      mobileAirPartialReplace: true,
+    });
+
+    expect(partial).toHaveLength(1);
+    const routes = service.getRoutes();
+    expect(routes.some((r) => r.sensorId === "mob-001")).toBe(true);
+    expect(routes.filter((r) => r.sensorId === "mob-002")).toHaveLength(1);
+    expect(routes.find((r) => r.sensorId === "mob-002")?.sessionId).toBe(99);
+  });
+
   it("ignore les capteurs inconnus dans selectedSensors", async () => {
     (service as any).sensors = [buildSensor()];
 

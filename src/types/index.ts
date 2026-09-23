@@ -172,6 +172,13 @@ export interface DataFetchParams {
   sources: string[];
   signalAirPeriod?: DateRange;
   mobileAirPeriod?: DateRange;
+  /** Périodes par capteur (prioritaires sur mobileAirPeriod). */
+  mobileAirPeriods?: Record<string, DateRange>;
+  /**
+   * Si true, ne vide que les routes des selectedSensors avant merge
+   * (refetch partiel). Sinon clearRoutes() global avant chargement.
+   */
+  mobileAirPartialReplace?: boolean;
   selectedSensors?: string[];
   signalAirSelectedTypes?: string[];
 }
