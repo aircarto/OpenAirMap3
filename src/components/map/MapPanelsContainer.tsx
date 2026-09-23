@@ -46,6 +46,17 @@ interface MapPanelsContainerProps {
   historicalEndDate?: string;
   historicalTimeStep?: string;
   historicalPlaybackDate?: string;
+  selectedMobileAirSensors?: string[];
+  mobileAirSensorVisibility?: Record<string, boolean>;
+  mobileAirSensorStatus?: Record<string, string>;
+  mobileAirSensorPeriods?: Record<string, { startDate: string; endDate: string }>;
+  mobileAirDefaultPeriod?: { startDate: string; endDate: string };
+  onMobileAirSensorRemove?: (sensorId: string) => void;
+  onMobileAirSensorPeriodChange?: (
+    sensorId: string,
+    period: { startDate: string; endDate: string }
+  ) => void;
+  onMobileAirSensorVisibilityChange?: (sensorId: string, visible: boolean) => void;
 }
 
 const MapPanelsContainer: React.FC<MapPanelsContainerProps> = ({
@@ -62,6 +73,14 @@ const MapPanelsContainer: React.FC<MapPanelsContainerProps> = ({
   historicalEndDate,
   historicalTimeStep,
   historicalPlaybackDate,
+  selectedMobileAirSensors = [],
+  mobileAirSensorVisibility = {},
+  mobileAirSensorStatus = {},
+  mobileAirSensorPeriods = {},
+  mobileAirDefaultPeriod = { startDate: "", endDate: "" },
+  onMobileAirSensorRemove,
+  onMobileAirSensorPeriodChange,
+  onMobileAirSensorVisibilityChange,
 }) => {
   const historicalMode =
     isHistoricalModeActive &&
@@ -200,7 +219,23 @@ const MapPanelsContainer: React.FC<MapPanelsContainerProps> = ({
         panelSize={mobileAir.mobileAirDetailPanelSize}
         onPointHover={mobileAir.handleMobileAirPointHover}
         onPointHighlight={mobileAir.handleMobileAirPointHighlight}
-        onRouteSelect={mobileAir.openMobileAirDetailPanelForRoute}
+        onRouteSelect={mobileAir.focusRouteForDetail}
+        loadedSensorIds={selectedMobileAirSensors}
+        sensorVisibility={mobileAirSensorVisibility}
+        sensorStatus={
+          mobileAirSensorStatus as Record<
+            string,
+            import("../../constants/mobileAir").MobileAirSensorStatus
+          >
+        }
+        sensorPeriods={mobileAirSensorPeriods}
+        defaultPeriod={mobileAirDefaultPeriod}
+        isSessionOnMap={mobileAir.isSessionOnMap}
+        onSensorVisibilityChange={onMobileAirSensorVisibilityChange}
+        onSensorRemove={onMobileAirSensorRemove}
+        onSensorPeriodChange={onMobileAirSensorPeriodChange}
+        onToggleSessionOnMap={mobileAir.toggleSessionOnMap}
+        onSetSensorSessionsVisible={mobileAir.setSensorSessionsVisible}
       />
     </>
   );

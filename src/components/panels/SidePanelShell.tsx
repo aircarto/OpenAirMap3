@@ -18,9 +18,21 @@ export const PANEL_EXIT_MS = 300;
 
 /** Échelles de largeur. Deux suffisent — il en existait cinq, par dérive. */
 const WIDTHS = {
-  default: "w-full sm:w-[320px] md:w-[400px] lg:w-[600px] xl:w-[650px]",
+  // Élargissement modéré pour laisser plus de place au graphique (sacrifie un peu de carte).
+  default: "w-full sm:w-[320px] md:w-[420px] lg:w-[680px] xl:w-[720px]",
   compact: "w-full sm:w-[340px] md:w-[420px] lg:w-[480px] xl:w-[520px]",
 } as const;
+
+/** Classes body pour les panneaux centrés sur le graphique (flex + scroll). */
+export const CHART_PANEL_BODY_CLASS =
+  "flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3 sm:gap-3 sm:p-4";
+
+/**
+ * Hauteur stable du canvas : indépendante du flex des frères pour qu'ouvrir
+ * meta / photo / infos pousse le scroll sans chevaucher le graphe.
+ */
+export const CHART_PANEL_HEIGHT_CLASS =
+  "h-[clamp(16rem,40vh,26rem)] w-full shrink-0 overflow-hidden sm:h-[clamp(18rem,42vh,28rem)]";
 
 export interface SidePanelShellProps {
   isOpen: boolean;
@@ -159,21 +171,23 @@ export const SidePanelShell: React.FC<SidePanelShellProps> = ({
   }, [isOpen, size, handleSizeChange]);
 
   const panelClasses = cn(
-    "glass-2 relative z-panel flex h-full min-h-0 flex-col",
+    "glass-2 flex h-full min-h-0 flex-col",
     isAnimatingOut
       ? // `fixed` pour rester visible alors que le panneau est déjà sorti du flux
         cn(
-          "fixed left-0 top-0",
+          "fixed left-0 top-0 z-panel",
           WIDTHS[width],
           "animate-slide-out-left will-change-transform"
         )
       : size === "fullscreen"
-      ? // `absolute` et non un frère flex : en plein écran le panneau recouvre la
-        // carte au lieu de la comprimer à zéro.
-        "absolute inset-0 w-full animate-slide-in-left"
+      ? // `fixed` (pas `absolute`) : le rail vit dans la colonne carte, frère DOM
+        // postérieur au panneau — un absolute + z-index ne suffit pas toujours à
+        // le couvrir. fixed + z-floating (> z-rail) ancre le plein écran au
+        // viewport et passe au-dessus du rail.
+        "fixed inset-0 z-floating w-full animate-slide-in-left"
       : size === "hidden"
       ? "hidden"
-      : cn(WIDTHS[width], "animate-slide-in-left"),
+      : cn("relative z-panel", WIDTHS[width], "animate-slide-in-left"),
     size !== "hidden" &&
       !isAnimatingOut &&
       "transition-all [transition-duration:var(--dur-panel)] [transition-timing-function:var(--ease-out)]"

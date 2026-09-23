@@ -63,9 +63,9 @@ export const SidePanelHeader: React.FC<SidePanelHeaderProps> = ({
           {badge}
         </div>
         {subtitle && (
-          <p className="truncate text-xs text-[color:var(--fg-muted)]">
+          <div className="truncate text-xs text-[color:var(--fg-muted)]">
             {subtitle}
-          </p>
+          </div>
         )}
       </div>
 

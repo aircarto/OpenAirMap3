@@ -13,13 +13,16 @@ import { ModelingService } from "../../services/ModelingService";
 import { DataServiceFactory } from "../../services/DataServiceFactory";
 import { getSensorModelImage } from "../../constants/sensorModels";
 import PanelChartBlock from "../charts/PanelChartBlock";
-import HistoricalTimeRangeSelector from "../controls/HistoricalTimeRangeSelector";
+import ChartTimeControls from "../controls/ChartTimeControls";
 import { getMaxHistoryDays, getCustomRangeISO, type TimeRange } from "../../utils/historicalTimeRange";
-import { ToggleGroup, ToggleGroupItem } from "../ui/button-group";
 import ExpertMenu from "../controls/ExpertMenu";
 import { cn } from "../../lib/utils";
 import { sources } from "../../constants/sources";
-import SidePanelShell, { type PanelSize } from "./SidePanelShell";
+import SidePanelShell, {
+  CHART_PANEL_BODY_CLASS,
+  type PanelSize,
+} from "./SidePanelShell";
+import CollapsiblePanelSection from "./CollapsiblePanelSection";
 import PanelReopenBadge from "./PanelReopenBadge";
 
 interface MicroSidePanelProps {
@@ -906,77 +909,74 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
         onSizeChange={onSizeChange}
         onHidden={onHidden}
         testId="micro-side-panel"
+        bodyClassName={CHART_PANEL_BODY_CLASS}
         title={t("panels.stationSidePanel.comparisonTitle")}
         badge={
           <PanelReopenBadge
             label={t("panels.stationSidePanel.reopenButtonTooltip")}
           />
         }
-      >
-        {/* Informations station sélectionnée */}
-        <div className="border border-[rgb(16_32_56_/_0.09)] rounded-[var(--r-md)] p-3 sm:p-4">
-          <div className="flex items-start justify-between space-x-3">
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-[color:var(--fg)] truncate">
-                {selectedStation.name}
-              </p>
-              <p className="text-xs text-[color:var(--fg-muted)] truncate">
-                {t("panels.microSidePanel.sourceLabel")}
-              </p>
-            </div>
-
-            {/* Bouton mode comparaison */}
-            {onComparisonModeToggle && (
-              <button
-                onClick={() => {
-                  if (isHistoricalLocked) {
-                    return;
-                  }
-                  // Passer le polluant actuellement sélectionné dans le panel
-                  const currentPollutant =
-                    state.chartControls.selectedPollutants[0] ||
-                    initialPollutant;
-                  onComparisonModeToggle(currentPollutant);
-                }}
-                disabled={isHistoricalLocked}
-                className={`px-3 py-1.5 rounded-[var(--r-sm)] text-xs transition-all duration-200 flex items-center ${
-                  isHistoricalLocked
-                    ? "text-[color:var(--fg-muted)] bg-[rgb(16_32_56_/_0.03)] border border-[rgb(16_32_56_/_0.09)] opacity-50 cursor-not-allowed"
-                    : isComparisonMode
-                    ? "text-green-700 bg-green-50 border border-green-200"
-                    : "text-[color:var(--fg-muted)] hover:bg-black/5 border border-[rgb(16_32_56_/_0.09)]"
-                }`}
+        headerExtra={
+          onComparisonModeToggle ? (
+            <button
+              type="button"
+              onClick={() => {
+                if (isHistoricalLocked) {
+                  return;
+                }
+                // Passer le polluant actuellement sélectionné dans le panel
+                const currentPollutant =
+                  state.chartControls.selectedPollutants[0] ||
+                  initialPollutant;
+                onComparisonModeToggle(currentPollutant);
+              }}
+              disabled={isHistoricalLocked}
+              className={cn(
+                'flex min-h-11 shrink-0 items-center rounded-[var(--r-sm)] px-2.5 text-xs transition-all duration-200',
+                'motion-reduce:transition-none',
+                isHistoricalLocked
+                  ? 'cursor-not-allowed border border-[rgb(16_32_56_/_0.09)] bg-[rgb(16_32_56_/_0.03)] text-[color:var(--fg-muted)] opacity-50'
+                  : isComparisonMode
+                    ? 'border border-green-200 bg-green-50 text-green-700'
+                    : 'border border-[rgb(16_32_56_/_0.09)] text-[color:var(--fg-muted)] hover:bg-black/5'
+              )}
+            >
+              <svg
+                className="mr-1 h-3 w-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
               >
-                <svg
-                  className="w-3 h-3 mr-1"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                  />
-                </svg>
-                {isComparisonMode
-                  ? t("panels.stationSidePanel.disableComparison")
-                  : t("panels.stationSidePanel.enableComparison")}
-              </button>
-            )}
-          </div>
-        </div>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                />
+              </svg>
+              {isComparisonMode
+                ? t("panels.stationSidePanel.disableComparison")
+                : t("panels.stationSidePanel.enableComparison")}
+            </button>
+          ) : undefined
+        }
+      >
+        <CollapsiblePanelSection
+          title={selectedStation.name}
+          defaultOpen={false}
+          storageKey="micro-meta"
+        >
+          <p className="text-xs text-[color:var(--fg-muted)]">
+            {t("panels.microSidePanel.sourceLabel")}
+            {selectedStation.address ? ` · ${selectedStation.address}` : ""}
+          </p>
+        </CollapsiblePanelSection>
 
         {/* Graphique avec contrôles intégrés */}
-        <div className="flex-1 min-h-64 sm:min-h-72 md:min-h-80 lg:min-h-96">
-          <div className="mb-2 sm:mb-3">
-            <h3 className="text-sm font-medium text-[color:var(--fg-muted)]">
-              {t("panels.microSidePanel.temporalEvolutionAtmoMicro")}
-            </h3>
-          </div>
+        <div className="flex shrink-0 flex-col gap-2">
           {isInitialChartLoading ? (
-            <div className="flex items-center justify-center h-64 sm:h-72 md:h-80 lg:h-96 bg-[rgb(16_32_56_/_0.03)] rounded-[var(--r-md)]">
+            <div className="flex h-[clamp(16rem,40vh,26rem)] shrink-0 items-center justify-center sm:h-[clamp(18rem,42vh,28rem)] rounded-[var(--r-md)] bg-[rgb(16_32_56_/_0.03)] sm:min-h-[18rem]">
               <div className="flex flex-col items-center space-y-2">
                 <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-[#4271B3]"></div>
                 <span className="text-xs sm:text-sm text-[color:var(--fg-muted)]">
@@ -985,7 +985,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
               </div>
             </div>
           ) : state.error ? (
-            <div className="flex items-center justify-center h-64 sm:h-72 md:h-80 lg:h-96 bg-red-50 rounded-[var(--r-md)]">
+            <div className="flex h-[clamp(16rem,40vh,26rem)] shrink-0 items-center justify-center sm:h-[clamp(18rem,42vh,28rem)] rounded-[var(--r-md)] bg-red-50 sm:min-h-[18rem]">
               <div className="text-center">
                 <svg
                   className="w-6 h-6 sm:w-8 sm:h-8 text-red-400 mx-auto mb-2"
@@ -1006,9 +1006,9 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
               </div>
             </div>
           ) : (
-            <div className="bg-white/60 rounded-[var(--r-md)] border border-[rgb(16_32_56_/_0.09)] p-3 sm:p-4">
-              {/* Polluants et Options avancées sur la même ligne (responsive: empilés sur mobile) */}
-              <div className="flex flex-col sm:flex-row items-start gap-2 sm:gap-3 md:gap-4 mb-3 sm:mb-4">
+            <>
+              {/* Polluants et Options avancées — ligne compacte */}
+              <div className="flex shrink-0 flex-col items-stretch gap-2 sm:flex-row sm:items-start">
                 {/* Sélection des polluants */}
                 <div className="flex-1 min-w-0 sm:max-w-[260px] border border-[rgb(16_32_56_/_0.09)] rounded-[var(--r-md)] flex flex-col">
                   <button
@@ -1209,7 +1209,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
               </div>
 
               {state.infoMessage && (
-                <div className="mb-3 sm:mb-4 p-3 sm:p-4 bg-blue-50 border border-blue-100 rounded-[var(--r-md)] text-xs sm:text-sm text-blue-800 flex items-start space-x-2">
+                <div className="flex shrink-0 items-start space-x-2 rounded-[var(--r-md)] border border-blue-100 bg-blue-50 p-3 text-xs text-blue-800 sm:text-sm">
                   <svg
                     className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 flex-shrink-0 mt-0.5"
                     fill="none"
@@ -1229,10 +1229,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                 </div>
               )}
 
-              {/* Graphique */}
               <PanelChartBlock
-                className="mb-2 sm:mb-3 md:mb-4"
-                heightClassName="h-80 sm:h-72 md:h-80 lg:h-96"
                 loading={state.loading}
                 data={state.historicalData}
                 selectedPollutants={state.chartControls.selectedPollutants}
@@ -1255,242 +1252,178 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                 xAxisMax={historicalMode?.endDate}
               />
 
-              {/* Contrôles du graphique - en bas du graphique */}
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4">
-                {/* Contrôles de la période - Utilisation du composant réutilisable */}
-                <div className="flex-1 border border-[rgb(16_32_56_/_0.09)] rounded-[var(--r-md)] p-2 sm:p-2.5 md:p-3">
-                  <HistoricalTimeRangeSelector
-                    timeRange={state.chartControls.timeRange}
-                    onTimeRangeChange={handleTimeRangeChange}
-                    timeStep={state.chartControls.timeStep}
-                    disabled={isHistoricalLocked || chartControlsDisabled}
-                  />
-                </div>
-
-                {/* Contrôles du pas de temps */}
-                <div className="flex-1 border border-[rgb(16_32_56_/_0.09)] rounded-[var(--r-md)] p-2 sm:p-2.5 md:p-3 rtl-on-ar">
-                  <div className="flex items-center space-x-2 mb-2.5 sm:mb-3">
-                    <svg
-                      className="w-4 h-4 text-[color:var(--fg-muted)] flex-shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M13 10V3L4 14h7v7l9-11h-7z"
-                      />
-                    </svg>
-                    <span className="text-sm font-medium text-[color:var(--fg-muted)]">
-                      {t("controls.timeStep")}
-                    </span>
-                  </div>
-                  <ToggleGroup
-                    type="single"
-                    value={state.chartControls.timeStep}
-                    onValueChange={(value) => {
-                      if (isHistoricalLocked || chartControlsDisabled) {
-                        return;
-                      }
-                      if (value && !isTimeStepValidForCurrentRange(value)) {
-                        return;
-                      }
-                      if (value) {
-                        handleTimeStepChange(value);
-                      }
-                    }}
-                    className="w-full"
-                  >
-                    {MICRO_TIME_STEP_OPTIONS.map(({ key, labelKey, shortLabelKey }) => {
-                      const isDisabledByRange =
-                        !isTimeStepValidForCurrentRange(key);
-                      const isDisabledBySupport =
-                        !isTimeStepSupportedByAtmoMicro(key);
-                      const isDisabled =
-                        isHistoricalLocked ||
-                        chartControlsDisabled ||
-                        isDisabledByRange ||
-                        isDisabledBySupport;
-                      const maxDays = getMaxHistoryDays(key);
-                      const label = t(`panels.stationSidePanel.${labelKey}`);
-                      const shortLabel = t(`panels.stationSidePanel.${shortLabelKey}`);
-                      const displayLabel =
-                        key === "instantane" && sensorTimeStep !== null
-                          ? formatTimeStep(sensorTimeStep)
-                          : label;
-                      const displayShort =
-                        key === "instantane" && sensorTimeStep !== null
-                          ? formatTimeStep(sensorTimeStep)
-                          : shortLabel;
-
-                      let tooltip = displayLabel;
-                      if (isDisabledByRange && maxDays) {
-                        tooltip = t(
-                          "panels.stationSidePanel.timeStepRangeLimit",
-                          { maxDays }
-                        );
-                      } else if (isDisabledBySupport) {
-                        tooltip = t("panels.stationSidePanel.timeStepNotSupported");
-                      }
-
-                      return (
-                        <ToggleGroupItem
-                          key={key}
-                          value={key}
-                          disabled={isDisabled}
-                          className={cn(
-                            "text-xs min-w-0",
-                            isDisabled && "opacity-50"
-                          )}
-                          title={tooltip}
-                        >
-                          <span className="time-step-button-full truncate">
-                            {displayLabel}
-                          </span>
-                          <span className="time-step-button-short truncate">
-                            {displayShort}
-                          </span>
-                        </ToggleGroupItem>
-                      );
-                    })}
-                  </ToggleGroup>
-
-                  {/* Message explicatif si des boutons sont désactivés à cause de la période */}
-                  {(() => {
-                    const disabledByRange = MICRO_TIME_STEP_OPTIONS.filter(
-                      ({ key }) => !isTimeStepValidForCurrentRange(key)
+              <ChartTimeControls
+                timeRange={state.chartControls.timeRange}
+                onTimeRangeChange={handleTimeRangeChange}
+                timeStep={state.chartControls.timeStep}
+                onTimeStepChange={handleTimeStepChange}
+                disabled={isHistoricalLocked || chartControlsDisabled}
+                timeStepOptions={MICRO_TIME_STEP_OPTIONS.map(
+                  ({ key, labelKey, shortLabelKey }) => {
+                    const isDisabledByRange =
+                      !isTimeStepValidForCurrentRange(key);
+                    const isDisabledBySupport =
+                      !isTimeStepSupportedByAtmoMicro(key);
+                    const maxDays = getMaxHistoryDays(key);
+                    const label = t(`panels.stationSidePanel.${labelKey}`);
+                    const shortLabel = t(
+                      `panels.stationSidePanel.${shortLabelKey}`
                     );
+                    // Le pas « instantané » porte la cadence réelle du capteur
+                    // quand elle est connue (ex. « scan 2min »).
+                    const displayLabel =
+                      key === "instantane" && sensorTimeStep !== null
+                        ? formatTimeStep(sensorTimeStep)
+                        : label;
+                    const displayShort =
+                      key === "instantane" && sensorTimeStep !== null
+                        ? formatTimeStep(sensorTimeStep)
+                        : shortLabel;
 
-                    if (disabledByRange.length > 0) {
-                      const timeStepLabels = disabledByRange
-                        .map(({ key, labelKey }) => {
-                          const maxDays = getMaxHistoryDays(key);
-                          if (!maxDays) return null;
-                          const daysText =
-                            maxDays === 60
-                              ? t("panels.comparisonSidePanel.twoMonths")
-                              : maxDays === 180
-                              ? t("panels.comparisonSidePanel.sixMonths")
-                              : t("panels.comparisonSidePanel.daysUnit", { count: maxDays });
-                          return `${t(`panels.stationSidePanel.${labelKey}`)} (max: ${daysText})`;
-                        })
-                        .filter(Boolean);
-
-                      return (
-                        <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-[var(--r-sm)]">
-                          <p className="text-[11px] sm:text-xs text-amber-700">
-                            {t(
-                              "panels.stationSidePanel.timeStepsDisabledByRange",
-                              {
-                                labels: timeStepLabels.join(", "),
-                              }
-                            )}
-                          </p>
-                        </div>
+                    let tooltip = displayLabel;
+                    if (isDisabledByRange && maxDays) {
+                      tooltip = t(
+                        "panels.stationSidePanel.timeStepRangeLimit",
+                        { maxDays }
+                      );
+                    } else if (isDisabledBySupport) {
+                      tooltip = t(
+                        "panels.stationSidePanel.timeStepNotSupported"
                       );
                     }
-                    return null;
-                  })()}
-                </div>
-              </div>
-            </div>
+
+                    return {
+                      key,
+                      label: displayLabel,
+                      shortLabel: displayShort,
+                      disabled: isDisabledByRange || isDisabledBySupport,
+                      title: tooltip,
+                    };
+                  }
+                )}
+                timeStepHint={(() => {
+                  const disabledByRange = MICRO_TIME_STEP_OPTIONS.filter(
+                    ({ key }) => !isTimeStepValidForCurrentRange(key)
+                  );
+
+                  if (disabledByRange.length === 0) return null;
+
+                  const timeStepLabels = disabledByRange
+                    .map(({ key, labelKey }) => {
+                      const maxDays = getMaxHistoryDays(key);
+                      if (!maxDays) return null;
+                      const daysText =
+                        maxDays === 60
+                          ? t("panels.comparisonSidePanel.twoMonths")
+                          : maxDays === 180
+                          ? t("panels.comparisonSidePanel.sixMonths")
+                          : t("panels.comparisonSidePanel.daysUnit", {
+                              count: maxDays,
+                            });
+                      return `${t(`panels.stationSidePanel.${labelKey}`)} (max: ${daysText})`;
+                    })
+                    .filter(Boolean);
+
+                  return (
+                    <div className="rounded-[var(--r-sm)] border border-amber-200 bg-amber-50 p-2">
+                      <p className="text-[11px] text-amber-700 sm:text-xs">
+                        {t(
+                          "panels.stationSidePanel.timeStepsDisabledByRange",
+                          { labels: timeStepLabels.join(", ") }
+                        )}
+                      </p>
+                    </div>
+                  );
+                })()}
+              />
+            </>
           )}
         </div>
 
-        {/* Section Informations et Photo du capteur */}
-        {selectedStation && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-            {/* Photo du capteur */}
-            <div className="bg-white/60 rounded-[var(--r-md)] border border-[rgb(16_32_56_/_0.09)] overflow-hidden">
-              {getSensorModelImage(selectedStation.sensorModel) ? (
-                <div className="relative w-full aspect-video">
-                  <img
-                    src={getSensorModelImage(selectedStation.sensorModel)!}
-                    alt={t("panels.microSidePanel.sensorAlt", {
-                      model:
-                        selectedStation.sensorModel || "AtmoMicro",
-                    })}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      // Masquer l'image si elle ne se charge pas
-                      (e.target as HTMLImageElement).style.display = "none";
-                    }}
-                  />
-                  {selectedStation.sensorModel && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
-                      <p className="text-white text-xs sm:text-sm font-medium">
-                        {t("tooltip.model")} {selectedStation.sensorModel}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="w-full aspect-video bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
-                  <div className="text-center">
-                    <svg
-                      className="w-12 h-12 text-blue-400 mx-auto mb-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"
-                      />
-                    </svg>
-                    <p className="text-blue-600 text-xs font-medium">
-                      {selectedStation.sensorModel ||
-                        t("panels.microSidePanel.sensorFallback")}
+        {/* Photo du capteur */}
+        <CollapsiblePanelSection
+          title={t("panels.microSidePanel.sensorAlt", {
+            model:
+              selectedStation.sensorModel ||
+              t("panels.microSidePanel.sensorFallback"),
+          })}
+          defaultOpen={false}
+          storageKey="micro-photo"
+        >
+          <div className="overflow-hidden rounded-[var(--r-md)]">
+            {getSensorModelImage(selectedStation.sensorModel) ? (
+              <div className="relative w-full aspect-video">
+                <img
+                  src={getSensorModelImage(selectedStation.sensorModel)!}
+                  alt={t("panels.microSidePanel.sensorAlt", {
+                    model: selectedStation.sensorModel || "AtmoMicro",
+                  })}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    // Masquer l'image si elle ne se charge pas
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
+                />
+                {selectedStation.sensorModel && (
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+                    <p className="text-white text-xs sm:text-sm font-medium">
+                      {t("tooltip.model")} {selectedStation.sensorModel}
                     </p>
                   </div>
-                </div>
-              )}
-            </div>
-
-            {/* Encart Informations */}
-            <div className="bg-white/60 rounded-[var(--r-md)] border border-[rgb(16_32_56_/_0.09)] p-3 sm:p-4">
-              <h3 className="text-sm font-semibold text-[color:var(--fg)] mb-3 flex items-center">
-                <svg
-                  className="w-4 h-4 text-blue-600 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                {t("panels.microSidePanel.infoCardTitle")}
-              </h3>
-              <div className="space-y-2">
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 mr-2"></div>
-                  <div className="flex-1">
-                    <p className="text-xs text-[color:var(--fg-muted)]">
-                      {t("panels.microSidePanel.infoCardComingSoon")}
-                    </p>
-                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="w-full aspect-video bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
+                <div className="text-center">
+                  <svg
+                    className="w-12 h-12 text-blue-400 mx-auto mb-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"
+                    />
+                  </svg>
+                  <p className="text-blue-600 text-xs font-medium">
+                    {selectedStation.sensorModel ||
+                      t("panels.microSidePanel.sensorFallback")}
+                  </p>
                 </div>
               </div>
-              <a
-                href={ATMOMICRO_DISCOVER_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-3 w-full bg-[#4271B3] hover:bg-[#325a96] text-white font-medium py-2 px-3 rounded-[var(--r-sm)] transition-colors flex items-center justify-center text-xs sm:text-sm"
-              >
-                {t("panels.microSidePanel.buttonDiscover")}
-              </a>
+            )}
+          </div>
+        </CollapsiblePanelSection>
+
+        {/* Encart Informations */}
+        <CollapsiblePanelSection
+          title={t("panels.microSidePanel.infoCardTitle")}
+          defaultOpen={false}
+          storageKey="micro-infos"
+        >
+          <div className="space-y-2">
+            <div className="flex items-start">
+              <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 mr-2"></div>
+              <div className="flex-1">
+                <p className="text-xs text-[color:var(--fg-muted)]">
+                  {t("panels.microSidePanel.infoCardComingSoon")}
+                </p>
+              </div>
             </div>
           </div>
-        )}
-    </SidePanelShell>
+          <a
+            href={ATMOMICRO_DISCOVER_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 flex min-h-11 w-full items-center justify-center rounded-[var(--r-sm)] bg-[#4271B3] px-3 text-xs font-medium text-white transition-colors hover:bg-[#325a96] sm:text-sm"
+          >
+            {t("panels.microSidePanel.buttonDiscover")}
+          </a>
+        </CollapsiblePanelSection>
+      </SidePanelShell>
     );
   };
 

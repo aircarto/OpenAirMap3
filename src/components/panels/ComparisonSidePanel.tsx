@@ -10,10 +10,14 @@ import { pollutants } from "../../constants/pollutants";
 import { MAX_COMPARISON_STATIONS } from "../../constants/comparison";
 import { AtmoRefService } from "../../services/AtmoRefService";
 import PanelChartBlock from "../charts/PanelChartBlock";
-import HistoricalTimeRangeSelector from "../controls/HistoricalTimeRangeSelector";
+import ChartTimeControls from "../controls/ChartTimeControls";
 import { getMaxHistoryDays, type TimeRange } from "../../utils/historicalTimeRange";
 import { sources } from "../../constants/sources";
-import SidePanelShell, { type PanelSize } from "./SidePanelShell";
+import SidePanelShell, {
+  CHART_PANEL_BODY_CLASS,
+  type PanelSize,
+} from "./SidePanelShell";
+import CollapsiblePanelSection from "./CollapsiblePanelSection";
 import PanelReopenBadge from "./PanelReopenBadge";
 
 interface ComparisonSidePanelProps {
@@ -415,6 +419,7 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
         panelSize={panelSize}
         onSizeChange={onSizeChange}
         onHidden={onHidden}
+        bodyClassName={CHART_PANEL_BODY_CLASS}
         title={t("panels.comparisonSidePanel.title")}
         subtitle={t("panels.comparisonSidePanel.stationsSelected", {
           count: comparisonState.comparedStations.length,
@@ -425,24 +430,18 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
             label={t("panels.stationSidePanel.reopenButtonTooltip")}
           />
         }
-      >
-      {/* Stations sélectionnées */}
-      <div className="border border-[rgb(16_32_56_/_0.09)] rounded-[var(--r-md)] p-3 sm:p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-sm font-medium text-[color:var(--fg-muted)]">
-            {t("panels.comparisonSidePanel.stationsSelectedTitle")}
-          </h3>
-              
-          {/* Bouton désactiver comparaison - repositionné au-dessus de l'encart station */}
+        headerExtra={
           <button
+            type="button"
             onClick={() => onComparisonModeToggle()}
-            className="px-3 py-1.5 rounded-[var(--r-sm)] text-xs transition-all duration-200 flex items-center text-red-700 hover:bg-red-50 border border-red-200"
+            className="flex min-h-11 shrink-0 items-center rounded-[var(--r-sm)] border border-red-200 px-2.5 text-xs text-red-700 transition-all duration-200 hover:bg-red-50 motion-reduce:transition-none"
           >
             <svg
-              className="w-3 h-3 mr-1"
+              className="mr-1 h-3 w-3"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
+              aria-hidden="true"
             >
               <path
                 strokeLinecap="round"
@@ -453,35 +452,77 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
             </svg>
             {t("panels.comparisonSidePanel.disableComparison")}
           </button>
-        </div>
-        <div className="space-y-2">
-          {comparisonState.comparedStations.map((station, index) => (
-            <div
-              key={station.id}
-              className="flex items-center justify-between p-2 bg-[rgb(16_32_56_/_0.03)] rounded-[var(--r-sm)]"
-            >
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-[color:var(--fg)] truncate">
-                  {station.name}
-                </p>
-                <p className="text-xs text-[color:var(--fg-muted)] truncate">
-                  {station.source === "atmoRef"
-                    ? t("panels.comparisonSidePanel.sourceAtmoRef")
-                    : station.source === "atmoMicro"
-                    ? t("panels.comparisonSidePanel.sourceAtmoMicro")
-                    : station.source === "nebuleair"
-                    ? t("panels.comparisonSidePanel.sourceNebuleAir")
-                    : t("panels.comparisonSidePanel.sourceOther")}{" "}
-                  - {station.address}
-                </p>
-              </div>
-              <button
-                onClick={() => onRemoveStation(station.id)}
-                className="ml-2 p-1 text-[color:var(--fg-muted)] hover:text-red-600 transition-colors"
-                title={t("panels.removeFromComparison")}
+        }
+      >
+        {/* Stations sélectionnées */}
+        <CollapsiblePanelSection
+          title={t("panels.comparisonSidePanel.stationsSelectedTitle")}
+          defaultOpen={false}
+          storageKey="comparison-stations"
+        >
+          <div className="space-y-2">
+            {comparisonState.comparedStations.map((station) => (
+              <div
+                key={station.id}
+                className="flex items-center justify-between rounded-[var(--r-sm)] bg-[rgb(16_32_56_/_0.03)] p-2"
               >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-[color:var(--fg)]">
+                    {station.name}
+                  </p>
+                  <p className="truncate text-xs text-[color:var(--fg-muted)]">
+                    {station.source === "atmoRef"
+                      ? t("panels.comparisonSidePanel.sourceAtmoRef")
+                      : station.source === "atmoMicro"
+                      ? t("panels.comparisonSidePanel.sourceAtmoMicro")
+                      : station.source === "nebuleair"
+                      ? t("panels.comparisonSidePanel.sourceNebuleAir")
+                      : t("panels.comparisonSidePanel.sourceOther")}{" "}
+                    - {station.address}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onRemoveStation(station.id)}
+                  className="ml-2 p-1 text-[color:var(--fg-muted)] transition-colors hover:text-red-600"
+                  title={t("panels.removeFromComparison")}
+                >
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        </CollapsiblePanelSection>
+
+        {/* Graphique avec contrôles intégrés */}
+        <div className="flex shrink-0 flex-col gap-2">
+          {isInitialChartLoading ? (
+            <div className="flex h-[clamp(16rem,40vh,26rem)] shrink-0 items-center justify-center sm:h-[clamp(18rem,42vh,28rem)] rounded-[var(--r-md)] bg-[rgb(16_32_56_/_0.03)] sm:min-h-[18rem]">
+              <div className="flex flex-col items-center space-y-2">
+                <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-blue-600 sm:h-8 sm:w-8"></div>
+                <span className="text-xs text-[color:var(--fg-muted)] sm:text-sm">
+                  {t("panels.loadingData")}
+                </span>
+              </div>
+            </div>
+          ) : comparisonState.error ? (
+            <div className="flex h-[clamp(16rem,40vh,26rem)] shrink-0 items-center justify-center sm:h-[clamp(18rem,42vh,28rem)] rounded-[var(--r-md)] bg-red-50 sm:min-h-[18rem]">
+              <div className="text-center">
                 <svg
-                  className="w-4 h-4"
+                  className="mx-auto mb-2 h-6 w-6 text-red-400 sm:h-8 sm:w-8"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -490,212 +531,178 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-              </button>
+                <p className="text-xs text-red-600 sm:text-sm">
+                  {comparisonState.error}
+                </p>
+              </div>
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Graphique avec contrôles intégrés */}
-      <div className="flex-1 min-h-80 sm:min-h-96">
-        <div className="mb-2 sm:mb-3">
-          <h3 className="text-sm font-medium text-[color:var(--fg-muted)]">
-            {t("panels.comparisonSidePanel.dataComparisonTitle")}
-          </h3>
-        </div>
-        {isInitialChartLoading ? (
-          <div className="flex items-center justify-center h-80 sm:h-96 md:h-[28rem] bg-[rgb(16_32_56_/_0.03)] rounded-[var(--r-md)]">
-            <div className="flex flex-col items-center space-y-2">
-              <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-600"></div>
-              <span className="text-xs sm:text-sm text-[color:var(--fg-muted)]">
-                {t("panels.loadingData")}
-              </span>
-            </div>
-          </div>
-        ) : comparisonState.error ? (
-          <div className="flex items-center justify-center h-80 sm:h-96 md:h-[28rem] bg-red-50 rounded-[var(--r-md)]">
-            <div className="text-center">
-              <svg
-                className="w-6 h-6 sm:w-8 sm:h-8 text-red-400 mx-auto mb-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <p className="text-xs sm:text-sm text-red-600">
-                {comparisonState.error}
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="bg-white/60 rounded-[var(--r-md)] border border-[rgb(16_32_56_/_0.09)] p-3 sm:p-4">
-            {/* Sélection du polluant et contrôle d'affichage des données brutes */}
-            <div className="flex flex-row items-start gap-2 sm:gap-4 mb-3 sm:mb-4">
-              {/* Sélection du polluant */}
-              <div className="flex-1 border border-[rgb(16_32_56_/_0.09)] rounded-[var(--r-md)]">
-                <button
-                  onClick={() => setShowPollutantsList(!showPollutantsList)}
-                  className="w-full flex items-center justify-between p-2.5 sm:p-3 text-left hover:bg-black/5 transition-colors rounded-[var(--r-md)]"
-                >
-                  <div className="flex items-center space-x-2 min-w-0 flex-1">
+          ) : (
+            <>
+              {/* Polluant comparé et données brutes — ligne compacte */}
+              <div className="flex shrink-0 flex-col items-stretch gap-2 sm:flex-row sm:items-start">
+                <div className="flex min-w-0 flex-1 flex-col rounded-[var(--r-md)] border border-[rgb(16_32_56_/_0.09)] sm:max-w-[280px]">
+                  <button
+                    type="button"
+                    onClick={() => setShowPollutantsList(!showPollutantsList)}
+                    aria-expanded={showPollutantsList}
+                    className="flex h-11 w-full shrink-0 items-center justify-between rounded-[var(--r-md)] px-2.5 text-left transition-colors hover:bg-black/5 sm:px-3"
+                  >
+                    <div className="flex min-w-0 flex-1 items-center space-x-2">
+                      <svg
+                        className="h-4 w-4 flex-shrink-0 text-[color:var(--fg-muted)]"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                        />
+                      </svg>
+                      <span className="truncate text-sm font-medium text-[color:var(--fg-muted)]">
+                        {t("panels.comparisonSidePanel.pollutantCompared")}
+                      </span>
+                      <span className="flex-shrink-0 rounded-full bg-[rgb(16_32_56_/_0.06)] px-2 py-0.5 text-xs text-[color:var(--fg-muted)]">
+                        {t(`pollutants.${comparisonState.selectedPollutant}`, {
+                          defaultValue: comparisonState.selectedPollutant,
+                        })}
+                      </span>
+                    </div>
                     <svg
-                      className="w-4 h-4 text-[color:var(--fg-muted)] flex-shrink-0"
+                      className={`h-4 w-4 flex-shrink-0 text-[color:var(--fg-muted)] transition-transform motion-reduce:transition-none ${
+                        showPollutantsList ? "rotate-180" : ""
+                      }`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
+                      aria-hidden="true"
                     >
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                        d="M19 9l-7 7-7-7"
                       />
                     </svg>
-                    <span className="text-sm font-medium text-[color:var(--fg-muted)] truncate">
-                      {t("panels.comparisonSidePanel.pollutantCompared")}
-                    </span>
-                    <span className="text-xs text-[color:var(--fg-muted)] bg-[rgb(16_32_56_/_0.06)] px-2 py-1 rounded-full flex-shrink-0">
-                      {t(`pollutants.${comparisonState.selectedPollutant}`, {
-                        defaultValue: comparisonState.selectedPollutant,
-                      })}
-                    </span>
-                  </div>
-                  <svg
-                    className={`w-4 h-4 text-[color:var(--fg-muted)] transition-transform flex-shrink-0 ${
-                      showPollutantsList ? "rotate-180" : ""
-                    }`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </button>
+                  </button>
 
-              {showPollutantsList && (
-                <div className="px-2.5 sm:px-3 pb-2.5 sm:pb-3 space-y-1">
-                  {getAvailablePollutants().map((pollutantCode) => {
-                    const pollutant = pollutants[pollutantCode];
-                    const isSelected =
-                      comparisonState.selectedPollutant === pollutantCode;
+                  {showPollutantsList && (
+                    <div className="space-y-1 px-2.5 pb-2.5 sm:px-3 sm:pb-3">
+                      {getAvailablePollutants().map((pollutantCode) => {
+                        const isSelected =
+                          comparisonState.selectedPollutant === pollutantCode;
 
-                    return (
-                      <button
-                        key={pollutantCode}
-                        onClick={() =>
-                          !chartControlsDisabled &&
-                          handlePollutantChange(pollutantCode)
-                        }
-                        disabled={chartControlsDisabled}
-                        className={`w-full flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-[var(--r-sm)] text-sm transition-all duration-200 ${
-                          isSelected
-                            ? "text-blue-700 bg-blue-50 border border-blue-200"
-                            : "text-[color:var(--fg-muted)] hover:bg-black/5"
-                        }`}
-                      >
-                        <div
-                          className={`w-3 h-3 rounded border mr-2 flex items-center justify-center transition-colors flex-shrink-0 ${
-                            isSelected
-                              ? "bg-blue-600 border-blue-600"
-                              : "border-[rgb(16_32_56_/_0.14)]"
-                          }`}
-                        >
-                          {isSelected && (
-                            <svg
-                              className="w-2 h-2 text-white"
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
+                        return (
+                          <button
+                            key={pollutantCode}
+                            type="button"
+                            onClick={() =>
+                              !chartControlsDisabled &&
+                              handlePollutantChange(pollutantCode)
+                            }
+                            disabled={chartControlsDisabled}
+                            className={`flex w-full items-center rounded-[var(--r-sm)] px-2.5 py-1.5 text-sm transition-all duration-200 sm:px-3 sm:py-2 ${
+                              isSelected
+                                ? "border border-blue-200 bg-blue-50 text-blue-700"
+                                : "text-[color:var(--fg-muted)] hover:bg-black/5"
+                            }`}
+                          >
+                            <div
+                              className={`mr-2 flex h-3 w-3 flex-shrink-0 items-center justify-center rounded border transition-colors ${
+                                isSelected
+                                  ? "border-blue-600 bg-blue-600"
+                                  : "border-[rgb(16_32_56_/_0.14)]"
+                              }`}
                             >
-                              <path
-                                fillRule="evenodd"
-                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                          )}
-                        </div>
-                        <span className="flex-1 text-left truncate">
-                          {t(`pollutants.${pollutantCode}`, {
-                            defaultValue: pollutantCode,
-                          })}
-                        </span>
-                      </button>
-                    );
-                  })}
+                              {isSelected && (
+                                <svg
+                                  className="h-2 w-2 text-white"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                              )}
+                            </div>
+                            <span className="flex-1 truncate text-left">
+                              {t(`pollutants.${pollutantCode}`, {
+                                defaultValue: pollutantCode,
+                              })}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              )}
+
+                {/* Contrôle d'affichage des données brutes - seulement si conditions remplies */}
+                {canShowRawDataButton() && hasCorrectedData && (
+                  <div className="flex h-11 flex-none items-center justify-between gap-2 rounded-[var(--r-md)] border border-[rgb(16_32_56_/_0.09)] px-2.5">
+                    <div className="flex min-w-0 items-center space-x-2">
+                      <svg
+                        className="h-4 w-4 flex-shrink-0 text-[color:var(--fg-muted)]"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                        />
+                      </svg>
+                      <span className="truncate text-xs font-medium text-[color:var(--fg-muted)] sm:text-sm">
+                        {t("panels.comparisonSidePanel.rawData")}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowRawData(!showRawData)}
+                      role="switch"
+                      aria-checked={showRawData}
+                      aria-label={t("panels.comparisonSidePanel.rawData")}
+                      className={`relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors ${
+                        showRawData
+                          ? "bg-blue-600"
+                          : "bg-[rgb(16_32_56_/_0.10)]"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                          showRawData ? "translate-x-5" : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                )}
               </div>
 
-              {/* Contrôle d'affichage des données brutes - seulement si conditions remplies */}
-              {canShowRawDataButton() && hasCorrectedData && (
-                <div className="flex-1 border border-[rgb(16_32_56_/_0.09)] rounded-[var(--r-md)]">
-                  <div className="p-2.5 sm:p-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2 min-w-0">
-                        <svg
-                          className="w-4 h-4 text-[color:var(--fg-muted)] flex-shrink-0"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                          />
-                        </svg>
-                        <span className="text-xs sm:text-sm font-medium text-[color:var(--fg-muted)] truncate">
-                          {t("panels.comparisonSidePanel.rawData")}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => setShowRawData(!showRawData)}
-                        className={`relative inline-flex h-4 w-8 sm:h-5 sm:w-9 items-center rounded-full transition-colors flex-shrink-0 ${
-                          showRawData ? "bg-blue-600" : "bg-[rgb(16_32_56_/_0.10)]"
-                        }`}
-                      >
-                        <span
-                          className={`inline-block h-2.5 w-2.5 sm:h-3 sm:w-3 transform rounded-full bg-white transition-transform ${
-                            showRawData ? "translate-x-4 sm:translate-x-5" : "translate-x-0.5 sm:translate-x-1"
-                          }`}
-                        />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Graphique */}
-            <div className="mb-3 sm:mb-4">
               {/* Message au niveau du graphique (mode Scan) */}
               {comparisonState.timeStep === "instantane" && (
-                <div className="mb-2 p-2.5 sm:p-3 bg-blue-50 border border-blue-200 rounded-[var(--r-md)]">
-                  <p className="text-xs sm:text-sm text-blue-800 font-medium">
+                <div className="shrink-0 rounded-[var(--r-md)] border border-blue-200 bg-blue-50 p-2.5 sm:p-3">
+                  <p className="text-xs font-medium text-blue-800 sm:text-sm">
                     {t("panels.comparisonSidePanel.scanModeTitle")}
                   </p>
-                  <p className="text-xs text-blue-700 mt-1">
+                  <p className="mt-1 text-xs text-blue-700">
                     {t("panels.comparisonSidePanel.scanModeDescription")}
                   </p>
                 </div>
               )}
+
               <PanelChartBlock
-                heightClassName="h-80 sm:h-96 md:h-[28rem]"
                 loading={comparisonState.loading}
                 data={
                   comparisonState.comparisonData[
@@ -709,123 +716,92 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
                 onHasCorrectedDataChange={handleHasCorrectedDataChange}
                 showRawData={showRawData}
               />
-            </div>
 
-            {/* Contrôles du graphique */}
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-              {/* Contrôles de la période */}
-              <div className="flex-1 border border-[rgb(16_32_56_/_0.09)] rounded-[var(--r-md)] p-2.5 sm:p-3">
-                <HistoricalTimeRangeSelector
-                  timeRange={comparisonState.timeRange}
-                  onTimeRangeChange={handleTimeRangeChange}
-                  timeStep={comparisonState.timeStep}
-                  disabled={chartControlsDisabled}
-                />
-              </div>
-
-              {/* Contrôles du pas de temps */}
-              <div className="flex-1 border border-[rgb(16_32_56_/_0.09)] rounded-[var(--r-md)] p-2.5 sm:p-3 rtl-on-ar">
-                <div className="flex items-center space-x-2 mb-2.5 sm:mb-3">
-                  <svg
-                    className="w-4 h-4 text-[color:var(--fg-muted)] flex-shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 10V3L4 14h7v7l9-11h-7z"
-                    />
-                  </svg>
-                  <span className="text-sm font-medium text-[color:var(--fg-muted)]">
-                    {t("controls.timeStep")}
-                  </span>
-                </div>
-                <div className="grid grid-cols-4 gap-1">
-                  {COMPARISON_TIME_STEP_OPTIONS.map(({ key, labelKey }) => {
-                    const isDisabledByRange = !isTimeStepValidForCurrentRange(key);
+              <ChartTimeControls
+                timeRange={comparisonState.timeRange}
+                onTimeRangeChange={handleTimeRangeChange}
+                timeStep={comparisonState.timeStep}
+                onTimeStepChange={handleTimeStepChange}
+                disabled={chartControlsDisabled}
+                timeStepOptions={COMPARISON_TIME_STEP_OPTIONS.map(
+                  ({ key, labelKey }) => {
+                    const isDisabledByRange =
+                      !isTimeStepValidForCurrentRange(key);
                     const isDisabledBySupport =
                       !isTimeStepSupportedByComparedStations(key);
-                    const isDisabled = isDisabledByRange || isDisabledBySupport;
-                    // Bloquer aussi le clic pendant un chargement, sans
-                    // changer l'apparence (le pas de temps sélectionné doit
-                    // rester visible).
-                    const isBlocked = isDisabled || chartControlsDisabled;
-                    const isSelected = comparisonState.timeStep === key;
                     const maxDays = getMaxHistoryDays(key);
                     const label = t(`panels.comparisonSidePanel.${labelKey}`);
 
-                    let tooltip = label;
+                    let title = label;
                     if (isDisabledByRange && maxDays) {
-                      tooltip = t("panels.stationSidePanel.timeStepRangeLimit", {
-                        maxDays,
-                      });
+                      title = t(
+                        "panels.stationSidePanel.timeStepRangeLimit",
+                        { maxDays }
+                      );
                     } else if (isDisabledBySupport) {
-                      tooltip = t("panels.stationSidePanel.timeStepNotSupported");
+                      title = t(
+                        "panels.stationSidePanel.timeStepNotSupported"
+                      );
                     }
 
-                    return (
-                      <button
-                        key={key}
-                        onClick={() => !isBlocked && handleTimeStepChange(key)}
-                        disabled={isBlocked}
-                        title={tooltip}
-                        className={`px-1.5 py-1 text-xs rounded-[var(--r-sm)] transition-all duration-200 ${
-                          isDisabled
-                            ? "bg-[rgb(16_32_56_/_0.06)] text-[color:var(--fg-muted)] cursor-not-allowed opacity-60"
-                            : isSelected
-                            ? "bg-blue-600 text-white shadow-sm"
-                            : "bg-[rgb(16_32_56_/_0.06)] text-[color:var(--fg-muted)] hover:bg-black/10"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
-                    
-                {/* Message explicatif si des boutons sont désactivés à cause de la période */}
-                {(() => {
+                    return {
+                      key,
+                      label,
+                      disabled: isDisabledByRange || isDisabledBySupport,
+                      title,
+                    };
+                  }
+                )}
+                timeStepHint={(() => {
                   const disabledByRange = COMPARISON_TIME_STEP_OPTIONS.filter(
                     ({ key }) => !isTimeStepValidForCurrentRange(key)
                   );
 
-                  if (disabledByRange.length > 0) {
-                    const timeStepLabels = disabledByRange
-                      .map(({ key, labelKey }) => {
-                        const maxDays = getMaxHistoryDays(key);
-                        if (!maxDays) return null;
-                        const daysText =
-                          maxDays === 60
-                            ? t("panels.comparisonSidePanel.twoMonths")
-                            : maxDays === 180
-                            ? t("panels.comparisonSidePanel.sixMonths")
-                            : t("panels.comparisonSidePanel.daysUnit", { count: maxDays });
-                        return `${t(`panels.comparisonSidePanel.${labelKey}`)} (max ${daysText})`;
-                      })
-                      .filter(Boolean);
+                  if (disabledByRange.length === 0) return null;
 
-                    return (
-                      <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-[var(--r-sm)]">
-                        <p className="text-[11px] sm:text-xs text-amber-700">
-                          <span className="font-medium">{t("panels.comparisonSidePanel.limitationLabel")}</span>{" "}
-                          {t("panels.stationSidePanel.timeStepsDisabledByRange", {
-                            labels: timeStepLabels.join(t("panels.comparisonSidePanel.timeStepLabelsSeparator")),
-                          })}
-                        </p>
-                      </div>
-                    );
-                  }
-                  return null;
+                  const timeStepLabels = disabledByRange
+                    .map(({ key, labelKey }) => {
+                      const maxDays = getMaxHistoryDays(key);
+                      if (!maxDays) return null;
+                      const daysText =
+                        maxDays === 60
+                          ? t("panels.comparisonSidePanel.twoMonths")
+                          : maxDays === 180
+                          ? t("panels.comparisonSidePanel.sixMonths")
+                          : t("panels.comparisonSidePanel.daysUnit", {
+                              count: maxDays,
+                            });
+                      return `${t(
+                        `panels.comparisonSidePanel.${labelKey}`
+                      )} (max ${daysText})`;
+                    })
+                    .filter(Boolean);
+
+                  return (
+                    <div className="rounded-[var(--r-sm)] border border-amber-200 bg-amber-50 p-2">
+                      <p className="text-[11px] text-amber-700 sm:text-xs">
+                        <span className="font-medium">
+                          {t("panels.comparisonSidePanel.limitationLabel")}
+                        </span>{" "}
+                        {t(
+                          "panels.stationSidePanel.timeStepsDisabledByRange",
+                          {
+                            labels: timeStepLabels.join(
+                              t(
+                                "panels.comparisonSidePanel.timeStepLabelsSeparator"
+                              )
+                            ),
+                          }
+                        )}
+                      </p>
+                    </div>
+                  );
                 })()}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </SidePanelShell>
+              />
+            </>
+          )}
+        </div>
+      </SidePanelShell>
     );
   };
 

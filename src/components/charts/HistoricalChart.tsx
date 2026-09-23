@@ -17,7 +17,7 @@ import { useHistoricalChartData } from "./hooks/useHistoricalChartData";
 import { useAmChartsChart } from "./hooks/useAmChartsChart";
 import { getChartMargins } from "./utils/historicalChartConfig";
 
-interface HistoricalChartProps {
+export interface HistoricalChartProps {
   data: Record<string, HistoricalDataPoint[]>;
   selectedPollutants: string[];
   source: string; // Source de données (atmoRef, atmoMicro, comparison, etc.)

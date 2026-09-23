@@ -48,14 +48,14 @@ const ChartThresholdLegend: React.FC<ChartThresholdLegendProps> = ({
 
   return (
     <div
-      className="mt-2 px-0.5"
+      className="mt-1.5 shrink-0 px-0.5"
       data-testid="chart-threshold-legend"
       role="region"
       aria-label={t("chart.thresholdLegendAria", { unit })}
     >
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
         <div
-          className="flex h-2.5 min-w-0 flex-1 overflow-hidden rounded-[var(--r-sm)]"
+          className="flex h-2 min-w-0 flex-1 overflow-hidden rounded-[var(--r-sm)]"
           aria-hidden="true"
         >
           {items.map((item) => (
@@ -72,7 +72,7 @@ const ChartThresholdLegend: React.FC<ChartThresholdLegendProps> = ({
           </span>
         ) : null}
       </div>
-      <ul className="mt-1.5 grid grid-cols-6 gap-x-0.5" role="list">
+      <ul className="mt-1 grid grid-cols-6 gap-x-0.5" role="list">
         {items.map((item) => (
           <li key={item.key} className="min-w-0 text-center">
             <span

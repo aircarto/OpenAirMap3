@@ -18,12 +18,15 @@ import { NebuleAirService } from "../../services/NebuleAirService";
 import { ModelingService } from "../../services/ModelingService";
 import { DataServiceFactory } from "../../services/DataServiceFactory";
 import PanelChartBlock from "../charts/PanelChartBlock";
-import HistoricalTimeRangeSelector from "../controls/HistoricalTimeRangeSelector";
+import ChartTimeControls from "../controls/ChartTimeControls";
 import { getMaxHistoryDays, getCustomRangeISO, type TimeRange } from "../../utils/historicalTimeRange";
-import { ToggleGroup, ToggleGroupItem } from "../ui/button-group";
 import { cn } from "../../lib/utils";
 import ExpertMenu from "../controls/ExpertMenu";
-import SidePanelShell, { type PanelSize } from "./SidePanelShell";
+import SidePanelShell, {
+  CHART_PANEL_BODY_CLASS,
+  type PanelSize,
+} from "./SidePanelShell";
+import CollapsiblePanelSection from "./CollapsiblePanelSection";
 import PanelReopenBadge from "./PanelReopenBadge";
 
 const NEBULEAIR_TIMESTEP_OPTIONS = [
@@ -963,8 +966,6 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
   const renderPanelContent = () => {
     if (!selectedStation) return null;
 
-    const availablePollutants = getAvailablePollutants();
-
     return (
       <SidePanelShell
         isOpen={isOpen}
@@ -972,6 +973,7 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
         onSizeChange={onSizeChange}
         onHidden={onHidden}
         testId="nebuleair-side-panel"
+        bodyClassName={CHART_PANEL_BODY_CLASS}
         title={t("panels.stationSidePanel.comparisonTitle")}
         subtitle={
           selectedStation.lastSeenSec !== undefined
@@ -983,72 +985,68 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
             label={t("panels.stationSidePanel.reopenButtonTooltip")}
           />
         }
-      >
-        {/* Informations station sélectionnée */}
-        <div className="border border-[rgb(16_32_56_/_0.09)] rounded-[var(--r-md)] p-3 sm:p-4">
-          <div className="flex items-start justify-between space-x-3">
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-[color:var(--fg)] truncate">
-                {selectedStation.name}
-              </p>
-              <p className="text-xs text-[color:var(--fg-muted)] truncate">
-                {t("panels.nebuleAirSidePanel.sourceLabel")}
-                {selectedStation.address
-                  ? ` · ${selectedStation.address}`
-                  : ""}
-              </p>
-            </div>
-
-            {/* Bouton mode comparaison */}
-            {onComparisonModeToggle && (
-              <button
-                onClick={() => {
-                  if (isHistoricalLocked) {
-                    return;
-                  }
-                  // Passer le polluant actuellement sélectionné dans le panel
-                  const currentPollutant =
-                    state.chartControls.selectedPollutants[0] ||
-                    initialPollutant;
-                  onComparisonModeToggle(currentPollutant);
-                }}
-                disabled={isHistoricalLocked}
-                className={`px-3 py-1.5 rounded-[var(--r-sm)] text-xs transition-all duration-200 flex items-center ${
-                  isHistoricalLocked
-                    ? "text-[color:var(--fg-muted)] bg-[rgb(16_32_56_/_0.03)] border border-[rgb(16_32_56_/_0.09)] opacity-50 cursor-not-allowed"
-                    : isComparisonMode
-                    ? "text-green-700 bg-green-50 border border-green-200"
-                    : "text-[color:var(--fg-muted)] hover:bg-black/5 border border-[rgb(16_32_56_/_0.09)]"
-                }`}
+        headerExtra={
+          onComparisonModeToggle ? (
+            <button
+              type="button"
+              onClick={() => {
+                if (isHistoricalLocked) {
+                  return;
+                }
+                const currentPollutant =
+                  state.chartControls.selectedPollutants[0] ||
+                  initialPollutant;
+                onComparisonModeToggle(currentPollutant);
+              }}
+              disabled={isHistoricalLocked}
+              className={cn(
+                'flex min-h-11 shrink-0 items-center rounded-[var(--r-sm)] px-2.5 text-xs transition-all duration-200',
+                'motion-reduce:transition-none',
+                isHistoricalLocked
+                  ? 'cursor-not-allowed border border-[rgb(16_32_56_/_0.09)] bg-[rgb(16_32_56_/_0.03)] text-[color:var(--fg-muted)] opacity-50'
+                  : isComparisonMode
+                    ? 'border border-green-200 bg-green-50 text-green-700'
+                    : 'border border-[rgb(16_32_56_/_0.09)] text-[color:var(--fg-muted)] hover:bg-black/5'
+              )}
+            >
+              <svg
+                className="mr-1 h-3 w-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
               >
-                <svg
-                  className="w-3 h-3 mr-1"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                  />
-                </svg>
-                {isComparisonMode
-                  ? t("panels.stationSidePanel.disableComparison")
-                  : t("panels.stationSidePanel.enableComparison")}
-              </button>
-            )}
-          </div>
-        </div>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                />
+              </svg>
+              {isComparisonMode
+                ? t('panels.stationSidePanel.disableComparison')
+                : t('panels.stationSidePanel.enableComparison')}
+            </button>
+          ) : undefined
+        }
+      >
+        <CollapsiblePanelSection
+          title={selectedStation.name}
+          defaultOpen={false}
+          storageKey="nebuleair-meta"
+        >
+          <p className="text-xs text-[color:var(--fg-muted)]">
+            {t('panels.nebuleAirSidePanel.sourceLabel')}
+            {selectedStation.address
+              ? ` · ${selectedStation.address}`
+              : ''}
+          </p>
+        </CollapsiblePanelSection>
 
         {/* Graphique avec contrôles intégrés */}
-        <div className="flex-1 min-h-80 sm:min-h-96 md:min-h-[28rem]">
-          <h3 className="text-sm font-medium text-[color:var(--fg-muted)] mb-2 sm:mb-3">
-            {t("panels.nebuleAirSidePanel.temporalEvolutionNebuleAir")}
-          </h3>
+        <div className="flex shrink-0 flex-col gap-2">
           {isInitialChartLoading ? (
-            <div className="flex items-center justify-center h-80 sm:h-96 md:h-[28rem] bg-[rgb(16_32_56_/_0.03)] rounded-[var(--r-md)]">
+            <div className="flex h-[clamp(16rem,40vh,26rem)] shrink-0 items-center justify-center sm:h-[clamp(18rem,42vh,28rem)] rounded-[var(--r-md)] bg-[rgb(16_32_56_/_0.03)] sm:min-h-[18rem]">
               <div className="flex flex-col items-center space-y-2">
                 <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-[#4271B3]"></div>
                 <span className="text-xs sm:text-sm text-[color:var(--fg-muted)]">
@@ -1057,7 +1055,7 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
               </div>
             </div>
           ) : state.error ? (
-            <div className="flex items-center justify-center h-80 sm:h-96 md:h-[28rem] bg-red-50 rounded-[var(--r-md)]">
+            <div className="flex h-[clamp(16rem,40vh,26rem)] shrink-0 items-center justify-center sm:h-[clamp(18rem,42vh,28rem)] rounded-[var(--r-md)] bg-red-50 sm:min-h-[18rem]">
               <div className="text-center">
                 <svg
                   className="w-6 h-6 sm:w-8 sm:h-8 text-red-400 mx-auto mb-2"
@@ -1078,9 +1076,9 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
               </div>
             </div>
           ) : (
-            <div className="bg-white/60 rounded-[var(--r-md)] border border-[rgb(16_32_56_/_0.09)] p-3 sm:p-4">
-              {/* Polluants et Options avancées sur la même ligne (responsive: empilés sur mobile) */}
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4 mb-3 sm:mb-4 items-start">
+            <>
+              {/* Polluants et Options avancées — ligne compacte */}
+              <div className="flex shrink-0 flex-col items-stretch gap-2 sm:flex-row sm:items-start">
                 {/* Sélection des polluants */}
                 <div className="flex-1 min-w-0 sm:max-w-[260px] border border-[rgb(16_32_56_/_0.09)] rounded-[var(--r-md)] flex flex-col">
                   <button
@@ -1305,10 +1303,7 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                 </div>
               )}
 
-              {/* Graphique */}
               <PanelChartBlock
-                className="mb-3 sm:mb-4"
-                heightClassName="h-80 sm:h-96 md:h-[28rem]"
                 loading={state.loading}
                 data={state.historicalData}
                 selectedPollutants={state.chartControls.selectedPollutants}
@@ -1328,168 +1323,102 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
                 xAxisMax={historicalMode?.endDate}
               />
 
-              {/* Contrôles du graphique - en bas du graphique */}
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                {/* Contrôles de la période - Utilisation du composant réutilisable */}
-                <div className="flex-1 border border-[rgb(16_32_56_/_0.09)] rounded-[var(--r-md)] p-2.5 sm:p-3">
-                  <HistoricalTimeRangeSelector
-                    timeRange={state.chartControls.timeRange}
-                    onTimeRangeChange={handleTimeRangeChange}
-                    timeStep={state.chartControls.timeStep}
-                    disabled={isHistoricalLocked || chartControlsDisabled}
-                  />
-                </div>
-
-                {/* Contrôles du pas de temps */}
-                <div className="flex-1 border border-[rgb(16_32_56_/_0.09)] rounded-[var(--r-md)] p-2.5 sm:p-3 rtl-on-ar">
-                  <div className="flex items-center space-x-2 mb-2.5 sm:mb-3">
-                    <svg
-                      className="w-4 h-4 text-[color:var(--fg-muted)] flex-shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M13 10V3L4 14h7v7l9-11h-7z"
-                      />
-                    </svg>
-                    <span className="text-sm font-medium text-[color:var(--fg-muted)]">
-                      {t("controls.timeStep")}
-                    </span>
-                  </div>
-                  <ToggleGroup
-                    type="single"
-                    value={state.chartControls.timeStep}
-                    onValueChange={(value) => {
-                      if (isHistoricalLocked || chartControlsDisabled) {
-                        return;
-                      }
-                      if (value) {
-                        const isDisabledBySupport =
-                          !supportedTimeSteps.includes(value);
-                        const isDisabledByRange =
-                          !isTimeStepValidForCurrentRange(value);
-                        if (!isDisabledBySupport && !isDisabledByRange) {
-                          handleTimeStepChange(value);
-                        }
-                      }
-                    }}
-                    className="w-full"
-                  >
-                    {[
-                      { key: "instantane", labelKey: "timeStepScan" },
-                      { key: "quartHeure", labelKey: "timeStep15min" },
-                      { key: "heure", labelKey: "timeStep1h" },
-                      { key: "jour", labelKey: "timeStep1j" },
-                    ].map(({ key, labelKey }) => {
-                      const isDisabledBySupport =
-                        !supportedTimeSteps.includes(key);
-                      const isDisabledByRange =
-                        !isTimeStepValidForCurrentRange(key);
-                      const isDisabled =
-                        isHistoricalLocked ||
-                        chartControlsDisabled ||
-                        isDisabledBySupport ||
-                        isDisabledByRange;
-                      const maxDays = getMaxHistoryDays(key);
-                      const label = t(`panels.stationSidePanel.${labelKey}`);
-
-                      let tooltip = label;
-                      if (isDisabledByRange && maxDays) {
-                        tooltip = t(
-                          "panels.stationSidePanel.timeStepRangeLimit",
-                          { maxDays }
-                        );
-                      } else if (isDisabledBySupport) {
-                        tooltip = t(
-                          "panels.nebuleAirSidePanel.timeStepNotSupported"
-                        );
-                      }
-
-                      return (
-                        <ToggleGroupItem
-                          key={key}
-                          value={key}
-                          disabled={isDisabled}
-                          className={cn(
-                            "text-xs min-w-0",
-                            isDisabled && "opacity-50"
-                          )}
-                          title={tooltip}
-                        >
-                          {label}
-                        </ToggleGroupItem>
-                      );
-                    })}
-                  </ToggleGroup>
-
-                  {/* Message explicatif si des boutons sont désactivés à cause de la période */}
-                  {(() => {
-                    const disabledByRange = [
-                      { key: "instantane", labelKey: "timeStepScan" },
-                      { key: "quartHeure", labelKey: "timeStep15min" },
-                      { key: "heure", labelKey: "timeStep1h" },
-                      { key: "jour", labelKey: "timeStep1j" },
-                    ].filter(({ key }) => {
-                      const isDisabledBySupport =
-                        !supportedTimeSteps.includes(key);
-                      const isDisabledByRange =
-                        !isTimeStepValidForCurrentRange(key);
-                      return !isDisabledBySupport && isDisabledByRange;
+              <ChartTimeControls
+                timeRange={state.chartControls.timeRange}
+                onTimeRangeChange={handleTimeRangeChange}
+                timeStep={state.chartControls.timeStep}
+                onTimeStepChange={handleTimeStepChange}
+                disabled={isHistoricalLocked || chartControlsDisabled}
+                timeStepOptions={[
+                  { key: 'instantane', labelKey: 'timeStepScan' },
+                  { key: 'quartHeure', labelKey: 'timeStep15min' },
+                  { key: 'heure', labelKey: 'timeStep1h' },
+                  { key: 'jour', labelKey: 'timeStep1j' },
+                ].map(({ key, labelKey }) => {
+                  const isDisabledBySupport =
+                    !supportedTimeSteps.includes(key);
+                  const isDisabledByRange =
+                    !isTimeStepValidForCurrentRange(key);
+                  const maxDays = getMaxHistoryDays(key);
+                  const label = t(`panels.stationSidePanel.${labelKey}`);
+                  let title = label;
+                  if (isDisabledByRange && maxDays) {
+                    title = t('panels.stationSidePanel.timeStepRangeLimit', {
+                      maxDays,
                     });
-
-                    if (disabledByRange.length > 0) {
+                  } else if (isDisabledBySupport) {
+                    title = t(
+                      'panels.nebuleAirSidePanel.timeStepNotSupported'
+                    );
+                  }
+                  return {
+                    key,
+                    label,
+                    disabled: isDisabledBySupport || isDisabledByRange,
+                    title,
+                  };
+                })}
+                timeStepHint={
+                  <>
+                    {(() => {
+                      const disabledByRange = [
+                        { key: 'instantane', labelKey: 'timeStepScan' },
+                        { key: 'quartHeure', labelKey: 'timeStep15min' },
+                        { key: 'heure', labelKey: 'timeStep1h' },
+                        { key: 'jour', labelKey: 'timeStep1j' },
+                      ].filter(({ key }) => {
+                        const isDisabledBySupport =
+                          !supportedTimeSteps.includes(key);
+                        const isDisabledByRange =
+                          !isTimeStepValidForCurrentRange(key);
+                        return !isDisabledBySupport && isDisabledByRange;
+                      });
+                      if (disabledByRange.length === 0) return null;
                       const timeStepLabels = disabledByRange
                         .map(({ key, labelKey }) => {
                           const maxDays = getMaxHistoryDays(key);
                           if (!maxDays) return null;
                           const daysText =
                             maxDays === 60
-                              ? t("panels.comparisonSidePanel.twoMonths")
+                              ? t('panels.comparisonSidePanel.twoMonths')
                               : maxDays === 180
-                              ? t("panels.comparisonSidePanel.sixMonths")
-                              : t("panels.comparisonSidePanel.daysUnit", { count: maxDays });
+                                ? t('panels.comparisonSidePanel.sixMonths')
+                                : t('panels.comparisonSidePanel.daysUnit', {
+                                    count: maxDays,
+                                  });
                           return `${t(`panels.stationSidePanel.${labelKey}`)} (max ${daysText})`;
                         })
                         .filter(Boolean);
-
                       return (
-                        <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-[var(--r-sm)]">
-                          <p className="text-[11px] sm:text-xs text-amber-700">
+                        <div className="rounded-[var(--r-sm)] border border-amber-200 bg-amber-50 p-2">
+                          <p className="text-[11px] text-amber-700 sm:text-xs">
                             {t(
-                              "panels.stationSidePanel.timeStepsDisabledByRange",
-                              {
-                                labels: timeStepLabels.join(", "),
-                              }
+                              'panels.stationSidePanel.timeStepsDisabledByRange',
+                              { labels: timeStepLabels.join(', ') }
                             )}
                           </p>
                         </div>
                       );
-                    }
-                    return null;
-                  })()}
-
-                  {hasRestrictedTimeSteps &&
-                    restrictedPollutants.length > 0 && (
-                      <p className="mt-2 text-[11px] sm:text-xs text-[color:var(--fg-muted)]">
-                        {restrictedPollutants.includes("bruit")
+                    })()}
+                    {hasRestrictedTimeSteps &&
+                    restrictedPollutants.length > 0 ? (
+                      <p className="mt-1.5 text-[11px] text-[color:var(--fg-muted)] sm:text-xs">
+                        {restrictedPollutants.includes('bruit')
                           ? t(
-                              "panels.nebuleAirSidePanel.restrictedPollutantsNoise"
+                              'panels.nebuleAirSidePanel.restrictedPollutantsNoise'
                             )
                           : t(
-                              "panels.nebuleAirSidePanel.restrictedPollutantsSome"
+                              'panels.nebuleAirSidePanel.restrictedPollutantsSome'
                             )}
                       </p>
-                    )}
-                </div>
-              </div>
-            </div>
+                    ) : null}
+                  </>
+                }
+              />
+            </>
           )}
         </div>
-    </SidePanelShell>
+      </SidePanelShell>
     );
   };
 

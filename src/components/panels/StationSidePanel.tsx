@@ -8,17 +8,19 @@ import {
   ATMOREF_POLLUTANT_MAPPING,
 } from "../../types";
 import { pollutants } from "../../constants/pollutants";
-import { pasDeTemps } from "../../constants/timeSteps";
 import { AtmoRefService } from "../../services/AtmoRefService";
 import { ModelingService } from "../../services/ModelingService";
 import { DataServiceFactory } from "../../services/DataServiceFactory";
 import PanelChartBlock from "../charts/PanelChartBlock";
-import HistoricalTimeRangeSelector from "../controls/HistoricalTimeRangeSelector";
+import ChartTimeControls from "../controls/ChartTimeControls";
 import { getMaxHistoryDays, getCustomRangeISO, type TimeRange } from "../../utils/historicalTimeRange";
 import ExpertMenu from "../controls/ExpertMenu";
-import { ToggleGroup, ToggleGroupItem } from "../ui/button-group";
 import { cn } from "../../lib/utils";
-import SidePanelShell, { type PanelSize } from "./SidePanelShell";
+import SidePanelShell, {
+  CHART_PANEL_BODY_CLASS,
+  type PanelSize,
+} from "./SidePanelShell";
+import CollapsiblePanelSection from "./CollapsiblePanelSection";
 import PanelReopenBadge from "./PanelReopenBadge";
 
 interface StationSidePanelProps {
@@ -897,92 +899,87 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
         onSizeChange={onSizeChange}
         onHidden={onHidden}
         testId="station-side-panel"
+        bodyClassName={CHART_PANEL_BODY_CLASS}
         title={t("panels.stationSidePanel.comparisonTitle")}
         badge={
           <PanelReopenBadge
             label={t("panels.stationSidePanel.reopenButtonTooltip")}
           />
         }
-      >
-        {/* Informations station sélectionnée */}
-        <div className="border border-[rgb(16_32_56_/_0.09)] rounded-[var(--r-md)] p-3 sm:p-4">
-          <div className="flex items-start justify-between space-x-3">
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-[color:var(--fg)] truncate">
-                {selectedStation.name.replace("_", " ")}
-              </p>
-              <p className="text-xs text-[color:var(--fg-muted)] truncate">
-                {t("panels.stationSidePanel.stationSourceAtmoRef")}
-                {selectedStation.address
-                  ? ` · ${selectedStation.address}`
-                  : ""}
-              </p>
-            </div>
-
-            {/* Bouton mode comparaison */}
-            {onComparisonModeToggle && (
-              <button
-                onClick={() => {
-                  if (isHistoricalLocked) {
-                    return;
-                  }
-                  // Passer le polluant actuellement sélectionné dans le panel
-                  const currentPollutant =
-                    state.chartControls.selectedPollutants[0] ||
-                    initialPollutant;
-                  onComparisonModeToggle(currentPollutant);
-                }}
-                disabled={isHistoricalLocked}
-                className={`px-3 py-1.5 rounded-[var(--r-sm)] text-xs transition-all duration-200 flex items-center ${
-                  isHistoricalLocked
-                    ? "text-[color:var(--fg-muted)] bg-[rgb(16_32_56_/_0.03)] border border-[rgb(16_32_56_/_0.09)] opacity-50 cursor-not-allowed"
-                    : isComparisonMode
-                    ? "text-green-700 bg-green-50 border border-green-200"
-                    : "text-[color:var(--fg-muted)] hover:bg-black/5 border border-[rgb(16_32_56_/_0.09)]"
-                }`}
+        headerExtra={
+          onComparisonModeToggle ? (
+            <button
+              type="button"
+              onClick={() => {
+                if (isHistoricalLocked) {
+                  return;
+                }
+                const currentPollutant =
+                  state.chartControls.selectedPollutants[0] ||
+                  initialPollutant;
+                onComparisonModeToggle(currentPollutant);
+              }}
+              disabled={isHistoricalLocked}
+              className={cn(
+                'flex min-h-11 shrink-0 items-center rounded-[var(--r-sm)] px-2.5 text-xs transition-all duration-200',
+                'motion-reduce:transition-none',
+                isHistoricalLocked
+                  ? 'cursor-not-allowed border border-[rgb(16_32_56_/_0.09)] bg-[rgb(16_32_56_/_0.03)] text-[color:var(--fg-muted)] opacity-50'
+                  : isComparisonMode
+                    ? 'border border-green-200 bg-green-50 text-green-700'
+                    : 'border border-[rgb(16_32_56_/_0.09)] text-[color:var(--fg-muted)] hover:bg-black/5'
+              )}
+            >
+              <svg
+                className="mr-1 h-3 w-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
               >
-                <svg
-                  className="w-3 h-3 mr-1"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                  />
-                </svg>
-                {isComparisonMode
-                  ? t("panels.stationSidePanel.disableComparison")
-                  : t("panels.stationSidePanel.enableComparison")}
-              </button>
-            )}
-          </div>
-        </div>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                />
+              </svg>
+              {isComparisonMode
+                ? t('panels.stationSidePanel.disableComparison')
+                : t('panels.stationSidePanel.enableComparison')}
+            </button>
+          ) : undefined
+        }
+      >
+        <CollapsiblePanelSection
+          title={selectedStation.name.replace('_', ' ')}
+          defaultOpen={false}
+          storageKey="station-meta"
+        >
+          <p className="text-xs text-[color:var(--fg-muted)]">
+            {t('panels.stationSidePanel.stationSourceAtmoRef')}
+            {selectedStation.address
+              ? ` · ${selectedStation.address}`
+              : ''}
+          </p>
+        </CollapsiblePanelSection>
 
         {/* Graphique avec contrôles intégrés */}
-        <div className="flex-1 min-h-64 sm:min-h-80 md:min-h-96 lg:min-h-[28rem]">
-          <div className="mb-2 sm:mb-3">
-            <h3 className="text-sm font-medium text-[color:var(--fg-muted)]">
-              {t("panels.stationSidePanel.temporalEvolution")}
-            </h3>
-          </div>
+        <div className="flex shrink-0 flex-col gap-2">
           {isInitialChartLoading ? (
-            <div className="flex items-center justify-center h-64 sm:h-80 md:h-96 lg:h-[28rem] bg-[rgb(16_32_56_/_0.03)] rounded-[var(--r-md)]">
+            <div className="flex h-[clamp(16rem,40vh,26rem)] shrink-0 items-center justify-center sm:h-[clamp(18rem,42vh,28rem)] rounded-[var(--r-md)] bg-[rgb(16_32_56_/_0.03)] sm:min-h-[18rem]">
               <div className="flex flex-col items-center space-y-2">
-                <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-[#4271B3]"></div>
-                <span className="text-xs sm:text-sm text-[color:var(--fg-muted)]">
-                  {t("panels.loadingData")}
+                <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-[#4271B3] sm:h-8 sm:w-8"></div>
+                <span className="text-xs text-[color:var(--fg-muted)] sm:text-sm">
+                  {t('panels.loadingData')}
                 </span>
               </div>
             </div>
           ) : state.error ? (
-            <div className="flex items-center justify-center h-64 sm:h-80 md:h-96 lg:h-[28rem] bg-red-50 rounded-[var(--r-md)]">
+            <div className="flex h-[clamp(16rem,40vh,26rem)] shrink-0 items-center justify-center sm:h-[clamp(18rem,42vh,28rem)] rounded-[var(--r-md)] bg-red-50 sm:min-h-[18rem]">
               <div className="text-center">
                 <svg
-                  className="w-6 h-6 sm:w-8 sm:h-8 text-red-400 mx-auto mb-2"
+                  className="mx-auto mb-2 h-6 w-6 text-red-400 sm:h-8 sm:w-8"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -994,18 +991,16 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
                     d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-                <p className="text-xs sm:text-sm text-red-600">
-                  {state.error}
-                </p>
+                <p className="text-xs text-red-600 sm:text-sm">{state.error}</p>
               </div>
             </div>
           ) : (
-            <div className="bg-white/60 rounded-[var(--r-md)] border border-[rgb(16_32_56_/_0.09)] p-3 sm:p-4">
-              {/* Polluants et Options avancées sur la même ligne (responsive: empilés sur mobile) */}
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4 mb-3 sm:mb-4 items-start">
-                {/* Sélection des polluants */}
-                <div className="flex-1 min-w-0 sm:max-w-[260px] border border-[rgb(16_32_56_/_0.09)] rounded-[var(--r-md)] flex flex-col">
+            <>
+              {/* Polluants et Options avancées — ligne compacte */}
+              <div className="flex shrink-0 flex-col items-stretch gap-2 sm:flex-row sm:items-start">
+                <div className="flex min-w-0 flex-1 flex-col rounded-[var(--r-md)] border border-[rgb(16_32_56_/_0.09)] sm:max-w-[260px]">
                   <button
+                    type="button"
                     onClick={() => {
                       if (isHistoricalLocked) {
                         return;
@@ -1013,18 +1008,20 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
                       setShowPollutantsList(!showPollutantsList);
                     }}
                     disabled={isHistoricalLocked}
-                    className={`w-full h-11 flex items-center justify-between px-2.5 sm:px-3 text-left transition-colors rounded-[var(--r-md)] shrink-0 ${
+                    aria-expanded={showPollutantsList}
+                    className={`flex h-11 w-full shrink-0 items-center justify-between rounded-[var(--r-md)] px-2.5 text-left transition-colors sm:px-3 ${
                       isHistoricalLocked
-                        ? "opacity-50 cursor-not-allowed"
-                        : "hover:bg-black/5"
+                        ? 'cursor-not-allowed opacity-50'
+                        : 'hover:bg-black/5'
                     }`}
                   >
-                    <div className="flex items-center space-x-2 min-w-0 flex-1">
+                    <div className="flex min-w-0 flex-1 items-center space-x-2">
                       <svg
-                        className="w-4 h-4 text-[color:var(--fg-muted)] flex-shrink-0"
+                        className="h-4 w-4 flex-shrink-0 text-[color:var(--fg-muted)]"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
+                        aria-hidden="true"
                       >
                         <path
                           strokeLinecap="round"
@@ -1033,26 +1030,23 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
                           d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
                         />
                       </svg>
-                      <span className="text-sm font-medium text-[color:var(--fg-muted)] truncate">
-                        {t("panels.stationSidePanel.pollutantsDisplayed")}
+                      <span className="truncate text-sm font-medium text-[color:var(--fg-muted)]">
+                        {t('panels.stationSidePanel.pollutantsDisplayed')}
                       </span>
-                      <span className="text-xs text-[color:var(--fg-muted)] bg-[rgb(16_32_56_/_0.06)] px-2 py-1 rounded-full flex-shrink-0">
-                        {t(
-                          "panels.stationSidePanel.selectedCount",
-                          {
-                            count: state.chartControls.selectedPollutants
-                              .length,
-                          }
-                        )}
+                      <span className="flex-shrink-0 rounded-full bg-[rgb(16_32_56_/_0.06)] px-2 py-0.5 text-xs text-[color:var(--fg-muted)]">
+                        {t('panels.stationSidePanel.selectedCount', {
+                          count: state.chartControls.selectedPollutants.length,
+                        })}
                       </span>
                     </div>
                     <svg
-                      className={`w-4 h-4 text-[color:var(--fg-muted)] transition-transform flex-shrink-0 ${
-                        showPollutantsList ? "rotate-180" : ""
+                      className={`h-4 w-4 flex-shrink-0 text-[color:var(--fg-muted)] transition-transform motion-reduce:transition-none ${
+                        showPollutantsList ? 'rotate-180' : ''
                       }`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
+                      aria-hidden="true"
                     >
                       <path
                         strokeLinecap="round"
@@ -1064,10 +1058,9 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
                   </button>
 
                   {showPollutantsList && (
-                    <div className="px-2.5 sm:px-3 pb-2.5 sm:pb-3 space-y-1">
+                    <div className="space-y-1 px-2.5 pb-2.5 sm:px-3 sm:pb-3">
                       {Object.entries(pollutants).map(
-                        ([pollutantCode, pollutant]) => {
-                          // Trouver si ce polluant est disponible dans la station
+                        ([pollutantCode]) => {
                           const availableVariable = Object.entries(
                             selectedStation.variables
                           ).find(([code, variable]) => {
@@ -1092,6 +1085,7 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
                           return (
                             <button
                               key={pollutantCode}
+                              type="button"
                               onClick={() =>
                                 isEnabled &&
                                 handlePollutantToggle(pollutantCode)
@@ -1104,41 +1098,41 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
                               title={
                                 isLastSelectedAndDisabled
                                   ? t(
-                                      "panels.stationSidePanel.atLeastOnePollutant"
+                                      'panels.stationSidePanel.atLeastOnePollutant'
                                     )
                                   : !isEnabled
-                                  ? t(
-                                      "panels.stationSidePanel.pollutantNotAvailable"
-                                    )
-                                  : undefined
+                                    ? t(
+                                        'panels.stationSidePanel.pollutantNotAvailable'
+                                      )
+                                    : undefined
                               }
-                              className={`w-full flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-[var(--r-sm)] text-sm transition-all duration-200 ${
+                              className={`flex w-full items-center rounded-[var(--r-sm)] px-2.5 py-1.5 text-sm transition-all duration-200 sm:px-3 sm:py-2 ${
                                 !isEnabled
-                                  ? "text-[color:var(--fg-muted)] cursor-not-allowed"
+                                  ? 'cursor-not-allowed text-[color:var(--fg-muted)]'
                                   : isLastSelectedAndDisabled
-                                  ? "text-[#1f3c6d] bg-[#e7eef8] border border-[#c1d3eb] opacity-70 cursor-not-allowed"
-                                  : isSelected
-                                  ? "text-[#1f3c6d] bg-[#e7eef8] border border-[#c1d3eb]"
-                                  : "text-[color:var(--fg-muted)] hover:bg-black/5"
+                                    ? 'cursor-not-allowed border border-[#c1d3eb] bg-[#e7eef8] text-[#1f3c6d] opacity-70'
+                                    : isSelected
+                                      ? 'border border-[#c1d3eb] bg-[#e7eef8] text-[#1f3c6d]'
+                                      : 'text-[color:var(--fg-muted)] hover:bg-black/5'
                               }`}
                             >
                               <div
-                                className={`w-3 h-3 rounded border mr-2 flex items-center justify-center transition-colors flex-shrink-0 ${
+                                className={`mr-2 flex h-3 w-3 flex-shrink-0 items-center justify-center rounded border transition-colors ${
                                   !isEnabled
-                                    ? "border-[rgb(16_32_56_/_0.14)] bg-[rgb(16_32_56_/_0.06)]"
+                                    ? 'border-[rgb(16_32_56_/_0.14)] bg-[rgb(16_32_56_/_0.06)]'
                                     : isLastSelectedAndDisabled
-                                    ? "bg-[#325a96] border-[#325a96] opacity-60"
-                                    : isSelected
-                                    ? "bg-[#325a96] border-[#325a96]"
-                                    : "border-[rgb(16_32_56_/_0.14)]"
-                              }`}
+                                      ? 'border-[#325a96] bg-[#325a96] opacity-60'
+                                      : isSelected
+                                        ? 'border-[#325a96] bg-[#325a96]'
+                                        : 'border-[rgb(16_32_56_/_0.14)]'
+                                }`}
                               >
                                 {isSelected && (
                                   <svg
-                                    className={`w-2 h-2 ${
+                                    className={`h-2 w-2 ${
                                       isLastSelectedAndDisabled
-                                        ? "text-white opacity-60"
-                                        : "text-white"
+                                        ? 'text-white opacity-60'
+                                        : 'text-white'
                                     }`}
                                     fill="currentColor"
                                     viewBox="0 0 20 20"
@@ -1151,14 +1145,12 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
                                   </svg>
                                 )}
                               </div>
-                              <span className="flex-1 text-left truncate">
+                              <span className="flex-1 truncate text-left">
                                 {t(`pollutants.${pollutantCode}`)}
                               </span>
                               {!isEnabled && (
-                                <span className="text-xs text-[color:var(--fg-muted)] flex-shrink-0">
-                                  {t(
-                                    "panels.stationSidePanel.notAvailable"
-                                  )}
+                                <span className="flex-shrink-0 text-xs text-[color:var(--fg-muted)]">
+                                  {t('panels.stationSidePanel.notAvailable')}
                                 </span>
                               )}
                             </button>
@@ -1169,67 +1161,59 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
                   )}
                 </div>
 
-                {/* Menu Expert - Options avancées (largeur naturelle, même hauteur que le bouton polluants) */}
-                <div className="flex-none flex flex-col [&_button]:h-11 [&_button]:shrink-0">
+                <div className="flex flex-none flex-col [&_button]:h-11 [&_button]:shrink-0">
                   <ExpertMenu
-                  showModeling={showModeling}
-                  onModelingChange={(checked) => {
-                    // Ne permettre l'activation que si le pas de temps est horaire
-                    if (
-                      state.chartControls.timeStep !== "heure" &&
-                      checked
-                    ) {
-                      return;
-                    }
-                    setShowModeling(checked);
-                    // Recharger les données si on active la modélisation et qu'on a les coordonnées
-                    if (
-                      checked &&
-                      selectedStation &&
-                      stationCoordinates
-                    ) {
-                      // Charger les données de modélisation pour tous les polluants actuellement sélectionnés
-                      const pollutantsToLoad =
-                        state.chartControls.selectedPollutants;
-                      loadHistoricalData(
-                        selectedStation,
-                        pollutantsToLoad,
-                        state.chartControls.timeRange,
-                        state.chartControls.timeStep,
-                        true,
+                    showModeling={showModeling}
+                    onModelingChange={(checked) => {
+                      if (
+                        state.chartControls.timeStep !== 'heure' &&
+                        checked
+                      ) {
+                        return;
+                      }
+                      setShowModeling(checked);
+                      if (
+                        checked &&
+                        selectedStation &&
                         stationCoordinates
-                      );
-                    } else if (!checked) {
-                      setModelingData({});
-                      setLoadingModeling(false);
+                      ) {
+                        const pollutantsToLoad =
+                          state.chartControls.selectedPollutants;
+                        loadHistoricalData(
+                          selectedStation,
+                          pollutantsToLoad,
+                          state.chartControls.timeRange,
+                          state.chartControls.timeStep,
+                          true,
+                          stationCoordinates
+                        );
+                      } else if (!checked) {
+                        setModelingData({});
+                        setLoadingModeling(false);
+                      }
+                    }}
+                    loadingModeling={loadingModeling}
+                    modelingDisabled={state.chartControls.timeStep !== 'heure'}
+                    modelingDisabledReason={
+                      state.chartControls.timeStep !== 'heure'
+                        ? t('panels.stationSidePanel.modelingOnlyHourly')
+                        : undefined
                     }
-                    // Si on active mais qu'on n'a pas encore les coordonnées, elles seront chargées dans le useEffect
-                  }}
-                  loadingModeling={loadingModeling}
-                  modelingDisabled={state.chartControls.timeStep !== "heure"}
-                  modelingDisabledReason={
-                    state.chartControls.timeStep !== "heure"
-                      ? t(
-                          "panels.stationSidePanel.modelingOnlyHourly"
-                        )
-                      : undefined
-                  }
-                  hideThresholdBackgroundForColorblind={
-                    hideThresholdBackgroundForColorblind
-                  }
-                  onHideThresholdBackgroundForColorblindChange={
-                    setHideThresholdBackgroundForColorblind
-                  }
-                  historicalLocked={isHistoricalLocked}
-                />
+                    hideThresholdBackgroundForColorblind={
+                      hideThresholdBackgroundForColorblind
+                    }
+                    onHideThresholdBackgroundForColorblindChange={
+                      setHideThresholdBackgroundForColorblind
+                    }
+                    historicalLocked={isHistoricalLocked}
+                  />
                 </div>
               </div>
 
-              {/* Message d'information */}
               {state.infoMessage && (
-                <div className="mb-3 sm:mb-4 p-3 sm:p-4 bg-amber-50 border border-amber-200 rounded-[var(--r-md)] text-xs sm:text-sm text-amber-800 flex items-start space-x-2">
+                <div className="flex shrink-0 items-start space-x-2 rounded-[var(--r-md)] border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 sm:text-sm">
                   <svg
-                    className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 flex-shrink-0 mt-0.5"
+                    className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-500 sm:h-5 sm:w-5"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -1241,16 +1225,11 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
                       d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
                     />
                   </svg>
-                  <span className="leading-normal">
-                    {state.infoMessage}
-                  </span>
+                  <span className="leading-normal">{state.infoMessage}</span>
                 </div>
               )}
 
-              {/* Graphique */}
               <PanelChartBlock
-                className="mb-2 sm:mb-3 md:mb-4"
-                heightClassName="h-64 sm:h-80 md:h-96 lg:h-[28rem]"
                 loading={state.loading}
                 data={state.historicalData}
                 selectedPollutants={state.chartControls.selectedPollutants}
@@ -1270,170 +1249,94 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
                 xAxisMax={historicalMode?.endDate}
               />
 
-              {/* Contrôles du graphique - en bas du graphique */}
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4">
-                {/* Contrôles de la période */}
-                <div className="flex-1 border border-[rgb(16_32_56_/_0.09)] rounded-[var(--r-md)] p-2 sm:p-2.5 md:p-3">
-                  <HistoricalTimeRangeSelector
-                    timeRange={state.chartControls.timeRange}
-                    onTimeRangeChange={handleTimeRangeChange}
-                    timeStep={state.chartControls.timeStep}
-                    disabled={isHistoricalLocked || chartControlsDisabled}
-                  />
-                </div>
-
-                {/* Contrôles du pas de temps */}
-                <div className="flex-1 border border-[rgb(16_32_56_/_0.09)] rounded-[var(--r-md)] p-2 sm:p-2.5 md:p-3 rtl-on-ar">
-                  <div className="flex items-center space-x-2 mb-2.5 sm:mb-3">
-                    <svg
-                      className="w-4 h-4 text-[color:var(--fg-muted)] flex-shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M13 10V3L4 14h7v7l9-11h-7z"
-                      />
-                    </svg>
-                    <span className="text-sm font-medium text-[color:var(--fg-muted)]">
-                      {t("controls.timeStep")}
-                    </span>
-                  </div>
-                  <ToggleGroup
-                    type="single"
-                    value={state.chartControls.timeStep}
-                    onValueChange={(value) => {
-                      if (isHistoricalLocked || chartControlsDisabled) {
-                        return;
-                      }
-                      if (value) {
-                        const isDisabledByRange =
-                          !isTimeStepValidForCurrentRange(value);
-                        const alwaysDisabled = value === "instantane"; // Toujours désactivé pour AtmoRef
-                        if (!alwaysDisabled && !isDisabledByRange) {
-                          handleTimeStepChange(value);
-                        }
-                      }
-                    }}
-                    className="w-full"
-                  >
-                    {[
-                      {
-                        key: "instantane",
-                        labelKey: "timeStepScan15min",
-                        shortLabelKey: "timeStepScan",
-                        alwaysDisabled: true, // Toujours désactivé pour AtmoRef
-                      },
-                      {
-                        key: "quartHeure",
-                        labelKey: "timeStep15min",
-                        shortLabelKey: "timeStep15min",
-                        alwaysDisabled: false,
-                      },
-                      {
-                        key: "heure",
-                        labelKey: "timeStep1h",
-                        shortLabelKey: "timeStep1h",
-                        alwaysDisabled: false,
-                      },
-                      {
-                        key: "jour",
-                        labelKey: "timeStep1j",
-                        shortLabelKey: "timeStep1j",
-                        alwaysDisabled: false,
-                      },
-                    ].map(({ key, labelKey, shortLabelKey, alwaysDisabled }) => {
-                      const isDisabledByRange =
-                        !isTimeStepValidForCurrentRange(key);
-                      const isDisabled =
-                        isHistoricalLocked ||
-                        chartControlsDisabled ||
-                        alwaysDisabled ||
-                        isDisabledByRange;
-                      const maxDays = getMaxHistoryDays(key);
-                      const label = t(`panels.stationSidePanel.${labelKey}`);
-                      const shortLabel = t(`panels.stationSidePanel.${shortLabelKey}`);
-
-                      let tooltip = label;
-                      if (isDisabledByRange && maxDays) {
-                        tooltip = t(
-                          "panels.stationSidePanel.timeStepRangeLimit",
-                          { maxDays }
-                        );
-                      }
-
-                      return (
-                        <ToggleGroupItem
-                          key={key}
-                          value={key}
-                          disabled={isDisabled}
-                          className={cn(
-                            "text-xs min-w-0",
-                            isDisabled && "opacity-50"
-                          )}
-                          title={tooltip}
-                        >
-                          <span className="time-step-button-full truncate">
-                            {label}
-                          </span>
-                          <span className="time-step-button-short truncate">
-                            {shortLabel}
-                          </span>
-                        </ToggleGroupItem>
-                      );
-                    })}
-                  </ToggleGroup>
-
-                  {/* Message explicatif si des boutons sont désactivés à cause de la période */}
-                  {(() => {
-                    const disabledByRange = [
-                      { key: "instantane", labelKey: "timeStepScan15min" },
-                      { key: "quartHeure", labelKey: "timeStep15min" },
-                      { key: "heure", labelKey: "timeStep1h" },
-                      { key: "jour", labelKey: "timeStep1j" },
-                    ].filter(({ key }) => {
-                      const alwaysDisabled = key === "instantane";
-                      const isDisabledByRange =
-                        !isTimeStepValidForCurrentRange(key);
-                      return !alwaysDisabled && isDisabledByRange;
-                    });
-
-                    if (disabledByRange.length > 0) {
-                      const timeStepLabels = disabledByRange
-                        .map(({ key, labelKey }) => {
-                          const maxDays = getMaxHistoryDays(key);
-                          if (!maxDays) return null;
-                          const daysText =
-                            maxDays === 60
-                              ? t("panels.comparisonSidePanel.twoMonths")
-                              : maxDays === 180
-                              ? t("panels.comparisonSidePanel.sixMonths")
-                              : t("panels.comparisonSidePanel.daysUnit", { count: maxDays });
-                          return `${t(`panels.stationSidePanel.${labelKey}`)} (max ${daysText})`;
+              <ChartTimeControls
+                timeRange={state.chartControls.timeRange}
+                onTimeRangeChange={handleTimeRangeChange}
+                timeStep={state.chartControls.timeStep}
+                onTimeStepChange={handleTimeStepChange}
+                disabled={isHistoricalLocked || chartControlsDisabled}
+                timeStepOptions={[
+                  {
+                    key: 'instantane',
+                    label: t('panels.stationSidePanel.timeStepScan15min'),
+                    shortLabel: t('panels.stationSidePanel.timeStepScan'),
+                    disabled: true,
+                    title: t('panels.stationSidePanel.timeStepScan15min'),
+                  },
+                  {
+                    key: 'quartHeure',
+                    label: t('panels.stationSidePanel.timeStep15min'),
+                    shortLabel: t('panels.stationSidePanel.timeStep15min'),
+                    disabled: !isTimeStepValidForCurrentRange('quartHeure'),
+                    title: !isTimeStepValidForCurrentRange('quartHeure')
+                      ? t('panels.stationSidePanel.timeStepRangeLimit', {
+                          maxDays: getMaxHistoryDays('quartHeure'),
                         })
-                        .filter(Boolean);
+                      : t('panels.stationSidePanel.timeStep15min'),
+                  },
+                  {
+                    key: 'heure',
+                    label: t('panels.stationSidePanel.timeStep1h'),
+                    shortLabel: t('panels.stationSidePanel.timeStep1h'),
+                    disabled: !isTimeStepValidForCurrentRange('heure'),
+                    title: !isTimeStepValidForCurrentRange('heure')
+                      ? t('panels.stationSidePanel.timeStepRangeLimit', {
+                          maxDays: getMaxHistoryDays('heure'),
+                        })
+                      : t('panels.stationSidePanel.timeStep1h'),
+                  },
+                  {
+                    key: 'jour',
+                    label: t('panels.stationSidePanel.timeStep1j'),
+                    shortLabel: t('panels.stationSidePanel.timeStep1j'),
+                    disabled: !isTimeStepValidForCurrentRange('jour'),
+                    title: !isTimeStepValidForCurrentRange('jour')
+                      ? t('panels.stationSidePanel.timeStepRangeLimit', {
+                          maxDays: getMaxHistoryDays('jour'),
+                        })
+                      : t('panels.stationSidePanel.timeStep1j'),
+                  },
+                ]}
+                timeStepHint={(() => {
+                  const disabledByRange = [
+                    { key: 'quartHeure', labelKey: 'timeStep15min' },
+                    { key: 'heure', labelKey: 'timeStep1h' },
+                    { key: 'jour', labelKey: 'timeStep1j' },
+                  ].filter(
+                    ({ key }) => !isTimeStepValidForCurrentRange(key)
+                  );
 
-                      return (
-                        <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-[var(--r-sm)]">
-                          <p className="text-[11px] sm:text-xs text-amber-700">
-                            {t(
-                              "panels.stationSidePanel.timeStepsDisabledByRange",
-                              {
-                                labels: timeStepLabels.join(", "),
-                              }
-                            )}
-                          </p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
-                </div>
-              </div>
-            </div>
+                  if (disabledByRange.length === 0) return null;
+
+                  const timeStepLabels = disabledByRange
+                    .map(({ key, labelKey }) => {
+                      const maxDays = getMaxHistoryDays(key);
+                      if (!maxDays) return null;
+                      const daysText =
+                        maxDays === 60
+                          ? t('panels.comparisonSidePanel.twoMonths')
+                          : maxDays === 180
+                            ? t('panels.comparisonSidePanel.sixMonths')
+                            : t('panels.comparisonSidePanel.daysUnit', {
+                                count: maxDays,
+                              });
+                      return `${t(`panels.stationSidePanel.${labelKey}`)} (max ${daysText})`;
+                    })
+                    .filter(Boolean);
+
+                  return (
+                    <div className="rounded-[var(--r-sm)] border border-amber-200 bg-amber-50 p-2">
+                      <p className="text-[11px] text-amber-700 sm:text-xs">
+                        {t(
+                          'panels.stationSidePanel.timeStepsDisabledByRange',
+                          { labels: timeStepLabels.join(', ') }
+                        )}
+                      </p>
+                    </div>
+                  );
+                })()}
+              />
+            </>
           )}
         </div>
       </SidePanelShell>

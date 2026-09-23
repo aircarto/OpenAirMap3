@@ -381,8 +381,16 @@ export const useAmChartsChart = ({
     // Créer la légende
     setupLegend(root, chart, seriesConfigs, isMobile);
 
+    // Suivre les changements de taille du conteneur (flex-grow, fullscreen,
+    // ouverture de sections) : sans cela amCharts garde souvent la taille initiale.
+    const resizeObserver = new ResizeObserver(() => {
+      root.resize();
+    });
+    resizeObserver.observe(containerRef.current);
+
     // Nettoyage au démontage
     return () => {
+      resizeObserver.disconnect();
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
       window.removeEventListener("blur", handleWindowBlur);

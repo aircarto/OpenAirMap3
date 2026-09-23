@@ -123,6 +123,7 @@ const AmChartsLineChart: React.FC<AmChartsLineChartProps> = ({
   const chartRef = useRef<am5xy.XYChart | null>(null);
   const rootRef = useRef<am5.Root | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const containerIdRef = useRef<string>(
     containerId || `amcharts-container-${Math.random().toString(36).substr(2, 9)}`
   );
@@ -393,6 +394,14 @@ const AmChartsLineChart: React.FC<AmChartsLineChartProps> = ({
     if (onChartReady) {
       onChartReady(chart, root);
     }
+
+    // Suivre flex-grow / resize du panneau
+    resizeObserverRef.current?.disconnect();
+    const resizeObserver = new ResizeObserver(() => {
+      root.resize();
+    });
+    resizeObserver.observe(containerRef.current);
+    resizeObserverRef.current = resizeObserver;
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- création unique du graphique ; mises à jour via effets séparés
 
   // Mettre à jour le label de l'axe Y gauche au changement de langue ou de yAxes
@@ -411,6 +420,8 @@ const AmChartsLineChart: React.FC<AmChartsLineChartProps> = ({
   // Nettoyage au démontage
   useEffect(() => {
     return () => {
+      resizeObserverRef.current?.disconnect();
+      resizeObserverRef.current = null;
       if (rootRef.current) {
         rootRef.current.dispose();
         rootRef.current = null;

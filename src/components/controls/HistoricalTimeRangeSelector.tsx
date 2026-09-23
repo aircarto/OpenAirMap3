@@ -11,6 +11,10 @@ import { ToggleGroup, ToggleGroupItem } from "../ui/button-group";
 import { cn } from "../../lib/utils";
 import type { TimeRange } from "../../utils/historicalTimeRange";
 import { getMaxHistoryDays } from "../../utils/historicalTimeRange";
+import {
+  chartSegmentGroupClass,
+  chartSegmentItemClass,
+} from "./chartSegmentStyles";
 
 interface HistoricalTimeRangeSelectorProps {
   timeRange: TimeRange;
@@ -34,6 +38,11 @@ interface HistoricalTimeRangeSelectorProps {
    * hôte.
    */
   customRangePresentation?: "popover" | "inline";
+  /**
+   * `"toolbar"` : en-tête compact pour la barre plate sous le graphique
+   * (ChartTimeControls). `"default"` conserve le libellé Historique classique.
+   */
+  variant?: "default" | "toolbar";
 }
 
 // Fonction pour calculer le nombre de jours entre deux dates
@@ -67,8 +76,10 @@ const HistoricalTimeRangeSelector: React.FC<
   timeStep,
   disabled = false,
   customRangePresentation = "popover",
+  variant = "default",
 }) => {
   const { t, i18n } = useTranslation();
+  const isToolbar = variant === "toolbar";
   const [isCustomOpen, setIsCustomOpen] = useState(false);
   const isInlineCustomRange = customRangePresentation === "inline";
   const customRangeId = useId();
@@ -457,22 +468,31 @@ const HistoricalTimeRangeSelector: React.FC<
 
   return (
     <div className={`relative rtl-on-ar ${className}`} ref={dropdownRef}>
-      <div className="flex items-center space-x-2 mb-2.5 sm:mb-3">
-        <svg
-          className="w-4 h-4 text-gray-600 flex-shrink-0"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-        <span className="text-sm font-medium text-gray-700">{t("historical.periodLabel")}</span>
-      </div>
+      {isToolbar ? (
+        <div className="mb-1 text-[11px] font-medium uppercase tracking-wide text-[color:var(--fg-muted)]">
+          {t("historical.periodLabel")}
+        </div>
+      ) : (
+        <div className="mb-2.5 flex items-center space-x-2 sm:mb-3">
+          <svg
+            className="h-4 w-4 flex-shrink-0 text-gray-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <span className="text-sm font-medium text-gray-700">
+            {t("historical.periodLabel")}
+          </span>
+        </div>
+      )}
 
       {/* Boutons des périodes prédéfinies */}
       <ToggleGroup
@@ -483,7 +503,9 @@ const HistoricalTimeRangeSelector: React.FC<
             handlePresetChange(value);
           }
         }}
-        className="w-full mb-2"
+        className={cn(
+          isToolbar ? cn(chartSegmentGroupClass, "mb-1.5") : "mb-2 w-full"
+        )}
       >
         {[
           { key: "3h" as const },
@@ -504,8 +526,8 @@ const HistoricalTimeRangeSelector: React.FC<
                   : undefined
               }
               className={cn(
-                "text-xs min-w-0",
-                !isValid && "opacity-50"
+                isToolbar ? chartSegmentItemClass : "min-w-0 text-xs",
+                !isValid && "opacity-40"
               )}
             >
               {t(`historical.preset${key}`)}
@@ -513,8 +535,6 @@ const HistoricalTimeRangeSelector: React.FC<
           );
         })}
       </ToggleGroup>
-      
-      
 
       {/* Bouton pour la sélection personnalisée */}
       <button
@@ -523,11 +543,22 @@ const HistoricalTimeRangeSelector: React.FC<
         disabled={disabled}
         aria-expanded={isCustomOpen}
         aria-controls={customRangeId}
-        className={`w-full px-2.5 py-1.5 text-xs rounded-md transition-all duration-200 border ${
-          isCustomSelected
-            ? "bg-blue-50 text-blue-700 border-blue-200"
-            : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
-        }`}
+        className={cn(
+          "w-full text-left transition-colors motion-reduce:transition-none",
+          isToolbar
+            ? cn(
+                "flex h-8 items-center justify-between rounded-lg border px-2.5 text-[11px] sm:text-xs",
+                isCustomSelected
+                  ? "border-[rgb(16_32_56_/_0.12)] bg-white text-[color:var(--fg)] shadow-sm"
+                  : "border-transparent bg-[rgb(16_32_56_/_0.04)] text-[color:var(--fg-muted)] hover:bg-[rgb(16_32_56_/_0.07)]"
+              )
+            : cn(
+                "min-h-11 rounded-md border px-2.5 py-1.5 text-xs",
+                isCustomSelected
+                  ? "border-blue-200 bg-blue-50 text-blue-700"
+                  : "border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100"
+              )
+        )}
       >
         <div className="flex items-center justify-between">
           <span className="flex items-center">
