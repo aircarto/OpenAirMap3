@@ -10,6 +10,13 @@ import {
 } from "../types";
 import { getAirQualityLevel } from "../utils";
 import { pollutants } from "../constants/pollutants";
+import { isHttpNotFound } from "../utils/instantSnapshot";
+
+const hasValidCoordinates = (station: AtmoRefStation): boolean =>
+  typeof station.latitude === "number" &&
+  typeof station.longitude === "number" &&
+  !Number.isNaN(station.latitude) &&
+  !Number.isNaN(station.longitude);
 
 export class AtmoRefService extends BaseDataService {
   private readonly BASE_URL = "https://api.atmosud.org/observations";
@@ -94,6 +101,10 @@ export class AtmoRefService extends BaseDataService {
       const devices: MeasurementDevice[] = [];
 
       for (const station of filteredStations) {
+        if (!hasValidCoordinates(station)) {
+          continue;
+        }
+
         const measure = measuresMap.get(station.id_station);
 
         if (measure) {
@@ -503,6 +514,10 @@ export class AtmoRefService extends BaseDataService {
           );
           temporalData.push(...chunkData);
         } catch (error) {
+          // 404 AtmoSud = créneau sans mesures → série vide, pas une panne
+          if (isHttpNotFound(error)) {
+            continue;
+          }
           console.warn(
             `Erreur lors de la récupération des données pour la période ${chunkStart.toISOString()} - ${chunkEnd.toISOString()}:`,
             error
@@ -595,7 +610,10 @@ export class AtmoRefService extends BaseDataService {
     )}&temporalite=${temporalite}&metadata=false&only_validate_values=true&format=json&download=false`;
 
     try {
-      const response = await this.makeRequest(url);
+      // 404 = aucune mesure pour la fenêtre (créneau pas encore publié)
+      const response = await this.makeRequest(url, {
+        emptyOnHttpStatuses: [404],
+      });
 
       // L'API AtmoRef retourne un objet avec une propriété 'mesures'
       if (!response || !response.mesures || !Array.isArray(response.mesures)) {
@@ -630,6 +648,10 @@ export class AtmoRefService extends BaseDataService {
             console.warn(
               `Station ${measure.id_station} non trouvée dans la map des stations`
             );
+            return;
+          }
+
+          if (!hasValidCoordinates(station)) {
             return;
           }
 
@@ -684,6 +706,9 @@ export class AtmoRefService extends BaseDataService {
 
       return temporalDataPoints;
     } catch (error) {
+      if (isHttpNotFound(error)) {
+        return [];
+      }
       console.error(
         "Erreur lors de la récupération des données temporelles:",
         error

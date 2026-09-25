@@ -131,5 +131,145 @@ describe("AtmoRefService", () => {
       qualityLevel: "default",
     });
   });
+
+  it("omet les stations sans coordonnées valides (live)", async () => {
+    const stationsResponse = {
+      stations: [
+        buildStation({ latitude: null, longitude: null }),
+        buildStation({
+          id_station: "FR002",
+          nom_station: "Station Nice",
+          latitude: 43.7102,
+          longitude: 7.262,
+        }),
+      ],
+    };
+    const measuresResponse = {
+      mesures: [
+        buildMeasure(),
+        buildMeasure({
+          id_station: "FR002",
+          nom_station: "Station Nice",
+          valeur: 8,
+        }),
+      ],
+    };
+
+    vi.spyOn(service as any, "makeRequest")
+      .mockResolvedValueOnce(stationsResponse)
+      .mockResolvedValueOnce(measuresResponse);
+
+    const result = await service.fetchData(baseParams);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      id: "FR002",
+      latitude: 43.7102,
+      longitude: 7.262,
+    });
+  });
+
+  it("traite un 404 de /stations/mesures comme une série temporelle vide", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(
+      async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/stations/mesures?")) {
+          return new Response(JSON.stringify({ detail: "NOT FOUND" }), {
+            status: 404,
+            statusText: "NOT FOUND",
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        if (url.includes("/stations?")) {
+          return new Response(JSON.stringify({ stations: [buildStation()] }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        return new Response("unexpected", { status: 500 });
+      }
+    );
+
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
+    const result = await service.fetchTemporalData({
+      pollutant: "pm25",
+      timeStep: "heure",
+      startDate: "2026-09-24T12:00:00.000Z",
+      endDate: "2026-09-24T12:59:59.999Z",
+    });
+
+    expect(result).toEqual([]);
+    expect(
+      consoleErrorSpy.mock.calls.some((args) =>
+        String(args[0]).includes("atmoRef")
+      )
+    ).toBe(false);
+
+    fetchSpy.mockRestore();
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("omet les stations sans coordonnées dans le snapshot temporel", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(
+      async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/stations/mesures?")) {
+          return new Response(
+            JSON.stringify({
+              mesures: [
+                buildMeasure({
+                  id_station: "FR_BAD",
+                  valeur: 15,
+                }),
+                buildMeasure({
+                  id_station: "FR001",
+                  valeur: 12.5,
+                }),
+              ],
+            }),
+            {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+        }
+        if (url.includes("/stations?")) {
+          return new Response(
+            JSON.stringify({
+              stations: [
+                buildStation({
+                  id_station: "FR_BAD",
+                  latitude: null,
+                  longitude: null,
+                }),
+                buildStation(),
+              ],
+            }),
+            {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+        }
+        return new Response("unexpected", { status: 500 });
+      }
+    );
+
+    const result = await service.fetchTemporalData({
+      pollutant: "pm25",
+      timeStep: "heure",
+      startDate: "2026-09-24T11:00:00.000Z",
+      endDate: "2026-09-24T11:59:59.999Z",
+    });
+
+    expect(result).toHaveLength(1);
+    expect(result[0].devices).toHaveLength(1);
+    expect(result[0].devices[0].id).toBe("FR001");
+
+    fetchSpy.mockRestore();
+  });
 });
 

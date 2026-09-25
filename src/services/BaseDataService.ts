@@ -43,10 +43,11 @@ export abstract class BaseDataService implements DataService {
 
   protected async makeRequest(
     url: string,
-    options?: RequestInit
+    options?: RequestInit & { emptyOnHttpStatuses?: number[] }
   ): Promise<any> {
     try {
-      const method = options?.method || "GET";
+      const { emptyOnHttpStatuses, ...fetchInit } = options ?? {};
+      const method = fetchInit.method || "GET";
       const defaultOptions: RequestInit = {
         method,
         headers: {
@@ -56,20 +57,24 @@ export abstract class BaseDataService implements DataService {
         },
         mode: "cors",
         credentials: "omit",
-        ...options,
+        ...fetchInit,
       };
 
       // Fusionner les en-têtes
-      if (options?.headers) {
+      if (fetchInit.headers) {
         defaultOptions.headers = {
           ...defaultOptions.headers,
-          ...options.headers,
+          ...fetchInit.headers,
         };
       }
 
       const response = await fetch(url, defaultOptions);
 
       if (!response.ok) {
+        // Ex. AtmoSud /stations/mesures → 404 quand le créneau n’a pas encore de mesures
+        if (emptyOnHttpStatuses?.includes(response.status)) {
+          return null;
+        }
         throw new Error(
           `HTTP error! status: ${response.status} - ${response.statusText}`
         );
