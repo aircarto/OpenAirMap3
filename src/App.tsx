@@ -28,7 +28,7 @@ import { useAirQualityData } from "./hooks/useAirQualityData";
 import { useMapInstant } from "./hooks/useMapInstant";
 import { useInstantSnapshot } from "./hooks/useInstantSnapshot";
 import { useDomainConfig } from "./hooks/useDomainConfig";
-import { MAX_MOBILE_AIR_SENSORS } from "./constants/mobileAir";
+import { MAX_MOBILE_AIR_SENSORS, buildMobileAirLiveClickPeriod, MOBILEAIR_LIVE_SOURCE } from "./constants/mobileAir";
 import {
   formatMobileAirPeriodRange,
   getMobileAirMapPeriod,
@@ -196,6 +196,20 @@ const AppContent: React.FC = () => {
     useState<string[]>([]);
   const [mobileAirPartialRefetchToken, setMobileAirPartialRefetchToken] =
     useState(0);
+  /** Live Scan MobileAir — OFF par défaut jusqu’à action user. */
+  const [mobileAirLiveEnabled, setMobileAirLiveEnabled] = useState(false);
+  /** Session à afficher en priorité après un clic live (sensorId → sessionId). */
+  const [preferredMobileAirSessions, setPreferredMobileAirSessions] = useState<
+    Record<string, number>
+  >({});
+  /** Feedback live dans la pile de notices carte (même style que les autres). */
+  const [mobileAirLiveNotice, setMobileAirLiveNotice] = useState<{
+    id: string;
+    tone: "info" | "warn" | "neutral";
+    message: string;
+    detail?: string;
+    busy?: boolean;
+  } | null>(null);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
 
   // États pour gérer SignalAir et MobileAir indépendamment du système de sources
@@ -249,6 +263,7 @@ const AppContent: React.FC = () => {
     setMobileAirSensorPeriods({});
     setMobileAirSensorVisibility({});
     setMobileAirPartialRefetchSensors([]);
+    setPreferredMobileAirSessions({});
     setIsMobileAirEnabled(false);
     setIsMobileAirVisible(false);
   }, [defaultMobileAirPeriod]);
@@ -263,10 +278,11 @@ const AppContent: React.FC = () => {
     };
     if (!mobilityToastShownRef.current) {
       mobilityToastShownRef.current = true;
-      addToast({
-        title: t("toast.mobilityModeTitle"),
-        description: t("toast.mobilityModeDescription"),
-        variant: "info",
+      setMobileAirLiveNotice({
+        id: "mobility-mode",
+        tone: "info",
+        message: t("toast.mobilityModeTitle"),
+        detail: t("toast.mobilityModeDescription"),
       });
     }
   }, [
@@ -274,7 +290,6 @@ const AppContent: React.FC = () => {
     isSignalAirEnabled,
     signalAirSelectedTypes,
     isSignalAirVisible,
-    addToast,
     t,
   ]);
 
@@ -282,6 +297,9 @@ const AppContent: React.FC = () => {
     const snapshot = mobilitySnapshotRef.current;
     mobilitySnapshotRef.current = null;
     mobilityToastShownRef.current = false;
+    setMobileAirLiveNotice((prev) =>
+      prev?.id === "mobility-mode" ? null : prev
+    );
     if (!snapshot) return;
     setSelectedSources(snapshot.selectedSources);
     setIsSignalAirEnabled(snapshot.isSignalAirEnabled);
@@ -338,6 +356,10 @@ const AppContent: React.FC = () => {
 
   const handleTimeStepChange = useCallback((timeStep: string) => {
     setSelectedTimeStep(timeStep);
+    if (timeStep !== "instantane") {
+      setMobileAirLiveEnabled(false);
+      setMobileAirLiveNotice(null);
+    }
     trackFeatureUsage("time_step_change", { timeStep });
   }, []);
 
@@ -368,9 +390,14 @@ const AppContent: React.FC = () => {
   const handleMobileAirSensorsSelected = (
     sensorIds: string[],
     period: { startDate: string; endDate: string },
+    preferredSessions?: Record<string, number>,
   ) => {
     const limited = sensorIds.slice(0, MAX_MOBILE_AIR_SENSORS);
     if (limited.length === 0) return;
+    // Entrée mobilité : couper le live Scan
+    setMobileAirLiveEnabled(false);
+    setMobileAirLiveNotice(null);
+    setPreferredMobileAirSessions(preferredSessions ?? {});
     captureMobilitySnapshotIfNeeded();
     const visibility: Record<string, boolean> = {};
     const periods: Record<string, { startDate: string; endDate: string }> = {};
@@ -389,6 +416,57 @@ const AppContent: React.FC = () => {
       sensorCount: limited.length,
       startDate: period.startDate,
       endDate: period.endDate,
+    });
+  };
+
+  const handleMobileAirLiveEnabledChange = useCallback(
+    (enabled: boolean) => {
+      if (enabled && selectedTimeStep !== "instantane") {
+        setMobileAirLiveNotice({
+          id: "mobileair-live-scan-only",
+          tone: "warn",
+          message: t("panels.mobileAirSelection.liveToggle"),
+          detail: t("panels.mobileAirSelection.liveScanOnlyHint"),
+        });
+        return;
+      }
+      if (enabled && selectedMobileAirSensors.length > 0) {
+        setMobileAirLiveNotice({
+          id: "mobileair-live-mobility",
+          tone: "warn",
+          message: t("panels.mobileAirSelection.liveToggle"),
+          detail: t("panels.mobileAirSelection.liveMobilityHint"),
+        });
+        return;
+      }
+      setMobileAirLiveEnabled(enabled);
+      if (enabled) {
+        setMobileAirLiveNotice({
+          id: "mobileair-live-loading",
+          tone: "info",
+          busy: true,
+          message: t("panels.mobileAirSelection.liveLoading"),
+        });
+      } else {
+        setMobileAirLiveNotice(null);
+      }
+      trackFeatureUsage("mobileair_live_toggle", { enabled });
+    },
+    [selectedTimeStep, selectedMobileAirSensors.length, t],
+  );
+
+  /** Clic marqueur live → −24h + session du point, coupe le live. */
+  const handleMobileAirLiveClick = (payload: {
+    sensorId: string;
+    sessionId: number;
+  }) => {
+    const period = buildMobileAirLiveClickPeriod();
+    handleMobileAirSensorsSelected([payload.sensorId], period, {
+      [payload.sensorId]: payload.sessionId,
+    });
+    trackFeatureUsage("mobileair_live_click", {
+      sensorId: payload.sensorId,
+      sessionId: String(payload.sessionId),
     });
   };
 
@@ -932,6 +1010,7 @@ const AppContent: React.FC = () => {
     lastRefresh,
     mobileAirSensorStatus,
     isMobileAirLoading,
+    mobileAirLiveCount,
   } = useAirQualityData({
     selectedPollutant,
     selectedSources: isMobileAirMobilityMode ? [] : selectedSources,
@@ -944,7 +1023,52 @@ const AppContent: React.FC = () => {
     mobileAirPartialRefetchToken,
     signalAirOptions,
     autoRefreshEnabled: autoRefreshEnabled && !isExploration && !isMobileAirMobilityMode,
+    mobileAirLiveEnabled:
+      mobileAirLiveEnabled &&
+      !isMobileAirMobilityMode &&
+      selectedTimeStep === "instantane",
   });
+
+  const wasLoadingLiveRef = useRef(false);
+  useEffect(() => {
+    const isLoadingLive = loadingSources.includes(MOBILEAIR_LIVE_SOURCE);
+    if (isLoadingLive) {
+      wasLoadingLiveRef.current = true;
+      setMobileAirLiveNotice({
+        id: "mobileair-live-loading",
+        tone: "info",
+        busy: true,
+        message: t("panels.mobileAirSelection.liveLoading"),
+      });
+      return;
+    }
+    if (!wasLoadingLiveRef.current) return;
+    wasLoadingLiveRef.current = false;
+    if (!mobileAirLiveEnabled) {
+      setMobileAirLiveNotice(null);
+      return;
+    }
+    if (mobileAirLiveCount > 0) {
+      setMobileAirLiveNotice({
+        id: "mobileair-live-ready",
+        tone: "info",
+        message: t("panels.mobileAirSelection.liveReady", {
+          count: mobileAirLiveCount,
+        }),
+      });
+    } else {
+      setMobileAirLiveNotice({
+        id: "mobileair-live-empty",
+        tone: "neutral",
+        message: t("panels.mobileAirSelection.liveEmpty"),
+      });
+    }
+  }, [
+    loadingSources,
+    mobileAirLiveEnabled,
+    mobileAirLiveCount,
+    t,
+  ]);
 
   const {
     devices: snapshotDevices,
@@ -1444,6 +1568,9 @@ const AppContent: React.FC = () => {
       signalAirReportsCount,
       isMobileAirMobilityMode,
       onExitMobilityModeViaSignalAir: handleExitMobilityModeViaSignalAir,
+      mobileAirLiveEnabled,
+      onMobileAirLiveEnabledChange: handleMobileAirLiveEnabledChange,
+      selectedTimeStep,
     }),
     [
       isSignalAirEnabled,
@@ -1472,6 +1599,9 @@ const AppContent: React.FC = () => {
       signalAirReportsCount,
       isMobileAirMobilityMode,
       handleExitMobilityModeViaSignalAir,
+      mobileAirLiveEnabled,
+      handleMobileAirLiveEnabledChange,
+      selectedTimeStep,
     ],
   );
 
@@ -1521,6 +1651,17 @@ const AppContent: React.FC = () => {
           tone: "error" as const,
           message: `${t("common.error")} : ${mapDataError}`,
         },
+        mobileAirLiveNotice && {
+          id: mobileAirLiveNotice.id,
+          tone: mobileAirLiveNotice.tone,
+          busy: mobileAirLiveNotice.busy,
+          message: mobileAirLiveNotice.message,
+          detail: mobileAirLiveNotice.detail,
+          onDismiss: mobileAirLiveNotice.busy
+            ? undefined
+            : () => setMobileAirLiveNotice(null),
+          dismissLabel: t("common.close"),
+        },
       ]),
     [
       shouldShowAtmoMicroOutageBanner,
@@ -1530,6 +1671,7 @@ const AppContent: React.FC = () => {
       loadingSources,
       azurUnavailable,
       mapDataError,
+      mobileAirLiveNotice,
       t,
     ],
   );
@@ -1612,6 +1754,8 @@ const AppContent: React.FC = () => {
             }
             onSignalAirSourceDeselected={handleSignalAirSourceDeselected}
             onMobileAirSensorSelected={handleMobileAirSensorsSelected}
+            onMobileAirLiveClick={handleMobileAirLiveClick}
+            preferredMobileAirSessions={preferredMobileAirSessions}
             onMobileAirSourceDeselected={handleMobileAirSourceDeselected}
             isHistoricalModeActive={isExploration}
             isSignalAirEnabled={isSignalAirEnabled}

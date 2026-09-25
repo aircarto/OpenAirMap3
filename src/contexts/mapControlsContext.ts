@@ -162,6 +162,12 @@ export interface MapControlsCommunitySources {
    */
   isMobileAirMobilityMode: boolean;
   onExitMobilityModeViaSignalAir: () => void;
+
+  /** Live MobileAir (Scan) — toggle OFF par défaut. */
+  mobileAirLiveEnabled: boolean;
+  onMobileAirLiveEnabledChange: (enabled: boolean) => void;
+  /** Pas de temps courant (pour griser le live hors Scan). */
+  selectedTimeStep: string;
 }
 
 export interface MapControlsUi {

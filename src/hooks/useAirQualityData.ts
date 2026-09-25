@@ -11,6 +11,8 @@ import type {
   MobileAirPeriod,
   MobileAirSensorStatus,
 } from "../constants/mobileAir";
+import { MOBILEAIR_LIVE_SOURCE } from "../constants/mobileAir";
+import { MobileAirService } from "../services/MobileAirService";
 
 interface UseAirQualityDataProps {
   selectedPollutant: string;
@@ -35,6 +37,11 @@ interface UseAirQualityDataProps {
     isSourceSelected?: boolean;
   };
   autoRefreshEnabled?: boolean;
+  /**
+   * Live MobileAir (Scan uniquement). Désactivé en mode mobilité.
+   * Défaut OFF — l’utilisateur active le toggle dans le disclosure.
+   */
+  mobileAirLiveEnabled?: boolean;
 }
 
 // Correction : utiliser le code réel du pas de temps
@@ -79,6 +86,7 @@ export const useAirQualityData = ({
   mobileAirPartialRefetchToken = 0,
   signalAirOptions,
   autoRefreshEnabled = true,
+  mobileAirLiveEnabled = false,
 }: UseAirQualityDataProps) => {
   const [devices, setDevices] = useState<MeasurementDevice[]>([]);
   const [reports, setReports] = useState<SignalAirReport[]>([]);
@@ -102,6 +110,10 @@ export const useAirQualityData = ({
   const fetchDataRef = useRef<(() => Promise<void>) | undefined>(undefined);
 
   const hasMobileAirSensors = selectedMobileAirSensors.length > 0;
+  const shouldFetchLive =
+    mobileAirLiveEnabled &&
+    selectedTimeStep === "instantane" &&
+    !hasMobileAirSensors;
 
   const fetchData = useCallback(async () => {
     const now = new Date();
@@ -130,17 +142,20 @@ export const useAirQualityData = ({
         !!signalAirOptions &&
         signalAirOptions.fetchToken > signalAirLastTriggerRef.current;
 
-      if (filteredSources.length === 0 && !shouldFetchSignalAir && !hasMobileAirSensors) {
-        // Ne pas réinitialiser si on charge SignalAir ou MobileAir séparément
+      // Live-only (ou aucune source classique) : ne pas sortir avant le fetch live
+      if (
+        filteredSources.length === 0 &&
+        !shouldFetchSignalAir &&
+        !hasMobileAirSensors &&
+        !shouldFetchLive
+      ) {
         if (!isSignalAirSourceSelected && !hasMobileAirSensors) {
           setDevices([]);
           setReports([]);
         }
         setLoading(false);
         setLoadingSources([]);
-        if (filteredSources.length === 0 && !isSignalAirSourceSelected && !hasMobileAirSensors) {
-          return;
-        }
+        return;
       }
 
       if (!isSignalAirSourceSelected) {
@@ -217,6 +232,9 @@ export const useAirQualityData = ({
       if (hasMobileAirSensors) {
         allSourcesToLoad.push("mobileair");
       }
+      if (shouldFetchLive) {
+        allSourcesToLoad.push(MOBILEAIR_LIVE_SOURCE);
+      }
 
       if (allSourcesToLoad.length === 0) {
         setLoading(false);
@@ -245,18 +263,16 @@ export const useAirQualityData = ({
       setDevices((prevDevices) => {
         const filteredDevices = prevDevices.filter((device) => {
           // Garder les devices des sources actuellement sélectionnées
-          return mappedSources.includes(device.source);
+          if (mappedSources.includes(device.source)) return true;
+          // Préserver les marqueurs live MobileAir pendant le refresh
+          if (
+            shouldFetchLive &&
+            device.source === MOBILEAIR_LIVE_SOURCE
+          ) {
+            return true;
+          }
+          return false;
         });
-
-        // console.log("🧹 [HOOK] Nettoyage des devices:", {
-        //   totalDevices: prevDevices.length,
-        //   filteredDevices: filteredDevices.length,
-        //   selectedSources: selectedSources,
-        //   mappedSources: mappedSources,
-        //   removedDevices: prevDevices
-        //     .filter((d) => !mappedSources.includes(d.source))
-        //     .map((d) => ({ id: d.id, source: d.source })),
-        // });
 
         return filteredDevices;
       });
@@ -499,6 +515,37 @@ export const useAirQualityData = ({
           );
         }
       }
+
+      // Live MobileAir (Scan) — indépendant du mode mobilité / capteurs chargés
+      if (shouldFetchLive) {
+        try {
+          const mobileAirService = DataServiceFactory.getService(
+            "mobileair"
+          ) as MobileAirService;
+          if (mobileAirService) {
+            const liveSensors = await mobileAirService.fetchLiveSensors("5m");
+            const liveDevices = mobileAirService.createLiveDevices(
+              liveSensors,
+              selectedPollutant
+            );
+            setDevices((prev) => {
+              const withoutLive = prev.filter(
+                (d) => d.source !== MOBILEAIR_LIVE_SOURCE
+              );
+              return [...withoutLive, ...liveDevices];
+            });
+          }
+        } catch (err) {
+          console.error(
+            "Erreur lors de la récupération du live MobileAir:",
+            err
+          );
+        }
+      } else {
+        setDevices((prev) =>
+          prev.filter((d) => d.source !== MOBILEAIR_LIVE_SOURCE)
+        );
+      }
     } catch (err) {
       setError(
         err instanceof Error
@@ -507,6 +554,9 @@ export const useAirQualityData = ({
       );
     } finally {
       setLoading(false);
+      setLoadingSources((prev) =>
+        prev.filter((source) => source !== MOBILEAIR_LIVE_SOURCE)
+      );
     }
   }, [
     selectedPollutant,
@@ -517,9 +567,11 @@ export const useAirQualityData = ({
     mobileAirSensorPeriods,
     selectedMobileAirSensors,
     hasMobileAirSensors,
+    shouldFetchLive,
     mobileAirPartialRefetchSensors,
     mobileAirPartialRefetchToken,
     signalAirOptions,
+    mobileAirLiveEnabled,
   ]);
 
   // Mettre à jour la référence quand fetchData change
@@ -535,8 +587,16 @@ export const useAirQualityData = ({
       intervalRef.current = null;
     }
 
-    // Ne pas démarrer l'auto-refresh si désactivé ou aucune source sélectionnée
-    if (!autoRefreshEnabled || selectedSources.length === 0) {
+    const liveOnlyRefresh =
+      mobileAirLiveEnabled &&
+      selectedTimeStep === "instantane" &&
+      !hasMobileAirSensors;
+
+    // Ne pas démarrer l'auto-refresh si désactivé et aucune source / live
+    if (
+      !autoRefreshEnabled ||
+      (selectedSources.length === 0 && !liveOnlyRefresh)
+    ) {
       return;
     }
 
@@ -558,7 +618,14 @@ export const useAirQualityData = ({
         intervalRef.current = null;
       }
     };
-  }, [selectedTimeStep, selectedSources, autoRefreshEnabled, fetchData]);
+  }, [
+    selectedTimeStep,
+    selectedSources,
+    autoRefreshEnabled,
+    fetchData,
+    mobileAirLiveEnabled,
+    hasMobileAirSensors,
+  ]);
 
   // Effet pour le chargement initial
   // Utiliser un ref pour éviter les appels multiples causés par la recréation de fetchData
@@ -574,6 +641,7 @@ export const useAirQualityData = ({
       mobileAirPartialRefetchToken,
       signalAirFetchToken: signalAirOptions?.fetchToken,
       signalAirIsSelected: signalAirOptions?.isSourceSelected,
+      mobileAirLiveEnabled,
     });
 
     // Si c'est le premier montage ou si les paramètres ont vraiment changé
@@ -599,6 +667,7 @@ export const useAirQualityData = ({
     mobileAirPartialRefetchToken,
     signalAirOptions?.fetchToken,
     signalAirOptions?.isSourceSelected,
+    mobileAirLiveEnabled,
     // Note: on utilise les dépendances réelles au lieu de fetchData
     // pour éviter les appels multiples quand fetchData est recréé avec les mêmes paramètres
   ]);
@@ -606,6 +675,10 @@ export const useAirQualityData = ({
   const isMobileAirLoading = selectedMobileAirSensors.some(
     (id) => mobileAirSensorStatus[id] === "loading"
   ) || loadingSources.includes("mobileair");
+
+  const mobileAirLiveCount = devices.filter(
+    (d) => d.source === MOBILEAIR_LIVE_SOURCE
+  ).length;
 
   return {
     devices,
@@ -617,5 +690,6 @@ export const useAirQualityData = ({
     lastRefresh,
     mobileAirSensorStatus,
     isMobileAirLoading,
+    mobileAirLiveCount,
   };
 };

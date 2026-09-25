@@ -202,6 +202,11 @@ export interface AtmoRefStation {
   en_service: boolean;
   date_debut_mesure: string;
   date_fin_mesure: string | null;
+  /**
+   * Identifiant site microspot (`location_id`) quand la station héberge
+   * des microcapteurs en co-location QAQC. Absent / null si non renseigné.
+   */
+  id_site?: string | number | null;
   variables: Record<
     string,
     {
@@ -710,16 +715,23 @@ export interface MobileAirMetadataResponse {
   sensors: MobileAirSensor[];
 }
 
+/** Mode de mobilité MobileAir (app Cyan Sensor). 4 = mesure fixe. */
+export type MobileAirMovingMode = 0 | 1 | 2 | 3 | 4;
+
 export interface MobileAirDataPoint {
   time: string;
   sensorId: string;
   sessionId: number;
-  sat: number;
+  sat: number | null;
   PM1: number;
   PM25: number;
   PM10: number;
+  TEMP?: number | null;
+  HUM?: number | null;
   lat: number;
   lon: number;
+  acc?: number | null;
+  moving?: MobileAirMovingMode | null;
 }
 
 export interface MobileAirDataResponse {
@@ -738,6 +750,66 @@ export interface MobileAirRoute {
   startTime: string;
   endTime: string;
   duration: number; // en minutes
+  /** Mode du relevé (consensus / 1er point). 4 = mesure fixe. */
+  moving?: MobileAirMovingMode | null;
+}
+
+/** Types de signalement get_context */
+export type MobileAirContextType =
+  | 'fire'
+  | 'industrial'
+  | 'traffic'
+  | 'neighbourhood'
+  | 'works'
+  | 'cleaning'
+  | 'cooking'
+  | 'meeting'
+  | 'fault'
+  | 'other';
+
+export interface MobileAirContextPhoto {
+  url: string;
+  width?: number;
+  height?: number;
+  bytes?: number;
+}
+
+export interface MobileAirContextRaw {
+  id: number | string;
+  datetime_start: string;
+  datetime_stop: string;
+  context_type: MobileAirContextType | string;
+  user?: string;
+  comments?: string;
+  resolved?: boolean;
+  photos?: MobileAirContextPhoto[];
+}
+
+/** Signalement apparié à un point dataMobileAir (écart ≤ 2 min). */
+export interface MobileAirMatchedReport {
+  id: string;
+  sensorId: string;
+  sessionId: number;
+  contextType: MobileAirContextType | string;
+  comments: string;
+  datetimeStart: string;
+  datetimeStop: string;
+  photos: MobileAirContextPhoto[];
+  matchedPoint: MobileAirDataPoint;
+  timeDeltaMs: number;
+}
+
+/** Capteur live (liveMobileAir) — dernière mesure sans trajet complet. */
+export interface MobileAirLiveSensor {
+  id: number;
+  sensorId: string;
+  sensorToken: string;
+  lastSeen: string;
+  lastSeenSec: number;
+  fixed: boolean | null;
+  sessionId: number;
+  moving?: MobileAirMovingMode | null;
+  points: MobileAirDataPoint[];
 }
 
 // Mapping des polluants MobileAir vers nos codes

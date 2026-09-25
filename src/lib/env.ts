@@ -76,6 +76,9 @@ export const env = {
   get useMicrospotApi() {
     return process.env.NEXT_PUBLIC_USE_MICROSPOT_API;
   },
+  get hideAtmoMicroStationQaqc() {
+    return process.env.NEXT_PUBLIC_HIDE_ATMOMICRO_STATION_QAQC;
+  },
   get historicalModeLogs() {
     return process.env.NEXT_PUBLIC_HISTORICAL_MODE_LOGS;
   },

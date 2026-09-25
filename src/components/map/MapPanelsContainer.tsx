@@ -236,6 +236,7 @@ const MapPanelsContainer: React.FC<MapPanelsContainerProps> = ({
         onSensorPeriodChange={onMobileAirSensorPeriodChange}
         onToggleSessionOnMap={mobileAir.toggleSessionOnMap}
         onSetSensorSessionsVisible={mobileAir.setSensorSessionsVisible}
+        matchedReports={mobileAir.matchedReports ?? []}
       />
     </>
   );

@@ -10,6 +10,12 @@ import {
 } from "../types";
 import { getAirQualityLevel } from "../utils";
 import { pollutants } from "../constants/pollutants";
+import { featureFlags } from "../config/featureFlags";
+import {
+  getCachedQaqcRefStations,
+  getLegacySiteQaqcExclusionReason,
+  QaqcRefStation,
+} from "../utils/atmoMicroStationQaqc";
 
 export class AtmoMicroMeasuresUnavailableError extends Error {
   constructor(message: string = "ATMOMICRO_MEASURES_UNAVAILABLE") {
@@ -92,6 +98,16 @@ export class AtmoMicroService extends BaseDataService {
     super("atmoMicro");
   }
 
+  /**
+   * Stations AtmoRef pour le filtre QAQC, ou [] si le flag est off / échec réseau.
+   */
+  private async getQaqcRefStationsIfEnabled(): Promise<QaqcRefStation[]> {
+    if (!featureFlags.hideAtmoMicroStationQaqc) {
+      return [];
+    }
+    return getCachedQaqcRefStations((url) => this.makeRequest(url));
+  }
+
   // Expose l'état incident pour permettre à l'UI d'afficher un bandeau,
   // tout en conservant les marqueurs inactifs issus de capteurs/sites.
   isMeasuresUnavailableIncident(): boolean {
@@ -125,10 +141,11 @@ export class AtmoMicroService extends BaseDataService {
       }
 
       this.lastMeasuresUnavailable = false;
-      // Faire les deux appels API en parallèle.
+      // Faire les appels API en parallèle.
       // En cas d'incident mesures/dernieres (204/vide), on continue avec [] pour
       // garder les capteurs grisés (inactifs) issus de capteurs/sites.
-      const [sitesResult, measuresResponse] = await Promise.all([
+      // Les stations AtmoRef ne sont chargées que si le flag QAQC est actif.
+      const [sitesResult, measuresResponse, qaqcStations] = await Promise.all([
         this.fetchSites(atmoMicroVariable),
         this.fetchMeasures(
           atmoMicroVariable,
@@ -146,8 +163,10 @@ export class AtmoMicroService extends BaseDataService {
           }
           return [];
         }),
+        this.getQaqcRefStationsIfEnabled(),
       ]);
       const { filteredSites: sitesResponse, excludedSites } = sitesResult;
+      const filterQaqc = featureFlags.hideAtmoMicroStationQaqc;
 
 
       // Log des sites exclus de l'affichage et la raison d'exclusion
@@ -228,6 +247,24 @@ export class AtmoMicroService extends BaseDataService {
             continue;
           }
 
+          if (filterQaqc) {
+            const qaqcReason = getLegacySiteQaqcExclusionReason({
+              lat: measure.lat,
+              lon: measure.lon,
+              locationName: site.nom_site,
+              codeStationCommun: site.code_station_commun,
+              stations: qaqcStations,
+            });
+            if (qaqcReason) {
+              postFilterExcludedSites.push({
+                id_site: measure.id_site,
+                nom_site: site.nom_site,
+                reason: `colocation station ref QAQC (${qaqcReason})`,
+              });
+              continue;
+            }
+          }
+
           devices.push({
             id: measure.id_site.toString(),
             name: site.nom_site,
@@ -276,6 +313,24 @@ export class AtmoMicroService extends BaseDataService {
               reason: `coordonnees invalides dans capteurs/sites (lat=${site.lat}, lon=${site.lon})`,
             });
             continue;
+          }
+
+          if (filterQaqc) {
+            const qaqcReason = getLegacySiteQaqcExclusionReason({
+              lat: site.lat,
+              lon: site.lon,
+              locationName: site.nom_site,
+              codeStationCommun: site.code_station_commun,
+              stations: qaqcStations,
+            });
+            if (qaqcReason) {
+              postFilterExcludedSites.push({
+                id_site: site.id_site,
+                nom_site: site.nom_site,
+                reason: `colocation station ref QAQC (${qaqcReason})`,
+              });
+              continue;
+            }
           }
 
           devices.push({
@@ -813,6 +868,8 @@ export class AtmoMicroService extends BaseDataService {
     // Diviser la période en tranches pour éviter les timeouts
     const temporalDataPoints: TemporalDataPoint[] = [];
     const chunkSize = 30; // 30 jours par tranche (plus efficace que 7 jours)
+    const filterQaqc = featureFlags.hideAtmoMicroStationQaqc;
+    const qaqcStations = await this.getQaqcRefStationsIfEnabled();
 
     // CORRECTION : Convertir les dates locales en UTC correctement
     const startDateISO = this.formatDateForHistoricalMode(startDate, false);
@@ -903,60 +960,74 @@ export class AtmoMicroService extends BaseDataService {
 
             // Ne créer le device que si la valeur est valide
             if (
-              displayValue !== null &&
-              displayValue !== undefined &&
-              !isNaN(displayValue) &&
-              typeof displayValue === "number"
+              displayValue === null ||
+              displayValue === undefined ||
+              isNaN(displayValue) ||
+              typeof displayValue !== "number"
             ) {
-              totalValue += displayValue;
-              validValues++;
+              return;
+            }
 
-              const pollutantConfig = pollutants[pollutant];
-              if (!pollutantConfig) {
-                return; // Ignorer si le polluant n'est pas configuré
-              }
+            // Même garde que le chemin live (mesures/dernieres) : sans lat/lon
+            // valides Leaflet plante (`latlng is null`) au seek TimeBar.
+            if (!this.isValidCoordinate(measure.lat, measure.lon)) {
+              return;
+            }
 
-              const qualityLevel = getAirQualityLevel(
-                displayValue,
-                pollutantConfig.thresholds
-              );
-
-              // Même garde que le chemin live (mesures/dernieres) : sans lat/lon
-              // valides Leaflet plante (`latlng is null`) au seek TimeBar.
-              if (!this.isValidCoordinate(measure.lat, measure.lon)) {
+            if (filterQaqc) {
+              const qaqcReason = getLegacySiteQaqcExclusionReason({
+                lat: measure.lat,
+                lon: measure.lon,
+                locationName: measure.nom_site,
+                stations: qaqcStations,
+              });
+              if (qaqcReason) {
                 return;
               }
-
-              // Compter les niveaux de qualité
-              qualityLevels[qualityLevel] =
-                (qualityLevels[qualityLevel] || 0) + 1;
-
-              devices.push({
-                id: measure.id_site.toString(),
-                name: measure.nom_site, // Nom du site directement dans la réponse
-                latitude: measure.lat, // Coordonnées directement dans la réponse
-                longitude: measure.lon, // Coordonnées directement dans la réponse
-                source: this.sourceCode,
-                pollutant: pollutant,
-                value: displayValue,
-                unit: measure.unite,
-                timestamp: measure.time,
-                status: "active",
-                qualityLevel,
-                address: `${measure.nom_site}`, // Adresse simplifiée
-                departmentId: "", // Pas disponible dans cette API
-                corrected_value: correctedValue,
-                raw_value: rawValue,
-                has_correction: hasCorrection,
-              } as MeasurementDevice & {
-                qualityLevel: string;
-                address: string;
-                departmentId: string;
-                corrected_value?: number;
-                raw_value?: number;
-                has_correction?: boolean;
-              });
             }
+
+            totalValue += displayValue;
+            validValues++;
+
+            const pollutantConfig = pollutants[pollutant];
+            if (!pollutantConfig) {
+              return; // Ignorer si le polluant n'est pas configuré
+            }
+
+            const qualityLevel = getAirQualityLevel(
+              displayValue,
+              pollutantConfig.thresholds
+            );
+
+            // Compter les niveaux de qualité
+            qualityLevels[qualityLevel] =
+              (qualityLevels[qualityLevel] || 0) + 1;
+
+            devices.push({
+              id: measure.id_site.toString(),
+              name: measure.nom_site, // Nom du site directement dans la réponse
+              latitude: measure.lat, // Coordonnées directement dans la réponse
+              longitude: measure.lon, // Coordonnées directement dans la réponse
+              source: this.sourceCode,
+              pollutant: pollutant,
+              value: displayValue,
+              unit: measure.unite,
+              timestamp: measure.time,
+              status: "active",
+              qualityLevel,
+              address: `${measure.nom_site}`, // Adresse simplifiée
+              departmentId: "", // Pas disponible dans cette API
+              corrected_value: correctedValue,
+              raw_value: rawValue,
+              has_correction: hasCorrection,
+            } as MeasurementDevice & {
+              qualityLevel: string;
+              address: string;
+              departmentId: string;
+              corrected_value?: number;
+              raw_value?: number;
+              has_correction?: boolean;
+            });
           });
 
           const averageValue = validValues > 0 ? totalValue / validValues : 0;

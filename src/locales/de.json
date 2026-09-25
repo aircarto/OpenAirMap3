@@ -376,7 +376,13 @@
       "selectionCounter": "{{count}} / {{max}} ausgewählt",
       "loadedHint": "{{count}}/{{max}}",
       "loadingSensors": "Routen werden geladen…",
-      "loadSensorsRoutes": "{{count}} Routen laden"
+      "loadSensorsRoutes": "{{count}} Routen laden",
+      "liveToggle": "Live (Scan)",
+      "liveScanOnlyHint": "MobileAir live is only available on the Scan time step.",
+      "liveMobilityHint": "Live is disabled in mobility measurement mode.",
+      "liveLoading": "Looking for live MobileAir sensors…",
+      "liveEmpty": "No geolocated live MobileAir right now (5 min window).",
+      "liveReady": "{{count}} live MobileAir on the map."
     },
     "mobileAirManage": {
       "panelTitle": "MobileAir-Routen",
@@ -432,7 +438,12 @@
       "maximum": "Maximum",
       "minimum": "Minimum",
       "durationMin": "{{count}} min",
-      "durationHrMin": "{{hours}}h {{minutes}}min"
+      "durationHrMin": "{{hours}}h {{minutes}}min",
+      "reportsTitle": "Reports ({{count}})",
+      "showPhoto": "Show photo",
+      "hidePhoto": "Hide photo",
+      "photoAlt": "Report photo",
+      "modeLabel": "Mode:"
     },
     "purpleAirSidePanel": {
       "sensorLabel": "PurpleAir-Sensor #{{id}}",
@@ -860,6 +871,28 @@
       "backToMap": "Zurück zur Karte",
       "ctaMap": "Karte öffnen",
       "ctaAbout": "Über"
+    }
+  },
+  "mobileAir": {
+    "moving": {
+      "walk": "Walking",
+      "bike": "Bike",
+      "car": "Car",
+      "transit": "Public transport",
+      "fixed": "Fixed measurement",
+      "unknown": "Unknown mode"
+    },
+    "contextType": {
+      "fire": "Fire",
+      "industrial": "Industrial",
+      "traffic": "Traffic",
+      "neighbourhood": "Neighbourhood",
+      "works": "Works",
+      "cleaning": "Cleaning",
+      "cooking": "Cooking",
+      "meeting": "Gathering",
+      "fault": "Fault",
+      "other": "Other"
     }
   }
 }

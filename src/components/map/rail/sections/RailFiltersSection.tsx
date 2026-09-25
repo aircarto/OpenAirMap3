@@ -104,6 +104,7 @@ export const RailFiltersSection: React.FC<RailFiltersSectionProps> = ({
         mobileAirSlot={({ close }) => (
           <MobileAirSourceDisclosure
             community={community}
+            selectedTimeStep={filters.selectedTimeStep}
             onLoadRoute={communitySources.onMobileAirLoadRoute}
             onLoaded={close}
           />

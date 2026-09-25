@@ -2,11 +2,13 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   MobileAirRoute,
   MobileAirDataPoint,
+  MobileAirMatchedReport,
   MeasurementDevice,
 } from "../../../types";
 import { DataServiceFactory } from "../../../services/DataServiceFactory";
 import { MobileAirService } from "../../../services/MobileAirService";
 import { mobileAirRouteKey, pickMostRecentMobileAirRoute } from "../../../constants/mobileAir";
+import { matchContextsToRoutes } from "../../../utils/mobileAirContextMatch";
 import L from "leaflet";
 
 interface UseMobileAirProps {
@@ -19,6 +21,11 @@ interface UseMobileAirProps {
   isEnabled?: boolean;
   /** Visibilité par capteur (masquer sans retirer les données). */
   sensorVisibility?: Record<string, boolean>;
+  /**
+   * Session à privilégier au seed (ex. sessionId du point live cliqué).
+   * Clé = sensorId, valeur = sessionId.
+   */
+  preferredSessionsBySensor?: Record<string, number>;
 }
 
 const mostRecentRoute = (
@@ -26,10 +33,11 @@ const mostRecentRoute = (
 ): MobileAirRoute | null => pickMostRecentMobileAirRoute(routes);
 
 /**
- * Clés de la session la plus récente pour chaque capteur (seed carte au chargement).
+ * Clés de session à afficher au chargement : préférée si connue, sinon la plus récente.
  */
-const seedMostRecentSessionKeys = (
-  routes: MobileAirRoute[]
+const seedSessionKeys = (
+  routes: MobileAirRoute[],
+  preferredSessionsBySensor: Record<string, number> = {}
 ): Set<string> => {
   const bySensor = new Map<string, MobileAirRoute[]>();
   for (const route of routes) {
@@ -38,10 +46,15 @@ const seedMostRecentSessionKeys = (
     bySensor.set(route.sensorId, list);
   }
   const keys = new Set<string>();
-  for (const sensorRoutes of bySensor.values()) {
-    const recent = mostRecentRoute(sensorRoutes);
-    if (recent) {
-      keys.add(mobileAirRouteKey(recent.sensorId, recent.sessionId));
+  for (const [sensorId, sensorRoutes] of bySensor) {
+    const preferredId = preferredSessionsBySensor[sensorId];
+    const preferred =
+      preferredId != null
+        ? sensorRoutes.find((r) => Number(r.sessionId) === Number(preferredId))
+        : null;
+    const chosen = preferred ?? mostRecentRoute(sensorRoutes);
+    if (chosen) {
+      keys.add(mobileAirRouteKey(chosen.sensorId, chosen.sessionId));
     }
   }
   return keys;
@@ -58,8 +71,12 @@ export const useMobileAir = ({
   onMobileAirSensorSelected,
   isEnabled = false,
   sensorVisibility = {},
+  preferredSessionsBySensor = {},
 }: UseMobileAirProps) => {
   const [mobileAirRoutes, setMobileAirRoutes] = useState<MobileAirRoute[]>([]);
+  const [matchedReports, setMatchedReports] = useState<MobileAirMatchedReport[]>(
+    []
+  );
   const [isMobileAirDetailPanelOpen, setIsMobileAirDetailPanelOpen] =
     useState(false);
   const [mobileAirDetailPanelSize, setMobileAirDetailPanelSize] = useState<
@@ -81,6 +98,8 @@ export const useMobileAir = ({
   const hasFittedBoundsRef = useRef(false);
   /** Capteurs pour lesquels on a déjà seedé une session visible. */
   const seededSensorIdsRef = useRef<Set<string>>(new Set());
+  const preferredSessionsRef = useRef(preferredSessionsBySensor);
+  preferredSessionsRef.current = preferredSessionsBySensor;
 
   // Extraire les routes des devices + seed / purge des clés visibles
   useEffect(() => {
@@ -128,17 +147,26 @@ export const useMobileAir = ({
       bySensor.set(route.sensorId, list);
     }
 
-    // Premier arrivée de données : forcer 1 session récente / capteur + focus global.
+    // Premier arrivée de données : forcer 1 session (préférée ou récente) / capteur + focus.
     if (justLoaded) {
-      const seeded = seedMostRecentSessionKeys(routes);
+      const preferred = preferredSessionsRef.current;
+      const seeded = seedSessionKeys(routes, preferred);
       setVisibleSessionKeys(seeded);
       for (const id of bySensor.keys()) {
         seededSensorIdsRef.current.add(id);
       }
-      const globalRecent = mostRecentRoute(routes);
-      if (globalRecent) {
-        setSelectedMobileAirRoute(globalRecent);
+      // Focus : session préférée du 1er capteur, sinon globale la plus récente
+      let focus: MobileAirRoute | null = null;
+      for (const [sensorId, sensorRoutes] of bySensor) {
+        const prefId = preferred[sensorId];
+        if (prefId != null) {
+          focus =
+            sensorRoutes.find((r) => Number(r.sessionId) === Number(prefId)) ??
+            null;
+          if (focus) break;
+        }
       }
+      setSelectedMobileAirRoute(focus ?? mostRecentRoute(routes));
       return;
     }
 
@@ -205,18 +233,33 @@ export const useMobileAir = ({
     });
   }, [mobileAirRoutes, visibleSessionKeys, sensorVisibility]);
 
-  // Focus graphique : sélection explicite, sinon session visible la plus récente
+  // Focus graphique : session sélectionnée seulement si encore cochée,
+  // sinon dernière session cochée (par date de fin), sinon rien.
   const focusRoute = useMemo(() => {
+    if (visibleRoutes.length === 0) return null;
+
     if (selectedMobileAirRoute) {
-      const stillThere = mobileAirRoutes.some(
+      const stillVisible = visibleRoutes.some(
         (r) =>
           String(r.sensorId) === String(selectedMobileAirRoute.sensorId) &&
           String(r.sessionId) === String(selectedMobileAirRoute.sessionId)
       );
-      if (stillThere) return selectedMobileAirRoute;
+      if (stillVisible) return selectedMobileAirRoute;
     }
-    return mostRecentRoute(visibleRoutes) ?? mostRecentRoute(mobileAirRoutes);
-  }, [selectedMobileAirRoute, mobileAirRoutes, visibleRoutes]);
+    return mostRecentRoute(visibleRoutes);
+  }, [selectedMobileAirRoute, visibleRoutes]);
+
+  // Si la session affichée est décochée : basculer sur la dernière cochée, sinon rien.
+  useEffect(() => {
+    if (!selectedMobileAirRoute) return;
+    const stillVisible = visibleRoutes.some(
+      (r) =>
+        String(r.sensorId) === String(selectedMobileAirRoute.sensorId) &&
+        String(r.sessionId) === String(selectedMobileAirRoute.sessionId)
+    );
+    if (stillVisible) return;
+    setSelectedMobileAirRoute(focusRoute);
+  }, [selectedMobileAirRoute, visibleRoutes, focusRoute]);
 
   const activeMobileAirRoute = focusRoute;
 
@@ -274,11 +317,65 @@ export const useMobileAir = ({
     setHoveredMobileAirPoint(null);
     setHighlightedMobileAirPoint(null);
     setMobileAirRoutes([]);
+    setMatchedReports([]);
     setUserClosedDetailPanel(false);
     setIsMobileAirDetailPanelOpen(false);
     prevMobileAirRoutesLengthRef.current = 0;
     hasFittedBoundsRef.current = false;
   }, [isEnabled]);
+
+  // Charger get_context pour les capteurs des routes chargées
+  useEffect(() => {
+    if (!isEnabled || mobileAirRoutes.length === 0) {
+      setMatchedReports([]);
+      return;
+    }
+
+    let cancelled = false;
+    const sensorIds = [...new Set(mobileAirRoutes.map((r) => r.sensorId))];
+
+    const loadContexts = async () => {
+      try {
+        const service = DataServiceFactory.getService(
+          "mobileair"
+        ) as MobileAirService;
+
+        // Enveloppe temporelle des sessions chargées
+        let minStart = Infinity;
+        let maxEnd = -Infinity;
+        for (const route of mobileAirRoutes) {
+          const s = Date.parse(route.startTime);
+          const e = Date.parse(route.endTime);
+          if (!Number.isNaN(s)) minStart = Math.min(minStart, s);
+          if (!Number.isNaN(e)) maxEnd = Math.max(maxEnd, e);
+        }
+        const period =
+          Number.isFinite(minStart) && Number.isFinite(maxEnd)
+            ? {
+                startDate: new Date(minStart).toISOString(),
+                endDate: new Date(maxEnd).toISOString(),
+              }
+            : undefined;
+
+        const allRaw = (
+          await Promise.all(
+            sensorIds.map((id) => service.fetchContext(id, period))
+          )
+        ).flat();
+
+        if (cancelled) return;
+        setMatchedReports(matchContextsToRoutes(allRaw, mobileAirRoutes));
+      } catch (error) {
+        console.error("Erreur get_context MobileAir:", error);
+        if (!cancelled) setMatchedReports([]);
+      }
+    };
+
+    void loadContexts();
+    return () => {
+      cancelled = true;
+    };
+  }, [isEnabled, mobileAirRoutes]);
 
   const handleMobileAirSensorsSelected = (
     sensorIds: string[],
@@ -423,6 +520,7 @@ export const useMobileAir = ({
   return {
     mobileAirRoutes,
     visibleRoutes,
+    matchedReports,
     isMobileAirDetailPanelOpen,
     mobileAirDetailPanelSize,
     selectedMobileAirRoute,

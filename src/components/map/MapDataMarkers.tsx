@@ -3,7 +3,11 @@ import L from "leaflet";
 import CustomSpiderfiedMarkers from "./CustomSpiderfiedMarkers";
 import MarkerWithTooltip from "./MarkerWithTooltip";
 import MobileAirRoutes from "./MobileAirRoutes";
+import MobileAirLiveMarkers, {
+  type MobileAirLiveDevice,
+} from "./MobileAirLiveMarkers";
 import CustomSpiderfiedSignalAirMarkers from "./CustomSpiderfiedSignalAirMarkers";
+import { MOBILEAIR_LIVE_SOURCE } from "../../constants/mobileAir";
 
 interface MapDataMarkersProps {
   sortedDevices: any[];
@@ -18,6 +22,10 @@ interface MapDataMarkersProps {
   selectedPollutant: string;
   handleMobileAirPointClickWrapper: (route: any, point: any) => void;
   handleMobileAirRouteClickWrapper: (route: any) => void;
+  onMobileAirLiveClick?: (payload: {
+    sensorId: string;
+    sessionId: number;
+  }) => void;
   isSignalAirVisible: boolean;
   reports: any[];
   createSignalIconWrapper: (report: any) => L.Icon | L.DivIcon;
@@ -37,14 +45,19 @@ const MapDataMarkers: React.FC<MapDataMarkersProps> = ({
   selectedPollutant,
   handleMobileAirPointClickWrapper,
   handleMobileAirRouteClickWrapper,
+  onMobileAirLiveClick,
   isSignalAirVisible,
   reports,
   createSignalIconWrapper,
   handleSignalAirMarkerClickWrapper,
 }) => {
   const devicesWithoutMobileAir = sortedDevices.filter(
-    (device) => device.source !== "mobileair"
+    (device) =>
+      device.source !== "mobileair" && device.source !== MOBILEAIR_LIVE_SOURCE
   );
+  const liveDevices = sortedDevices.filter(
+    (device) => device.source === MOBILEAIR_LIVE_SOURCE
+  ) as MobileAirLiveDevice[];
 
   return (
     <>
@@ -88,6 +101,19 @@ const MapDataMarkers: React.FC<MapDataMarkersProps> = ({
           focusedRoute={mobileAir.activeMobileAirRoute ?? null}
         />
       )}
+
+      <MobileAirLiveMarkers
+        devices={liveDevices}
+        selectedPollutant={selectedPollutant}
+        onLiveClick={(device) => {
+          const live = device.mobileAirLive;
+          if (!live || !onMobileAirLiveClick) return;
+          onMobileAirLiveClick({
+            sensorId: live.sensorId,
+            sessionId: live.sessionId,
+          });
+        }}
+      />
 
       {isSignalAirVisible && (
         <CustomSpiderfiedSignalAirMarkers

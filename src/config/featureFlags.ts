@@ -19,6 +19,17 @@ export const featureFlags = {
   useMicrospotApi: parseBooleanEnv(env.useMicrospotApi, false),
 
   /**
+   * Masque les microcapteurs AtmoMicro en co-location sur une station de
+   * référence (phase QAQC / calibration). Getter : lu à chaque accès pour
+   * permettre les tests `vi.stubEnv`.
+   *
+   * Par défaut true : ces capteurs ne sont pas destinés à la diffusion carte.
+   */
+  get hideAtmoMicroStationQaqc() {
+    return parseBooleanEnv(env.hideAtmoMicroStationQaqc, true);
+  },
+
+  /**
    * Zoom minimum pour afficher le tooltip des marqueurs.
    * null = pas de restriction (tooltip à tous les niveaux de zoom).
    * number = tooltip uniquement quand zoom >= cette valeur.

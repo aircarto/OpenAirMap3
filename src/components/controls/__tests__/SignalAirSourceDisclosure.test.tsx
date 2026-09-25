@@ -36,6 +36,9 @@ const makeCommunity = (
   signalAirReportsCount: 12,
   isMobileAirMobilityMode: false,
   onExitMobilityModeViaSignalAir: vi.fn(),
+  mobileAirLiveEnabled: false,
+  onMobileAirLiveEnabledChange: vi.fn(),
+  selectedTimeStep: "heure",
   ...overrides,
 });
 

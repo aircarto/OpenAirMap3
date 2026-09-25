@@ -381,7 +381,13 @@
       "lastSeenDays_one": "Il y a {{count}} jour",
       "lastSeenDays_other": "Il y a {{count}} jours",
       "searchPlaceholder": "Rechercher un capteur…",
-      "noSearchResults": "Aucun capteur ne correspond à « {{query}} »"
+      "noSearchResults": "Aucun capteur ne correspond à « {{query}} »",
+      "liveToggle": "Live (Scan)",
+      "liveScanOnlyHint": "Le live MobileAir n’est disponible qu’au pas de temps Scan.",
+      "liveMobilityHint": "Le live est désactivé en mode mesure en mobilité.",
+      "liveLoading": "Recherche des MobileAir en direct…",
+      "liveEmpty": "Aucun MobileAir géolocalisé en direct pour le moment (fenêtre 5 min).",
+      "liveReady": "{{count}} MobileAir en direct sur la carte."
     },
     "mobileAirManage": {
       "panelTitle": "Parcours MobileAir",
@@ -437,7 +443,12 @@
       "maximum": "Maximum",
       "minimum": "Minimum",
       "durationMin": "{{count}} min",
-      "durationHrMin": "{{hours}}h {{minutes}}min"
+      "durationHrMin": "{{hours}}h {{minutes}}min",
+      "reportsTitle": "Signalements ({{count}})",
+      "showPhoto": "Voir la photo",
+      "hidePhoto": "Masquer la photo",
+      "photoAlt": "Photo du signalement",
+      "modeLabel": "Mode :"
     },
     "purpleAirSidePanel": {
       "sensorLabel": "Capteur PurpleAir #{{id}}",
@@ -860,6 +871,28 @@
       "backToMap": "Retour à la carte",
       "ctaMap": "Ouvrir la carte",
       "ctaAbout": "À propos"
+    }
+  },
+  "mobileAir": {
+    "moving": {
+      "walk": "À pied",
+      "bike": "Vélo",
+      "car": "Voiture",
+      "transit": "Transports en commun",
+      "fixed": "Mesure fixe",
+      "unknown": "Mode inconnu"
+    },
+    "contextType": {
+      "fire": "Feu",
+      "industrial": "Industriel",
+      "traffic": "Trafic",
+      "neighbourhood": "Voisinage",
+      "works": "Travaux",
+      "cleaning": "Nettoyage",
+      "cooking": "Cuisine",
+      "meeting": "Rassemblement",
+      "fault": "Panne",
+      "other": "Autre"
     }
   }
 }

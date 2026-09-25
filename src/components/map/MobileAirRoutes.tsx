@@ -1,9 +1,7 @@
-import React, { memo } from "react";
-import { Polyline, CircleMarker } from "react-leaflet";
-import L from "leaflet";
+import React, { memo, useLayoutEffect } from "react";
+import { Polyline, CircleMarker, useMap } from "react-leaflet";
 import {
   MobileAirRoute,
-  MeasurementDevice,
   MobileAirDataPoint,
   MOBILEAIR_POLLUTANT_MAPPING,
 } from "../../types";
@@ -12,6 +10,27 @@ import {
   getQualityColor,
   getQualityLevel,
 } from "../../constants/qualityColors";
+import { isFixedMobileAirSession } from "../../constants/mobileAirMoving";
+
+/** Panes dédiés : les points restent toujours au-dessus du trait. */
+const MOBILEAIR_LINES_PANE = "mobileair-lines";
+const MOBILEAIR_POINTS_PANE = "mobileair-points";
+
+const EnsureMobileAirPanes: React.FC = () => {
+  const map = useMap();
+  useLayoutEffect(() => {
+    // overlayPane = 400 ; points au-dessus des segments colorés
+    if (!map.getPane(MOBILEAIR_LINES_PANE)) {
+      const pane = map.createPane(MOBILEAIR_LINES_PANE);
+      pane.style.zIndex = "410";
+    }
+    if (!map.getPane(MOBILEAIR_POINTS_PANE)) {
+      const pane = map.createPane(MOBILEAIR_POINTS_PANE);
+      pane.style.zIndex = "420";
+    }
+  }, [map]);
+  return null;
+};
 
 interface MobileAirRoutesProps {
   routes: MobileAirRoute[];
@@ -185,6 +204,7 @@ const MobileAirRoutes: React.FC<MobileAirRoutesProps> = memo(
 
     return (
       <>
+        <EnsureMobileAirPanes />
         {[...routes]
           .sort((a, b) => {
             // Dessiner le trajet focus au-dessus des autres
@@ -193,7 +213,6 @@ const MobileAirRoutes: React.FC<MobileAirRoutesProps> = memo(
             return aFocus - bFocus;
           })
           .map((route) => {
-          const segments = createColoredSegments(route);
           const isFocused = isSameRoute(focusedRoute, route);
           const hasFocus = focusedRoute != null;
           // Style B — contour blanc GPS : focus lisible, autres colorés mais plus fins
@@ -201,6 +220,71 @@ const MobileAirRoutes: React.FC<MobileAirRoutesProps> = memo(
           const lineOpacity = isFocused ? 0.92 : hasFocus ? 0.45 : 0.6;
           const pointRadius = isFocused ? 7 : 5.5;
           const pointOpacity = isFocused ? 1 : hasFocus ? 0.65 : 0.8;
+          const isFixed = isFixedMobileAirSession(route.moving);
+
+          // Mesure fixe (moving=4) : un seul CircleMarker, pas de polyline
+          if (isFixed) {
+            const displayPoint =
+              route.points[route.points.length - 1] ?? route.points[0];
+            if (!displayPoint) return null;
+            const pollutantKey = getPollutantKey(selectedPollutant);
+            const rawValue = displayPoint[
+              pollutantKey as keyof MobileAirDataPoint
+            ] as number;
+            const correctedValue = ensureNonNegativeValue(rawValue) || 0;
+            const color = getQualityColor(
+              correctedValue,
+              selectedPollutant,
+              pollutants
+            );
+            const isHovered =
+              hoveredPoint && isSamePoint(hoveredPoint, displayPoint);
+
+            return (
+              <React.Fragment key={`${route.sensorId}-${route.sessionId}`}>
+                {isHovered && (
+                  <CircleMarker
+                    pane={MOBILEAIR_POINTS_PANE}
+                    center={[displayPoint.lat, displayPoint.lon]}
+                    radius={16}
+                    pathOptions={{
+                      color: "rgba(0, 0, 0, 0.15)",
+                      fillColor: "rgba(0, 0, 0, 0.1)",
+                      fillOpacity: 0.2,
+                      weight: 0,
+                    }}
+                    interactive={false}
+                  />
+                )}
+                <CircleMarker
+                  pane={MOBILEAIR_POINTS_PANE}
+                  center={[displayPoint.lat, displayPoint.lon]}
+                  radius={isHovered ? 14 : isFocused ? 10 : 8}
+                  pathOptions={{
+                    color: isHovered
+                      ? "#FFFF00"
+                      : isFocused
+                        ? "#ffffff"
+                        : color,
+                    fillColor: color,
+                    fillOpacity: 1,
+                    weight: isHovered ? 3 : isFocused ? 2.5 : 2,
+                    opacity: 1,
+                  }}
+                  eventHandlers={{
+                    click: () => {
+                      onPointClick?.(route, displayPoint);
+                      onRouteClick?.(route);
+                    },
+                    mouseover: () => onPointHover?.(displayPoint),
+                    mouseout: () => onPointHover?.(null),
+                  }}
+                />
+              </React.Fragment>
+            );
+          }
+
+          const segments = createColoredSegments(route);
 
           return (
             <React.Fragment key={`${route.sensorId}-${route.sessionId}`}>
@@ -209,6 +293,7 @@ const MobileAirRoutes: React.FC<MobileAirRoutesProps> = memo(
                 segments.map((segment, index) => (
                   <Polyline
                     key={`${route.sensorId}-${route.sessionId}-outline-${index}`}
+                    pane={MOBILEAIR_LINES_PANE}
                     positions={segment.positions}
                     pathOptions={{
                       color: "#ffffff",
@@ -225,6 +310,7 @@ const MobileAirRoutes: React.FC<MobileAirRoutesProps> = memo(
               {segments.map((segment, index) => (
                 <Polyline
                   key={`${route.sensorId}-${route.sessionId}-${index}`}
+                  pane={MOBILEAIR_LINES_PANE}
                   positions={segment.positions}
                   color={segment.color}
                   weight={lineWeight}
@@ -240,7 +326,7 @@ const MobileAirRoutes: React.FC<MobileAirRoutesProps> = memo(
                 />
               ))}
 
-              {/* Points cliquables */}
+              {/* Points cliquables — pane au-dessus du trait */}
               {route.points.map((point, index) => {
                 const pollutantKey = getPollutantKey(selectedPollutant);
                 const rawValue = point[
@@ -263,6 +349,7 @@ const MobileAirRoutes: React.FC<MobileAirRoutesProps> = memo(
                     {isHovered && (
                       <>
                         <CircleMarker
+                          pane={MOBILEAIR_POINTS_PANE}
                           center={[point.lat, point.lon]}
                           radius={18}
                           pathOptions={{
@@ -275,6 +362,7 @@ const MobileAirRoutes: React.FC<MobileAirRoutesProps> = memo(
                           interactive={false}
                         />
                         <CircleMarker
+                          pane={MOBILEAIR_POINTS_PANE}
                           center={[point.lat, point.lon]}
                           radius={14}
                           pathOptions={{
@@ -287,6 +375,7 @@ const MobileAirRoutes: React.FC<MobileAirRoutesProps> = memo(
                           interactive={false}
                         />
                         <CircleMarker
+                          pane={MOBILEAIR_POINTS_PANE}
                           center={[point.lat, point.lon]}
                           radius={12}
                           pathOptions={{
@@ -302,6 +391,7 @@ const MobileAirRoutes: React.FC<MobileAirRoutesProps> = memo(
                     )}
 
                     <CircleMarker
+                      pane={MOBILEAIR_POINTS_PANE}
                       center={[point.lat, point.lon]}
                       radius={isHovered ? 12 : pointRadius}
                       pathOptions={{

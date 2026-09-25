@@ -71,6 +71,7 @@ const mockRoutes = (
     observations?: unknown | (() => unknown);
     devices?: unknown | (() => unknown);
     locations?: unknown | (() => unknown);
+    stations?: unknown | (() => unknown);
   }
 ) => {
   const resolve = (value: unknown) =>
@@ -86,6 +87,13 @@ const mockRoutes = (
       }
       if (url.includes("/lists/locations")) {
         return Promise.resolve(resolve(routes.locations ?? []));
+      }
+      // Avant /observations : l'URL AtmoRef contient aussi ce segment
+      // (`…/observations/stations`).
+      if (url.includes("/stations")) {
+        return Promise.resolve(
+          resolve(routes.stations ?? { stations: [] })
+        );
       }
       if (url.includes("/observations")) {
         return Promise.resolve(resolve(routes.observations ?? []));
@@ -103,6 +111,9 @@ describe("AtmoMicroV2Service", () => {
   let service: AtmoMicroV2Service;
 
   beforeEach(() => {
+    // Les tests existants ne couvrent pas le filtre QAQC : le désactiver pour
+    // ne pas imposer un mock AtmoRef à chaque cas.
+    vi.stubEnv("NEXT_PUBLIC_HIDE_ATMOMICRO_STATION_QAQC", "false");
     AtmoMicroV2Service.resetCaches();
     service = new AtmoMicroV2Service();
     // Les logs de capteurs écartés sont volontairement bavards : on les tait
@@ -114,6 +125,7 @@ describe("AtmoMicroV2Service", () => {
   });
 
   afterEach(() => {
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
@@ -1088,6 +1100,194 @@ describe("AtmoMicroV2Service", () => {
 
       expect(result).toEqual([]);
       expect(spy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("filtre QAQC (hideAtmoMicroStationQaqc)", () => {
+    beforeEach(() => {
+      vi.stubEnv("NEXT_PUBLIC_HIDE_ATMOMICRO_STATION_QAQC", "true");
+      AtmoMicroV2Service.resetCaches();
+    });
+
+    it("exclut les capteurs dont le location_id est une co-location station (code FR dans le nom du site)", async () => {
+      mockRoutes(service, {
+        observations: [
+          buildObservation({
+            id: "QAQC_FR",
+            location_id: "59",
+            location_name: "Nice Magnan FR24035",
+            lat: 43.6893,
+            lon: 7.2421,
+          }),
+          buildObservation(),
+        ],
+        devices: [
+          buildDevice({
+            id: "QAQC_FR",
+            location_id: "59",
+            actual_location: "Nice Magnan FR24035",
+          }),
+          buildDevice(),
+        ],
+        locations: [
+          buildLocation({
+            id: "59",
+            name: "Nice Magnan FR24035",
+            lat: 43.6893,
+            lon: 7.2421,
+          }),
+          buildLocation(),
+        ],
+        stations: { stations: [] },
+      });
+
+      const result = await service.fetchData(baseParams);
+
+      expect(result.map((d) => d.id)).toEqual(["05C1A382"]);
+      expect(console.log).toHaveBeenCalledWith(
+        expect.stringContaining("location_id=59")
+      );
+    });
+
+    it("exclut via location_id résolu par proximité AtmoRef", async () => {
+      mockRoutes(service, {
+        observations: [
+          buildObservation({
+            id: "QAQC_NEAR",
+            location_id: "29",
+            location_name: "Gardanne",
+            lat: 43.453584,
+            lon: 5.466672,
+          }),
+          buildObservation(),
+        ],
+        devices: [
+          buildDevice({
+            id: "QAQC_NEAR",
+            location_id: "29",
+            actual_location: "Gardanne",
+            lat: 43.453584,
+            lon: 5.466672,
+          }),
+          buildDevice(),
+        ],
+        locations: [
+          buildLocation({
+            id: "29",
+            name: "Gardanne",
+            lat: 43.453584,
+            lon: 5.466672,
+          }),
+          buildLocation(),
+        ],
+        stations: {
+          stations: [
+            {
+              id_station: "FR03030",
+              nom_station: "Gardanne",
+              latitude: 43.453584,
+              longitude: 5.466672,
+              id_site: "29",
+            },
+          ],
+        },
+      });
+
+      const result = await service.fetchData(baseParams);
+
+      expect(result.map((d) => d.id)).toEqual(["05C1A382"]);
+      expect(console.log).toHaveBeenCalledWith(
+        expect.stringContaining("location_id=29")
+      );
+    });
+
+    it("exclut via location_id issu de id_site AtmoRef (jointure officielle)", async () => {
+      mockRoutes(service, {
+        observations: [
+          buildObservation({
+            id: "QAQC_ID_SITE",
+            location_id: "11",
+            location_name: "Avignon Mairie",
+            lat: 43.949673,
+            lon: 4.804341,
+          }),
+          buildObservation(),
+        ],
+        devices: [
+          buildDevice({
+            id: "QAQC_ID_SITE",
+            location_id: "11",
+            actual_location: "Avignon Mairie",
+            lat: 43.949673,
+            lon: 4.804341,
+          }),
+          buildDevice(),
+        ],
+        locations: [
+          buildLocation({
+            id: "11",
+            name: "Avignon Mairie",
+            lat: 43.949673,
+            lon: 4.804341,
+          }),
+          buildLocation(),
+        ],
+        stations: {
+          stations: [
+            {
+              id_station: "FR03080",
+              nom_station: "Avignon Mairie",
+              latitude: 43.949673,
+              longitude: 4.804341,
+              id_site: 11,
+            },
+          ],
+        },
+      });
+
+      const result = await service.fetchData(baseParams);
+
+      expect(result.map((d) => d.id)).toEqual(["05C1A382"]);
+      expect(console.log).toHaveBeenCalledWith(
+        expect.stringContaining("location_id=11")
+      );
+    });
+
+    it("conserve les capteurs co-localisés quand le flag est désactivé", async () => {
+      vi.stubEnv("NEXT_PUBLIC_HIDE_ATMOMICRO_STATION_QAQC", "false");
+      AtmoMicroV2Service.resetCaches();
+
+      mockRoutes(service, {
+        observations: [
+          buildObservation({
+            id: "QAQC_FR",
+            location_id: "59",
+            location_name: "Nice Magnan FR24035",
+            lat: 43.6893,
+            lon: 7.2421,
+          }),
+        ],
+        devices: [
+          buildDevice({
+            id: "QAQC_FR",
+            location_id: "59",
+            actual_location: "Nice Magnan FR24035",
+          }),
+        ],
+        locations: [
+          buildLocation({
+            id: "59",
+            name: "Nice Magnan FR24035",
+            lat: 43.6893,
+            lon: 7.2421,
+          }),
+        ],
+      });
+
+      const result = await service.fetchData(baseParams);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe("QAQC_FR");
     });
   });
 });

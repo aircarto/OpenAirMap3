@@ -19,6 +19,8 @@ import type { MapControlsCommunitySources } from "../../contexts/mapControlsCont
 
 export interface MobileAirSourceDisclosureProps {
   community: MapControlsCommunitySources;
+  /** Pas de temps courant (Scan = instantane) — source de vérité pour le live. */
+  selectedTimeStep: string;
   /** Purge les parcours détenus par la carte avant de déléguer à App */
   onLoadRoute: (
     sensorIds: string[],
@@ -36,7 +38,7 @@ export interface MobileAirSourceDisclosureProps {
  */
 export const MobileAirSourceDisclosure: React.FC<
   MobileAirSourceDisclosureProps
-> = ({ community, onLoadRoute, onLoaded }) => {
+> = ({ community, selectedTimeStep, onLoadRoute, onLoaded }) => {
   const { t } = useTranslation();
   const {
     isMobileAirEnabled,
@@ -78,6 +80,9 @@ export const MobileAirSourceDisclosure: React.FC<
   const label = getSourceDisplayName("communautaire.mobileair", t);
   const atLimit = selectedSensors.length >= MAX_MOBILE_AIR_SENSORS;
   const listRef = useRef<HTMLDivElement>(null);
+  const isScan = selectedTimeStep === "instantane";
+  const liveDisabled =
+    !isScan || community.isMobileAirMobilityMode;
 
   const formatLastSeen = (ageSeconds: number | null): string | null => {
     if (ageSeconds === null) return null;
@@ -204,6 +209,61 @@ export const MobileAirSourceDisclosure: React.FC<
             {t("panels.mobileAirSelection.loadingSensors")}
           </p>
         )}
+
+        {/* Toggle Live Scan */}
+        <div className="space-y-1 px-0.5">
+          <button
+            type="button"
+            data-testid="sources-mobileair-live-toggle"
+            role="switch"
+            aria-checked={community.mobileAirLiveEnabled}
+            disabled={liveDisabled}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              if (liveDisabled) return;
+              community.onMobileAirLiveEnabledChange(
+                !community.mobileAirLiveEnabled
+              );
+            }}
+            className={cn(
+              "flex min-h-11 w-full items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-xs font-medium transition-colors",
+              liveDisabled
+                ? "cursor-not-allowed border-black/[0.06] bg-black/[0.02] text-[color:var(--fg-muted)] opacity-70"
+                : community.mobileAirLiveEnabled
+                  ? "border-blue-300 bg-blue-50 text-[#1f3c6d]"
+                  : "border-black/[0.09] bg-white text-gray-700 hover:bg-black/[0.04]"
+            )}
+          >
+            <span>{t("panels.mobileAirSelection.liveToggle")}</span>
+            <span
+              aria-hidden="true"
+              className={cn(
+                "relative h-5 w-9 shrink-0 rounded-full transition-colors",
+                community.mobileAirLiveEnabled ? "bg-blue-600" : "bg-gray-300"
+              )}
+            >
+              <span
+                className={cn(
+                  "absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform",
+                  community.mobileAirLiveEnabled
+                    ? "translate-x-4"
+                    : "translate-x-0.5"
+                )}
+              />
+            </span>
+          </button>
+          {!isScan && (
+            <p className="px-1 text-[10px] text-[color:var(--fg-muted)]">
+              {t("panels.mobileAirSelection.liveScanOnlyHint")}
+            </p>
+          )}
+          {community.isMobileAirMobilityMode && (
+            <p className="px-1 text-[10px] text-[color:var(--fg-muted)]">
+              {t("panels.mobileAirSelection.liveMobilityHint")}
+            </p>
+          )}
+        </div>
 
         {loading && (
           <p className="px-2 text-xs text-[color:var(--fg-muted)]">

@@ -2,18 +2,22 @@ import { BaseDataService } from "./BaseDataService";
 import {
   MeasurementDevice,
   MobileAirSensor,
-  MobileAirMetadataResponse,
   MobileAirDataPoint,
-  MobileAirDataResponse,
   MobileAirRoute,
+  MobileAirLiveSensor,
+  MobileAirContextRaw,
+  MobileAirMovingMode,
   MOBILEAIR_POLLUTANT_MAPPING,
   MOBILEAIR_TIMESTEP_MAPPING,
 } from "../types";
 import { pollutants } from "../constants/pollutants";
+import { resolveSessionMoving } from "../constants/mobileAirMoving";
+import { MOBILEAIR_LIVE_SOURCE } from "../constants/mobileAir";
 import { isDevRuntime } from "../lib/env";
 
 export class MobileAirService extends BaseDataService {
   private readonly baseUrl = this.getApiBaseUrl();
+  private readonly contextBaseUrl = this.getContextBaseUrl();
   private sensors: MobileAirSensor[] = [];
   private routes: MobileAirRoute[] = [];
   /** Requête de catalogue en vol, pour dédupliquer les appels concurrents */
@@ -23,12 +27,20 @@ export class MobileAirService extends BaseDataService {
     super("mobileair");
   }
 
-  private getApiBaseUrl(): string {
+  private getRootUrl(): string {
     // Dev : rewrite Next `/aircarto` → api.aircarto.fr (voir next.config.ts).
     if (isDevRuntime()) {
-      return "/aircarto/capteurs";
+      return "/aircarto";
     }
-    return "https://api.aircarto.fr/capteurs";
+    return "https://api.aircarto.fr";
+  }
+
+  private getApiBaseUrl(): string {
+    return `${this.getRootUrl()}/capteurs`;
+  }
+
+  private getContextBaseUrl(): string {
+    return `${this.getRootUrl()}/context`;
   }
 
   async fetchData(params: {
@@ -272,6 +284,8 @@ export class MobileAirService extends BaseDataService {
         (new Date(endTime).getTime() - new Date(startTime).getTime()) /
         (1000 * 60);
 
+      const moving = resolveSessionMoving(points);
+
       routes.push({
         sessionId,
         sensorId,
@@ -283,10 +297,159 @@ export class MobileAirService extends BaseDataService {
         startTime,
         endTime,
         duration,
+        moving,
       });
     });
 
     return routes;
+  }
+
+  /**
+   * Dernières mesures des MobileAir actifs (`liveMobileAir`).
+   * Filtre les capteurs sans GPS (`fixed === null` / `points` vides).
+   */
+  async fetchLiveSensors(since: string = "5m"): Promise<MobileAirLiveSensor[]> {
+    const url = `${this.baseUrl}/liveMobileAir?since=${encodeURIComponent(since)}`;
+    const response = await this.makeRequest(url);
+    if (!Array.isArray(response)) {
+      return [];
+    }
+    return response
+      .map((row) => this.normalizeLiveSensor(row))
+      .filter((sensor): sensor is MobileAirLiveSensor => sensor !== null);
+  }
+
+  /**
+   * Convertit les capteurs live en devices carte (`source: mobileair-live`).
+   * Un CircleMarker = dernier point géolocalisé.
+   */
+  createLiveDevices(
+    liveSensors: MobileAirLiveSensor[],
+    pollutant: string
+  ): MeasurementDevice[] {
+    const pollutantKey = this.getPollutantKey(pollutant);
+    const devices: MeasurementDevice[] = [];
+
+    for (const sensor of liveSensors) {
+      const lastPoint = sensor.points[sensor.points.length - 1];
+      if (!lastPoint) continue;
+      if (
+        typeof lastPoint.lat !== "number" ||
+        typeof lastPoint.lon !== "number" ||
+        Number.isNaN(lastPoint.lat) ||
+        Number.isNaN(lastPoint.lon)
+      ) {
+        continue;
+      }
+
+      const rawValue = lastPoint[
+        pollutantKey as keyof MobileAirDataPoint
+      ] as number;
+      const value =
+        typeof rawValue === "number" && !Number.isNaN(rawValue) ? rawValue : 0;
+      const pollutantConfig = pollutants[pollutant];
+      const qualityLevel = pollutantConfig
+        ? this.getQualityLevel(value, pollutantConfig.thresholds)
+        : "default";
+
+      devices.push({
+        id: `mobileair-live-${sensor.sensorId}`,
+        name: `MobileAir live ${sensor.sensorId}`,
+        latitude: lastPoint.lat,
+        longitude: lastPoint.lon,
+        source: MOBILEAIR_LIVE_SOURCE,
+        pollutant,
+        value,
+        unit: "µg/m³",
+        timestamp: lastPoint.time || sensor.lastSeen,
+        status: "active",
+        qualityLevel,
+        mobileAirLive: sensor,
+      } as MeasurementDevice & { mobileAirLive: MobileAirLiveSensor });
+    }
+
+    return devices;
+  }
+
+  /**
+   * Format attendu par `get_context` : ISO sans millisecondes.
+   * `toISOString()` → `…T00:00:00.000Z` est rejeté (400 Invalid start/end date format).
+   */
+  private formatContextApiDate(value: string): string {
+    const ms = Date.parse(value);
+    if (Number.isNaN(ms)) return value;
+    return new Date(ms).toISOString().replace(/\.\d{3}Z$/, "Z");
+  }
+
+  /**
+   * Signalements d’un capteur (`get_context`).
+   * `sensorId` = nom (ex. mobileair-012), pas le token.
+   */
+  async fetchContext(
+    sensorId: string,
+    period?: { startDate: string; endDate: string }
+  ): Promise<MobileAirContextRaw[]> {
+    const params = new URLSearchParams({
+      capteur_id: sensorId,
+    });
+    if (period?.startDate) {
+      params.set("start", this.formatContextApiDate(period.startDate));
+    }
+    if (period?.endDate) {
+      params.set("end", this.formatContextApiDate(period.endDate));
+    }
+
+    const url = `${this.contextBaseUrl}/get_context?${params.toString()}`;
+    const response = await this.makeRequest(url);
+    if (!Array.isArray(response)) {
+      return [];
+    }
+    return response as MobileAirContextRaw[];
+  }
+
+  private normalizeLiveSensor(row: unknown): MobileAirLiveSensor | null {
+    if (!row || typeof row !== "object") return null;
+    const raw = row as Record<string, unknown>;
+    const sensorId = String(raw.sensorId ?? "");
+    const sensorToken = String(raw.sensorToken ?? "");
+    if (!sensorId || !sensorToken) return null;
+
+    const fixed =
+      raw.fixed === true ? true : raw.fixed === false ? false : null;
+    const points = Array.isArray(raw.points)
+      ? (raw.points as MobileAirDataPoint[])
+      : [];
+
+    // Sans GPS : non plaçable
+    if (fixed === null || points.length === 0) {
+      return null;
+    }
+
+    const moving = this.normalizeMoving(raw.moving);
+
+    return {
+      id: Number(raw.id) || 0,
+      sensorId,
+      sensorToken,
+      lastSeen: String(raw.lastSeen ?? ""),
+      lastSeenSec: Number(raw.lastSeenSec) || 0,
+      fixed,
+      sessionId: Number(raw.sessionId) || 0,
+      moving,
+      points,
+    };
+  }
+
+  private normalizeMoving(
+    value: unknown
+  ): MobileAirMovingMode | null {
+    if (value === 0 || value === 1 || value === 2 || value === 3 || value === 4) {
+      return value;
+    }
+    if (typeof value === "string" && /^[0-4]$/.test(value)) {
+      return Number(value) as MobileAirMovingMode;
+    }
+    return null;
   }
 
   private getPollutantKey(pollutant: string): string {

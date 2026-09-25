@@ -8,6 +8,7 @@ import {
 } from "../../utils/historicalTimeRange";
 import { cn } from "../../lib/utils";
 import type { MobileAirSensorStatus } from "../../constants/mobileAir";
+import MobileAirMovingBadge from "./MobileAirMovingBadge";
 
 export interface MobileAirManageSectionProps {
   sensorIds: string[];
@@ -297,6 +298,9 @@ export const MobileAirManageSection: React.FC<MobileAirManageSectionProps> = ({
                                       )
                                     </span>
                                   )}
+                                </span>
+                                <span className="mt-0.5 flex items-center gap-1.5">
+                                  <MobileAirMovingBadge moving={route.moving} />
                                 </span>
                                 <span className="block text-[10px] text-[color:var(--fg-muted)]">
                                   {new Date(route.startTime).toLocaleString()}

@@ -129,6 +129,13 @@ interface AirQualityMapProps {
     sensorIds: string[],
     period: { startDate: string; endDate: string },
   ) => void;
+  /** Clic sur un marqueur live Scan → charge −24h + session du point. */
+  onMobileAirLiveClick?: (payload: {
+    sensorId: string;
+    sessionId: number;
+  }) => void;
+  /** Sessions à privilégier au seed (clic live). */
+  preferredMobileAirSessions?: Record<string, number>;
   onMobileAirSourceDeselected?: () => void;
   isHistoricalModeActive?: boolean;
   // Nouveaux props pour gérer SignalAir et MobileAir indépendamment
@@ -215,6 +222,8 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
   isHistoricalModeWithSignalAirData = false,
   onSignalAirSourceDeselected,
   onMobileAirSensorSelected,
+  onMobileAirLiveClick,
+  preferredMobileAirSessions = {},
   onMobileAirSourceDeselected,
   isHistoricalModeActive = false,
   isSignalAirEnabled = false,
@@ -365,6 +374,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
     onMobileAirSensorSelected,
     isEnabled: isMobileAirEnabled,
     sensorVisibility: mobileAirSensorVisibility,
+    preferredSessionsBySensor: preferredMobileAirSessions,
   });
 
   // Hook pour gérer le tooltip au hover sur les marqueurs (désactivé - on utilise les tooltips Leaflet natifs maintenant)
@@ -1064,6 +1074,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
             selectedPollutant={selectedPollutant}
             handleMobileAirPointClickWrapper={handleMobileAirPointClickWrapper}
             handleMobileAirRouteClickWrapper={handleMobileAirRouteClickWrapper}
+            onMobileAirLiveClick={onMobileAirLiveClick}
             isSignalAirVisible={isSignalAirVisible}
             reports={reports}
             createSignalIconWrapper={createSignalIconWrapper}

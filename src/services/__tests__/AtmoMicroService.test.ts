@@ -40,10 +40,16 @@ describe("AtmoMicroService", () => {
   let service: AtmoMicroService;
 
   beforeEach(() => {
+    vi.stubEnv("NEXT_PUBLIC_HIDE_ATMOMICRO_STATION_QAQC", "false");
     (AtmoMicroService as any).sitesCache = null;
     (AtmoMicroService as any).lastSitesFetch = 0;
     (AtmoMicroService as any).sitesFetchPromise = null;
     service = new AtmoMicroService();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
   });
 
   it("retourne un tableau vide pour un polluant non supporté", async () => {
@@ -212,6 +218,47 @@ describe("AtmoMicroService", () => {
       rawValue: undefined,
       hasCorrection: true,
     });
+  });
+
+  it("exclut un site avec code_station_commun FRxxxxx quand le flag QAQC est actif", async () => {
+    vi.stubEnv("NEXT_PUBLIC_HIDE_ATMOMICRO_STATION_QAQC", "true");
+    vi.spyOn(console, "groupCollapsed").mockImplementation(() => {});
+    vi.spyOn(console, "groupEnd").mockImplementation(() => {});
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    const qaqcSite = buildSite({
+      id_site: 308,
+      nom_site: "Gap Commanderie",
+      code_station_commun: "FR24033",
+      lat: 44.555239,
+      lon: 6.073149,
+    });
+    const normalSite = buildSite();
+    const qaqcMeasure = buildMeasure({
+      id_site: 308,
+      nom_site: "Gap Commanderie",
+      lat: 44.555239,
+      lon: 6.073149,
+    });
+    const normalMeasure = buildMeasure();
+
+    // Promise.all : sites (cache), mesures, stations AtmoRef — routage par URL
+    vi.spyOn(service as any, "makeRequest").mockImplementation((url: string) => {
+      if (url.includes("/sites")) {
+        return Promise.resolve([qaqcSite, normalSite]);
+      }
+      if (url.includes("/mesures/dernieres")) {
+        return Promise.resolve([qaqcMeasure, normalMeasure]);
+      }
+      if (url.includes("/stations")) {
+        return Promise.resolve({ stations: [] });
+      }
+      throw new Error(`URL non mockée: ${url}`);
+    });
+
+    const result = await service.fetchData(baseParams);
+
+    expect(result.map((d) => d.id)).toEqual(["101"]);
   });
 });
 

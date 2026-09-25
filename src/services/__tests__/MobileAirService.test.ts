@@ -309,5 +309,91 @@ describe("MobileAirService", () => {
     expect(result).toEqual([]);
     expect(makeRequestSpy).not.toHaveBeenCalled();
   });
+
+  it("propage moving=4 sur la route (mesure fixe)", async () => {
+    (service as any).sensors = [buildSensor()];
+    vi.spyOn(service as any, "makeRequest").mockResolvedValue([
+      buildDataPoint({ moving: 4, sessionId: 7 }),
+      buildDataPoint({
+        moving: 4,
+        sessionId: 7,
+        time: "2025-02-15T10:01:00Z",
+      }),
+    ]);
+
+    const result = await service.fetchData({
+      ...baseParams,
+      selectedSensors: ["mob-001"],
+    });
+
+    expect(result).toHaveLength(1);
+    const route = (result[0] as any).mobileAirRoute;
+    expect(route.moving).toBe(4);
+    expect(route.sessionId).toBe(7);
+  });
+
+  it("filtre les live sans GPS (fixed null / points vides)", async () => {
+    vi.spyOn(service as any, "makeRequest").mockResolvedValue([
+      {
+        id: 1,
+        sensorId: "mobileair-001",
+        sensorToken: "AAA",
+        lastSeen: "2026-09-24T13:00:00Z",
+        lastSeenSec: 10,
+        fixed: null,
+        sessionId: 1,
+        moving: 0,
+        points: [],
+      },
+      {
+        id: 2,
+        sensorId: "mobileair-002",
+        sensorToken: "BBB",
+        lastSeen: "2026-09-24T13:01:00Z",
+        lastSeenSec: 5,
+        fixed: true,
+        sessionId: 2,
+        moving: 4,
+        points: [
+          buildDataPoint({
+            sensorId: "mobileair-002",
+            sessionId: 2,
+            moving: 4,
+            lat: 43.3,
+            lon: 5.4,
+          }),
+        ],
+      },
+    ]);
+
+    const live = await service.fetchLiveSensors("5m");
+    expect(live).toHaveLength(1);
+    expect(live[0].sensorId).toBe("mobileair-002");
+
+    const devices = service.createLiveDevices(live, "pm25");
+    expect(devices).toHaveLength(1);
+    expect(devices[0].source).toBe("mobileair-live");
+    expect(devices[0].latitude).toBe(43.3);
+  });
+
+  it("fetchContext appelle get_context avec capteur_id", async () => {
+    const spy = vi
+      .spyOn(service as any, "makeRequest")
+      .mockResolvedValue([{ id: 1, context_type: "fire" }]);
+
+    const rows = await service.fetchContext("mobileair-012", {
+      startDate: "2026-09-01T00:00:00.123Z",
+      endDate: "2026-09-02T00:00:00.456Z",
+    });
+
+    expect(rows).toHaveLength(1);
+    const url = String(spy.mock.calls[0][0]);
+    expect(url).toContain("/context/get_context");
+    expect(url).toContain("capteur_id=mobileair-012");
+    // Pas de millisecondes : l’API renvoie 400 sinon
+    expect(url).toContain("start=2026-09-01T00%3A00%3A00Z");
+    expect(url).toContain("end=2026-09-02T00%3A00%3A00Z");
+    expect(url).not.toMatch(/\.000Z|\.\d{3}Z/);
+  });
 });
 

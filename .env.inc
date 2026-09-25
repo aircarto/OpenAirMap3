@@ -59,6 +59,9 @@ NEXT_PUBLIC_MATOMO_SITE_ID=string|number
 
 NEXT_PUBLIC_USE_MICROSPOT_API=boolean
 
+# Masque les microcapteurs AtmoMicro co-localises sur une station de reference (QAQC)
+NEXT_PUBLIC_HIDE_ATMOMICRO_STATION_QAQC=boolean
+
 
 # =====================================================
 # Debug / diagnostics

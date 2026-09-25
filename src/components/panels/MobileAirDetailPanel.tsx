@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import {
   MobileAirRoute,
   MobileAirDataPoint,
+  MobileAirMatchedReport,
   MOBILEAIR_POLLUTANT_MAPPING,
 } from "../../types";
 import { pollutants } from "../../constants/pollutants";
@@ -29,6 +30,9 @@ import SidePanelShell, {
 import CollapsiblePanelSection from "./CollapsiblePanelSection";
 import PanelReopenBadge from "./PanelReopenBadge";
 import MobileAirManageSection from "./MobileAirManageSection";
+import MobileAirMovingBadge from "./MobileAirMovingBadge";
+import MobileAirReportsSection from "./MobileAirReportsSection";
+import { filterReportsForRoute } from "../../utils/mobileAirContextMatch";
 import type { MobileAirSensorStatus } from "../../constants/mobileAir";
 
 interface MobileAirDetailPanelProps {
@@ -60,6 +64,8 @@ interface MobileAirDetailPanelProps {
   ) => void;
   onToggleSessionOnMap?: (route: MobileAirRoute, visible: boolean) => void;
   onSetSensorSessionsVisible?: (sensorId: string, visible: boolean) => void;
+  /** Signalements appariés (get_context) pour les sessions chargées */
+  matchedReports?: MobileAirMatchedReport[];
 }
 
 const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
@@ -87,17 +93,22 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
   onSensorPeriodChange,
   onToggleSessionOnMap,
   onSetSensorSessionsVisible,
+  matchedReports = [],
 }) => {
   const { t, i18n } = useTranslation();
   const [hoveredPoint, setHoveredPoint] = useState<MobileAirDataPoint | null>(
     null
   );
+  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [localSelectedPollutants, setLocalSelectedPollutants] = useState<string[]>([initialPollutant]);
   const chartRef = useRef<am5xy.XYChart | null>(null);
   const rootRef = useRef<am5.Root | null>(null);
   const seriesRefs = useRef<Map<string, am5xy.LineSeries>>(new Map());
   const routeIdRef = useRef<string | null>(null);
   const chartContainerRef = useRef<HTMLDivElement>(null);
+  const reportRangesRef = useRef<am5.DataItem<am5xy.IDateAxisDataItem>[]>([]);
+  const matchedReportsRef = useRef(matchedReports);
+  matchedReportsRef.current = matchedReports;
 
   // Initialiser les polluants locaux uniquement lors de l'ouverture du panel ou du changement de route
   useEffect(() => {
@@ -107,7 +118,8 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
       return;
     }
     
-    const routeToUse = selectedRoute || activeRoute;
+    // activeRoute = focus calculé (null si aucun trajet coché sur la carte)
+    const routeToUse = activeRoute;
     const currentRouteId = routeToUse 
       ? `${routeToUse.sensorId}-${routeToUse.sessionId}` 
       : null;
@@ -216,7 +228,128 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
     return latMatch && lonMatch && timeMatch;
   };
 
-  const routeToUse = selectedRoute || activeRoute;
+  // Source de vérité : focus carte (null si tous les trajets sont désactivés)
+  const routeToUse = activeRoute;
+
+  const routeReports = useMemo(
+    () => filterReportsForRoute(matchedReports, routeToUse),
+    [matchedReports, routeToUse]
+  );
+
+  const clearReportRanges = useCallback(() => {
+    const chart = chartRef.current;
+    if (!chart) {
+      reportRangesRef.current = [];
+      return;
+    }
+    const xAxis = chart.xAxes.getIndex(0) as
+      | am5xy.DateAxis<am5xy.AxisRendererX>
+      | undefined;
+    if (!xAxis) return;
+    for (const item of reportRangesRef.current) {
+      try {
+        xAxis.axisRanges.removeValue(item);
+      } catch {
+        // ignore
+      }
+    }
+    reportRangesRef.current = [];
+  }, []);
+
+  const paintReportBubbles = useCallback(() => {
+    const chart = chartRef.current;
+    const root = rootRef.current;
+    if (!chart || !root || !routeToUse) return;
+
+    const xAxis = chart.xAxes.getIndex(0) as
+      | am5xy.DateAxis<am5xy.AxisRendererX>
+      | undefined;
+    if (!xAxis) return;
+
+    clearReportRanges();
+
+    const reports = filterReportsForRoute(
+      matchedReportsRef.current,
+      routeToUse
+    );
+
+    for (const report of reports) {
+      const ts = Date.parse(report.datetimeStart);
+      if (Number.isNaN(ts)) continue;
+
+      const shortComment = (report.comments || "").trim().slice(0, 40);
+      const typeLabel = t(`mobileAir.contextType.${report.contextType}`, {
+        defaultValue: report.contextType,
+      });
+      const labelText = shortComment
+        ? `${typeLabel}: ${shortComment}`
+        : typeLabel;
+
+      const rangeDataItem = xAxis.makeDataItem({ value: ts });
+      const range = xAxis.createAxisRange(rangeDataItem);
+      range.get("grid")?.setAll({
+        stroke: am5.color("#F59E0B"),
+        strokeOpacity: 0.85,
+        strokeWidth: 1.5,
+        strokeDasharray: [3, 3],
+        visible: true,
+      });
+      const label = range.get("label");
+      if (label) {
+        label.setAll({
+          text: labelText,
+          inside: true,
+          rotation: -90,
+          centerX: 0,
+          centerY: 0,
+          dy: -8,
+          fontSize: 9,
+          fill: am5.color("#B45309"),
+          background: am5.RoundedRectangle.new(root, {
+            fill: am5.color("#FFFBEB"),
+            fillOpacity: 0.92,
+            cornerRadiusTL: 3,
+            cornerRadiusTR: 3,
+            cornerRadiusBL: 3,
+            cornerRadiusBR: 3,
+          }),
+          paddingTop: 2,
+          paddingBottom: 2,
+          paddingLeft: 4,
+          paddingRight: 4,
+        });
+      }
+      reportRangesRef.current.push(rangeDataItem);
+    }
+  }, [clearReportRanges, routeToUse, t]);
+
+  useEffect(() => {
+    paintReportBubbles();
+  }, [paintReportBubbles, routeReports]);
+
+  const handleReportClick = useCallback(
+    (report: MobileAirMatchedReport) => {
+      setSelectedReportId(report.id);
+      onPointHighlight?.(report.matchedPoint);
+
+      const chart = chartRef.current;
+      const xAxis = chart?.xAxes.getIndex(0) as
+        | am5xy.DateAxis<am5xy.AxisRendererX>
+        | undefined;
+      if (xAxis) {
+        const ts = Date.parse(report.datetimeStart);
+        if (!Number.isNaN(ts)) {
+          const pad = 15 * 60 * 1000;
+          try {
+            xAxis.zoomToValues(ts - pad, ts + pad);
+          } catch {
+            // ignore zoom errors
+          }
+        }
+      }
+    },
+    [onPointHighlight]
+  );
 
   // Préparer les données pour le graphique avec tous les polluants sélectionnés
   const chartData = useMemo(() => {
@@ -521,8 +654,11 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
       
       // Stocker l'intervalle pour le nettoyage
       (root as any).__cursorCheckInterval = cursorCheckInterval;
+
+      // Bulles signalements (après création du chart)
+      paintReportBubbles();
     },
-    [localSelectedPollutants, onPointHover, i18n.language]
+    [localSelectedPollutants, onPointHover, i18n.language, paintReportBubbles]
   );
 
   // Nettoyer l'intervalle du curseur au démontage
@@ -658,10 +794,15 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
             : undefined
       }
       badge={
-        <PanelReopenBadge
-          label={t("panels.mobileAirSelection.reopenButtonTooltip")}
-          className="bg-green-600 text-white"
-        />
+        <div className="flex items-center gap-2">
+          {routeToUse && (
+            <MobileAirMovingBadge moving={routeToUse.moving} />
+          )}
+          <PanelReopenBadge
+            label={t("panels.mobileAirSelection.reopenButtonTooltip")}
+            className="bg-green-600 text-white"
+          />
+        </div>
       }
     >
       {hasManage && (
@@ -817,8 +958,93 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
         </CollapsiblePanelSection>
       )}
 
-      {/* Graphique — zone dominante */}
-      <div className="flex min-h-0 flex-1 flex-col rounded-[var(--r-md)] border border-[rgb(16_32_56_/_0.09)] p-2 sm:p-3">
+      <MobileAirReportsSection
+        reports={routeReports}
+        selectedReportId={selectedReportId}
+        onReportClick={handleReportClick}
+      />
+
+      <CollapsiblePanelSection
+        title={t("panels.mobileAirDetail.sessionInfoTitle")}
+        defaultOpen={false}
+        storageKey="mobileair-session-info"
+      >
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div>
+            <span className="text-[color:var(--fg-muted)]">{t("panels.mobileAirDetail.startLabel")}</span>
+            <p className="font-medium">
+              {formatDate(routeToUse.startTime)}
+            </p>
+          </div>
+          <div>
+            <span className="text-[color:var(--fg-muted)]">{t("panels.mobileAirDetail.endLabel")}</span>
+            <p className="font-medium">{formatDate(routeToUse.endTime)}</p>
+          </div>
+          <div>
+            <span className="text-[color:var(--fg-muted)]">{t("panels.mobileAirDetail.durationLabel")}</span>
+            <p className="font-medium">
+              {formatDuration(routeToUse.duration)}
+            </p>
+          </div>
+          <div>
+            <span className="text-[color:var(--fg-muted)]">{t("panels.mobileAirDetail.pointsLabel")}</span>
+            <p className="font-medium">{routeToUse.points.length}</p>
+          </div>
+          <div className="col-span-2">
+            <span className="text-[color:var(--fg-muted)]">
+              {t("panels.mobileAirDetail.modeLabel")}
+            </span>
+            <p className="mt-1">
+              <MobileAirMovingBadge moving={routeToUse.moving} />
+            </p>
+          </div>
+        </div>
+      </CollapsiblePanelSection>
+
+      <CollapsiblePanelSection
+        title={t("panels.mobileAirDetail.statsTitle")}
+        defaultOpen={false}
+        storageKey="mobileair-stats"
+      >
+        <div className="grid grid-cols-3 gap-3 text-sm">
+          <div className="text-center">
+            <span className="text-[color:var(--fg-muted)] block">{t("panels.mobileAirDetail.average")}</span>
+            <p className="font-medium text-lg">
+              {routeToUse.averageValue.toFixed(1)}
+            </p>
+            <p className="text-xs text-[color:var(--fg-muted)]">
+              {localSelectedPollutants.length > 0 && pollutants[localSelectedPollutants[0]]?.unit 
+                ? pollutants[localSelectedPollutants[0]].unit 
+                : "µg/m³"}
+            </p>
+          </div>
+          <div className="text-center">
+            <span className="text-[color:var(--fg-muted)] block">{t("panels.mobileAirDetail.maximum")}</span>
+            <p className="font-medium text-lg">
+              {routeToUse.maxValue.toFixed(1)}
+            </p>
+            <p className="text-xs text-[color:var(--fg-muted)]">
+              {localSelectedPollutants.length > 0 && pollutants[localSelectedPollutants[0]]?.unit 
+                ? pollutants[localSelectedPollutants[0]].unit 
+                : "µg/m³"}
+            </p>
+          </div>
+          <div className="text-center">
+            <span className="text-[color:var(--fg-muted)] block">{t("panels.mobileAirDetail.minimum")}</span>
+            <p className="font-medium text-lg">
+              {routeToUse.minValue.toFixed(1)}
+            </p>
+            <p className="text-xs text-[color:var(--fg-muted)]">
+              {localSelectedPollutants.length > 0 && pollutants[localSelectedPollutants[0]]?.unit 
+                ? pollutants[localSelectedPollutants[0]].unit 
+                : "µg/m³"}
+            </p>
+          </div>
+        </div>
+      </CollapsiblePanelSection>
+
+      {/* Graphique — shrink-0 + hauteur clamp (évite le chevauchement flex-1 / canvas) */}
+      <div className="flex shrink-0 flex-col rounded-[var(--r-md)] border border-[rgb(16_32_56_/_0.09)] p-2 sm:p-3">
         {!isPollutantSupported ? (
           <div className={`flex items-center justify-center ${CHART_PANEL_HEIGHT_CLASS}`}>
             <div className="text-center">
@@ -849,7 +1075,10 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
             </div>
           </div>
         ) : (
-          <div className={`relative ${CHART_PANEL_HEIGHT_CLASS}`} ref={chartContainerRef}>
+          <div
+            className={`relative isolate ${CHART_PANEL_HEIGHT_CLASS}`}
+            ref={chartContainerRef}
+          >
             <div
               className="absolute top-2 right-2 z-10"
               data-export-ignore="true"
@@ -887,7 +1116,7 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
 
       {/* Point mis en surbrillance */}
       {hoveredPoint && (
-        <div className="border border-yellow-300 rounded-[var(--r-md)] p-3 sm:p-4 bg-blue-50">
+        <div className="shrink-0 border border-yellow-300 rounded-[var(--r-md)] p-3 sm:p-4 bg-blue-50">
           <h3 className="text-sm font-medium text-yellow-800 mb-3 flex items-center">
             <span className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
             {t("panels.mobileAirDetail.highlightedPoint")}
@@ -970,76 +1199,6 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
           </div>
         </div>
       )}
-      <CollapsiblePanelSection
-        title={t("panels.mobileAirDetail.sessionInfoTitle")}
-        defaultOpen={false}
-        storageKey="mobileair-session-info"
-      >
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <span className="text-[color:var(--fg-muted)]">{t("panels.mobileAirDetail.startLabel")}</span>
-            <p className="font-medium">
-              {formatDate(routeToUse.startTime)}
-            </p>
-          </div>
-          <div>
-            <span className="text-[color:var(--fg-muted)]">{t("panels.mobileAirDetail.endLabel")}</span>
-            <p className="font-medium">{formatDate(routeToUse.endTime)}</p>
-          </div>
-          <div>
-            <span className="text-[color:var(--fg-muted)]">{t("panels.mobileAirDetail.durationLabel")}</span>
-            <p className="font-medium">
-              {formatDuration(routeToUse.duration)}
-            </p>
-          </div>
-          <div>
-            <span className="text-[color:var(--fg-muted)]">{t("panels.mobileAirDetail.pointsLabel")}</span>
-            <p className="font-medium">{routeToUse.points.length}</p>
-          </div>
-        </div>
-      </CollapsiblePanelSection>
-
-      <CollapsiblePanelSection
-        title={t("panels.mobileAirDetail.statsTitle")}
-        defaultOpen={false}
-        storageKey="mobileair-stats"
-      >
-        <div className="grid grid-cols-3 gap-3 text-sm">
-          <div className="text-center">
-            <span className="text-[color:var(--fg-muted)] block">{t("panels.mobileAirDetail.average")}</span>
-            <p className="font-medium text-lg">
-              {routeToUse.averageValue.toFixed(1)}
-            </p>
-            <p className="text-xs text-[color:var(--fg-muted)]">
-              {localSelectedPollutants.length > 0 && pollutants[localSelectedPollutants[0]]?.unit 
-                ? pollutants[localSelectedPollutants[0]].unit 
-                : "µg/m³"}
-            </p>
-          </div>
-          <div className="text-center">
-            <span className="text-[color:var(--fg-muted)] block">{t("panels.mobileAirDetail.maximum")}</span>
-            <p className="font-medium text-lg">
-              {routeToUse.maxValue.toFixed(1)}
-            </p>
-            <p className="text-xs text-[color:var(--fg-muted)]">
-              {localSelectedPollutants.length > 0 && pollutants[localSelectedPollutants[0]]?.unit 
-                ? pollutants[localSelectedPollutants[0]].unit 
-                : "µg/m³"}
-            </p>
-          </div>
-          <div className="text-center">
-            <span className="text-[color:var(--fg-muted)] block">{t("panels.mobileAirDetail.minimum")}</span>
-            <p className="font-medium text-lg">
-              {routeToUse.minValue.toFixed(1)}
-            </p>
-            <p className="text-xs text-[color:var(--fg-muted)]">
-              {localSelectedPollutants.length > 0 && pollutants[localSelectedPollutants[0]]?.unit 
-                ? pollutants[localSelectedPollutants[0]].unit 
-                : "µg/m³"}
-            </p>
-          </div>
-        </div>
-      </CollapsiblePanelSection>
         </>
       )}
     </SidePanelShell>

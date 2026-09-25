@@ -10,6 +10,12 @@ import {
 } from "../types";
 import { getAirQualityLevel } from "../utils";
 import { pollutants } from "../constants/pollutants";
+import { featureFlags } from "../config/featureFlags";
+import {
+  getCachedQaqcLocationIdSet,
+  getCachedQaqcRefStations,
+  resetQaqcStationsCache,
+} from "../utils/atmoMicroStationQaqc";
 
 /**
  * Service microcapteurs AtmoSud adossé à la nouvelle API « microspot ».
@@ -18,8 +24,8 @@ import { pollutants } from "../constants/pollutants";
  * par une base intermédiaire. Deux différences de fond, pas un simple renommage :
  *
  * 1. Le modèle est le CAPTEUR, pas le site. Un marqueur = un capteur (`device.id`).
- *    Les sites de co-location de calibration portent donc plusieurs marqueurs,
- *    ce qui est voulu : la dispersion entre capteurs y est l'information utile.
+ *    Les sites de co-location de calibration peuvent porter plusieurs marqueurs ;
+ *    la diffusion carte publique les masque via `hideAtmoMicroStationQaqc`.
  * 2. Les identifiants n'ont aucune correspondance avec les anciens `id_site`,
  *    qui n'étaient qu'un auto-incrément de la base intermédiaire. Aucune
  *    jointure entre les deux APIs n'est possible.
@@ -145,6 +151,31 @@ export class AtmoMicroV2Service
     AtmoMicroV2Service.locationsCache = null;
     AtmoMicroV2Service.locationsFetchedAt = 0;
     AtmoMicroV2Service.locationsFetchPromise = null;
+    resetQaqcStationsCache();
+  }
+
+  /**
+   * Set des `location_id` microspot en co-location station (QAQC), ou vide
+   * si le flag est off. Construit une fois depuis /lists/locations × AtmoRef.
+   */
+  private async getQaqcLocationIdsIfEnabled(
+    locations?: Map<string, MicrospotLocation>
+  ): Promise<Set<string>> {
+    if (!featureFlags.hideAtmoMicroStationQaqc) {
+      return new Set();
+    }
+    const locs =
+      locations ??
+      (await this.getCachedLocations().catch(() => {
+        console.warn(
+          "[AtmoMicro] lists/locations indisponible pour le filtre QAQC"
+        );
+        return new Map<string, MicrospotLocation>();
+      }));
+    const stations = await getCachedQaqcRefStations((url) =>
+      this.makeRequest(url)
+    );
+    return getCachedQaqcLocationIdSet(locs, stations);
   }
 
   /**
@@ -380,7 +411,7 @@ export class AtmoMicroV2Service
       // Trois appels en parallèle. Contrairement à l'ancien service, les
       // observations portent déjà les métadonnées utiles (marque, modèle) :
       // /lists/devices ne sert plus qu'aux capteurs sans mesure récente, et
-      // /lists/locations qu'à retrouver `influence`.
+      // /lists/locations qu'à retrouver `influence` (+ filtre QAQC).
       const [observations, devices, locations] = await Promise.all([
         this.fetchLatestObservations(
           variableIsoCode,
@@ -406,6 +437,9 @@ export class AtmoMicroV2Service
           return new Map<string, MicrospotLocation>();
         }),
       ]);
+
+      // Après locations : croiser avec AtmoRef pour obtenir les location_id QAQC.
+      const qaqcLocationIds = await this.getQaqcLocationIdsIfEnabled(locations);
 
       const { eligibleDevices, excludedDevices } = this.filterDevicesByVariable(
         devices,
@@ -451,6 +485,18 @@ export class AtmoMicroV2Service
           // affirmerait le contraire. Sans position exploitable, on l'écarte.
           seenDeviceIds.add(observation.id);
           continue;
+        }
+
+        if (qaqcLocationIds.size > 0 && observation.location_id) {
+          if (qaqcLocationIds.has(String(observation.location_id))) {
+            postFilterExcluded.push({
+              id: observation.id,
+              name: displayName,
+              reason: `colocation station ref QAQC (location_id=${observation.location_id})`,
+            });
+            seenDeviceIds.add(observation.id);
+            continue;
+          }
         }
 
         // `value_ref` est la meilleure valeur disponible (corrigée sinon brute)
@@ -530,6 +576,17 @@ export class AtmoMicroV2Service
             reason: `coordonnees invalides dans lists/devices (lat=${device.lat}, lon=${device.lon})`,
           });
           continue;
+        }
+
+        if (qaqcLocationIds.size > 0 && device.location_id) {
+          if (qaqcLocationIds.has(String(device.location_id))) {
+            postFilterExcluded.push({
+              id: device.id,
+              name: displayName,
+              reason: `colocation station ref QAQC (location_id=${device.location_id})`,
+            });
+            continue;
+          }
         }
 
         measurementDevices.push({
@@ -1048,6 +1105,8 @@ export class AtmoMicroV2Service
 
     const observationsByTimestamp = new Map<string, MicrospotObservation[]>();
     const siteFilter = params.sites ? new Set(params.sites) : null;
+    // Uniquement si le flag QAQC est on (sinon aucun appel locations/stations).
+    const qaqcLocationIds = await this.getQaqcLocationIdsIfEnabled();
 
     // Les tranches n'ont aucune dépendance entre elles : les lancer ensemble
     // plutôt qu'en boucle `await` évite de payer N fois la latence (~20 s
@@ -1107,6 +1166,20 @@ export class AtmoMicroV2Service
           continue;
         }
 
+        // Aligné sur le fetch live : écarter les observations sans coords valides
+        // (sinon crash Leaflet au seek TimeBar).
+        if (!this.isValidCoordinate(observation.lat, observation.lon)) {
+          continue;
+        }
+
+        if (
+          qaqcLocationIds.size > 0 &&
+          observation.location_id &&
+          qaqcLocationIds.has(String(observation.location_id))
+        ) {
+          continue;
+        }
+
         totalValue += displayValue;
         validValues++;
 
@@ -1115,12 +1188,6 @@ export class AtmoMicroV2Service
           pollutantConfig.thresholds
         );
         qualityLevels[qualityLevel] = (qualityLevels[qualityLevel] || 0) + 1;
-
-        // Aligné sur le fetch live : écarter les observations sans coords valides
-        // (sinon crash Leaflet au seek TimeBar).
-        if (!this.isValidCoordinate(observation.lat, observation.lon)) {
-          continue;
-        }
 
         const hasCorrection = observation.value !== null;
         const displayName = this.buildDisplayName({
