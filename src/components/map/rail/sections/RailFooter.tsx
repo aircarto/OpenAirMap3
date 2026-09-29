@@ -2,7 +2,6 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "../../../../i18n/navigation";
 import LanguageSwitcher from "../../../controls/LanguageSwitcher";
-import TourReplayButton from "../../../tour/TourReplayButton";
 import { useMapControls } from "../../../../contexts/mapControlsContext";
 import RailItem from "../RailItem";
 import RailSection from "../RailSection";
@@ -11,7 +10,7 @@ import {
   RAIL_FLYOUT_SIDE_OFFSET,
   railFlyoutSide,
 } from "../railFlyout";
-import { IconInfo, IconLanguage, IconTour } from "../railIcons";
+import { IconInfo, IconLanguage } from "../railIcons";
 import type { RailOrientation } from "../useRailRoving";
 
 export interface RailFooterProps {
@@ -20,7 +19,11 @@ export interface RailFooterProps {
 }
 
 /**
- * Pied du rail : langue, tutoriel, informations, liens pages SEO.
+ * Pied du rail : langue, informations, liens pages SEO.
+ *
+ * Le replay du tutoriel vit dans la modale d'informations : sur mobile, un
+ * troisième item épinglé mangeait la place du mode historique dans la zone
+ * défilante. Ce groupe n'est PAS gelé pendant la lecture historique.
  */
 export const RailFooter: React.FC<RailFooterProps> = ({
   orientation,
@@ -55,26 +58,10 @@ export const RailFooter: React.FC<RailFooterProps> = ({
         )}
       />
 
-      <TourReplayButton
-        tourId="app_overview"
-        renderTrigger={({ label, disabled, onReplay }) => (
-          <RailItem
-            itemId="tour"
-            data-testid="rail-tour-replay"
-            aria-label={label}
-            title={label}
-            disabled={disabled}
-            onClick={onReplay}
-            onFocus={onItemFocus}
-            label={label}
-            icon={<IconTour />}
-          />
-        )}
-      />
-
       <RailItem
         itemId="info"
         data-testid="rail-info-button"
+        // Libellé conservé mot pour mot : e2e/smoke.spec.ts cible ce nom
         aria-label={t("app.infoButton")}
         title={t("app.infoButton")}
         onClick={ui.onOpenInfoModal}
