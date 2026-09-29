@@ -264,6 +264,13 @@ export const useAirQualityData = ({
         const filteredDevices = prevDevices.filter((device) => {
           // Garder les devices des sources actuellement sélectionnées
           if (mappedSources.includes(device.source)) return true;
+          // MobileAir n’est pas dans selectedSources/mappedSources : le préserver
+          // tant que des capteurs sont chargés (le wipe full / merge partiel gèrent
+          // le remplacement plus bas). Sinon un refetch partiel d’un capteur
+          // efface les sessions des autres avant le merge.
+          if (hasMobileAirSensors && device.source === "mobileair") {
+            return true;
+          }
           // Préserver les marqueurs live MobileAir pendant le refresh
           if (
             shouldFetchLive &&
