@@ -16,11 +16,16 @@ export type PanelSize = "normal" | "fullscreen" | "hidden";
  */
 export const PANEL_EXIT_MS = 300;
 
-/** Échelles de largeur. Deux suffisent — il en existait cinq, par dérive. */
+/** Échelles de largeur. Deux suffisent — il en existait cinq, par dérive.
+ *  `max-w-full` + `min-w-0` : un enfant (graphique, toggle) ne doit jamais
+ *  élargir le panneau au-delà de sa colonne flex, sinon scroll horizontal.
+ */
 const WIDTHS = {
   // Élargissement modéré pour laisser plus de place au graphique (sacrifie un peu de carte).
-  default: "w-full sm:w-[320px] md:w-[420px] lg:w-[680px] xl:w-[720px]",
-  compact: "w-full sm:w-[340px] md:w-[420px] lg:w-[480px] xl:w-[520px]",
+  default:
+    "w-full max-w-full min-w-0 shrink-0 sm:w-[320px] md:w-[420px] lg:w-[680px] xl:w-[720px]",
+  compact:
+    "w-full max-w-full min-w-0 shrink-0 sm:w-[340px] md:w-[420px] lg:w-[480px] xl:w-[520px]",
 } as const;
 
 /** Classes body pour les panneaux centrés sur le graphique (flex + scroll). */
@@ -171,7 +176,7 @@ export const SidePanelShell: React.FC<SidePanelShellProps> = ({
   }, [isOpen, size, handleSizeChange]);
 
   const panelClasses = cn(
-    "glass-2 flex h-full min-h-0 flex-col",
+    "glass-2 relative z-panel flex h-full min-h-0 flex-col overflow-x-hidden",
     isAnimatingOut
       ? // `fixed` pour rester visible alors que le panneau est déjà sorti du flux
         cn(
@@ -220,10 +225,10 @@ export const SidePanelShell: React.FC<SidePanelShellProps> = ({
       {size !== "hidden" && (
         <div
           className={cn(
-            // `min-h-0` est ce qui rend `overflow-y-auto` effectif : sans lui la
-            // zone refuse de se réduire sous la hauteur de son contenu et c'est
-            // le panneau entier qui déborde.
-            "min-h-0 flex-1 overflow-y-auto",
+            // `min-h-0` rend `overflow-y-auto` effectif ; `overflow-x-hidden` +
+            // `min-w-0` empêchent un enfant large (amCharts, toggles) de forcer
+            // un scroll horizontal sur le viewport.
+            "min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden",
             bodyClassName ?? "space-y-4 p-3 sm:space-y-6 sm:p-4"
           )}
         >

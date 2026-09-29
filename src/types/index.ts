@@ -36,6 +36,8 @@ export interface Seuils {
 }
 
 // Types pour les polluants
+export type PollutantCategory = "polluant" | "bruit" | "chaleur";
+
 export interface Pollutant {
   name: string;
   code: string;
@@ -44,6 +46,8 @@ export interface Pollutant {
   supportedTimeSteps?: string[];
   /** Si false, le polluant n'apparaît pas dans le sélecteur global (défaut: true) */
   activated?: boolean;
+  /** Groupe d'affichage dans le menu (polluant / bruit / chaleur) */
+  category: PollutantCategory;
 }
 
 // Types pour les pas de temps

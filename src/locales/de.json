@@ -35,7 +35,12 @@
     "so2": "SO₂",
     "o3": "O₃",
     "bruit": "Lärm",
-    "noAvailable": "Kein Schadstoff verfügbar"
+    "noAvailable": "Kein Schadstoff verfügbar",
+    "categories": {
+      "polluant": "Schadstoff",
+      "bruit": "Lärm",
+      "chaleur": "Wärme"
+    }
   },
   "quality": {
     "noData": "Keine Daten",
@@ -636,7 +641,9 @@
       "personalDataTitle": "Personenbezogene Daten",
       "personalDataText": "OpenAirMap bietet keine Benutzerkonten. Technische Cookies oder Tracker (insbesondere zur Reichweitenmessung über Matomo) können zur Sicherstellung des Betriebs und zur Verbesserung des Dienstes verwendet werden.",
       "privacyPolicyLink": "Datenschutzrichtlinie von AtmoSud"
-    }
+    },
+    "tourTitle": "Erste Schritte",
+    "tourText": "Starten Sie die Führung erneut, um die Kartensteuerung, Datenquellen und den historischen Modus kennenzulernen."
   },
   "tooltip": {
     "model": "Modell:",
@@ -703,7 +710,8 @@
     "effisMaxPower": "max. {{frp}} MW",
     "effisBurnedAreas_one": "{{count}} Brandfläche",
     "effisBurnedAreas_other": "{{count}} Brandflächen",
-    "effisBurnedTotal": "{{hectares}} ha"
+    "effisBurnedTotal": "{{hectares}} ha",
+    "periodAria": "Zeitraum: {{period}}"
   },
   "baseLayer": {
     "title": "Kartenbasis",
@@ -778,6 +786,14 @@
       "step3": {
         "title": "Go to a date",
         "description": "Pick a date in the calendar (including pollution episodes) to jump there. Station charts open on this window, with a cursor on the current instant."
+      },
+      "step4": {
+        "title": "Daten laden",
+        "description": "Nach Auswahl des Zeitraums klicken Sie hier, um historische Messungen auf der Karte zu laden."
+      },
+      "step5": {
+        "title": "Wiedergabesteuerung",
+        "description": "Nutzen Sie Wiedergabe/Pause, die Zeitleiste und die Geschwindigkeit zur Navigation. Dieses Panel ist verschiebbar; öffnen Sie den Kalender über das Symbol oben rechts."
       }
     },
     "global": {
@@ -825,7 +841,8 @@
     },
     "groupUtilities": "Extras",
     "groupBaseLayer": "Kartenhintergrund",
-    "groupModes": "Modi"
+    "groupModes": "Modi",
+    "brandWebsite": "Website von {{organization}}"
   },
   "timeBar": {
     "now": "Jetzt",

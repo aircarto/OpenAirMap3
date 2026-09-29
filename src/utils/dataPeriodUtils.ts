@@ -18,24 +18,46 @@ function getLocale(locale?: string): string {
   return localeMap[locale.slice(0, 2)] || localeMap.fr;
 }
 
+function formatTime(date: Date, loc: string): string {
+  return date.toLocaleTimeString(loc, {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function formatDayMonth(date: Date, loc: string, withYear = false): string {
+  return date.toLocaleDateString(loc, {
+    day: "2-digit",
+    month: "2-digit",
+    ...(withYear ? { year: "2-digit" as const } : {}),
+  });
+}
+
+export type PeriodFormatOptions = {
+  /** Format court pour chip mobile (sans label, rapidement lisible) */
+  compact?: boolean;
+};
+
 /**
  * Retourne la période de données actuellement affichée selon le pas de temps.
  * @param timeStep - Pas de temps (jour, heure, quartHeure, instantane, deuxMin)
  * @param locale - Code langue (fr, en, ar, etc.) pour le formatage date/heure
+ * @param options - compact pour chip mobile
  */
-export function getCurrentDataPeriod(timeStep: string, locale?: string): string {
+export function getCurrentDataPeriod(
+  timeStep: string,
+  locale?: string,
+  options?: PeriodFormatOptions
+): string {
   const now = new Date();
   const loc = getLocale(locale);
+  const compact = Boolean(options?.compact);
 
   switch (timeStep) {
     case "jour": {
       const yesterday = new Date(now);
       yesterday.setDate(yesterday.getDate() - 1);
-      return yesterday.toLocaleDateString(loc, {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      });
+      return formatDayMonth(yesterday, loc, !compact);
     }
 
     case "heure": {
@@ -44,7 +66,7 @@ export function getCurrentDataPeriod(timeStep: string, locale?: string): string 
       lastHour.setMilliseconds(0);
       const endHour = new Date(lastHour);
       endHour.setHours(endHour.getHours() + 1);
-      return `${lastHour.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" })}-${endHour.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" })}`;
+      return `${formatTime(lastHour, loc)}-${formatTime(endHour, loc)}`;
     }
 
     case "quartHeure": {
@@ -55,14 +77,11 @@ export function getCurrentDataPeriod(timeStep: string, locale?: string): string 
       lastQuarter.setMilliseconds(0);
       const quarterEnd = new Date(lastQuarter);
       quarterEnd.setMinutes(quarterEnd.getMinutes() + 15);
-      return `${lastQuarter.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" })}-${quarterEnd.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" })}`;
+      return `${formatTime(lastQuarter, loc)}-${formatTime(quarterEnd, loc)}`;
     }
 
     case "instantane":
-      return now.toLocaleTimeString(loc, {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+      return formatTime(now, loc);
 
     case "deuxMin": {
       const lastTwoMin = new Date(now);
@@ -75,7 +94,7 @@ export function getCurrentDataPeriod(timeStep: string, locale?: string): string 
       }
       const twoMinEnd = new Date(lastTwoMin);
       twoMinEnd.setMinutes(twoMinEnd.getMinutes() + 2);
-      return `${lastTwoMin.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" })}-${twoMinEnd.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" })}`;
+      return `${formatTime(lastTwoMin, loc)}-${formatTime(twoMinEnd, loc)}`;
     }
 
     default:
@@ -87,12 +106,20 @@ export function getCurrentDataPeriod(timeStep: string, locale?: string): string 
  * Formate une date ISO pour l'affichage en mode historique.
  * @param dateString - Date ISO
  * @param locale - Code langue pour le formatage
+ * @param options - compact : jj/mm hh:mm (sans année)
  */
-export function formatHistoricalDate(dateString: string, locale?: string): string {
+export function formatHistoricalDate(
+  dateString: string,
+  locale?: string,
+  options?: PeriodFormatOptions
+): string {
   if (!dateString) return "";
   const date = new Date(dateString);
   if (Number.isNaN(date.getTime())) return "";
   const loc = getLocale(locale);
+  if (options?.compact) {
+    return `${formatDayMonth(date, loc)} ${formatTime(date, loc)}`;
+  }
   return date.toLocaleString(loc, {
     day: "2-digit",
     month: "2-digit",
@@ -105,14 +132,16 @@ export function formatHistoricalDate(dateString: string, locale?: string): strin
 /**
  * Retourne la période à afficher : date historique si fournie, sinon période calculée selon le pas de temps.
  * @param locale - Code langue (fr, en, ar, etc.) pour adapter le format date/heure
+ * @param options - compact pour chip mobile
  */
 export function getDisplayedPeriod(
   selectedTimeStep: string,
   historicalCurrentDate?: string,
-  locale?: string
+  locale?: string,
+  options?: PeriodFormatOptions
 ): string {
   if (historicalCurrentDate) {
-    return formatHistoricalDate(historicalCurrentDate, locale);
+    return formatHistoricalDate(historicalCurrentDate, locale, options);
   }
-  return getCurrentDataPeriod(selectedTimeStep, locale);
+  return getCurrentDataPeriod(selectedTimeStep, locale, options);
 }

@@ -35,7 +35,12 @@
     "so2": "SO₂",
     "o3": "O₃",
     "bruit": "Noise",
-    "noAvailable": "No pollutant available"
+    "noAvailable": "No pollutant available",
+    "categories": {
+      "polluant": "Pollutant",
+      "bruit": "Noise",
+      "chaleur": "Heat"
+    }
   },
   "quality": {
     "noData": "No data",
@@ -636,7 +641,9 @@
       "personalDataTitle": "Personal data",
       "personalDataText": "OpenAirMap does not provide user accounts. Technical cookies or trackers (notably for audience measurement via Matomo) may be used to ensure proper operation and continuous improvement of the service.",
       "privacyPolicyLink": "AtmoSud privacy policy"
-    }
+    },
+    "tourTitle": "Getting started",
+    "tourText": "Replay the guided tour to discover map controls, data sources and historical mode."
   },
   "tooltip": {
     "model": "Model:",
@@ -703,7 +710,8 @@
     "effisMaxPower": "max {{frp}} MW",
     "effisBurnedAreas_one": "{{count}} burned area",
     "effisBurnedAreas_other": "{{count}} burned areas",
-    "effisBurnedTotal": "{{hectares}} ha"
+    "effisBurnedTotal": "{{hectares}} ha",
+    "periodAria": "Period: {{period}}"
   },
   "baseLayer": {
     "title": "Base map",
@@ -778,6 +786,14 @@
       "step3": {
         "title": "Choose a period",
         "description": "The “Period” button sets the navigable bounds of the bar (calendar and pollution episodes). Station charts open on this window."
+      },
+      "step4": {
+        "title": "Load data",
+        "description": "Once the period is selected, click here to load historical measurements on the map."
+      },
+      "step5": {
+        "title": "Playback controls",
+        "description": "Use play/pause, the timeline and speed to navigate through time. This panel is draggable; reopen the calendar via the icon at the top right."
       }
     },
     "global": {
@@ -825,7 +841,8 @@
     },
     "groupUtilities": "Utilities",
     "groupBaseLayer": "Base map",
-    "groupModes": "Modes"
+    "groupModes": "Modes",
+    "brandWebsite": "{{organization}} website"
   },
   "timeBar": {
     "now": "Now",

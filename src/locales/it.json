@@ -35,7 +35,12 @@
     "so2": "SO₂",
     "o3": "O₃",
     "bruit": "Rumore",
-    "noAvailable": "Nessun inquinante disponibile"
+    "noAvailable": "Nessun inquinante disponibile",
+    "categories": {
+      "polluant": "Inquinante",
+      "bruit": "Rumore",
+      "chaleur": "Calore"
+    }
   },
   "quality": {
     "noData": "Nessun dato",
@@ -636,7 +641,9 @@
       "personalDataTitle": "Dati personali",
       "personalDataText": "OpenAirMap non prevede account utente. Cookie o tracker tecnici (in particolare per la misurazione dell'audience tramite Matomo) possono essere utilizzati per garantire il corretto funzionamento e il miglioramento del servizio.",
       "privacyPolicyLink": "Informativa sulla privacy di AtmoSud"
-    }
+    },
+    "tourTitle": "Per iniziare",
+    "tourText": "Rilancia il tutorial guidato per scoprire i controlli della mappa, le fonti di dati e la modalità storica."
   },
   "tooltip": {
     "model": "Modello:",
@@ -703,7 +710,8 @@
     "effisMaxPower": "max {{frp}} MW",
     "effisBurnedAreas_one": "{{count}} area bruciata",
     "effisBurnedAreas_other": "{{count}} aree bruciate",
-    "effisBurnedTotal": "{{hectares}} ha"
+    "effisBurnedTotal": "{{hectares}} ha",
+    "periodAria": "Periodo: {{period}}"
   },
   "baseLayer": {
     "title": "Mappa di base",
@@ -778,6 +786,14 @@
       "step3": {
         "title": "Go to a date",
         "description": "Pick a date in the calendar (including pollution episodes) to jump there. Station charts open on this window, with a cursor on the current instant."
+      },
+      "step4": {
+        "title": "Carica i dati",
+        "description": "Una volta scelto il periodo, fai clic qui per caricare le misure storiche sulla mappa."
+      },
+      "step5": {
+        "title": "Controlli di riproduzione",
+        "description": "Usa play/pausa, la timeline e la velocità per navigare nel tempo. Questo pannello è trascinabile; riapri il calendario con l'icona in alto a destra."
       }
     },
     "global": {
@@ -825,7 +841,8 @@
     },
     "groupUtilities": "Utilità",
     "groupBaseLayer": "Mappa di base",
-    "groupModes": "Modalità"
+    "groupModes": "Modalità",
+    "brandWebsite": "Sito di {{organization}}"
   },
   "timeBar": {
     "now": "Adesso",

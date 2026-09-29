@@ -3,14 +3,17 @@ import { useTranslation } from "react-i18next";
 import {
   pollutants,
   isPollutantSupportedForTimeStep,
+  POLLUTANT_CATEGORY_ORDER,
 } from "../../constants/pollutants";
+import type { Pollutant, PollutantCategory } from "../../types";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuTrigger,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
+  DropdownMenuSeparator,
 } from "../ui/dropdown-menu";
 import { DropdownButton } from "./DropdownButton";
 import type { CustomTriggerProps } from "./dropdownTriggerContract";
@@ -45,6 +48,22 @@ const PollutantDropdown: React.FC<PollutantDropdownProps> = ({
       ),
     [selectedTimeStep]
   );
+
+  const pollutantsByCategory = useMemo(() => {
+    const groups = new Map<PollutantCategory, Array<[string, Pollutant]>>();
+    for (const entry of availablePollutants) {
+      const category = entry[1].category;
+      const list = groups.get(category);
+      if (list) list.push(entry);
+      else groups.set(category, [entry]);
+    }
+    return POLLUTANT_CATEGORY_ORDER.filter((category) =>
+      groups.has(category)
+    ).map((category) => ({
+      category,
+      items: groups.get(category)!,
+    }));
+  }, [availablePollutants]);
 
   const getDisplayText = () => {
     const pollutant = pollutants[selectedPollutant];
@@ -93,18 +112,26 @@ const PollutantDropdown: React.FC<PollutantDropdownProps> = ({
           value={selectedPollutant}
           onValueChange={onPollutantChange}
         >
-          {availablePollutants.map(([code, pollutant]) => (
-            <DropdownMenuRadioItem
-              key={code}
-              value={code}
-              className={cn(
-                "py-2 pr-3 text-sm",
-                selectedPollutant === code &&
-                  "bg-[#e7eef8] text-[#1f3c6d]"
-              )}
-            >
-              {t(`pollutants.${code}`)}
-            </DropdownMenuRadioItem>
+          {pollutantsByCategory.map(({ category, items }, sectionIndex) => (
+            <div key={category} role="group">
+              {sectionIndex > 0 && <DropdownMenuSeparator />}
+              <DropdownMenuLabel className="px-2 py-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                {t(`pollutants.categories.${category}`)}
+              </DropdownMenuLabel>
+              {items.map(([code]) => (
+                <DropdownMenuRadioItem
+                  key={code}
+                  value={code}
+                  className={cn(
+                    "py-2 pr-3 text-sm",
+                    selectedPollutant === code &&
+                      "bg-[#e7eef8] text-[#1f3c6d]"
+                  )}
+                >
+                  {t(`pollutants.${code}`)}
+                </DropdownMenuRadioItem>
+              ))}
+            </div>
           ))}
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>

@@ -306,6 +306,7 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
               mobilityPeriodRange={mobilityPeriodRange}
               statistics={statistics}
               sourceStatistics={sourceStatistics}
+              variant="full"
               showDetails={false}
             />
           </div>
@@ -322,6 +323,7 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
             mobilityPeriodRange={mobilityPeriodRange}
             statistics={statistics}
             sourceStatistics={sourceStatistics}
+            variant="compact"
             showDetails={false}
           />
         )}

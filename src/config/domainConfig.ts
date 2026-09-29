@@ -54,6 +54,8 @@ export interface DomainConfig {
     website: string;
     contact: string;
     about?: string;
+    /** Cible du clic sur le logo du rail. Absente = ouvrir la modale infos. */
+    logo?: string;
   };
   organization: string;
   legal?: DomainLegalInfo;
@@ -131,6 +133,10 @@ const atmosudConfig: DomainConfig = {
   organization: 'AtmoSud',
   // Première mesure exploitable du réseau AtmoSud (station de référence la plus ancienne).
   earliestMeasurementDate: '2007-05-22',
+  links: {
+    ...defaultConfig.links,
+    logo: 'https://www.atmosud.org/',
+  },
   legal: {
     siret: '10795525400019',
     legalForm: 'Association loi 1901',

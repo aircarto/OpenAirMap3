@@ -35,7 +35,12 @@
     "so2": "SO₂",
     "o3": "O₃",
     "bruit": "الضجيج",
-    "noAvailable": "لا يوجد ملوث متاح"
+    "noAvailable": "لا يوجد ملوث متاح",
+    "categories": {
+      "polluant": "ملوث",
+      "bruit": "ضجيج",
+      "chaleur": "حرارة"
+    }
   },
   "quality": {
     "noData": "لا توجد بيانات",
@@ -636,7 +641,9 @@
       "personalDataTitle": "البيانات الشخصية",
       "personalDataText": "لا يوفّر OpenAirMap حسابات مستخدمين. قد تُستخدم ملفات تعريف ارتباط أو أدوات تتبع تقنية (لا سيما لقياس الجمهور عبر Matomo) لضمان حسن التشغيل وتحسين الخدمة.",
       "privacyPolicyLink": "سياسة الخصوصية لدى AtmoSud"
-    }
+    },
+    "tourTitle": "البدء",
+    "tourText": "أعد تشغيل الجولة الإرشادية لاكتشاف عناصر التحكم في الخريطة ومصادر البيانات والوضع التاريخي."
   },
   "tooltip": {
     "model": "النموذج:",
@@ -719,7 +726,8 @@
     "effisBurnedAreas_few": "{{count}} مناطق محروقة",
     "effisBurnedAreas_many": "{{count}} منطقة محروقة",
     "effisBurnedAreas_other": "{{count}} منطقة محروقة",
-    "effisBurnedTotal": "{{hectares}} هكتار"
+    "effisBurnedTotal": "{{hectares}} هكتار",
+    "periodAria": "الفترة: {{period}}"
   },
   "baseLayer": {
     "title": "الخريطة الأساسية",
@@ -794,6 +802,14 @@
       "step3": {
         "title": "Go to a date",
         "description": "Pick a date in the calendar (including pollution episodes) to jump there. Station charts open on this window, with a cursor on the current instant."
+      },
+      "step4": {
+        "title": "تحميل البيانات",
+        "description": "بعد اختيار الفترة، انقر هنا لتحميل القياسات التاريخية على الخريطة."
+      },
+      "step5": {
+        "title": "عناصر التحكم في التشغيل",
+        "description": "استخدم التشغيل/الإيقاف والجدول الزمني والسرعة للتنقل عبر الزمن. هذه اللوحة قابلة للسحب؛ أعد فتح التقويم عبر الأيقونة أعلى اليمين."
       }
     },
     "global": {
@@ -841,7 +857,8 @@
     },
     "groupUtilities": "أدوات",
     "groupBaseLayer": "خلفية الخريطة",
-    "groupModes": "الأنماط"
+    "groupModes": "الأنماط",
+    "brandWebsite": "موقع {{organization}}"
   },
   "timeBar": {
     "now": "الآن",

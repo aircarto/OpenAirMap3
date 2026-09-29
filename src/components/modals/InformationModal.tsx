@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { DomainConfig } from '../../config/domainConfig';
 import { Link } from '../../i18n/navigation';
 import { getMarkerPath } from '../../utils';
+import TourReplayButton from '../tour/TourReplayButton';
 
 const FOCUSABLE_SELECTOR =
   'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
@@ -236,6 +237,37 @@ const InformationModal: React.FC<InformationModalProps> = ({
           />
         </div>
       </header>
+
+      <section className="rounded-xl border border-slate-200 bg-white px-6 py-5 text-sm text-slate-600 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <h3 className="text-base font-semibold text-slate-800">
+              {t('infoModal.tourTitle')}
+            </h3>
+            <p className="mt-1 leading-relaxed">
+              {t('infoModal.tourText')}
+            </p>
+          </div>
+          <TourReplayButton
+            tourId="app_overview"
+            renderTrigger={({ label, disabled, onReplay }) => (
+              <button
+                type="button"
+                data-testid="info-modal-tour-replay"
+                disabled={disabled}
+                onClick={() => {
+                  onClose();
+                  // Laisser la modale se démonter avant d'afficher le tour.
+                  requestAnimationFrame(() => onReplay());
+                }}
+                className="inline-flex shrink-0 items-center justify-center rounded-md border border-[#4271B3]/40 bg-white px-3 py-2 text-sm font-semibold text-[#325A96] shadow-sm transition hover:bg-[#4271B3]/10 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {label}
+              </button>
+            )}
+          />
+        </div>
+      </section>
 
       <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="px-6 pb-3 pt-5 sm:px-10">
