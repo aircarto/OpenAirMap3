@@ -530,7 +530,7 @@ export const useAirQualityData = ({
             "mobileair"
           ) as MobileAirService;
           if (mobileAirService) {
-            const liveSensors = await mobileAirService.fetchLiveSensors("5m");
+            const liveSensors = await mobileAirService.fetchLiveSensors("15m");
             const liveDevices = mobileAirService.createLiveDevices(
               liveSensors,
               selectedPollutant

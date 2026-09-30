@@ -376,6 +376,61 @@ describe("MobileAirService", () => {
     expect(devices[0].latitude).toBe(43.3);
   });
 
+  it("conserve les 3 points live quand fixed === false (trajet)", async () => {
+    vi.spyOn(service as any, "makeRequest").mockResolvedValue([
+      {
+        id: 3,
+        sensorId: "mobileair-003",
+        sensorToken: "CCC",
+        lastSeen: "2026-09-24T13:02:00Z",
+        lastSeenSec: 2,
+        fixed: false,
+        sessionId: 3,
+        moving: 1,
+        points: [
+          buildDataPoint({
+            sensorId: "mobileair-003",
+            sessionId: 3,
+            moving: 1,
+            time: "2026-09-24T13:00:00Z",
+            lat: 43.3,
+            lon: 5.4,
+            PM25: 8,
+          }),
+          buildDataPoint({
+            sensorId: "mobileair-003",
+            sessionId: 3,
+            moving: 1,
+            time: "2026-09-24T13:01:00Z",
+            lat: 43.31,
+            lon: 5.41,
+            PM25: 12,
+          }),
+          buildDataPoint({
+            sensorId: "mobileair-003",
+            sessionId: 3,
+            moving: 1,
+            time: "2026-09-24T13:02:00Z",
+            lat: 43.32,
+            lon: 5.42,
+            PM25: 15,
+          }),
+        ],
+      },
+    ]);
+
+    const live = await service.fetchLiveSensors("15m");
+    expect(live).toHaveLength(1);
+    expect(live[0].fixed).toBe(false);
+    expect(live[0].points).toHaveLength(3);
+
+    const devices = service.createLiveDevices(live, "pm25");
+    expect(devices).toHaveLength(1);
+    expect(devices[0].latitude).toBe(43.32);
+    expect(devices[0].longitude).toBe(5.42);
+    expect((devices[0] as any).mobileAirLive.points).toHaveLength(3);
+  });
+
   it("fetchContext appelle get_context avec capteur_id", async () => {
     const spy = vi
       .spyOn(service as any, "makeRequest")

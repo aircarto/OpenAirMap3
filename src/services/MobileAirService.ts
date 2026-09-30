@@ -308,7 +308,7 @@ export class MobileAirService extends BaseDataService {
    * Dernières mesures des MobileAir actifs (`liveMobileAir`).
    * Filtre les capteurs sans GPS (`fixed === null` / `points` vides).
    */
-  async fetchLiveSensors(since: string = "5m"): Promise<MobileAirLiveSensor[]> {
+  async fetchLiveSensors(since: string = "15m"): Promise<MobileAirLiveSensor[]> {
     const url = `${this.baseUrl}/liveMobileAir?since=${encodeURIComponent(since)}`;
     const response = await this.makeRequest(url);
     if (!Array.isArray(response)) {
@@ -321,7 +321,8 @@ export class MobileAirService extends BaseDataService {
 
   /**
    * Convertit les capteurs live en devices carte (`source: mobileair-live`).
-   * Un CircleMarker = dernier point géolocalisé.
+   * Position = dernier point GPS ; `mobileAirLive.points` conserve la queue
+   * (jusqu’à 3 points si `fixed === false`) pour le rendu carte.
    */
   createLiveDevices(
     liveSensors: MobileAirLiveSensor[],

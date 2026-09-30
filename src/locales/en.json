@@ -386,7 +386,7 @@
       "liveScanOnlyHint": "MobileAir live is only available on the Scan time step.",
       "liveMobilityHint": "Live is disabled in mobility measurement mode.",
       "liveLoading": "Looking for live MobileAir sensors…",
-      "liveEmpty": "No geolocated live MobileAir right now (5 min window).",
+      "liveEmpty": "No geolocated live MobileAir right now (15 min window).",
       "liveReady": "{{count}} live MobileAir on the map."
     },
     "mobileAirManage": {
