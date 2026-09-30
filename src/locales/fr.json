@@ -392,7 +392,7 @@
       "liveMobilityHint": "Le live est désactivé en mode mesure en mobilité.",
       "liveLoading": "Recherche des MobileAir en direct…",
       "liveEmpty": "Aucun MobileAir géolocalisé en direct pour le moment (fenêtre 15 min).",
-      "liveReady": "{{count}} MobileAir en direct sur la carte."
+      "liveReady": "{{count}}  MobileAir en direct sur la carte."
     },
     "mobileAirManage": {
       "panelTitle": "Parcours MobileAir",
