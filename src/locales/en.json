@@ -415,8 +415,6 @@
       "detailFocusBadge": "detail"
     },
     "mobileAirDetail": {
-      "sessionTitle": "Session {{sessionId}}",
-      "sensorLabel": "Sensor {{sensorId}}",
       "pollutantsDisplayed": "Pollutants displayed ({{count}})",
       "sessionsAvailable": "Available sessions ({{count}})",
       "sessionLabel": "Session {{sessionId}}",

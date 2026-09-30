@@ -775,34 +775,19 @@ const MobileAirDetailPanel: React.FC<MobileAirDetailPanelProps> = ({
       width="compact"
       bodyClassName={CHART_PANEL_BODY_CLASS}
       testId="mobileair-detail-panel"
-      title={
-        routeToUse
-          ? t("panels.mobileAirDetail.sessionTitle", {
-              sessionId: routeToUse.sessionId,
-            })
-          : t("panels.mobileAirManage.panelTitle")
-      }
+      title={t("panels.mobileAirManage.panelTitle")}
       subtitle={
-        routeToUse
-          ? t("panels.mobileAirDetail.sensorLabel", {
-              sensorId: routeToUse.sensorId,
+        loadedSensorIds.length > 0
+          ? t("panels.mobileAirManage.title", {
+              count: loadedSensorIds.length,
             })
-          : loadedSensorIds.length > 0
-            ? t("panels.mobileAirManage.title", {
-                count: loadedSensorIds.length,
-              })
-            : undefined
+          : undefined
       }
       badge={
-        <div className="flex items-center gap-2">
-          {routeToUse && (
-            <MobileAirMovingBadge moving={routeToUse.moving} />
-          )}
-          <PanelReopenBadge
-            label={t("panels.mobileAirSelection.reopenButtonTooltip")}
-            className="bg-green-600 text-white"
-          />
-        </div>
+        <PanelReopenBadge
+          label={t("panels.mobileAirSelection.reopenButtonTooltip")}
+          className="bg-green-600 text-white"
+        />
       }
     >
       {hasManage && (
