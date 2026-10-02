@@ -168,7 +168,16 @@ interface AirQualityMapProps {
   /** Masque l'encart promo quand le panel historique de sélection de date est visible */
   isHistoricalDatePanelVisible?: boolean;
   /** Callback quand l'utilisateur déplace ou zoome la carte */
-  onMapViewChange?: (center: [number, number], zoom: number) => void;
+  onMapViewChange?: (
+    center: [number, number],
+    zoom: number,
+    bounds: {
+      south: number;
+      west: number;
+      north: number;
+      east: number;
+    }
+  ) => void;
   /** Emprise de l'instance courante (voir DomainConfig.mapBounds) — limite les couches EFFIS */
   mapBounds: DomainConfig["mapBounds"];
 }

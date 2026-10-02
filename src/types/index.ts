@@ -36,7 +36,7 @@ export interface Seuils {
 }
 
 // Types pour les polluants
-export type PollutantCategory = "polluant" | "bruit" | "chaleur";
+export type PollutantCategory = "polluant" | "bruit" | "chaleur" | "meteo";
 
 export interface Pollutant {
   name: string;
@@ -77,6 +77,10 @@ export interface MeasurementDevice {
   corrected_value?: number; // Valeur corrigée si disponible
   raw_value?: number; // Valeur brute originale
   has_correction?: boolean; // Indique si une correction a été appliquée
+  /** Direction du vent (degrés), source Météo-France */
+  windDirection?: number | null;
+  /** Identifie un point météo (station / bouée) pour le rendu marqueur */
+  isMeteo?: boolean;
 }
 
 // Types spécifiques pour SignalAir
@@ -185,6 +189,17 @@ export interface DataFetchParams {
   mobileAirPartialReplace?: boolean;
   selectedSensors?: string[];
   signalAirSelectedTypes?: string[];
+  /** Emprise viewport carte (WGS84) — utiliséé par Météo-France. */
+  bounds?: {
+    south: number;
+    west: number;
+    north: number;
+    east: number;
+  };
+  /** Zoom carte courant — seuil min pour MF. */
+  zoom?: number;
+  /** Variable météo sélectionnée (vent, temperature, …). */
+  meteoVariable?: string;
 }
 
 // Types pour les marqueurs

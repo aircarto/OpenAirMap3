@@ -103,6 +103,20 @@ export const MARKER_CONFIGS: Record<string, MarkerConfig> = {
     ],
     defaultLevel: "default",
   },
+  meteoFrance: {
+    source: "meteoFrance",
+    basePath: "meteoFranceMarkers/meteoFrance",
+    levels: [
+      "bon",
+      "moyen",
+      "degrade",
+      "mauvais",
+      "tresMauvais",
+      "extrMauvais",
+      "default",
+    ],
+    defaultLevel: "default",
+  },
 };
 
 /**
@@ -170,7 +184,9 @@ export function getMarkerPath(source: string, level: string): string {
     level = config.defaultLevel;
   }
 
-  return `/markers/${config.basePath}_${level}.png`;
+  // Marqueurs Météo-France en SVG (losange), les autres sources en PNG
+  const extension = markerSource === "meteoFrance" ? "svg" : "png";
+  return `/markers/${config.basePath}_${level}.${extension}`;
 }
 
 /**

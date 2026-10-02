@@ -4,6 +4,11 @@ import {
   isPollutantSupportedForTimeStep,
   pollutants,
 } from "../constants/pollutants";
+import {
+  getDefaultMeteoVariable,
+  isMeteoVariableCode,
+  type MeteoVariableCode,
+} from "../constants/meteoVariables";
 import { getDefaultSources, sources } from "../constants/sources";
 import { pasDeTemps } from "../constants/timeSteps";
 
@@ -12,6 +17,7 @@ export interface AppUrlParams {
   lng: number;
   zoom: number;
   pollutant: string;
+  meteo: MeteoVariableCode;
   timeStep: string;
   sources: string[];
   /** Borne basse plage TimeBar (YYYY-MM-DD), null = pas de plage custom. */
@@ -51,6 +57,7 @@ export const buildAppUrlDefaults = (mapDefaults: {
   lng: mapDefaults.mapCenter[1],
   zoom: mapDefaults.mapZoom,
   pollutant: getDefaultPollutant(),
+  meteo: getDefaultMeteoVariable(),
   timeStep: getDefaultTimeStep(),
   sources: getDefaultSources(),
   from: null,
@@ -187,6 +194,12 @@ export const parseAppUrlParams = (
       ? pollutantParam
       : defaults.pollutant;
 
+  const meteoParam = params.get("meteo");
+  const meteo: MeteoVariableCode =
+    meteoParam && isMeteoVariableCode(meteoParam)
+      ? meteoParam
+      : defaults.meteo;
+
   const timeStepParam = params.get("timeStep");
   const timeStep =
     timeStepParam && VALID_TIME_STEPS.has(timeStepParam)
@@ -211,6 +224,7 @@ export const parseAppUrlParams = (
       timeStep,
       defaults.pollutant
     ),
+    meteo,
     timeStep,
     sources: parsedSources,
     from: rangeValid ? from : null,
@@ -242,6 +256,10 @@ export const serializeAppUrlParams = (
     params.set("pollutant", state.pollutant);
   }
 
+  if (state.meteo !== defaults.meteo) {
+    params.set("meteo", state.meteo);
+  }
+
   if (state.timeStep !== defaults.timeStep) {
     params.set("timeStep", state.timeStep);
   }
@@ -271,6 +289,7 @@ export const areAppUrlParamsEqual = (
   Math.abs(a.lng - b.lng) <= COORD_EPSILON &&
   a.zoom === b.zoom &&
   a.pollutant === b.pollutant &&
+  a.meteo === b.meteo &&
   a.timeStep === b.timeStep &&
   arraysEqual(a.sources, b.sources) &&
   a.from === b.from &&

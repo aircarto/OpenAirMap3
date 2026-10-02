@@ -16,8 +16,16 @@ import { MobileAirService } from "../services/MobileAirService";
 
 interface UseAirQualityDataProps {
   selectedPollutant: string;
+  selectedMeteoVariable?: string;
   selectedSources: string[];
   selectedTimeStep: string;
+  mapBounds?: {
+    south: number;
+    west: number;
+    north: number;
+    east: number;
+  } | null;
+  mapZoom?: number;
   signalAirPeriod?: { startDate: string; endDate: string };
   /** Période par défaut (chargement initial multi-capteurs). */
   mobileAirPeriod?: MobileAirPeriod;
@@ -76,8 +84,11 @@ const isSignalAirReport = (
 
 export const useAirQualityData = ({
   selectedPollutant,
+  selectedMeteoVariable,
   selectedSources,
   selectedTimeStep,
+  mapBounds = null,
+  mapZoom,
   signalAirPeriod,
   mobileAirPeriod,
   mobileAirSensorPeriods = {},
@@ -305,13 +316,19 @@ export const useAirQualityData = ({
 
         try {
           const data = await service.fetchData({
-            pollutant: selectedPollutant,
+            pollutant:
+              mappedSourceCode === "meteoFrance"
+                ? selectedMeteoVariable || selectedPollutant
+                : selectedPollutant,
             timeStep: selectedTimeStep,
             sources: mappedSources, // Utiliser les sources mappées, pas les sources originales
             signalAirPeriod,
             signalAirSelectedTypes: signalAirOptions?.selectedTypes,
             mobileAirPeriod,
             selectedSensors: selectedMobileAirSensors,
+            bounds: mapBounds ?? undefined,
+            zoom: mapZoom,
+            meteoVariable: selectedMeteoVariable,
           });
 
           // Séparer les appareils de mesure des signalements
@@ -567,8 +584,11 @@ export const useAirQualityData = ({
     }
   }, [
     selectedPollutant,
+    selectedMeteoVariable,
     selectedSources,
     selectedTimeStep,
+    mapBounds,
+    mapZoom,
     signalAirPeriod,
     mobileAirPeriod,
     mobileAirSensorPeriods,
@@ -638,10 +658,25 @@ export const useAirQualityData = ({
   // Utiliser un ref pour éviter les appels multiples causés par la recréation de fetchData
   useEffect(() => {
     // Créer une signature des paramètres qui déclenchent vraiment un rechargement
+    const meteoSelected = selectedSources.includes("meteoFrance");
+    // Arrondir la bbox pour éviter un storm de refetch au pan (debounce spatial)
+    const boundsKey =
+      meteoSelected && mapBounds
+        ? [
+            mapBounds.south.toFixed(3),
+            mapBounds.west.toFixed(3),
+            mapBounds.north.toFixed(3),
+            mapBounds.east.toFixed(3),
+            mapZoom ?? "",
+          ].join("|")
+        : "";
+
     const fetchParams = JSON.stringify({
       selectedPollutant,
+      selectedMeteoVariable,
       selectedSources,
       selectedTimeStep,
+      boundsKey,
       signalAirPeriod,
       mobileAirPeriod,
       selectedMobileAirSensors,
@@ -655,8 +690,12 @@ export const useAirQualityData = ({
     if (!hasMountedRef.current || lastFetchParamsRef.current !== fetchParams) {
       hasMountedRef.current = true;
       lastFetchParamsRef.current = fetchParams;
-      // Utiliser fetchDataRef.current pour éviter la dépendance à fetchData
-      fetchDataRef.current?.();
+
+      const timer = window.setTimeout(() => {
+        fetchDataRef.current?.();
+      }, meteoSelected && boundsKey ? 400 : 0);
+
+      return () => window.clearTimeout(timer);
     }
 
     // Cleanup: réinitialiser le flag au démontage pour le mode StrictMode
@@ -666,8 +705,11 @@ export const useAirQualityData = ({
     };
   }, [
     selectedPollutant,
+    selectedMeteoVariable,
     selectedSources,
     selectedTimeStep,
+    mapBounds,
+    mapZoom,
     signalAirPeriod,
     mobileAirPeriod,
     selectedMobileAirSensors,

@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import PollutantDropdown from "../../../controls/PollutantDropdown";
+import VariableDropdown from "../../../controls/VariableDropdown";
 import SourceDropdown from "../../../controls/SourceDropdown";
 import MobileAirSourceDisclosure from "../../../controls/MobileAirSourceDisclosure";
 import SignalAirSourceDisclosure from "../../../controls/SignalAirSourceDisclosure";
@@ -25,7 +25,7 @@ export interface RailFiltersSectionProps {
 }
 
 /**
- * Groupe « données » : polluant, sources, pas de temps.
+ * Groupe « données » : variables, sources, pas de temps.
  *
  * Les trois contrôles sont réutilisés tels quels — seul leur déclencheur change,
  * via `renderTrigger`. Le rendu des menus, la compatibilité source/pas de temps
@@ -49,6 +49,7 @@ export const RailFiltersSection: React.FC<RailFiltersSectionProps> = ({
   };
 
   const sourcesCount = filters.selectedSources.length;
+  const showMeteoSection = filters.selectedSources.includes("meteoFrance");
 
   return (
     <RailSection
@@ -57,14 +58,17 @@ export const RailFiltersSection: React.FC<RailFiltersSectionProps> = ({
       locked={ui.controlsLocked}
       lockedReason={t("rail.frozenDuringPlayback")}
     >
-      {/* Polluant */}
+      {/* Variables (polluant + météo) */}
       <label htmlFor="rail-pollutant-trigger" className="sr-only" id="rail-pollutant-label">
-        {t("controls.pollutant")}
+        {t("controls.variable")}
       </label>
-      <PollutantDropdown
+      <VariableDropdown
         selectedPollutant={filters.selectedPollutant}
         onPollutantChange={filters.onPollutantChange}
+        selectedMeteoVariable={filters.selectedMeteoVariable}
+        onMeteoVariableChange={filters.onMeteoVariableChange}
         selectedTimeStep={filters.selectedTimeStep}
+        showMeteoSection={showMeteoSection}
         {...flyout}
         renderTrigger={({ displayText }) => (
           <RailItem
@@ -75,7 +79,7 @@ export const RailFiltersSection: React.FC<RailFiltersSectionProps> = ({
             aria-labelledby="rail-pollutant-label rail-pollutant-value"
             aria-haspopup="menu"
             onFocus={onItemFocus}
-            label={t("controls.pollutant")}
+            label={t("controls.variable")}
             icon={<IconPollutant />}
             caption={<span id="rail-pollutant-value">{displayText}</span>}
           />

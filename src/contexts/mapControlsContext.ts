@@ -1,5 +1,6 @@
 import { createContext, useContext } from "react";
 import { ModelingLayerType } from "../constants/mapLayers";
+import type { MeteoVariableCode } from "../constants/meteoVariables";
 import { Toast } from "../components/ui/toast";
 import type { Notice } from "../components/map/notifications/notice";
 import type { MapInstantMode, TimeBarCustomRange, TimeBarSlot } from "../utils/mapInstant";
@@ -42,9 +43,11 @@ export interface MapControlsBrand {
 
 export interface MapControlsFilters {
   selectedPollutant: string;
+  selectedMeteoVariable: MeteoVariableCode;
   selectedSources: string[];
   selectedTimeStep: string;
   onPollutantChange: (pollutant: string) => void;
+  onMeteoVariableChange: (variable: MeteoVariableCode) => void;
   onSourceChange: (sources: string[]) => void;
   onTimeStepChange: (timeStep: string) => void;
   /**

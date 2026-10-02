@@ -150,6 +150,13 @@ const MarkerTooltip: React.FC<MarkerTooltipProps> = ({
         normalizedPollutants.push("PM₂.₅");
         normalizedPollutants.push("PM₁₀");
       }
+      else if (device.source === "meteoFrance" || device.isMeteo) {
+        const meteoLabel =
+          t(`meteoVariables.${device.pollutant}`, {
+            defaultValue: device.pollutant,
+          }) + (device.unit ? ` (${device.unit})` : "");
+        normalizedPollutants.push(meteoLabel);
+      }
       // Pour les autres sources, on affiche au minimum le polluant actuellement sélectionné
       else {
         const currentPollutant =

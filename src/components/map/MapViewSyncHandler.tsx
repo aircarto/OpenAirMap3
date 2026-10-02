@@ -1,8 +1,19 @@
 import React, { useEffect, useRef } from "react";
 import { useMapEvents } from "react-leaflet";
 
+export interface MapViewportBounds {
+  south: number;
+  west: number;
+  north: number;
+  east: number;
+}
+
 interface MapViewSyncHandlerProps {
-  onViewChange?: (center: [number, number], zoom: number) => void;
+  onViewChange?: (
+    center: [number, number],
+    zoom: number,
+    bounds: MapViewportBounds
+  ) => void;
 }
 
 const MapViewSyncHandler: React.FC<MapViewSyncHandlerProps> = ({
@@ -26,6 +37,18 @@ const MapViewSyncHandler: React.FC<MapViewSyncHandlerProps> = ({
 
       if (!hasInitialisedRef.current) {
         hasInitialisedRef.current = true;
+        // Premier moveend : émettre aussi pour initialiser bbox MF
+        const map = event.target;
+        const center = map.getCenter();
+        const zoom = map.getZoom();
+        const b = map.getBounds();
+        lastSentRef.current = { lat: center.lat, lng: center.lng, zoom };
+        onViewChangeRef.current([center.lat, center.lng], zoom, {
+          south: b.getSouth(),
+          west: b.getWest(),
+          north: b.getNorth(),
+          east: b.getEast(),
+        });
         return;
       }
 
@@ -43,7 +66,13 @@ const MapViewSyncHandler: React.FC<MapViewSyncHandlerProps> = ({
         return;
       }
       lastSentRef.current = { lat: center.lat, lng: center.lng, zoom };
-      onViewChangeRef.current([center.lat, center.lng], zoom);
+      const b = map.getBounds();
+      onViewChangeRef.current([center.lat, center.lng], zoom, {
+        south: b.getSouth(),
+        west: b.getWest(),
+        north: b.getNorth(),
+        east: b.getEast(),
+      });
     },
   });
 

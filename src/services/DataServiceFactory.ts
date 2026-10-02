@@ -8,6 +8,7 @@ import { SignalAirService } from "./SignalAirService";
 import { MobileAirService } from "./MobileAirService";
 import { PurpleAirService } from "./PurpleAirService";
 import { SensorCommunityService } from "./SensorCommunityService";
+import { MeteoFranceService } from "./MeteoFranceService";
 
 export class DataServiceFactory {
   private static services: Map<string, DataService> = new Map();
@@ -27,6 +28,7 @@ export class DataServiceFactory {
     mobileair: MobileAirService,
     purpleair: PurpleAirService,
     sensorCommunity: SensorCommunityService,
+    meteoFrance: MeteoFranceService,
   };
 
   static getService(sourceCode: string): DataService {

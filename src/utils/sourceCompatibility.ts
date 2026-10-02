@@ -51,6 +51,7 @@ export const isSourceCompatibleWithTimeStep = (
 export const getSourceDisplayNameKey = (sourceCode: string): string => {
   if (sourceCode === "atmoRef") return "controls.sourceAtmoRef";
   if (sourceCode === "atmoMicro") return "controls.sourceAtmoMicro";
+  if (sourceCode === "meteoFrance") return "controls.sourceMeteoFrance";
   if (sourceCode === "communautaire") return "controls.sourceCommunautaire";
   if (sourceCode === "signalair") return "statistics.sourceName.signalair";
   if (sourceCode.startsWith("communautaire.")) {

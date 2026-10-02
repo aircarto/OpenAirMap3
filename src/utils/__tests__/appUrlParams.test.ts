@@ -27,12 +27,18 @@ describe("parseAppUrlParams", () => {
       lng: 5.4,
       zoom: 11,
       pollutant: "no2",
+      meteo: defaults.meteo,
       timeStep: "quartHeure",
       sources: ["atmoRef", "atmoMicro"],
       from: null,
       to: null,
       at: null,
     });
+  });
+
+  it("parse la variable météo", () => {
+    const result = parseAppUrlParams("?meteo=temperature", defaults);
+    expect(result.meteo).toBe("temperature");
   });
 
   it("parse from/to/at pour une plage TimeBar", () => {
@@ -118,6 +124,7 @@ describe("serializeAppUrlParams", () => {
       {
         ...defaults,
         pollutant: "no2",
+        meteo: "temperature",
         timeStep: "quartHeure",
         sources: ["atmoMicro"],
       },
@@ -125,7 +132,7 @@ describe("serializeAppUrlParams", () => {
     );
 
     expect(query).toBe(
-      "?pollutant=no2&timeStep=quartHeure&sources=atmoMicro"
+      "?pollutant=no2&meteo=temperature&timeStep=quartHeure&sources=atmoMicro"
     );
   });
 

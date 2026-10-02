@@ -52,6 +52,7 @@ const SOURCE_PRIORITY: Record<string, number> = {
   atmoRef: 100,
   atmoMicro: 80,
   nebuleair: 60,
+  meteoFrance: 40,
   // Toutes les autres sources ont une priorité de 0 par défaut
 };
 
@@ -264,36 +265,39 @@ export const createCustomIcon = (
   const valueText = document.createElement("div");
   valueText.className = "value-text";
 
-  // Fonction pour forcer les valeurs négatives à 0
-  // Les concentrations de polluants ne peuvent pas être négatives
+  // Fonction pour forcer les valeurs négatives à 0 (polluants uniquement)
+  // Les concentrations de polluants ne peuvent pas être négatives ; la température oui.
   const ensureNonNegativeValue = (value: number | undefined | null): number | undefined => {
-    // Retourner undefined/null si la valeur n'est pas définie
     if (value === undefined || value === null) return undefined;
-    // Vérifier que c'est un nombre valide et forcer les négatives à 0
     if (typeof value === "number" && !isNaN(value)) {
+      if (device.isMeteo || device.source === "meteoFrance") {
+        return value;
+      }
       return Math.max(0, value);
     }
-    // Si ce n'est pas un nombre valide, retourner undefined
     return undefined;
   };
 
   // Gestion normale pour les appareils de mesure
-  // Forcer les valeurs négatives à 0 avant l'affichage
   if (device.status === "active") {
     const correctedValue = ensureNonNegativeValue(device.value);
     if (correctedValue !== undefined) {
-      const displayValue = Math.round(correctedValue);
+      const displayValue =
+        device.isMeteo || device.source === "meteoFrance"
+          ? Math.round(correctedValue)
+          : Math.round(correctedValue);
       valueText.textContent = displayValue.toString();
 
       // Ajuster la taille du texte selon la longueur de la valeur
-      if (displayValue >= 1000) {
+      const absDisplay = Math.abs(displayValue);
+      if (absDisplay >= 1000) {
         valueText.style.fontSize = "10px";
-      } else if (displayValue >= 100) {
-        valueText.style.fontSize = "12px"; // Police plus petite pour les valeurs à 3 chiffres
-      } else if (displayValue >= 10) {
-        valueText.style.fontSize = "16px"; // Police moyenne pour les valeurs à 2 chiffres
+      } else if (absDisplay >= 100) {
+        valueText.style.fontSize = "12px";
+      } else if (absDisplay >= 10) {
+        valueText.style.fontSize = "16px";
       } else {
-        valueText.style.fontSize = "18px"; // Police normale pour les valeurs à 1 chiffre
+        valueText.style.fontSize = "18px";
       }
 
       // Couleur du texte selon le niveau de qualité
@@ -301,19 +305,42 @@ export const createCustomIcon = (
         bon: "#000000",
         moyen: "#000000",
         degrade: "#000000",
-        mauvais: "#000000", // Noir au lieu de blanc pour les marqueurs rouges
-        tresMauvais: "#F2F2F2", // Noir au lieu de blanc pour les marqueurs rouges
+        mauvais: "#000000",
+        tresMauvais: "#F2F2F2",
         extrMauvais: "#F2F2F2",
         default: "#666666",
       };
 
       valueText.style.color = textColors[qualityLevel] || "#000000";
 
-      // Ajouter un contour blanc pour améliorer la lisibilité
       if (qualityLevel == "extrMauvais" || qualityLevel == "tresMauvais") {
-        // Contour plus subtil pour éviter l'effet de "paté"
         valueText.style.textShadow =
           "1px 1px 2px rgba(0, 0, 0, 0.8), -1px -1px 2px rgba(0, 0, 0, 0.8)";
+      }
+
+      // Flèche direction du vent (météo)
+      if (
+        (device.isMeteo || device.source === "meteoFrance") &&
+        device.pollutant === "vent" &&
+        typeof device.windDirection === "number" &&
+        Number.isFinite(device.windDirection)
+      ) {
+        const arrow = document.createElement("div");
+        arrow.style.cssText = `
+          position: absolute;
+          top: -10px;
+          left: 50%;
+          width: 0;
+          height: 0;
+          border-left: 5px solid transparent;
+          border-right: 5px solid transparent;
+          border-bottom: 10px solid #1f3c6d;
+          transform: translateX(-50%) rotate(${device.windDirection}deg);
+          transform-origin: 50% 18px;
+          z-index: 5;
+          pointer-events: none;
+        `;
+        div.appendChild(arrow);
       }
 
       // Indicateur de valeur corrigée pour AtmoMicro

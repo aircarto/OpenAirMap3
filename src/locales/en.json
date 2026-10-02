@@ -39,8 +39,15 @@
     "categories": {
       "polluant": "Pollutant",
       "bruit": "Noise",
-      "chaleur": "Heat"
+      "chaleur": "Heat",
+      "meteo": "Weather"
     }
+  },
+  "meteoVariables": {
+    "vent": "Wind",
+    "temperature": "Temperature",
+    "humidite": "Humidity",
+    "precipitation": "Precipitation"
   },
   "quality": {
     "noData": "No data",
@@ -61,7 +68,8 @@
     "thresholdLegendAria": "Quality thresholds ({{unit}})"
   },
   "controls": {
-    "pollutant": "Pollutant",
+    "pollutant": "Variable",
+    "variable": "Variable",
     "sources": "Data sources",
     "timeStep": "Time step",
     "modeling": "Modeling map",
@@ -81,6 +89,7 @@
     "mainSources": "Main sources",
     "sourceAtmoRef": "AtmoSud reference stations",
     "sourceAtmoMicro": "AtmoSud qualified microsensors",
+    "sourceMeteoFrance": "Météo-France",
     "sourceCommunautaire": "Other community sensors",
     "sourceGroupCount": "{{selected}}/{{total}}",
     "sourceSignalements": "Community reports",
@@ -701,7 +710,8 @@
       "sensorCommunity": "Sensor.Community",
       "purpleair": "PurpleAir",
       "mobileair": "MobileAir",
-      "signalair": "SignalAir"
+      "signalair": "SignalAir",
+      "meteoFrance": "Météo-France"
     },
     "effisHotspots_one": "{{count}} fire hotspot",
     "effisHotspots_other": "{{count}} fire hotspots",

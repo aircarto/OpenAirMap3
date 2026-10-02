@@ -24,12 +24,15 @@ const attachHostCookie = (request: NextRequest, response: NextResponse) => {
 };
 
 const isSameOriginApiProxy = (pathname: string): boolean =>
-  pathname.startsWith('/aircarto') || pathname.startsWith('/feuxdeforet');
+  pathname.startsWith('/aircarto') ||
+  pathname.startsWith('/feuxdeforet') ||
+  pathname.startsWith('/api/');
 
 /**
  * next-intl pour les pages ; robots/sitemap hors i18n mais avec cookie Host.
- * Les proxies /aircarto et /feuxdeforet doivent rester hors i18n, sinon
- * next-intl les préfixe (ex. /en/aircarto) et le rewrite Next ne s'applique plus.
+ * Les proxies /aircarto, /feuxdeforet et /api/* doivent rester hors i18n, sinon
+ * next-intl les préfixe (ex. /en/aircarto) et le rewrite / la route API
+ * ne s'applique plus.
  */
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -51,6 +54,6 @@ export const config = {
     '/(fr|en|es|it|de|ar)/:path*',
     '/robots.txt',
     '/sitemap.xml',
-    '/((?!_next|_vercel|aircarto|feuxdeforet|.*\\..*).*)',
+    '/((?!_next|_vercel|aircarto|feuxdeforet|api|.*\\..*).*)',
   ],
 };

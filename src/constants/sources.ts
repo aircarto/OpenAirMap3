@@ -70,6 +70,12 @@ export const sources: Sources = {
     activated: false,
     supportedTimeSteps: ["quartHeure", "heure", "jour"],
   }, // Capteurs SignalAir
+  meteoFrance: {
+    name: "Météo-France",
+    code: "meteoFrance",
+    activated: false,
+    supportedTimeSteps: ["instantane", "heure"],
+  },
 };
 
 /**

@@ -16,7 +16,7 @@ import {
 import { Toast } from "../ui/toast";
 import AutoRefreshToggle from "./AutoRefreshToggle";
 
-const MAIN_SOURCE_CODES = ["atmoRef", "atmoMicro"] as const;
+const MAIN_SOURCE_CODES = ["atmoRef", "atmoMicro", "meteoFrance"] as const;
 
 interface SourceDropdownProps extends CustomTriggerProps {
   selectedSources: string[];

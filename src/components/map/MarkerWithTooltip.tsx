@@ -85,6 +85,12 @@ const MarkerTooltipContent: React.FC<{
     normalizedPollutants = ["PM₁", "PM₂.₅", "PM₁₀"];
   } else if (device.source === "nebuleair") {
     normalizedPollutants = ["PM₁", "PM₂.₅", "PM₁₀"];
+  } else if (device.source === "meteoFrance" || device.isMeteo) {
+    const meteoLabel =
+      t(`meteoVariables.${device.pollutant}`, {
+        defaultValue: device.pollutant,
+      }) + (device.unit ? ` (${device.unit})` : "");
+    normalizedPollutants = [meteoLabel];
   } else {
     const currentPollutant = pollutants[device.pollutant]?.name || device.pollutant;
     normalizedPollutants = [currentPollutant];

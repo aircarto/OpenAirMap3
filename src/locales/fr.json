@@ -39,8 +39,15 @@
     "categories": {
       "polluant": "Polluant",
       "bruit": "Bruit",
-      "chaleur": "Chaleur"
+      "chaleur": "Chaleur",
+      "meteo": "Météo"
     }
+  },
+  "meteoVariables": {
+    "vent": "Vent",
+    "temperature": "Température",
+    "humidite": "Humidité",
+    "precipitation": "Précipitations"
   },
   "quality": {
     "noData": "Pas de donnée",
@@ -61,7 +68,8 @@
     "thresholdLegendAria": "Seuils de qualité ({{unit}})"
   },
   "controls": {
-    "pollutant": "Polluant",
+    "pollutant": "Variable",
+    "variable": "Variable",
     "sources": "Sources de données",
     "timeStep": "Pas de temps",
     "modeling": "Carte de modélisation",
@@ -81,6 +89,7 @@
     "mainSources": "Sources principales",
     "sourceAtmoRef": "Stations de référence AtmoSud",
     "sourceAtmoMicro": "Microcapteurs qualifiés AtmoSud",
+    "sourceMeteoFrance": "Météo-France",
     "sourceCommunautaire": "Autres capteurs communautaires",
     "sourceGroupCount": "{{selected}}/{{total}}",
     "sourceSignalements": "Signalements communautaires",
@@ -707,7 +716,8 @@
       "sensorCommunity": "Sensor.Community",
       "purpleair": "PurpleAir",
       "mobileair": "MobileAir",
-      "signalair": "SignalAir"
+      "signalair": "SignalAir",
+      "meteoFrance": "Météo-France"
     },
     "periodAria": "Période : {{period}}"
   },

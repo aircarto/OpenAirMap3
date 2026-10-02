@@ -38,6 +38,12 @@ import {
   getSupportedPollutantsForTimeStep,
 } from "./constants/pollutants";
 import {
+  getDefaultMeteoVariable,
+  isMeteoVariableCode,
+  isMeteoVariableSupportedForTimeStep,
+  type MeteoVariableCode,
+} from "./constants/meteoVariables";
+import {
   pasDeTemps,
 } from "./constants/timeSteps";
 import { resolveDomainConfig } from "./lib/domain";
@@ -157,6 +163,8 @@ const AppContent: React.FC = () => {
   const [selectedPollutant, setSelectedPollutant] = useState<string>(
     INITIAL_APP_URL_PARAMS.pollutant,
   );
+  const [selectedMeteoVariable, setSelectedMeteoVariable] =
+    useState<MeteoVariableCode>(INITIAL_APP_URL_PARAMS.meteo);
   const [selectedSources, setSelectedSources] = useState<string[]>(
     INITIAL_APP_URL_PARAMS.sources,
   );
@@ -172,6 +180,19 @@ const AppContent: React.FC = () => {
   );
   const [currentModelingLayer, setCurrentModelingLayer] =
     useState<ModelingLayerType | null>(null);
+
+  // Vue carte (déclarée tôt : useAirQualityData utilise zoom/bbox pour Météo-France)
+  const [mapCenter, setMapCenter] = useState<[number, number]>([
+    INITIAL_APP_URL_PARAMS.lat,
+    INITIAL_APP_URL_PARAMS.lng,
+  ]);
+  const [mapZoom, setMapZoom] = useState<number>(INITIAL_APP_URL_PARAMS.zoom);
+  const [mapBounds, setMapBounds] = useState<{
+    south: number;
+    west: number;
+    north: number;
+    east: number;
+  } | null>(null);
 
   const resetSignalAirSettings = useCallback(() => {
     setSignalAirSelectedTypes([...SIGNAL_AIR_DEFAULT_TYPES]);
@@ -237,6 +258,14 @@ const AppContent: React.FC = () => {
     setSelectedPollutant(pollutant);
     trackEvent("pollutant", "select", pollutant);
   }, []);
+
+  const handleMeteoVariableChange = useCallback(
+    (variable: MeteoVariableCode) => {
+      setSelectedMeteoVariable(variable);
+      trackEvent("meteo", "select", variable);
+    },
+    []
+  );
 
   const handleSourceChange = useCallback((sources: string[]) => {
     setSelectedSources((previousSources) => {
@@ -611,6 +640,17 @@ const AppContent: React.FC = () => {
       }
     }
   }, [selectedPollutant, selectedTimeStep]);
+
+  useEffect(() => {
+    if (
+      !isMeteoVariableSupportedForTimeStep(
+        selectedMeteoVariable,
+        selectedTimeStep
+      )
+    ) {
+      setSelectedMeteoVariable(getDefaultMeteoVariable());
+    }
+  }, [selectedMeteoVariable, selectedTimeStep]);
 
   const {
     mode: mapInstantMode,
@@ -1013,8 +1053,11 @@ const AppContent: React.FC = () => {
     mobileAirLiveCount,
   } = useAirQualityData({
     selectedPollutant,
+    selectedMeteoVariable,
     selectedSources: isMobileAirMobilityMode ? [] : selectedSources,
     selectedTimeStep,
+    mapBounds,
+    mapZoom,
     signalAirPeriod,
     mobileAirPeriod,
     mobileAirSensorPeriods,
@@ -1284,13 +1327,6 @@ const AppContent: React.FC = () => {
     ? snapshotLoading && !timeBarPlaying
     : loading;
 
-  // Configuration de la carte basée sur le domaine et l'URL
-  const [mapCenter, setMapCenter] = useState<[number, number]>([
-    INITIAL_APP_URL_PARAMS.lat,
-    INITIAL_APP_URL_PARAMS.lng,
-  ]);
-  const [mapZoom, setMapZoom] = useState<number>(INITIAL_APP_URL_PARAMS.zoom);
-
   const appUrlDefaults = useMemo(
     () =>
       buildAppUrlDefaults({
@@ -1306,6 +1342,7 @@ const AppContent: React.FC = () => {
       lng: mapCenter[1],
       zoom: mapZoom,
       pollutant: selectedPollutant,
+      meteo: selectedMeteoVariable,
       timeStep: selectedTimeStep,
       sources: selectedSources,
       from: customRange?.start.date ?? null,
@@ -1321,6 +1358,7 @@ const AppContent: React.FC = () => {
       mapCenter,
       mapZoom,
       selectedPollutant,
+      selectedMeteoVariable,
       selectedTimeStep,
       selectedSources,
       customRange?.start.date,
@@ -1334,6 +1372,9 @@ const AppContent: React.FC = () => {
     setMapCenter([params.lat, params.lng]);
     setMapZoom(params.zoom);
     setSelectedPollutant(params.pollutant);
+    if (isMeteoVariableCode(params.meteo)) {
+      setSelectedMeteoVariable(params.meteo);
+    }
     setSelectedTimeStep(params.timeStep);
     setSelectedSources(params.sources);
     if (params.from && params.to) {
@@ -1379,10 +1420,20 @@ const AppContent: React.FC = () => {
   });
 
   const handleMapViewChange = useCallback(
-    (center: [number, number], zoom: number) => {
+    (
+      center: [number, number],
+      zoom: number,
+      bounds: {
+        south: number;
+        west: number;
+        north: number;
+        east: number;
+      }
+    ) => {
       markMapViewTouched();
       setMapCenter(center);
       setMapZoom(zoom);
+      setMapBounds(bounds);
     },
     [markMapViewTouched],
   );
@@ -1417,9 +1468,11 @@ const AppContent: React.FC = () => {
   const filtersValue = useMemo<MapControlsFilters>(
     () => ({
       selectedPollutant,
+      selectedMeteoVariable,
       selectedSources,
       selectedTimeStep,
       onPollutantChange: handlePollutantChange,
+      onMeteoVariableChange: handleMeteoVariableChange,
       onSourceChange: handleSourceChange,
       onTimeStepChange: handleTimeStepChange,
       isMobileAirMobilityMode,
@@ -1427,9 +1480,11 @@ const AppContent: React.FC = () => {
     }),
     [
       selectedPollutant,
+      selectedMeteoVariable,
       selectedSources,
       selectedTimeStep,
       handlePollutantChange,
+      handleMeteoVariableChange,
       handleSourceChange,
       handleTimeStepChange,
       isMobileAirMobilityMode,

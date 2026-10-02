@@ -13,7 +13,9 @@ markers/
 ├── nebuleAirMarkers/        # Capteurs communautaires NebuleAir
 ├── purpleAirMarkers/        # Capteurs PurpleAir
 ├── sensorCommunityMarkers/  # Capteurs Sensor.Community
-└── signalAirMarkers/        # Signalements SignalAir
+├── signalAirMarkers/        # Signalements SignalAir
+├── meteoFranceMarkers/      # Stations / bouées Météo-France (SVG losange)
+└── wildfire/                # Feux
 ```
 
 ### 🎨 Convention de Nommage
