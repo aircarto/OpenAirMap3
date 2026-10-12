@@ -238,6 +238,12 @@ const aircrowdConfig: DomainConfig = {
     'C3F37C3A', // Meyreuil_Mairie
     'D0001CA0', // Gardanne_Lycée_Fourcade
     'DE0B8E93', // Gardanne_NotreDame
+    // Capteurs AIR_QAM (campagne AirCrowd)
+    'AIR_QAM01',
+    'AIR_QAM02',
+    'AIR_QAM03',
+    'AIR_QAM04',
+    'AIR_QAM05',
   ],
   title: 'AirCrowd',
   seoTitle: "AirCrowd – Qualité de l'air à Gardanne / Meyreuil | AtmoSud",

@@ -100,7 +100,13 @@ describe("getConfigForDomain", () => {
     expect(config.mapCenter).toEqual([43.455, 5.475]);
     expect(config.atmoMicroAllowedSiteIds?.length).toBeGreaterThan(0);
     expect(config.atmoMicroAllowedSiteIds).toEqual(
-      expect.arrayContaining(["05C1A382", "D0001CA0", 1358])
+      expect.arrayContaining([
+        "05C1A382",
+        "D0001CA0",
+        1358,
+        "AIR_QAM01",
+        "AIR_QAM05",
+      ])
     );
     expect(config.aircrowdWmsEnabled).toBe(true);
     expect(config.aircrowdWmsStartDate).toBe("2026-09-02");
