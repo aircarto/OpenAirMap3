@@ -908,6 +908,11 @@ export class AtmoMicroService extends BaseDataService {
               !isNaN(displayValue) &&
               typeof displayValue === "number"
             ) {
+              // Même garde que le live / AtmoRef : lat/lon null → crash Leaflet TimeBar
+              if (!this.isValidCoordinate(measure.lat, measure.lon)) {
+                return;
+              }
+
               totalValue += displayValue;
               validValues++;
 
@@ -952,6 +957,8 @@ export class AtmoMicroService extends BaseDataService {
               });
             }
           });
+
+          if (devices.length === 0) continue;
 
           const averageValue = validValues > 0 ? totalValue / validValues : 0;
 

@@ -10,6 +10,20 @@ export const SNAPSHOT_TEMPORAL_SOURCES = [
 
 export type SnapshotTemporalSource = (typeof SNAPSHOT_TEMPORAL_SOURCES)[number];
 
+/** Coordonnées utilisables par Leaflet (évite [null,null] → crash .lat). */
+export const hasValidMapCoordinates = (
+  latitude: unknown,
+  longitude: unknown
+): boolean =>
+  typeof latitude === 'number' &&
+  typeof longitude === 'number' &&
+  !Number.isNaN(latitude) &&
+  !Number.isNaN(longitude) &&
+  latitude >= -90 &&
+  latitude <= 90 &&
+  longitude >= -180 &&
+  longitude <= 180;
+
 export const isValidTemporalDevice = (
   device: MeasurementDevice | null | undefined
 ): device is MeasurementDevice =>
@@ -18,7 +32,8 @@ export const isValidTemporalDevice = (
       device.value !== null &&
       device.value !== undefined &&
       typeof device.value === 'number' &&
-      !Number.isNaN(device.value)
+      !Number.isNaN(device.value) &&
+      hasValidMapCoordinates(device.latitude, device.longitude)
   );
 
 /** Fusionne plusieurs séries temporelles par timestamp (tolérance 5 min). */

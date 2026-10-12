@@ -1107,6 +1107,12 @@ export class AtmoMicroV2Service
           continue;
         }
 
+        // Même garde que le live : une mesure sans lat/lon plante Leaflet
+        // (bounds.contains([null,null]) → accès .lat sur null) en TimeBar.
+        if (!this.isValidCoordinate(observation.lat, observation.lon)) {
+          continue;
+        }
+
         totalValue += displayValue;
         validValues++;
 
@@ -1146,6 +1152,8 @@ export class AtmoMicroV2Service
           has_correction: hasCorrection,
         });
       }
+
+      if (devices.length === 0) continue;
 
       temporalDataPoints.push({
         timestamp,

@@ -996,6 +996,30 @@ describe("AtmoMicroV2Service", () => {
       expect(result[0].devices[0].id).toBe("A");
     });
 
+    it("omet les observations sans coordonnées valides (TimeBar)", async () => {
+      mockRoutes(service, {
+        observations: [
+          buildObservation({ id: "A", value_ref: 12 }),
+          buildObservation({
+            id: "B",
+            value_ref: 15,
+            lat: null as unknown as number,
+            lon: null as unknown as number,
+          }),
+        ],
+      });
+
+      const result = await service.fetchTemporalData({
+        pollutant: "pm25",
+        timeStep: "heure",
+        startDate: "2026-09-01T00:00:00Z",
+        endDate: "2026-09-01T12:00:00Z",
+      });
+
+      expect(result[0].deviceCount).toBe(1);
+      expect(result[0].devices[0].id).toBe("A");
+    });
+
     it("filtre sur les capteurs demandés", async () => {
       mockRoutes(service, {
         observations: [

@@ -8,6 +8,7 @@ import {
   DeviceStatistics,
   SourceStatistics,
 } from "../../../utils/deviceStatisticsUtils";
+import { hasValidMapCoordinates } from "../../../utils/instantSnapshot";
 
 interface UseVisibleDevicesProps {
   mapRef: React.RefObject<L.Map | null>;
@@ -67,7 +68,7 @@ export const useVisibleDevices = ({
     // Il faut donc inclure les valeurs dans le hash pour détecter les changements
     // Plus fiable que de dépendre uniquement de la référence
     const devicesHash = `${devices.length}_${devices.slice(0, 10).map(d => 
-      `${d.id}_${d.latitude.toFixed(2)}_${d.longitude.toFixed(2)}_${d.value?.toFixed(2) || '0'}_${d.timestamp || ''}`
+      `${d.id}_${hasValidMapCoordinates(d.latitude, d.longitude) ? `${d.latitude.toFixed(2)}_${d.longitude.toFixed(2)}` : 'no-coords'}_${d.value?.toFixed(2) || '0'}_${d.timestamp || ''}`
     ).join('|')}`;
     
     // Reconstruire seulement si le hash a changé
@@ -84,7 +85,7 @@ export const useVisibleDevices = ({
 
   useEffect(() => {
     // Même logique pour les reports
-    const reportsHash = `${reports.length}_${reports.slice(0, 10).map(r => `${r.id}_${r.latitude.toFixed(2)}_${r.longitude.toFixed(2)}`).join('|')}`;
+    const reportsHash = `${reports.length}_${reports.slice(0, 10).map(r => `${r.id}_${hasValidMapCoordinates(r.latitude, r.longitude) ? `${r.latitude.toFixed(2)}_${r.longitude.toFixed(2)}` : 'no-coords'}`).join('|')}`;
     
     if (reportsHash !== reportsHashRef.current) {
       reportsHashRef.current = reportsHash;
@@ -144,8 +145,10 @@ export const useVisibleDevices = ({
       // ET qu'il y a assez d'appareils pour que ce soit suspect
       if (isZoomedIn && ratio > 0.8 && devices.length > 20) {
         // Vérification avec filtrage linéaire
-        const linearFiltered = devices.filter((device) =>
-          bounds.contains([device.latitude, device.longitude])
+        const linearFiltered = devices.filter(
+          (device) =>
+            hasValidMapCoordinates(device.latitude, device.longitude) &&
+            bounds.contains([device.latitude, device.longitude])
         );
         
         // Utiliser le résultat linéaire seulement si l'écart est significatif (>20% ou >50 appareils)
@@ -163,8 +166,10 @@ export const useVisibleDevices = ({
     } catch (error) {
       // En cas d'erreur, fallback vers le filtrage linéaire
       console.error('[SpatialGrid] Erreur lors de la requête, fallback linéaire:', error);
-      visible = devices.filter((device) =>
-        bounds.contains([device.latitude, device.longitude])
+      visible = devices.filter(
+        (device) =>
+          hasValidMapCoordinates(device.latitude, device.longitude) &&
+          bounds.contains([device.latitude, device.longitude])
       );
     }
     
@@ -177,14 +182,18 @@ export const useVisibleDevices = ({
       
       // Même vérification pour les signalements
       if (visibleReps.length > reports.length * 0.9) {
-        visibleReps = reports.filter((report) =>
-          bounds.contains([report.latitude, report.longitude])
+        visibleReps = reports.filter(
+          (report) =>
+            hasValidMapCoordinates(report.latitude, report.longitude) &&
+            bounds.contains([report.latitude, report.longitude])
         );
       }
     } catch (error) {
       console.error('[SpatialGrid] Erreur lors de la requête reports, fallback linéaire:', error);
-      visibleReps = reports.filter((report) =>
-        bounds.contains([report.latitude, report.longitude])
+      visibleReps = reports.filter(
+        (report) =>
+          hasValidMapCoordinates(report.latitude, report.longitude) &&
+          bounds.contains([report.latitude, report.longitude])
       );
     }
     

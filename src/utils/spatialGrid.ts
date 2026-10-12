@@ -1,5 +1,6 @@
 import { MeasurementDevice, SignalAirReport } from '../types';
 import L from 'leaflet';
+import { hasValidMapCoordinates } from './instantSnapshot';
 
 /**
  * Structure de données spatiale optimisée pour le filtrage rapide des appareils
@@ -81,6 +82,12 @@ export class SpatialGrid {
 
     // Indexer chaque appareil dans sa cellule
     items.forEach((item, index) => {
+      // [null, null] fait traiter Leaflet contains() comme un LatLngBounds
+      // invalide → TypeError sur .lat (TimeBar / snapshot historique).
+      if (!hasValidMapCoordinates(item.latitude, item.longitude)) {
+        return;
+      }
+
       const key = this.getCellKey(item.latitude, item.longitude);
       
       if (!this.grid.has(key)) {
