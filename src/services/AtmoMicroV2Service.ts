@@ -84,25 +84,59 @@ const MAX_LIMIT = 500000;
  * exposé par CORS, donc illisible depuis le navigateur : rien ne permet de la
  * détecter côté client. La seule parade est de rester franchement sous le cap.
  *
- * D'où ces valeurs, mesurées le 2026-09-04 (PM2.5, tout le parc, `limit=500000`),
- * qui visent ~60 % du plafond :
- *   scan 0,25 j          -> 22 218 lignes, 7,2 Mo (59 %), 21 s
- *   quarter-hourly 2 j   -> 23 344 lignes, 7,6 Mo (63 %), 22 s
- *   hourly 8 j           -> 22 722 lignes, 7,3 Mo (61 %), 21 s
- *   daily 180 j          -> ~14 000 lignes, ~4,6 Mo (~38 %)
+ * Mesures 2026-10-12 (PM2.5, tout le parc, `limit=500000`) — le parc a grossi
+ * depuis septembre : 8 j horaire ≈ 8,6 Mo, 2 j quart-horaire ≈ 8,4 Mo. Firefox
+ * échoue alors avec « Content-Length header of network response exceeds
+ * response Body » (corps coupé vs Content-Length). Nouvelles cibles ~35–45 % :
+ *   scan 0,125 j         -> marge sous l’ancien 0,25 j déjà limite
+ *   quarter-hourly 1 j   -> ~4 Mo estimé
+ *   hourly 4 j           -> 12 966 lignes, 4,4 Mo (~36 %)
+ *   daily 90 j           -> marge sous l’ancien 180 j
  *
- * Les valeurs précédentes (scan 0,5 j, quart-horaire 3 j, horaire 12 j, daily
- * 365 j) tenaient entre 90 et 100 % du cap : `scan` était déjà tronqué, et les
- * autres l'auraient été à la première croissance du parc. Elles étaient aussi
- * deux fois plus lentes par requête (34 à 41 s contre 21 s).
+ * Avec une whitelist `device_id` (ex. AirCrowd), même 30 j restent ~2,7 Mo :
+ * le filtre serveur évite de télécharger tout le parc pour le jeter ensuite.
  */
 const CHUNK_DAYS_BY_AGGREGATION: Record<TimeStepConfig["aggregation"], number> =
   {
-    scan: 0.25,
-    "quarter-hourly": 2,
-    hourly: 8,
-    daily: 180,
+    scan: 0.125,
+    "quarter-hourly": 1,
+    hourly: 4,
+    daily: 90,
   };
+
+/** Nombre max de tranches `/observations` en vol (évite de saturer le navigateur). */
+const TEMPORAL_CHUNK_CONCURRENCY = 3;
+
+/**
+ * IDs microspot utilisables en `device_id` — exclut les id_site numériques
+ * de l’ancienne API présents dans les whitelists domaine mixtes.
+ */
+export const isMicrospotDeviceId = (id: string): boolean =>
+  id.length > 0 && !/^\d+$/.test(id);
+
+export const toMicrospotDeviceIds = (
+  sites: Array<string | number> | undefined
+): string[] => {
+  if (!sites || sites.length === 0) return [];
+  const seen = new Set<string>();
+  const ids: string[] = [];
+  for (const site of sites) {
+    const id = String(site).trim();
+    if (!id || !isMicrospotDeviceId(id)) continue;
+    const key = id.toUpperCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    ids.push(id);
+  }
+  return ids;
+};
+
+const isTruncatedBodyError = (error: unknown): boolean => {
+  const message = error instanceof Error ? error.message : String(error);
+  return /Content-Length header of network response exceeds response Body/i.test(
+    message
+  );
+};
 
 /** Préfixe du placeholder interne que l'API laisse fuiter dans `location_name`. */
 const AUTO_CREATED_LOCATION_PREFIX = "auto created for device";
@@ -968,12 +1002,19 @@ export class AtmoMicroV2Service
   private async fetchTemporalChunk(
     chunk: { startMs: number; endMs: number },
     timeStepConfig: TimeStepConfig,
-    variableIsoCode: string
+    variableIsoCode: string,
+    deviceIds: string[] = []
   ): Promise<MicrospotObservation[]> {
+    const deviceFilter =
+      deviceIds.length > 0
+        ? `&device_id=${deviceIds.map(encodeURIComponent).join(",")}`
+        : "";
+
     const url =
       `${this.BASE_URL}/observations` +
       `?aggregation=${timeStepConfig.aggregation}` +
       `&variable=${variableIsoCode}` +
+      deviceFilter +
       `&from_date_time=${new Date(chunk.startMs).toISOString()}` +
       `&date_time=${new Date(chunk.endMs).toISOString()}` +
       `&decimals=1` +
@@ -983,24 +1024,83 @@ export class AtmoMicroV2Service
       `&include=raw_value` +
       `&limit=${MAX_LIMIT}`;
 
-    const response = await this.makeRequest(url);
+    try {
+      const response = await this.makeRequest(url);
 
-    if (!response || !Array.isArray(response)) {
-      console.warn(
-        `[AtmoMicro] Aucune donnée pour la tranche ${new Date(
-          chunk.startMs
-        ).toISOString()} -> ${new Date(chunk.endMs).toISOString()}`
+      if (!response || !Array.isArray(response)) {
+        console.warn(
+          `[AtmoMicro] Aucune donnée pour la tranche ${new Date(
+            chunk.startMs
+          ).toISOString()} -> ${new Date(chunk.endMs).toISOString()}`
+        );
+        return [];
+      }
+
+      this.warnIfTruncated(
+        response.length,
+        MAX_LIMIT,
+        `observations (tranche ${new Date(chunk.startMs).toISOString()})`
       );
-      return [];
+
+      return response as MicrospotObservation[];
+    } catch (error) {
+      // Corps coupé (souvent au plafond 12 MiB) : découper la tranche en deux.
+      const durationMs = chunk.endMs - chunk.startMs;
+      const minSplitMs = 60 * 60 * 1000; // 1 h
+      if (isTruncatedBodyError(error) && durationMs > minSplitMs * 2) {
+        const mid = chunk.startMs + Math.floor(durationMs / 2);
+        console.warn(
+          `[AtmoMicro] Réponse tronquée sur ${new Date(
+            chunk.startMs
+          ).toISOString()} -> ${new Date(
+            chunk.endMs
+          ).toISOString()}, nouvel essai en 2 sous-tranches`
+        );
+        const [left, right] = await Promise.all([
+          this.fetchTemporalChunk(
+            { startMs: chunk.startMs, endMs: mid },
+            timeStepConfig,
+            variableIsoCode,
+            deviceIds
+          ),
+          this.fetchTemporalChunk(
+            { startMs: mid, endMs: chunk.endMs },
+            timeStepConfig,
+            variableIsoCode,
+            deviceIds
+          ),
+        ]);
+        return [...left, ...right];
+      }
+      throw error;
     }
+  }
 
-    this.warnIfTruncated(
-      response.length,
-      MAX_LIMIT,
-      `observations (tranche ${new Date(chunk.startMs).toISOString()})`
-    );
+  /** Exécute des tâches async avec un plafond de concurrence. */
+  private async mapWithConcurrency<T, R>(
+    items: T[],
+    concurrency: number,
+    worker: (item: T, index: number) => Promise<R>
+  ): Promise<PromiseSettledResult<R>[]> {
+    const results: PromiseSettledResult<R>[] = new Array(items.length);
+    let nextIndex = 0;
 
-    return response as MicrospotObservation[];
+    const runWorker = async () => {
+      while (nextIndex < items.length) {
+        const index = nextIndex;
+        nextIndex += 1;
+        try {
+          const value = await worker(items[index], index);
+          results[index] = { status: "fulfilled", value };
+        } catch (reason) {
+          results[index] = { status: "rejected", reason };
+        }
+      }
+    };
+
+    const pool = Math.max(1, Math.min(concurrency, items.length));
+    await Promise.all(Array.from({ length: pool }, () => runWorker()));
+    return results;
   }
 
   /** Série de tous les capteurs sur une période, pour l'animation temporelle. */
@@ -1009,7 +1109,7 @@ export class AtmoMicroV2Service
     timeStep: string;
     startDate: string;
     endDate: string;
-    sites?: string[];
+    sites?: Array<string | number>;
   }): Promise<TemporalDataPoint[]> {
     const variableIsoCode = this.getVariableIsoCode(params.pollutant);
     if (!variableIsoCode) return [];
@@ -1029,9 +1129,14 @@ export class AtmoMicroV2Service
     const start = new Date(startISO);
     const end = new Date(endISO);
 
-    // La taille de tranche dépend de l'agrégation : l'API plafonne à 50 000
-    // lignes, et une tranche fixe de 30 jours dépasse ce plafond dès l'horaire.
-    const chunkDays = CHUNK_DAYS_BY_AGGREGATION[timeStepConfig.aggregation];
+    const deviceIds = toMicrospotDeviceIds(params.sites);
+    // Whitelist courte (ex. AirCrowd) : payload ~10× plus petit → tranches plus larges.
+    const baseChunkDays =
+      CHUNK_DAYS_BY_AGGREGATION[timeStepConfig.aggregation];
+    const chunkDays =
+      deviceIds.length > 0 && deviceIds.length <= 30
+        ? baseChunkDays * 4
+        : baseChunkDays;
     const chunkMs = chunkDays * 24 * 60 * 60 * 1000;
 
     const chunks: Array<{ startMs: number; endMs: number }> = [];
@@ -1047,24 +1152,31 @@ export class AtmoMicroV2Service
     }
 
     const observationsByTimestamp = new Map<string, MicrospotObservation[]>();
-    const siteFilter = params.sites ? new Set(params.sites) : null;
+    const siteFilter =
+      deviceIds.length > 0
+        ? new Set(deviceIds.map((id) => id.toUpperCase()))
+        : null;
 
-    // Les tranches n'ont aucune dépendance entre elles : les lancer ensemble
-    // plutôt qu'en boucle `await` évite de payer N fois la latence (~20 s
-    // chacune). Promise.allSettled conserve le contrat « une tranche en échec
-    // ne condamne pas la période ».
-    const chunkResults = await Promise.allSettled(
-      chunks.map((chunk) =>
-        this.fetchTemporalChunk(chunk, timeStepConfig, variableIsoCode)
-      )
+    // Concurrence bornée : 4× ~8 Mo en parallèle faisait échouer Firefox
+    // (Content-Length vs corps coupé). Promise.allSettled conserve le contrat
+    // « une tranche en échec ne condamne pas la période ».
+    const chunkResults = await this.mapWithConcurrency(
+      chunks,
+      TEMPORAL_CHUNK_CONCURRENCY,
+      (chunk) =>
+        this.fetchTemporalChunk(
+          chunk,
+          timeStepConfig,
+          variableIsoCode,
+          deviceIds
+        )
     );
 
     chunkResults.forEach((result, index) => {
       if (result.status === "rejected") {
         const { startMs, endMs } = chunks[index];
-        // Une erreur de parsing JSON signale ici une réponse coupée en cours
-        // de transfert (le serveur répond 200 puis interrompt le flux au-delà
-        // d'une vingtaine de mégaoctets) : c'est un trou dans le graphique.
+        // Une erreur de parsing JSON / Content-Length signale une réponse
+        // coupée en cours de transfert : trou dans la TimeBar / le graphique.
         console.warn(
           `[AtmoMicro] Échec de la tranche ${new Date(
             startMs
@@ -1076,7 +1188,12 @@ export class AtmoMicroV2Service
       }
 
       for (const observation of result.value) {
-        if (siteFilter && !siteFilter.has(observation.id)) continue;
+        if (
+          siteFilter &&
+          !siteFilter.has(String(observation.id).toUpperCase())
+        ) {
+          continue;
+        }
 
         const existing = observationsByTimestamp.get(observation.time);
         if (existing) {

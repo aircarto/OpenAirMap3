@@ -111,6 +111,10 @@ export const useAirCrowdWmsMeasurements = ({
               timeStep: AIRCROWD_WMS_TIME_STEP,
               startDate,
               endDate,
+              sites:
+                (atmoMicroAllowedSiteIds?.length ?? 0) > 0
+                  ? atmoMicroAllowedSiteIds.map((id) => String(id))
+                  : undefined,
             })
           );
         }

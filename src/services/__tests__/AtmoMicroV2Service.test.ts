@@ -842,7 +842,7 @@ describe("AtmoMicroV2Service", () => {
       );
     };
 
-    it("découpe en tranches de 8 jours maximum en horaire", async () => {
+    it("découpe en tranches de 4 jours maximum en horaire", async () => {
       const spy = mockRoutes(service, { observations: [] });
 
       await service.fetchTemporalData({
@@ -855,19 +855,18 @@ describe("AtmoMicroV2Service", () => {
       const urls = requestedUrls(spy).filter((url) =>
         url.includes("/observations?")
       );
-      // Une tranche unique de 30 jours dépasserait le cap de 12 MiB de l'API,
-      // qui tronquerait la réponse en retirant la moitié des capteurs — sans que
-      // le navigateur puisse le détecter, X-Truncated n'étant pas exposé.
+      // Une tranche trop large (>~8 Mo) fait échouer Firefox
+      // (Content-Length vs corps tronqué au plafond 12 MiB).
       expect(urls.length).toBeGreaterThan(1);
       urls.forEach((url) => {
-        expect(chunkWidthInDays(url)).toBeLessThanOrEqual(8);
+        expect(chunkWidthInDays(url)).toBeLessThanOrEqual(4);
         expect(url).toContain("aggregation=hourly");
         expect(url).toContain("limit=500000");
         expect(url).toContain("include=raw_value");
       });
     });
 
-    it("découpe plus fin en quart-horaire — 2 jours maximum par tranche", async () => {
+    it("découpe plus fin en quart-horaire — 1 jour maximum par tranche", async () => {
       const spy = mockRoutes(service, { observations: [] });
 
       await service.fetchTemporalData({
@@ -882,7 +881,7 @@ describe("AtmoMicroV2Service", () => {
       );
       expect(urls.length).toBeGreaterThan(1);
       urls.forEach((url) => {
-        expect(chunkWidthInDays(url)).toBeLessThanOrEqual(2);
+        expect(chunkWidthInDays(url)).toBeLessThanOrEqual(1);
         expect(url).toContain("aggregation=quarter-hourly");
       });
     });
@@ -901,8 +900,31 @@ describe("AtmoMicroV2Service", () => {
         url.includes("/observations?")
       );
       urls.forEach((url) => {
-        expect(chunkWidthInDays(url)).toBeLessThanOrEqual(0.25);
+        expect(chunkWidthInDays(url)).toBeLessThanOrEqual(0.125);
         expect(url).toContain("aggregation=scan");
+      });
+    });
+
+    it("passe device_id côté API quand une whitelist microspot est fournie", async () => {
+      const spy = mockRoutes(service, { observations: [] });
+
+      await service.fetchTemporalData({
+        pollutant: "pm25",
+        timeStep: "heure",
+        startDate: "2026-09-01T00:00:00Z",
+        endDate: "2026-09-10T00:00:00Z",
+        sites: ["05C1A382", 1358, "0E1C3E25"],
+      });
+
+      const urls = requestedUrls(spy).filter((url) =>
+        url.includes("/observations?")
+      );
+      expect(urls.length).toBeGreaterThan(0);
+      urls.forEach((url) => {
+        expect(url).toContain("device_id=05C1A382");
+        expect(url).toContain("0E1C3E25");
+        // id_site numérique de l'ancienne API : pas d'appel microspot
+        expect(url).not.toMatch(/device_id=[^&]*1358/);
       });
     });
 
@@ -1039,40 +1061,31 @@ describe("AtmoMicroV2Service", () => {
       expect(result[0].devices.map((device) => device.id)).toEqual(["GARDE"]);
     });
 
-    it("lance les tranches d'observations en parallèle", async () => {
+    it("lance plusieurs tranches en parallèle, sans dépasser la concurrence", async () => {
       let inFlight = 0;
       let maxInFlight = 0;
-      const releases: Array<() => void> = [];
 
       vi.spyOn(
         service as unknown as RequestingService,
         "makeRequest"
-      ).mockImplementation(() => {
+      ).mockImplementation(async () => {
         inFlight += 1;
         maxInFlight = Math.max(maxInFlight, inFlight);
-        return new Promise((resolve) => {
-          releases.push(() => {
-            inFlight -= 1;
-            resolve([]);
-          });
-        });
+        await new Promise((resolve) => setTimeout(resolve, 30));
+        inFlight -= 1;
+        return [];
       });
 
-      const pending = service.fetchTemporalData({
+      await service.fetchTemporalData({
         pollutant: "pm25",
         timeStep: "heure",
         startDate: "2026-08-04",
         endDate: "2026-09-03",
       });
 
-      await vi.waitFor(() => {
-        expect(maxInFlight).toBeGreaterThan(1);
-      });
-
-      releases.forEach((release) => release());
-      await pending;
-
+      // Pool borné (TEMPORAL_CHUNK_CONCURRENCY = 3) : >1 en vol, jamais >3.
       expect(maxInFlight).toBeGreaterThan(1);
+      expect(maxInFlight).toBeLessThanOrEqual(3);
     });
 
     it("poursuit les autres tranches quand l'une échoue, en la journalisant", async () => {

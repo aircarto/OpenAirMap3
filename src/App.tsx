@@ -733,6 +733,7 @@ const AppContent: React.FC = () => {
     timeStep: selectedTimeStep,
     pollutant: selectedPollutant,
     selectedSources,
+    atmoMicroAllowedSiteIds: domainConfig.atmoMicroAllowedSiteIds,
     signalAirEnabled: isSignalAirEnabled,
     signalAirSelectedTypes,
   });

@@ -35,6 +35,8 @@ export interface UseInstantSnapshotProps {
   timeStep: string;
   pollutant: string;
   selectedSources: string[];
+  /** Whitelist domaine (ex. AirCrowd) → filtre `device_id` côté API microspot. */
+  atmoMicroAllowedSiteIds?: Array<string | number>;
   signalAirEnabled?: boolean;
   signalAirSelectedTypes?: string[];
 }
@@ -95,6 +97,7 @@ export const useInstantSnapshot = ({
   timeStep,
   pollutant,
   selectedSources,
+  atmoMicroAllowedSiteIds,
   signalAirEnabled = false,
   signalAirSelectedTypes = [],
 }: UseInstantSnapshotProps): UseInstantSnapshotResult => {
@@ -131,6 +134,18 @@ export const useInstantSnapshot = ({
     () => signalAirSelectedTypes.slice().sort().join(','),
     [signalAirSelectedTypes]
   );
+  const atmoMicroSitesKey = useMemo(
+    () =>
+      (atmoMicroAllowedSiteIds ?? [])
+        .map((id) => id.toString().toUpperCase())
+        .sort()
+        .join(','),
+    [atmoMicroAllowedSiteIds]
+  );
+  const atmoMicroSites = useMemo(
+    () => atmoMicroAllowedSiteIds ?? [],
+    [atmoMicroSitesKey] // eslint-disable-line react-hooks/exhaustive-deps -- clé stable
+  );
 
   const instantDate = instant?.date ?? '';
   const instantHour = instant?.hour ?? -1;
@@ -155,6 +170,7 @@ export const useInstantSnapshot = ({
         signalAirEnabled: boolean;
         selectedSources: string[];
         signalAirSelectedTypes: string[];
+        atmoMicroSites: Array<string | number>;
       }
     ) => {
       const requestId = context.blocking
@@ -184,6 +200,10 @@ export const useInstantSnapshot = ({
               timeStep: context.timeStep,
               startDate: window.startDate,
               endDate: window.endDate,
+              sites:
+                context.atmoMicroSites.length > 0
+                  ? context.atmoMicroSites.map((id) => String(id))
+                  : undefined,
             })
           );
         }
@@ -409,6 +429,7 @@ export const useInstantSnapshot = ({
       signalAirEnabled,
       selectedSources,
       signalAirSelectedTypes,
+      atmoMicroSites,
     };
 
     if (inBuffer) {
@@ -496,6 +517,8 @@ export const useInstantSnapshot = ({
     timeStep,
     pollutant,
     sourcesKey,
+    atmoMicroSitesKey,
+    atmoMicroSites,
     signalAirEnabled,
     typesKey,
   ]);
