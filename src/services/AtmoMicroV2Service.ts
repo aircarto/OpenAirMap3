@@ -901,6 +901,54 @@ export class AtmoMicroV2Service
   // Séries historiques
   // ---------------------------------------------------------------------------
 
+  /**
+   * Indique si une observation porte une mesure exploitable (corrigée ou brute).
+   * Les lignes « vides » de gapfill ont value / value_ref / value_raw à null.
+   */
+  private observationHasMeasure(observation: MicrospotObservation): boolean {
+    return (
+      observation.value !== null ||
+      observation.value_ref !== null ||
+      (observation.value_raw !== null && observation.value_raw !== undefined)
+    );
+  }
+
+  /**
+   * Déduplique les observations historiques par timestamp.
+   *
+   * Avec `gapfill=true`, l'API construit une grille temporelle **par
+   * location_id**. Un capteur déplacé (plusieurs sites sur la période, ex.
+   * Neb-033) renvoie donc deux lignes au même `time` : la mesure réelle d'un
+   * site et le null de gapfill de l'autre. Le transformateur du graphique
+   * (`.find()` sur le timestamp) prend la première — souvent le null — ce qui
+   * isole les points (connect: false) : la courbe se trace au début puis
+   * disparaît alors que le survol montre encore les points.
+   */
+  private deduplicateObservationsByTime(
+    observations: MicrospotObservation[]
+  ): MicrospotObservation[] {
+    const byTime = new Map<string, MicrospotObservation>();
+
+    for (const observation of observations) {
+      const existing = byTime.get(observation.time);
+      if (!existing) {
+        byTime.set(observation.time, observation);
+        continue;
+      }
+
+      if (
+        !this.observationHasMeasure(existing) &&
+        this.observationHasMeasure(observation)
+      ) {
+        byTime.set(observation.time, observation);
+      }
+    }
+
+    return Array.from(byTime.values()).sort(
+      (a, b) => new Date(a.time).getTime() - new Date(b.time).getTime()
+    );
+  }
+
   /** Série temporelle d'un capteur, pour le graphique du panneau de détail. */
   async fetchHistoricalData(params: {
     siteId: string;
@@ -938,6 +986,8 @@ export class AtmoMicroV2Service
         `&include=raw_value` +
         // gapfill : renvoie tous les pas de temps de la période, pour que le
         // graphique montre les trous au lieu de relier deux points distants.
+        // Attention : une grille par location_id → doublons si le capteur a
+        // bougé ; voir deduplicateObservationsByTime.
         `&gapfill=true` +
         `&limit=${MAX_LIMIT}`;
 
@@ -954,7 +1004,11 @@ export class AtmoMicroV2Service
         `observations (capteur ${params.siteId})`
       );
 
-      return (response as MicrospotObservation[]).map((observation) => {
+      const observations = this.deduplicateObservationsByTime(
+        response as MicrospotObservation[]
+      );
+
+      return observations.map((observation) => {
         const hasCorrection = observation.value !== null;
 
         return {

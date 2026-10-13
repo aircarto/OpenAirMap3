@@ -807,6 +807,101 @@ describe("AtmoMicroV2Service", () => {
       });
     });
 
+    it("déduplique les doublons gapfill multi-sites en préférant la mesure réelle", async () => {
+      // Capteur déplacé : gapfill renvoie une ligne null (ancien site) et une
+      // ligne mesurée (site courant) au même timestamp — cas Neb-033 sur 1 an.
+      const time = "2026-08-01T12:00:00+00:00";
+      mockRoutes(service, {
+        observations: [
+          buildObservation({
+            time,
+            location_id: "loc-ancienne",
+            value: null,
+            value_ref: null,
+            value_raw: null,
+          }),
+          buildObservation({
+            time,
+            location_id: "loc-actuelle",
+            value: 19.0,
+            value_ref: 19.0,
+            value_raw: 18.0,
+          }),
+          buildObservation({
+            time: "2026-08-01T13:00:00+00:00",
+            location_id: "loc-actuelle",
+            value: 21.0,
+            value_ref: 21.0,
+            value_raw: 20.0,
+          }),
+          buildObservation({
+            time: "2026-08-01T13:00:00+00:00",
+            location_id: "loc-ancienne",
+            value: null,
+            value_ref: null,
+            value_raw: null,
+          }),
+        ],
+      });
+
+      const result = await service.fetchHistoricalData({
+        siteId: "05C1A382",
+        pollutant: "pm25",
+        timeStep: "heure",
+        startDate: "2026-08-01",
+        endDate: "2026-08-02",
+      });
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toMatchObject({
+        timestamp: time,
+        corrected_value: 19.0,
+        raw_value: 18.0,
+        has_correction: true,
+      });
+      expect(result[1]).toMatchObject({
+        timestamp: "2026-08-01T13:00:00+00:00",
+        corrected_value: 21.0,
+        has_correction: true,
+      });
+    });
+
+    it("conserve les vrais trous de gapfill (une seule ligne null par créneau)", async () => {
+      mockRoutes(service, {
+        observations: [
+          buildObservation({
+            time: "2026-08-01T12:00:00+00:00",
+            location_id: "loc-a",
+            value: null,
+            value_ref: null,
+            value_raw: null,
+          }),
+          buildObservation({
+            time: "2026-08-01T12:00:00+00:00",
+            location_id: "loc-b",
+            value: null,
+            value_ref: null,
+            value_raw: null,
+          }),
+        ],
+      });
+
+      const result = await service.fetchHistoricalData({
+        siteId: "05C1A382",
+        pollutant: "pm25",
+        timeStep: "heure",
+        startDate: "2026-08-01",
+        endDate: "2026-08-02",
+      });
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        timestamp: "2026-08-01T12:00:00+00:00",
+        corrected_value: undefined,
+        has_correction: false,
+      });
+    });
+
     it("retourne un tableau vide sur 204", async () => {
       mockRoutes(service, { observations: null });
 
