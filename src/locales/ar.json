@@ -709,7 +709,8 @@
     "fireLegendBurnedArea": "المحيط المحروق",
     "fireLegendBurnedNote": "محيطات مرسومة بواسطة MODIS. قد يستغرق ظهور حريق حديث عدة أيام.",
     "groupModeling": "النمذجة",
-    "groupFire": "الحرائق"
+    "groupFire": "الحرائق",
+    "groupBaseMap": "خلفية الخريطة"
   },
   "toast": {
     "sourceUnavailable": "{{name}} غير متاح",

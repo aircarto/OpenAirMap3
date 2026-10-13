@@ -54,7 +54,7 @@ export interface MapControlsModeling {
   onModelingLayerChange: (layer: ModelingLayerType | null) => void;
 }
 
-/** PoC cartographie WMS AirCrowd (entrée UI séparée de la modélisation Azur). */
+/** Cartographie WMS AirCrowd (1er choix du sous-menu Modélisation si exposée). */
 export interface MapControlsAirCrowdWms {
   /** La feature est proposée pour ce domaine */
   featureEnabled: boolean;

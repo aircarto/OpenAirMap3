@@ -20,9 +20,8 @@ export interface RailBaseLayerSectionProps {
 /**
  * Groupe « fond de carte », isolé en fin de zone défilante.
  *
- * Son panneau porte deux sous-menus dépliables : « Modélisation » et
- * « Incendie ». Tous trois touchent au SUPPORT ou aux surfaces peintes sur la
- * carte, par opposition aux filtres de données du haut du rail.
+ * Son panneau porte trois sous-menus : « Modélisation », « Incendie »,
+ * puis « Fond de carte » (styles de fond + découpage communal).
  *
  * Séparé du groupe « couches » : la modélisation et les sources spéciales
  * ajoutent de la donnée SUR la carte, tandis que le fond de carte change le
@@ -51,26 +50,28 @@ export const RailBaseLayerSection: React.FC<RailBaseLayerSectionProps> = ({
         {...baseLayer}
         placement={orientation === "vertical" ? "right" : "top"}
         panelClassName={RAIL_FLYOUT_CLASS}
-        isModelingActive={Boolean(modeling.currentModelingLayer)}
-        modelingSlot={
-          <ModelingLayerControl
-            variant="inline"
-            currentModelingLayer={modeling.currentModelingLayer}
-            onModelingLayerChange={modeling.onModelingLayerChange}
-            selectedPollutant={filters.selectedPollutant}
-            selectedTimeStep={filters.selectedTimeStep}
-          />
+        isModelingActive={
+          Boolean(modeling.currentModelingLayer) || airCrowdWms.enabled
         }
-        isAirCrowdActive={airCrowdWms.enabled}
-        airCrowdSlot={
-          airCrowdWms.featureEnabled ? (
-            <AirCrowdWmsControls
-              enabled={airCrowdWms.enabled}
-              onEnabledChange={airCrowdWms.onEnabledChange}
+        modelingSlot={
+          <div className="space-y-0.5 pl-4 pr-1" data-testid="modeling-inline">
+            {airCrowdWms.featureEnabled ? (
+              <AirCrowdWmsControls
+                enabled={airCrowdWms.enabled}
+                onEnabledChange={airCrowdWms.onEnabledChange}
+                selectedPollutant={filters.selectedPollutant}
+                locked={ui.controlsLocked}
+              />
+            ) : null}
+            <ModelingLayerControl
+              variant="inline"
+              omitWrapper
+              currentModelingLayer={modeling.currentModelingLayer}
+              onModelingLayerChange={modeling.onModelingLayerChange}
               selectedPollutant={filters.selectedPollutant}
-              locked={ui.controlsLocked}
+              selectedTimeStep={filters.selectedTimeStep}
             />
-          ) : null
+          </div>
         }
         renderTrigger={({ isOpen, label }) => (
           <RailItem

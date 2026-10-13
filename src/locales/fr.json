@@ -693,7 +693,8 @@
     "overlayLegendsLoading": "Chargement de la légende…",
     "overlayLegendsError": "Légende indisponible",
     "groupModeling": "Modélisation",
-    "groupFire": "Incendie"
+    "groupFire": "Incendie",
+    "groupBaseMap": "Fond de carte"
   },
   "toast": {
     "sourceUnavailable": "{{name}} non disponible",

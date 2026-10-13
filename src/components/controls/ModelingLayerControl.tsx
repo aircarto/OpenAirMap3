@@ -22,6 +22,11 @@ interface ModelingLayerControlProps extends CustomTriggerProps {
    * composant en est le propriétaire, seule sa présentation change.
    */
   variant?: "dropdown" | "inline";
+  /**
+   * En mode inline : ne pas envelopper dans le conteneur `pl-4` (l'appelant
+   * compose déjà AirCrowd + Azur dans un wrapper commun).
+   */
+  omitWrapper?: boolean;
   currentModelingLayer: ModelingLayerType | null;
   onModelingLayerChange: (layerType: ModelingLayerType | null) => void;
   selectedPollutant?: string;
@@ -36,6 +41,7 @@ const ModelingLayerControl: React.FC<ModelingLayerControlProps> = ({
   selectedPollutant,
   selectedTimeStep = "heure",
   variant = "dropdown",
+  omitWrapper = false,
   triggerId,
   renderTrigger,
   menuSide,
@@ -142,11 +148,20 @@ const ModelingLayerControl: React.FC<ModelingLayerControlProps> = ({
 
   if (variant === "inline") {
     if (isDisabled) {
-      return (
+      const unavailable = (
         <p className="px-2.5 py-1.5 text-[11px] text-gray-500">
           {t("controls.modelingUnavailable")}
         </p>
       );
+      if (omitWrapper) return unavailable;
+      return (
+        <div className="pl-4 pr-1" data-testid="modeling-inline">
+          {unavailable}
+        </div>
+      );
+    }
+    if (omitWrapper) {
+      return <>{renderOptions()}</>;
     }
     return (
       <div className="pl-4 pr-1" data-testid="modeling-inline">

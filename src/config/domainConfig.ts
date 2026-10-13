@@ -56,8 +56,8 @@ export interface DomainConfig {
   /** Première date de carto disponible (YYYY-MM-DD) pour le sélecteur. */
   aircrowdWmsStartDate?: string;
   /**
-   * PoC Cartographie AirCrowd (WMS) :
-   * - expose le contrôle dans le menu fond de carte ;
+   * Cartographie AirCrowd (WMS) :
+   * - expose le 1er choix du sous-menu Modélisation ;
    * - active la couche par défaut à l’arrivée sur l’instance.
    */
   aircrowdWmsEnabled?: boolean;

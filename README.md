@@ -22,7 +22,7 @@ Résolu par hostname via [`src/config/domainConfig.ts`](src/config/domainConfig.
 | --- | --- |
 | Polluants | PM₂.₅ et PM₁₀ uniquement |
 | Sources de mesures | Stations de référence AtmoSud + microcapteurs qualifiés AtmoSud |
-| Modélisation | AzurH **et** cartographie WMS AirCrowd |
+| Modélisation | Cartographie WMS AirCrowd (1er choix) **et** AzurH |
 | Pas de temps | **Horaire uniquement** |
 | Langue par défaut | Anglais |
 | À l’arrivée | Stations + microcapteurs + couche WMS AirCrowd activés |

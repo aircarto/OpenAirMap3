@@ -11,7 +11,11 @@ interface AirCrowdWmsControlsProps {
   className?: string;
 }
 
-/** Toggle de la nappe AirCrowd. La date/heure est pilotée par la TimeBar. */
+/**
+ * Option « Cartographie AirCrowd » du menu Modélisation.
+ * Même présentation que les choix Azur (polluant / vent) : bascule unique.
+ * La date/heure est pilotée par la TimeBar.
+ */
 const AirCrowdWmsControls: React.FC<AirCrowdWmsControlsProps> = ({
   enabled,
   onEnabledChange,
@@ -22,28 +26,45 @@ const AirCrowdWmsControls: React.FC<AirCrowdWmsControlsProps> = ({
   const { t } = useTranslation();
   const pollutantOk = isAirCrowdWmsPollutantSupported(selectedPollutant);
   const disabled = !pollutantOk || locked;
+  const isSelected = enabled && pollutantOk;
 
   return (
-    <div className={cn("flex flex-col gap-2 px-1", className)}>
-      <label
+    <div className={cn("flex flex-col gap-1", className)}>
+      <button
+        type="button"
+        disabled={disabled}
+        aria-pressed={isSelected}
+        data-testid="aircrowd-wms-toggle"
+        onClick={() => {
+          if (disabled) return;
+          onEnabledChange(!enabled);
+        }}
         className={cn(
-          "flex min-h-11 items-center gap-2 text-sm font-medium",
-          disabled ? "cursor-not-allowed text-gray-400" : "text-gray-800"
+          "flex w-full items-center gap-2 rounded px-2.5 py-1.5 text-xs transition-colors",
+          isSelected
+            ? "border border-[hsl(var(--brand-200))] bg-[hsl(var(--brand-100))] text-[hsl(var(--brand-800))]"
+            : "text-gray-700 hover:bg-gray-50/80",
+          disabled && "cursor-not-allowed opacity-50"
         )}
       >
-        <input
-          type="checkbox"
-          className="accent-[#4271B3]"
-          checked={enabled && pollutantOk}
-          disabled={disabled}
-          onChange={(e) => onEnabledChange(e.target.checked)}
-          data-testid="aircrowd-wms-toggle"
-        />
-        <span>{t("aircrowdWms.title")}</span>
-      </label>
+        <span
+          aria-hidden="true"
+          className={cn(
+            "flex h-3 w-3 shrink-0 items-center justify-center rounded-sm border",
+            isSelected
+              ? "border-[hsl(var(--brand-600))]"
+              : "border-gray-300/60"
+          )}
+        >
+          {isSelected && (
+            <span className="h-1.5 w-1.5 rounded-[1px] bg-[hsl(var(--brand-600))]" />
+          )}
+        </span>
+        <span className="truncate">{t("aircrowdWms.title")}</span>
+      </button>
 
       {!pollutantOk ? (
-        <p className="text-xs text-amber-700">
+        <p className="px-2.5 text-[11px] text-amber-700">
           {t("aircrowdWms.unsupportedPollutant")}
         </p>
       ) : null}
