@@ -87,16 +87,13 @@ describe("getConfigForDomain", () => {
     expect(config).toBe(DOMAIN_CONFIG["aircrowd.atmosud.org"]);
     expect(config.title).toBe("AirCrowd");
     expect(config.mapZoom).toBe(14);
-    expect(config.mapMinZoom).toBe(10);
+    expect(config.mapMinZoom).toBe(12);
     expect(config.mapMaxZoom).toBe(18);
     expect(config.mapBounds).toEqual([
-      [43.4, 5.38],
-      [43.58, 5.62],
+      [43.41, 5.42],
+      [43.53, 5.55],
     ]);
-    expect(config.mapMaxBounds).toEqual([
-      [43.2, 5.25],
-      [43.6, 5.7],
-    ]);
+    expect(config.mapMaxBounds).toEqual(config.mapBounds);
     expect(config.mapCenter).toEqual([43.455, 5.475]);
     expect(config.atmoMicroAllowedSiteIds?.length).toBeGreaterThan(0);
     expect(config.atmoMicroAllowedSiteIds).toEqual(

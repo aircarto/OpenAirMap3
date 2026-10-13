@@ -27,7 +27,7 @@ Résolu par hostname via [`src/config/domainConfig.ts`](src/config/domainConfig.
 | Langue par défaut | Anglais |
 | À l’arrivée | Stations + microcapteurs + couche WMS AirCrowd activés |
 
-**Carte** : centrage / zoom sur Gardanne ; emprise données Gardanne–Meyreuil ; navigation limitée avec dézoom possible jusqu’à voir Marseille (`mapMinZoom` / `mapMaxBounds`).
+**Carte** : centrage / zoom sur Gardanne ; navigation verrouillée sur l’emprise de la couche AirCrowd (Gardanne–Meyreuil) via `mapMinZoom` / `mapMaxBounds`.
 
 **Whitelist microcapteurs** : seuls les sites de la campagne (IDs API historique + `device.id` Microspot) sont affichés. Liste à jour dans `domainConfig` (`atmoMicroAllowedSiteIds`).
 

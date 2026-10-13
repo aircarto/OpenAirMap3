@@ -99,16 +99,14 @@ export interface DomainConfig {
   legal?: DomainLegalInfo;
 }
 
-/** Emprise campagne AirCrowd (overlays WMS / couverture données). */
+/**
+ * Emprise campagne AirCrowd (Gardanne / Meyreuil).
+ * Calée sur le bbox WMS GeoServer (~43.427–43.514 / 5.440–5.538) avec une
+ * petite marge pour la navigation Leaflet (maxBounds + overlays EFFIS/WMS).
+ */
 const GARDANNE_MEYREUIL_BOUNDS: [[number, number], [number, number]] = [
-  [43.4, 5.38],
-  [43.58, 5.62],
-];
-
-/** Emprise navigation : Gardanne/Meyreuil + dézoom jusqu'à Marseille. */
-const MARSEILLE_GARDANNE_BOUNDS: [[number, number], [number, number]] = [
-  [43.2, 5.25],
-  [43.6, 5.7],
+  [43.41, 5.42],
+  [43.53, 5.55],
 ];
 
 const defaultConfig: DomainConfig = {
@@ -219,10 +217,10 @@ const aircrowdConfig: DomainConfig = {
   ...atmosudConfig,
   mapCenter: [43.455, 5.475], // Gardanne
   mapZoom: 14,
-  mapMinZoom: 10, // dézoom possible jusqu'à voir Marseille
+  mapMinZoom: 12, // reste sur la zone d'emprise AirCrowd (pas Marseille)
   mapMaxZoom: 18,
   mapBounds: GARDANNE_MEYREUIL_BOUNDS,
-  mapMaxBounds: MARSEILLE_GARDANNE_BOUNDS,
+  mapMaxBounds: GARDANNE_MEYREUIL_BOUNDS,
   atmoMicroAllowedSiteIds: [
     // Ancienne API (id_site) — utile si VITE_USE_MICROSPOT_API=false
     1358, 1377, 1378, 1379, 1380, 1381, 1382, 1383, 1384, 1385, 1398, 1399,
