@@ -260,6 +260,14 @@
     "exporting": "Export en cours...",
     "exportPNG": "Exporter en PNG",
     "exportCSV": "Exporter en CSV",
+    "deviceLocations": {
+      "title": "Localisations sur la période",
+      "count": "{{count}} sites",
+      "currentBadge": "actuel",
+      "influence": "Influence : {{value}}",
+      "centerOnMap": "Voir sur la carte",
+      "loadPeriod": "Charger cette période"
+    },
     "microSidePanel": {
       "sourceLabel": "Microcapteur qualifié AtmoSud",
       "temporalEvolutionAtmoMicro": "Évolution temporelle",

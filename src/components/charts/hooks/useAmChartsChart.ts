@@ -18,7 +18,15 @@ import {
   getPlaybackMarkerSeriesId,
   createSlimYScrollbar,
 } from "../utils/amChartsHelpers";
-import { getHistoricalAxisRange } from "../../../utils/historicalTimeRange";
+import {
+  getHistoricalAxisRange,
+  parseHistoricalAxisDate,
+} from "../../../utils/historicalTimeRange";
+import type { DeviceLocationStay } from "../../../types";
+import {
+  getLocationChangeMarkers,
+  getLocationHighlightBands,
+} from "../utils/deviceLocationChartOverlays";
 
 const applyFixedXAxisRange = (
   xAxis: am5xy.DateAxis<am5xy.AxisRenderer>,
@@ -79,6 +87,10 @@ interface UseAmChartsChartProps {
   source?: string;
   selectedPollutants?: string[];
   showRawData?: boolean;
+  /** Sites successifs AtmoMicro (séparateurs verticaux). */
+  locationStays?: DeviceLocationStay[];
+  /** Site survolé / sélectionné (bande légère). */
+  highlightedLocationId?: string | null;
 }
 
 export const useAmChartsChart = ({
@@ -101,6 +113,8 @@ export const useAmChartsChart = ({
   source = "",
   selectedPollutants = [],
   showRawData = true,
+  locationStays = [],
+  highlightedLocationId = null,
 }: UseAmChartsChartProps) => {
   const chartRef = useRef<am5xy.XYChart | null>(null);
   const rootRef = useRef<am5.Root | null>(null);
@@ -1058,6 +1072,114 @@ export const useAmChartsChart = ({
     source,
     selectedPollutants,
     showRawData,
+  ]);
+
+  // Séparateurs verticaux + bande légère pour les changements de localisation
+  const locationOverlayRangesRef = useRef<
+    Array<am5.DataItem<am5xy.IDateAxisDataItem>>
+  >([]);
+
+  useEffect(() => {
+    const chart = chartRef.current;
+    const root = rootRef.current;
+    if (!chart || !root) {
+      return;
+    }
+
+    const xAxis = chart.xAxes.getIndex(
+      0
+    ) as am5xy.DateAxis<am5xy.AxisRendererX>;
+    if (!xAxis) {
+      return;
+    }
+
+    // Nettoyer uniquement nos overlays (pas le curseur de playback).
+    locationOverlayRangesRef.current.forEach((range) => {
+      try {
+        xAxis.axisRanges.removeValue(range);
+        range.dispose();
+      } catch {
+        // ignore
+      }
+    });
+    locationOverlayRangesRef.current = [];
+
+    if (!locationStays.length) {
+      return;
+    }
+
+    let rangeMin: number | undefined;
+    let rangeMax: number | undefined;
+    if (xAxisMin && xAxisMax) {
+      rangeMin = parseHistoricalAxisDate(xAxisMin, false);
+      rangeMax = parseHistoricalAxisDate(xAxisMax, true);
+      if (Number.isNaN(rangeMin)) rangeMin = undefined;
+      if (Number.isNaN(rangeMax)) rangeMax = undefined;
+    }
+
+    const markers = getLocationChangeMarkers(
+      locationStays,
+      rangeMin,
+      rangeMax
+    );
+    markers.forEach((marker) => {
+      const rangeDataItem = xAxis.makeDataItem({
+        value: marker.timestamp,
+      });
+      const range = xAxis.createAxisRange(rangeDataItem);
+      range.get("grid")!.setAll({
+        stroke: am5.color("#64748b"),
+        strokeOpacity: 0.85,
+        strokeWidth: 1.5,
+        strokeDasharray: [2, 3],
+        visible: true,
+        location: 0,
+      });
+      const label = range.get("label");
+      if (label) {
+        label.setAll({
+          text: marker.label,
+          inside: true,
+          rotation: -90,
+          centerY: am5.p100,
+          centerX: am5.p50,
+          dy: -8,
+          fontSize: isMobile ? 8 : 10,
+          fill: am5.color("#475569"),
+          background: am5.Rectangle.new(root, {
+            fill: am5.color("#ffffff"),
+            fillOpacity: 0.75,
+          }),
+        });
+      }
+      locationOverlayRangesRef.current.push(range);
+    });
+
+    const highlighted = locationStays.find(
+      (s) => s.locationId === highlightedLocationId
+    );
+    const bands = getLocationHighlightBands(highlighted, rangeMin, rangeMax);
+    bands.forEach((band) => {
+      const rangeDataItem = xAxis.makeDataItem({
+        value: band.start,
+        endValue: band.end,
+      });
+      const range = xAxis.createAxisRange(rangeDataItem);
+      range.get("axisFill")!.setAll({
+        visible: true,
+        fill: am5.color("#3b82f6"),
+        fillOpacity: 0.08,
+      });
+      range.get("grid")!.set("visible", false);
+      locationOverlayRangesRef.current.push(range);
+    });
+  }, [
+    locationStays,
+    highlightedLocationId,
+    xAxisMin,
+    xAxisMax,
+    amChartsData,
+    isMobile,
   ]);
 
   return {

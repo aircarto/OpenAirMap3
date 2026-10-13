@@ -8,6 +8,7 @@ export type { PanelSize, SidePanelShellProps } from "./SidePanelShell";
 export { default as SidePanelHeader } from "./SidePanelHeader";
 export { default as PanelReopenBadge } from "./PanelReopenBadge";
 export { default as CollapsiblePanelSection } from "./CollapsiblePanelSection";
+export { default as DeviceLocationsSection } from "./DeviceLocationsSection";
 
 export { default as StationSidePanel } from "./StationSidePanel";
 export { default as MicroSidePanel } from "./MicroSidePanel";

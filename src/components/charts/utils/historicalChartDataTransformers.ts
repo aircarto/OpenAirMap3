@@ -424,13 +424,30 @@ export const transformNormalData = (
             : 24 * 60 * 60 * 1000) / 2
         : 1000; // 1 seconde pour les pas de temps non agrégés
 
-      // Chercher les données mesurées pour ce polluant
+      // Chercher les données mesurées pour ce polluant.
+      // Si plusieurs points matchent le même créneau (doublons API multi-sites),
+      // préférer celui qui a une valeur corrigée / brute réelle plutôt que le
+      // premier (souvent un null de gapfill) — sinon connect:false isole les
+      // points et la courbe disparaît sur les longues périodes.
       if (data[pollutant]) {
-        const dataPoint = data[pollutant].find((p) => {
+        const dataPoint = data[pollutant].reduce<
+          (typeof data)[string][number] | undefined
+        >((best, p) => {
           const pTimestampMs = normalizeTimestamp(p.timestamp);
-          // Comparer en millisecondes avec une tolérance adaptée au pas de temps
-          return Math.abs(pTimestampMs - timestampMs) < tolerance;
-        });
+          if (Math.abs(pTimestampMs - timestampMs) >= tolerance) {
+            return best;
+          }
+          if (!best) {
+            return p;
+          }
+          const bestScore =
+            (best.corrected_value !== undefined ? 2 : 0) +
+            (best.raw_value !== undefined || best.value !== undefined ? 1 : 0);
+          const score =
+            (p.corrected_value !== undefined ? 2 : 0) +
+            (p.raw_value !== undefined || p.value !== undefined ? 1 : 0);
+          return score > bestScore ? p : best;
+        }, undefined);
 
         if (dataPoint) {
           // Valeur corrigée si disponible

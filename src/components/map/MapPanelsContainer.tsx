@@ -57,6 +57,8 @@ interface MapPanelsContainerProps {
     period: { startDate: string; endDate: string }
   ) => void;
   onMobileAirSensorVisibilityChange?: (sensorId: string, visible: boolean) => void;
+  /** Centre la carte sur lat/lon (localisations historiques AtmoMicro). */
+  onCenterLocation?: (coords: { latitude: number; longitude: number }) => void;
 }
 
 const MapPanelsContainer: React.FC<MapPanelsContainerProps> = ({
@@ -81,6 +83,7 @@ const MapPanelsContainer: React.FC<MapPanelsContainerProps> = ({
   onMobileAirSensorRemove,
   onMobileAirSensorPeriodChange,
   onMobileAirSensorVisibilityChange,
+  onCenterLocation,
 }) => {
   const historicalMode =
     isHistoricalModeActive &&
@@ -110,6 +113,7 @@ const MapPanelsContainer: React.FC<MapPanelsContainerProps> = ({
             onRemoveStation={handleRemoveStationFromComparison}
             onComparisonModeToggle={sidePanels.handleComparisonModeToggle}
             onLoadComparisonData={handleLoadComparisonData}
+            onCenterLocation={onCenterLocation}
           />
         )}
 
@@ -144,6 +148,7 @@ const MapPanelsContainer: React.FC<MapPanelsContainerProps> = ({
             onComparisonModeToggle={sidePanels.handleComparisonModeToggle}
             isComparisonMode={sidePanels.comparisonState.isComparisonMode}
             historicalMode={historicalMode}
+            onCenterLocation={onCenterLocation}
           />
         )}
 

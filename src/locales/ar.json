@@ -255,6 +255,14 @@
     "exporting": "جاري التصدير...",
     "exportPNG": "تصدير كـ PNG",
     "exportCSV": "تصدير كـ CSV",
+    "deviceLocations": {
+      "title": "المواقع خلال الفترة",
+      "count": "{{count}} مواقع",
+      "currentBadge": "الحالي",
+      "influence": "التأثير: {{value}}",
+      "centerOnMap": "عرض على الخريطة",
+      "loadPeriod": "تحميل هذه الفترة"
+    },
     "microSidePanel": {
       "sourceLabel": "مقياس مصغر مؤهل AtmoSud",
       "temporalEvolutionAtmoMicro": "التطور الزمني",

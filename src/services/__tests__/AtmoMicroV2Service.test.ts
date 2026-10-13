@@ -807,6 +807,101 @@ describe("AtmoMicroV2Service", () => {
       });
     });
 
+    it("déduplique les doublons gapfill multi-sites en préférant la mesure réelle", async () => {
+      // Capteur déplacé : gapfill renvoie une ligne null (ancien site) et une
+      // ligne mesurée (site courant) au même timestamp — cas Neb-033 sur 1 an.
+      const time = "2026-08-01T12:00:00+00:00";
+      mockRoutes(service, {
+        observations: [
+          buildObservation({
+            time,
+            location_id: "loc-ancienne",
+            value: null,
+            value_ref: null,
+            value_raw: null,
+          }),
+          buildObservation({
+            time,
+            location_id: "loc-actuelle",
+            value: 19.0,
+            value_ref: 19.0,
+            value_raw: 18.0,
+          }),
+          buildObservation({
+            time: "2026-08-01T13:00:00+00:00",
+            location_id: "loc-actuelle",
+            value: 21.0,
+            value_ref: 21.0,
+            value_raw: 20.0,
+          }),
+          buildObservation({
+            time: "2026-08-01T13:00:00+00:00",
+            location_id: "loc-ancienne",
+            value: null,
+            value_ref: null,
+            value_raw: null,
+          }),
+        ],
+      });
+
+      const result = await service.fetchHistoricalData({
+        siteId: "05C1A382",
+        pollutant: "pm25",
+        timeStep: "heure",
+        startDate: "2026-08-01",
+        endDate: "2026-08-02",
+      });
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toMatchObject({
+        timestamp: time,
+        corrected_value: 19.0,
+        raw_value: 18.0,
+        has_correction: true,
+      });
+      expect(result[1]).toMatchObject({
+        timestamp: "2026-08-01T13:00:00+00:00",
+        corrected_value: 21.0,
+        has_correction: true,
+      });
+    });
+
+    it("conserve les vrais trous de gapfill (une seule ligne null par créneau)", async () => {
+      mockRoutes(service, {
+        observations: [
+          buildObservation({
+            time: "2026-08-01T12:00:00+00:00",
+            location_id: "loc-a",
+            value: null,
+            value_ref: null,
+            value_raw: null,
+          }),
+          buildObservation({
+            time: "2026-08-01T12:00:00+00:00",
+            location_id: "loc-b",
+            value: null,
+            value_ref: null,
+            value_raw: null,
+          }),
+        ],
+      });
+
+      const result = await service.fetchHistoricalData({
+        siteId: "05C1A382",
+        pollutant: "pm25",
+        timeStep: "heure",
+        startDate: "2026-08-01",
+        endDate: "2026-08-02",
+      });
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        timestamp: "2026-08-01T12:00:00+00:00",
+        corrected_value: undefined,
+        has_correction: false,
+      });
+    });
+
     it("retourne un tableau vide sur 204", async () => {
       mockRoutes(service, { observations: null });
 
@@ -834,6 +929,190 @@ describe("AtmoMicroV2Service", () => {
 
       expect(result).toEqual([]);
       expect(spy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("fetchDeviceLocationHistory", () => {
+    it("interroge /observations en daily sans gapfill", async () => {
+      const spy = mockRoutes(service, {
+        observations: [
+          buildObservation({
+            time: "2025-11-01T00:00:00+00:00",
+            location_id: "loc-a",
+            location_name: "auto created for device 05C1A382",
+            lat: 43.1,
+            lon: 5.1,
+          }),
+          buildObservation({
+            time: "2026-06-01T00:00:00+00:00",
+            location_id: "loc-b",
+            location_name: "auto created for device 05C1A382",
+            lat: 43.2,
+            lon: 5.2,
+          }),
+        ],
+        devices: [
+          buildDevice({
+            id: "05C1A382",
+            location_id: "loc-b",
+          }),
+        ],
+        locations: [],
+      });
+
+      const result = await service.fetchDeviceLocationHistory({
+        deviceId: "05C1A382",
+        startDate: "2025-10-13",
+        endDate: "2026-10-13",
+      });
+
+      const obsUrl = requestedUrls(spy).find((u) =>
+        u.includes("/observations?")
+      );
+      expect(obsUrl).toContain("aggregation=daily");
+      expect(obsUrl).toContain("device_id=05C1A382");
+      expect(obsUrl).toContain("variable=39");
+      expect(obsUrl).not.toContain("gapfill");
+
+      expect(result).toHaveLength(2);
+      expect(result[0].isCurrent).toBe(true);
+      expect(result[0].locationId).toBe("loc-b");
+      expect(result[0].label).toBe("Site B");
+      expect(result[1].locationId).toBe("loc-a");
+      expect(result[1].label).toBe("Site A");
+    });
+
+    it("fusionne A→B→A en un site avec plusieurs intervalles", () => {
+      const stays = service.buildLocationStaysFromObservations(
+        [
+          buildObservation({
+            time: "2026-01-01T00:00:00+00:00",
+            location_id: "loc-a",
+            location_name: "auto created for device X",
+            lat: 1,
+            lon: 1,
+          }),
+          buildObservation({
+            time: "2026-01-02T00:00:00+00:00",
+            location_id: "loc-a",
+            location_name: "auto created for device X",
+            lat: 1,
+            lon: 1,
+          }),
+          buildObservation({
+            time: "2026-02-01T00:00:00+00:00",
+            location_id: "loc-b",
+            location_name: "auto created for device X",
+            lat: 2,
+            lon: 2,
+          }),
+          buildObservation({
+            time: "2026-03-01T00:00:00+00:00",
+            location_id: "loc-a",
+            location_name: "auto created for device X",
+            lat: 1.1,
+            lon: 1.1,
+          }),
+        ],
+        { currentLocationId: "loc-a" }
+      );
+
+      expect(stays).toHaveLength(2);
+      const siteA = stays.find((s) => s.locationId === "loc-a")!;
+      const siteB = stays.find((s) => s.locationId === "loc-b")!;
+      expect(siteA.isCurrent).toBe(true);
+      expect(siteA.intervals).toHaveLength(2);
+      expect(siteA.intervals[0]).toEqual({
+        start: "2026-01-01T00:00:00+00:00",
+        end: "2026-01-02T00:00:00+00:00",
+      });
+      expect(siteA.intervals[1]).toEqual({
+        start: "2026-03-01T00:00:00+00:00",
+        end: "2026-03-01T00:00:00+00:00",
+      });
+      expect(siteB.intervals).toHaveLength(1);
+      expect(stays[0].locationId).toBe("loc-a");
+    });
+
+    it("enrichit via le catalogue et garde le nom officiel", () => {
+      const catalog = new Map([
+        [
+          "103",
+          buildLocation({
+            id: "103",
+            name: "Meyreuil Fauvettes",
+            influence: "Fond",
+            typology: "Périurbaine",
+          }),
+        ],
+      ]);
+
+      const stays = service.buildLocationStaysFromObservations(
+        [
+          buildObservation({
+            time: "2026-01-01T00:00:00+00:00",
+            location_id: "loc-auto",
+            location_name: "auto created for device X",
+            lat: 43.0,
+            lon: 5.0,
+          }),
+          buildObservation({
+            time: "2026-06-01T00:00:00+00:00",
+            location_id: "103",
+            location_name: "Meyreuil Fauvettes",
+            lat: 43.47,
+            lon: 5.49,
+          }),
+        ],
+        { currentLocationId: "103", catalog }
+      );
+
+      expect(stays).toHaveLength(2);
+      const named = stays.find((s) => s.locationId === "103")!;
+      expect(named.label).toBe("Meyreuil Fauvettes");
+      expect(named.fromCatalog).toBe(true);
+      expect(named.influence).toBe("Fond");
+      const auto = stays.find((s) => s.locationId === "loc-auto")!;
+      expect(auto.label).toBe("Site A");
+      expect(auto.fromCatalog).toBe(false);
+    });
+
+    it("retourne [] s'il n'y a qu'un seul location_id", () => {
+      const stays = service.buildLocationStaysFromObservations([
+        buildObservation({
+          time: "2026-01-01T00:00:00+00:00",
+          location_id: "loc-a",
+        }),
+        buildObservation({
+          time: "2026-01-02T00:00:00+00:00",
+          location_id: "loc-a",
+        }),
+      ]);
+      expect(stays).toEqual([]);
+    });
+
+    it("signale un chevauchement multi-sites mesurés au même timestamp", () => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      service.buildLocationStaysFromObservations([
+        buildObservation({
+          time: "2026-08-01T12:00:00+00:00",
+          location_id: "loc-a",
+          value: 10,
+          value_ref: 10,
+          value_raw: 9,
+        }),
+        buildObservation({
+          time: "2026-08-01T12:00:00+00:00",
+          location_id: "loc-b",
+          value: 12,
+          value_ref: 12,
+          value_raw: 11,
+        }),
+      ]);
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining("Chevauchement multi-sites")
+      );
+      warn.mockRestore();
     });
   });
 
