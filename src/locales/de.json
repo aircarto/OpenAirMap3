@@ -255,6 +255,14 @@
     "exporting": "Export wird durchgeführt…",
     "exportPNG": "Als PNG exportieren",
     "exportCSV": "Als CSV exportieren",
+    "deviceLocations": {
+      "title": "Standorte im Zeitraum",
+      "count": "{{count}} Standorte",
+      "currentBadge": "aktuell",
+      "influence": "Einfluss: {{value}}",
+      "centerOnMap": "Auf Karte zeigen",
+      "loadPeriod": "Diesen Zeitraum laden"
+    },
     "microSidePanel": {
       "sourceLabel": "AtmoSud-qualifizierter Mikrosensor",
       "temporalEvolutionAtmoMicro": "Zeitliche Entwicklung",

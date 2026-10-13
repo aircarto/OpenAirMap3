@@ -948,6 +948,18 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
         onMobileAirSensorRemove={onMobileAirSensorRemove}
         onMobileAirSensorPeriodChange={onMobileAirSensorPeriodChange}
         onMobileAirSensorVisibilityChange={onMobileAirSensorVisibilityChange}
+        onCenterLocation={({ latitude, longitude }) => {
+          if (mapView.mapRef.current) {
+            mapView.mapRef.current.panTo([latitude, longitude], {
+              animate: true,
+              duration: 0.5,
+            });
+            const currentZoom = mapView.mapRef.current.getZoom();
+            if (currentZoom < 14) {
+              mapView.mapRef.current.setZoom(14);
+            }
+          }
+        }}
       />
 
       {/* Conteneur de la carte */}

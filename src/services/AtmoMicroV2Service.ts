@@ -1,6 +1,8 @@
 import { BaseDataService } from "./BaseDataService";
 import {
   AtmoMicroLikeService,
+  DeviceLocationInterval,
+  DeviceLocationStay,
   MeasurementDevice,
   MicrospotDevice,
   MicrospotLocation,
@@ -894,6 +896,255 @@ export class AtmoMicroV2Service
         error
       );
       return null;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Historique des localisations
+  // ---------------------------------------------------------------------------
+
+  private static readonly AUTO_LOCATION_NAME_PREFIX = "auto created for device";
+
+  /** Libellés de repli Site A, Site B, … (ordre chronologique de première apparition). */
+  private static siteFallbackLabel(index: number): string {
+    const letter = String.fromCharCode(65 + (index % 26));
+    const cycle = Math.floor(index / 26);
+    return cycle === 0 ? `Site ${letter}` : `Site ${letter}${cycle + 1}`;
+  }
+
+  private isAutoLocationName(name: string | null | undefined): boolean {
+    if (!name) return true;
+    return name
+      .toLowerCase()
+      .startsWith(AtmoMicroV2Service.AUTO_LOCATION_NAME_PREFIX);
+  }
+
+  /**
+   * Agrège des observations (sans gapfill) en séjours par location_id.
+   * Exposée pour les tests unitaires de la logique d'intervalles.
+   */
+  buildLocationStaysFromObservations(
+    observations: MicrospotObservation[],
+    options: {
+      currentLocationId?: string | null;
+      catalog?: Map<string, MicrospotLocation>;
+    } = {}
+  ): DeviceLocationStay[] {
+    const withLocation = observations
+      .filter((o) => o.location_id)
+      .slice()
+      .sort(
+        (a, b) => new Date(a.time).getTime() - new Date(b.time).getTime()
+      );
+
+    if (withLocation.length === 0) {
+      return [];
+    }
+
+    // Détecter chevauchements : même timestamp, deux sites, tous deux mesurés.
+    const byTime = new Map<string, MicrospotObservation[]>();
+    for (const observation of withLocation) {
+      const list = byTime.get(observation.time) ?? [];
+      list.push(observation);
+      byTime.set(observation.time, list);
+    }
+    for (const [time, rows] of byTime) {
+      const measured = rows.filter((r) => this.observationHasMeasure(r));
+      const locationIds = new Set(
+        measured.map((r) => r.location_id).filter(Boolean)
+      );
+      if (locationIds.size > 1) {
+        console.warn(
+          `[AtmoMicro] Chevauchement multi-sites à ${time}: locations=${[
+            ...locationIds,
+          ].join(", ")}`
+        );
+      }
+    }
+
+    // Intervalles contigus le long de la timeline (changement de site = coupure).
+    type OpenInterval = {
+      locationId: string;
+      start: string;
+      end: string;
+      lat: number;
+      lon: number;
+      rawName: string | null;
+    };
+    const rawIntervals: OpenInterval[] = [];
+    let current: OpenInterval | null = null;
+
+    for (const observation of withLocation) {
+      const locationId = observation.location_id!;
+      if (!current || current.locationId !== locationId) {
+        if (current) {
+          rawIntervals.push(current);
+        }
+        current = {
+          locationId,
+          start: observation.time,
+          end: observation.time,
+          lat: observation.lat,
+          lon: observation.lon,
+          rawName: observation.location_name,
+        };
+      } else {
+        current.end = observation.time;
+        // Garder les dernières coords / nom vus sur ce séjour.
+        current.lat = observation.lat;
+        current.lon = observation.lon;
+        if (observation.location_name) {
+          current.rawName = observation.location_name;
+        }
+      }
+    }
+    if (current) {
+      rawIntervals.push(current);
+    }
+
+    // Regrouper par location_id (un site = N intervalles si A→B→A).
+    const firstSeenOrder: string[] = [];
+    const grouped = new Map<
+      string,
+      {
+        intervals: DeviceLocationInterval[];
+        lat: number;
+        lon: number;
+        rawName: string | null;
+      }
+    >();
+
+    for (const interval of rawIntervals) {
+      if (!grouped.has(interval.locationId)) {
+        firstSeenOrder.push(interval.locationId);
+        grouped.set(interval.locationId, {
+          intervals: [],
+          lat: interval.lat,
+          lon: interval.lon,
+          rawName: interval.rawName,
+        });
+      }
+      const entry = grouped.get(interval.locationId)!;
+      entry.intervals.push({ start: interval.start, end: interval.end });
+      entry.lat = interval.lat;
+      entry.lon = interval.lon;
+      if (interval.rawName) {
+        entry.rawName = interval.rawName;
+      }
+    }
+
+    if (grouped.size < 2) {
+      return [];
+    }
+
+    const catalog = options.catalog;
+    const currentLocationId = options.currentLocationId ?? null;
+
+    const stays: DeviceLocationStay[] = firstSeenOrder.map(
+      (locationId, index) => {
+        const entry = grouped.get(locationId)!;
+        const meta = catalog?.get(locationId);
+        const fromCatalog = Boolean(meta);
+        const catalogName = meta?.name?.trim() || null;
+        const useFallback =
+          !catalogName || this.isAutoLocationName(catalogName);
+        const obsFallback = this.isAutoLocationName(entry.rawName);
+
+        const label =
+          !useFallback && catalogName
+            ? catalogName
+            : !obsFallback && entry.rawName
+              ? entry.rawName
+              : AtmoMicroV2Service.siteFallbackLabel(index);
+
+        return {
+          locationId,
+          label,
+          lat: meta?.lat ?? entry.lat,
+          lon: meta?.lon ?? entry.lon,
+          intervals: entry.intervals,
+          isCurrent: currentLocationId === locationId,
+          influence: meta?.influence ?? null,
+          typology: meta?.typology ?? null,
+          fromCatalog,
+          rawName: entry.rawName,
+        };
+      }
+    );
+
+    // Actuel en premier, puis ordre chronologique de première apparition.
+    stays.sort((a, b) => {
+      if (a.isCurrent !== b.isCurrent) {
+        return a.isCurrent ? -1 : 1;
+      }
+      return (
+        firstSeenOrder.indexOf(a.locationId) -
+        firstSeenOrder.indexOf(b.locationId)
+      );
+    });
+
+    return stays;
+  }
+
+  /**
+   * Historique des sites d'un capteur (multi location_id).
+   * Source : observations daily sans gapfill ; enrichissement /lists/locations.
+   */
+  async fetchDeviceLocationHistory(params: {
+    deviceId: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<DeviceLocationStay[]> {
+    try {
+      const end = params.endDate
+        ? this.formatDateForHistoricalMode(params.endDate, true)
+        : new Date().toISOString();
+      const start = params.startDate
+        ? this.formatDateForHistoricalMode(params.startDate, false)
+        : new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
+
+      const url =
+        `${this.BASE_URL}/observations` +
+        `?aggregation=daily` +
+        `&device_id=${encodeURIComponent(params.deviceId)}` +
+        `&variable=39` +
+        `&from_date_time=${start}` +
+        `&date_time=${end}` +
+        `&decimals=1` +
+        `&limit=${MAX_LIMIT}`;
+
+      const [response, devices, locations] = await Promise.all([
+        this.makeRequest(url),
+        this.getCachedDevices().catch(() => [] as MicrospotDevice[]),
+        this.getCachedLocations().catch(
+          () => new Map<string, MicrospotLocation>()
+        ),
+      ]);
+
+      if (!response || !Array.isArray(response)) {
+        return [];
+      }
+
+      this.warnIfTruncated(
+        response.length,
+        MAX_LIMIT,
+        `location history (capteur ${params.deviceId})`
+      );
+
+      const device = devices.find((d) => d.id === params.deviceId);
+      return this.buildLocationStaysFromObservations(
+        response as MicrospotObservation[],
+        {
+          currentLocationId: device?.location_id ?? null,
+          catalog: locations,
+        }
+      );
+    } catch (error) {
+      console.error(
+        "Erreur lors de la récupération de l'historique des localisations:",
+        error
+      );
+      return [];
     }
   }
 

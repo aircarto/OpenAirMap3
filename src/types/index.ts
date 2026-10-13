@@ -278,6 +278,32 @@ export interface HistoricalDataPoint {
   has_correction?: boolean; // Indique si une correction a été appliquée
 }
 
+/** Intervalle de présence d'un capteur AtmoMicro sur un site. */
+export interface DeviceLocationInterval {
+  start: string; // ISO 8601
+  end: string; // ISO 8601
+}
+
+/**
+ * Historique des sites d'un microcapteur (plusieurs location_id dans le temps).
+ * Dérivé des observations ; enrichi via /lists/locations quand l'id y figure.
+ */
+export interface DeviceLocationStay {
+  locationId: string;
+  /** Libellé affiché (nom catalogue, sinon fallback Site A/B). */
+  label: string;
+  lat: number;
+  lon: number;
+  intervals: DeviceLocationInterval[];
+  isCurrent: boolean;
+  influence?: string | null;
+  typology?: string | null;
+  /** true si enrichi depuis /lists/locations */
+  fromCatalog?: boolean;
+  /** Nom brut API (ex. auto created for device …) */
+  rawName?: string | null;
+}
+
 export interface StationVariable {
   label: string;
   code_iso: string;
@@ -505,6 +531,16 @@ export interface AtmoMicroLikeService {
     startDate: string;
     endDate: string;
   }): Promise<Array<{ timestamp: string; value: number; unit: string }>>;
+
+  /**
+   * Sites successifs d'un capteur (multi location_id). Optionnel : l'ancienne
+   * API AtmoMicro n'a pas d'équivalent et peut renvoyer [].
+   */
+  fetchDeviceLocationHistory?(params: {
+    deviceId: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<DeviceLocationStay[]>;
 
   fetchTemporalData(params: {
     pollutant: string;

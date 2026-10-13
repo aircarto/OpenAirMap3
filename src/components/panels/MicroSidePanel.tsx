@@ -6,6 +6,7 @@ import {
   HistoricalDataPoint,
   SidePanelState,
   ATMOMICRO_POLLUTANT_MAPPING,
+  DeviceLocationStay,
 } from "../../types";
 import { pollutants } from "../../constants/pollutants";
 import type { AtmoMicroLikeService } from "../../types";
@@ -23,6 +24,7 @@ import SidePanelShell, {
   type PanelSize,
 } from "./SidePanelShell";
 import CollapsiblePanelSection from "./CollapsiblePanelSection";
+import DeviceLocationsSection from "./DeviceLocationsSection";
 import PanelReopenBadge from "./PanelReopenBadge";
 
 interface MicroSidePanelProps {
@@ -41,6 +43,8 @@ interface MicroSidePanelProps {
     timeStep: string;
     currentDate?: string;
   } | null;
+  /** Centre la carte sur une ancienne / actuelle localisation du capteur. */
+  onCenterLocation?: (coords: { latitude: number; longitude: number }) => void;
 }
 
 const MICRO_TIME_STEP_PRIORITY = ["heure", "quartHeure", "instantane"] as const;
@@ -64,6 +68,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
   onComparisonModeToggle,
   isComparisonMode = false,
   historicalMode = null,
+  onCenterLocation,
 }) => {
   const { t } = useTranslation();
   const isHistoricalLocked = Boolean(historicalMode);
@@ -110,6 +115,11 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
   const [loadingModeling, setLoadingModeling] = useState(false);
   const [hideThresholdBackgroundForColorblind, setHideThresholdBackgroundForColorblind] =
     useState(false);
+
+  const [locationStays, setLocationStays] = useState<DeviceLocationStay[]>([]);
+  const [highlightedLocationId, setHighlightedLocationId] = useState<
+    string | null
+  >(null);
 
   // Premier chargement (aucune donnée à afficher) : écran de chargement plein.
   // Rechargements suivants : voile par-dessus le graphique, qui reste monté.
@@ -352,6 +362,8 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
       setModelingData({});
       setLoadingModeling(false);
       setStationCoordinates(null);
+      setLocationStays([]);
+      setHighlightedLocationId(null);
       return;
     }
 
@@ -413,6 +425,26 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
       setModelingData({});
       setStationCoordinates(null);
       setLoadingModeling(false);
+      setLocationStays([]);
+      setHighlightedLocationId(null);
+
+      // Historique multi-sites (indépendant de la plage du graphique)
+      if (typeof atmoMicroService.fetchDeviceLocationHistory === 'function') {
+        atmoMicroService
+          .fetchDeviceLocationHistory({ deviceId: selectedStation.id })
+          .then((stays) => {
+            if (stationIdRef.current === selectedStation.id) {
+              setLocationStays(stays);
+            }
+          })
+          .catch((error) => {
+            console.error(
+              'Erreur lors du chargement des localisations du capteur:',
+              error
+            );
+            setLocationStays([]);
+          });
+      }
 
       // Charger le pas de temps par défaut du capteur
       if (selectedPollutants.length > 0) {
@@ -648,6 +680,13 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
     });
   };
 
+  const handleCenterDeviceLocation = useCallback(
+    (stay: DeviceLocationStay) => {
+      onCenterLocation?.({ latitude: stay.lat, longitude: stay.lon });
+    },
+    [onCenterLocation]
+  );
+
   const handleTimeRangeChange = (timeRange: TimeRange) => {
     if (isHistoricalLocked) {
       return;
@@ -703,6 +742,27 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
         stationCoordinates
       );
     }
+  };
+
+  const handleLoadDeviceLocationPeriod = (stay: DeviceLocationStay) => {
+    if (isHistoricalLocked || !selectedStation) {
+      return;
+    }
+    const starts = stay.intervals.map((i) => new Date(i.start).getTime());
+    const ends = stay.intervals.map((i) => new Date(i.end).getTime());
+    const startMs = Math.min(...starts);
+    const endMs = Math.max(...ends);
+    const toDateOnly = (ms: number) =>
+      new Date(ms).toISOString().split('T')[0];
+    handleTimeRangeChange({
+      type: 'custom',
+      custom: {
+        startDate: toDateOnly(startMs),
+        endDate: toDateOnly(endMs),
+        startTime: '00:00',
+        endTime: '23:59',
+      },
+    });
   };
 
   // Vérifier si un pas de temps est valide selon la période actuelle
@@ -1229,6 +1289,18 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                 </div>
               )}
 
+              {locationStays.length >= 2 ? (
+                <DeviceLocationsSection
+                  stays={locationStays}
+                  highlightedLocationId={highlightedLocationId}
+                  onHighlightLocation={setHighlightedLocationId}
+                  onCenterLocation={handleCenterDeviceLocation}
+                  onLoadPeriod={handleLoadDeviceLocationPeriod}
+                  storageKey={`device-locations-${selectedStation?.id ?? 'unknown'}`}
+                  className="shrink-0"
+                />
+              ) : null}
+
               <PanelChartBlock
                 loading={state.loading}
                 data={state.historicalData}
@@ -1248,8 +1320,15 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                   hideThresholdBackgroundForColorblind
                 }
                 playbackMarkerDate={historicalMode?.currentDate}
-                xAxisMin={historicalMode?.startDate}
-                xAxisMax={historicalMode?.endDate}
+                xAxisMin={
+                  getEffectiveDateRange(state.chartControls.timeRange)
+                    .startDate
+                }
+                xAxisMax={
+                  getEffectiveDateRange(state.chartControls.timeRange).endDate
+                }
+                locationStays={locationStays}
+                highlightedLocationId={highlightedLocationId}
               />
 
               <ChartTimeControls

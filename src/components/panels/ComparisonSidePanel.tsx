@@ -5,10 +5,13 @@ import {
   ChartControls,
   HistoricalDataPoint,
   ComparisonState,
+  DeviceLocationStay,
+  AtmoMicroLikeService,
 } from "../../types";
 import { pollutants } from "../../constants/pollutants";
 import { MAX_COMPARISON_STATIONS } from "../../constants/comparison";
 import { AtmoRefService } from "../../services/AtmoRefService";
+import { DataServiceFactory } from "../../services/DataServiceFactory";
 import PanelChartBlock from "../charts/PanelChartBlock";
 import ChartTimeControls from "../controls/ChartTimeControls";
 import { getMaxHistoryDays, type TimeRange } from "../../utils/historicalTimeRange";
@@ -18,6 +21,7 @@ import SidePanelShell, {
   type PanelSize,
 } from "./SidePanelShell";
 import CollapsiblePanelSection from "./CollapsiblePanelSection";
+import DeviceLocationsSection from "./DeviceLocationsSection";
 import PanelReopenBadge from "./PanelReopenBadge";
 
 interface ComparisonSidePanelProps {
@@ -35,6 +39,7 @@ interface ComparisonSidePanelProps {
     timeStep: string
   ) => Promise<void>;
   panelSize: PanelSize;
+  onCenterLocation?: (coords: { latitude: number; longitude: number }) => void;
 }
 
 const COMPARISON_TIME_STEP_PRIORITY = ["heure", "quartHeure", "instantane", "jour"] as const;
@@ -55,12 +60,22 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
   onComparisonModeToggle,
   onLoadComparisonData,
   panelSize,
+  onCenterLocation,
 }) => {
   const { t } = useTranslation();
   const [showPollutantsList, setShowPollutantsList] = useState(false);
   const [hasCorrectedData, setHasCorrectedData] = useState(false);
   const [showRawData, setShowRawData] = useState(false);
   const hasInitializedPollutant = useRef(false);
+  const atmoMicroService = useRef(
+    DataServiceFactory.getService('atmoMicro') as AtmoMicroLikeService
+  ).current;
+  const [staysByStation, setStaysByStation] = useState<
+    Record<string, DeviceLocationStay[]>
+  >({});
+  const [highlightedLocationId, setHighlightedLocationId] = useState<
+    string | null
+  >(null);
 
   // Fonction utilitaire pour vérifier si un polluant est disponible dans toutes les stations
   const isPollutantAvailableInAllStations = (
@@ -352,6 +367,85 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
       validatedTimeRange,
       comparisonState.timeStep
     );
+  };
+
+  // Historique multi-sites pour chaque station AtmoMicro comparée
+  useEffect(() => {
+    const microStations = comparisonState.comparedStations.filter(
+      (s) => s.source === 'atmoMicro'
+    );
+    if (
+      microStations.length === 0 ||
+      typeof atmoMicroService.fetchDeviceLocationHistory !== 'function'
+    ) {
+      setStaysByStation({});
+      return;
+    }
+
+    let cancelled = false;
+    Promise.all(
+      microStations.map(async (station) => {
+        const stays = await atmoMicroService.fetchDeviceLocationHistory!({
+          deviceId: station.id,
+        });
+        return [station.id, stays] as const;
+      })
+    )
+      .then((entries) => {
+        if (cancelled) return;
+        setStaysByStation(Object.fromEntries(entries));
+      })
+      .catch((error) => {
+        console.error(
+          'Erreur historique localisations (comparaison):',
+          error
+        );
+        if (!cancelled) setStaysByStation({});
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [comparisonState.comparedStations, atmoMicroService]);
+
+  const chartLocationStays = useMemo(() => {
+    const flattened: DeviceLocationStay[] = [];
+    for (const station of comparisonState.comparedStations) {
+      const stays = staysByStation[station.id];
+      if (!stays || stays.length < 2) continue;
+      for (const stay of stays) {
+        flattened.push({
+          ...stay,
+          label: `${station.name} — ${stay.label}`,
+        });
+      }
+    }
+    return flattened;
+  }, [comparisonState.comparedStations, staysByStation]);
+
+  const handleCenterDeviceLocation = useCallback(
+    (stay: DeviceLocationStay) => {
+      onCenterLocation?.({ latitude: stay.lat, longitude: stay.lon });
+    },
+    [onCenterLocation]
+  );
+
+  const handleLoadDeviceLocationPeriod = (stay: DeviceLocationStay) => {
+    const starts = stay.intervals.map((i) => new Date(i.start).getTime());
+    const ends = stay.intervals.map((i) => new Date(i.end).getTime());
+    const startMs = Math.min(...starts);
+    const endMs = Math.max(...ends);
+    const toDateOnly = (ms: number) =>
+      new Date(ms).toISOString().split('T')[0];
+    handleTimeRangeChange({
+      type: 'custom',
+      custom: {
+        startDate: toDateOnly(startMs),
+        endDate: toDateOnly(endMs),
+        startTime: '00:00',
+        endTime: '23:59',
+      },
+    });
   };
 
   const handleTimeStepChange = (timeStep: string) => {
@@ -702,6 +796,24 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
                 </div>
               )}
 
+              {comparisonState.comparedStations.map((station) => {
+                const stays = staysByStation[station.id];
+                if (!stays || stays.length < 2) return null;
+                return (
+                  <DeviceLocationsSection
+                    key={`locs-${station.id}`}
+                    stays={stays}
+                    stationLabel={station.name}
+                    highlightedLocationId={highlightedLocationId}
+                    onHighlightLocation={setHighlightedLocationId}
+                    onCenterLocation={handleCenterDeviceLocation}
+                    onLoadPeriod={handleLoadDeviceLocationPeriod}
+                    storageKey={`comparison-locations-${station.id}`}
+                    className="shrink-0"
+                  />
+                );
+              })}
+
               <PanelChartBlock
                 loading={comparisonState.loading}
                 data={
@@ -715,6 +827,8 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
                 timeStep={comparisonState.timeStep}
                 onHasCorrectedDataChange={handleHasCorrectedDataChange}
                 showRawData={showRawData}
+                locationStays={chartLocationStays}
+                highlightedLocationId={highlightedLocationId}
               />
 
               <ChartTimeControls

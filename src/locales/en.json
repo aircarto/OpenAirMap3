@@ -255,6 +255,14 @@
     "exporting": "Exporting...",
     "exportPNG": "Export as PNG",
     "exportCSV": "Export as CSV",
+    "deviceLocations": {
+      "title": "Locations over the period",
+      "count": "{{count}} sites",
+      "currentBadge": "current",
+      "influence": "Influence: {{value}}",
+      "centerOnMap": "Show on map",
+      "loadPeriod": "Load this period"
+    },
     "microSidePanel": {
       "sourceLabel": "AtmoSud qualified micro-sensor",
       "temporalEvolutionAtmoMicro": "Temporal evolution",

@@ -5,7 +5,7 @@ import React, {
   useMemo,
   useCallback,
 } from "react";
-import { HistoricalDataPoint, StationInfo } from "../../types";
+import { DeviceLocationStay, HistoricalDataPoint, StationInfo } from "../../types";
 import {
   exportAmChartsAsPNG,
   exportDataAsCSV,
@@ -32,6 +32,8 @@ export interface HistoricalChartProps {
   playbackMarkerDate?: string;
   xAxisMin?: string;
   xAxisMax?: string;
+  locationStays?: DeviceLocationStay[];
+  highlightedLocationId?: string | null;
 }
 
 const HistoricalChart: React.FC<HistoricalChartProps> = ({
@@ -49,6 +51,8 @@ const HistoricalChart: React.FC<HistoricalChartProps> = ({
   playbackMarkerDate,
   xAxisMin,
   xAxisMax,
+  locationStays = [],
+  highlightedLocationId = null,
 }) => {
   // État pour détecter le mode paysage sur mobile
   const [isLandscapeMobile, setIsLandscapeMobile] = useState(false);
@@ -160,6 +164,8 @@ const HistoricalChart: React.FC<HistoricalChartProps> = ({
     source,
     selectedPollutants,
     showRawData,
+    locationStays,
+    highlightedLocationId,
   });
 
   // Notifier le composant parent si des données corrigées sont disponibles
