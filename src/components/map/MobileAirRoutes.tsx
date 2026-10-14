@@ -215,11 +215,11 @@ const MobileAirRoutes: React.FC<MobileAirRoutesProps> = memo(
           .map((route) => {
           const isFocused = isSameRoute(focusedRoute, route);
           const hasFocus = focusedRoute != null;
-          // Style B — contour blanc GPS : focus lisible, autres colorés mais plus fins
-          const lineWeight = isFocused ? 4 : hasFocus ? 2.5 : 3;
-          const lineOpacity = isFocused ? 0.92 : hasFocus ? 0.45 : 0.6;
-          const pointRadius = isFocused ? 7 : 5.5;
-          const pointOpacity = isFocused ? 1 : hasFocus ? 0.65 : 0.8;
+          // Focus = session du graphique : pleine opacité ; autres sessions ternies
+          const lineWeight = isFocused ? 4 : hasFocus ? 1.5 : 3;
+          const lineOpacity = isFocused ? 1 : hasFocus ? 0.2 : 0.6;
+          const pointRadius = isFocused ? 8 : hasFocus ? 4.5 : 5.5;
+          const pointOpacity = isFocused ? 1 : hasFocus ? 0.3 : 0.8;
           const isFixed = isFixedMobileAirSession(route.moving);
 
           // Mesure fixe (moving=4) : un seul CircleMarker, pas de polyline
@@ -259,15 +259,11 @@ const MobileAirRoutes: React.FC<MobileAirRoutesProps> = memo(
                 <CircleMarker
                   pane={MOBILEAIR_POINTS_PANE}
                   center={[displayPoint.lat, displayPoint.lon]}
-                  radius={isHovered ? 14 : isFocused ? 10 : 8}
+                  radius={isHovered ? 14 : isFocused ? 11 : 8}
                   pathOptions={{
-                    color: isHovered
-                      ? "#FFFF00"
-                      : isFocused
-                        ? "#ffffff"
-                        : color,
+                    color: isHovered ? '#FFFF00' : color,
                     fillColor: color,
-                    fillOpacity: 1,
+                    fillOpacity: isHovered ? 1 : pointOpacity,
                     weight: isHovered ? 3 : isFocused ? 2.5 : 2,
                     opacity: 1,
                   }}
@@ -288,24 +284,6 @@ const MobileAirRoutes: React.FC<MobileAirRoutesProps> = memo(
 
           return (
             <React.Fragment key={`${route.sensorId}-${route.sessionId}`}>
-              {/* Contour blanc sous le trajet focus (lecture type GPS) */}
-              {isFocused &&
-                segments.map((segment, index) => (
-                  <Polyline
-                    key={`${route.sensorId}-${route.sessionId}-outline-${index}`}
-                    pane={MOBILEAIR_LINES_PANE}
-                    positions={segment.positions}
-                    pathOptions={{
-                      color: "#ffffff",
-                      weight: lineWeight + 3,
-                      opacity: 0.9,
-                      lineCap: "round",
-                      lineJoin: "round",
-                    }}
-                    interactive={false}
-                  />
-                ))}
-
               {/* Lignes de connexion entre les points */}
               {segments.map((segment, index) => (
                 <Polyline
@@ -395,14 +373,10 @@ const MobileAirRoutes: React.FC<MobileAirRoutesProps> = memo(
                       center={[point.lat, point.lon]}
                       radius={isHovered ? 12 : pointRadius}
                       pathOptions={{
-                        color: isHovered
-                          ? "#FFFF00"
-                          : isFocused
-                            ? "#ffffff"
-                            : color,
+                        color: isHovered ? '#FFFF00' : color,
                         fillColor: color,
                         fillOpacity: isHovered ? 1 : pointOpacity,
-                        weight: isHovered ? 3 : isFocused ? 2.5 : 1.5,
+                        weight: isHovered ? 3 : isFocused ? 2 : 1.5,
                         opacity: 1,
                       }}
                       eventHandlers={{
