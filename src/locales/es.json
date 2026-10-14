@@ -754,7 +754,8 @@
     "fireLegendBurnedArea": "Perímetro quemado",
     "fireLegendBurnedNote": "Perímetros cartografiados por MODIS. Un incendio reciente puede tardar varios días en aparecer.",
     "groupModeling": "Modelización",
-    "groupFire": "Incendio"
+    "groupFire": "Incendio",
+    "groupBaseMap": "Mapa base"
   },
   "toast": {
     "sourceUnavailable": "{{name}} no disponible",
