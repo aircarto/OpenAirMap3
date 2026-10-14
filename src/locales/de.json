@@ -754,7 +754,8 @@
     "fireLegendBurnedArea": "Brandumriss",
     "fireLegendBurnedNote": "Von MODIS kartierte Umrisse. Ein aktuelles Feuer kann mehrere Tage bis zur Anzeige benötigen.",
     "groupModeling": "Modellierung",
-    "groupFire": "Brände"
+    "groupFire": "Brände",
+    "groupBaseMap": "Kartengrundlage"
   },
   "toast": {
     "sourceUnavailable": "{{name}} nicht verfügbar",
