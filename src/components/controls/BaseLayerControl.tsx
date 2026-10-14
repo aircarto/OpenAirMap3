@@ -124,7 +124,7 @@ interface BaseLayerControlProps {
    * dépendre.
    */
   modelingSlot?: React.ReactNode;
-  /** Vrai si une couche de modélisation est active, pour la pastille du sous-menu */
+  /** Vrai si une couche de modélisation (Azur ou AirCrowd) est active */
   isModelingActive?: boolean;
   /**
    * Déclencheur fourni par l'appelant, rendu dans un `<PopoverTrigger asChild>`.
@@ -168,8 +168,9 @@ const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
   const [isOpen, setIsOpen] = useState(false);
 
   const handleLayerSelect = (layerKey: BaseLayerKey) => {
+    // Ne ferme pas le panneau : le choix vit dans un sous-menu, l'utilisateur
+    // peut enchaîner (ex. découpage communal) sans rouvrir.
     onBaseLayerChange(layerKey);
-    setIsOpen(false);
   };
 
   const handleCommunalLayerToggle = (e: React.MouseEvent) => {
@@ -272,73 +273,7 @@ const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
         )}
       >
           <div className="p-1">
-            {BASE_LAYER_KEYS.map((layerKey) => (
-              <button
-                key={layerKey}
-                type="button"
-                onClick={() => handleLayerSelect(layerKey as BaseLayerKey)}
-                className={`w-full flex items-center px-2.5 py-1.5 rounded text-xs transition-colors whitespace-nowrap ${
-                  currentBaseLayer === layerKey
-                    ? "bg-blue-50/80 text-blue-900 border border-blue-200/50"
-                    : "text-gray-700 hover:bg-gray-50/80"
-                }`}
-              >
-                <div
-                  className={`w-3 h-3 rounded-full border mr-2 flex items-center justify-center ${
-                    currentBaseLayer === layerKey
-                      ? "border-blue-600"
-                      : "border-gray-300/50"
-                  }`}
-                >
-                  {currentBaseLayer === layerKey && (
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-                  )}
-                </div>
-                <span>{getLayerLabel(layerKey as BaseLayerKey)}</span>
-              </button>
-            ))}
-            
-            {/* Séparateur */}
-            <div className="border-t border-gray-200/50 my-1"></div>
-            
-            {/* Option de découpage communal (overlay layer) */}
-            <button
-              type="button"
-              onClick={handleCommunalLayerToggle}
-              className={`w-full flex items-center px-2.5 py-1.5 rounded text-xs transition-colors whitespace-nowrap ${
-                isCommunalLayerEnabled
-                  ? "bg-green-50/80 text-green-900 border border-green-200/50"
-                  : "text-gray-700 hover:bg-gray-50/80"
-              }`}
-            >
-              <div
-                className={`w-3 h-3 rounded border mr-2 flex items-center justify-center ${
-                  isCommunalLayerEnabled
-                    ? "border-green-600 bg-green-600"
-                    : "border-gray-300/50"
-                }`}
-              >
-                {isCommunalLayerEnabled && (
-                  <svg
-                    className="w-2 h-2 text-white"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                )}
-              </div>
-              <span>{t("baseLayer.communal")}</span>
-            </button>
-
-            {/* Séparateur avant les sous-menus */}
-            <div className="my-1 border-t border-gray-200/50" />
-
-            {/* Sous-menu « Modélisation » */}
+            {/* 1. Modélisation (Azur + AirCrowd si exposé par le domaine) */}
             {modelingSlot && (
               <LayerDisclosure
                 label={t("baseLayer.groupModeling")}
@@ -348,7 +283,7 @@ const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
               </LayerDisclosure>
             )}
 
-            {/* Sous-menu « Incendie » : points de chaleur, zones brûlées, feux en cours */}
+            {/* 2. Incendie : points de chaleur, zones brûlées, feux en cours */}
             <LayerDisclosure
               label={t("baseLayer.groupFire")}
               active={
@@ -358,132 +293,202 @@ const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
               }
             >
               <div className="pl-4 pr-1">
-            <button
-              type="button"
-              onClick={handleEffisHotspotsToggle}
-              className={`w-full flex items-center px-2.5 py-1.5 rounded text-xs transition-colors whitespace-nowrap ${
-                isEffisHotspotsEnabled
-                  ? "bg-orange-50/80 text-orange-900 border border-orange-200/50"
-                  : "text-gray-700 hover:bg-gray-50/80"
-              }`}
-            >
-              <div
-                className={`w-3 h-3 rounded border mr-2 flex items-center justify-center ${
-                  isEffisHotspotsEnabled
-                    ? "border-orange-600 bg-orange-600"
-                    : "border-gray-300/50"
-                }`}
-              >
-                {isEffisHotspotsEnabled && (
-                  <svg
-                    className="w-2 h-2 text-white"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                )}
-              </div>
-              <span>{t("baseLayer.effisHotspots")}</span>
-            </button>
-
-            {isEffisHotspotsEnabled && (
-              <PeriodSelector
-                options={["24h", "7d"] as const}
-                value={effisHotspotsPeriod}
-                onChange={onEffisHotspotsPeriodChange}
-                getLabel={(option) => t(HOTSPOT_PERIOD_I18N_KEYS[option])}
-                ariaLabel={t("baseLayer.firePeriodHotspotsAria")}
-                accent="orange"
-              />
-            )}
-
-            {/* Option zones brûlées EFFIS (overlay layer) */}
-            <button
-              type="button"
-              onClick={handleEffisBurnedAreasToggle}
-              className={`w-full flex items-center px-2.5 py-1.5 rounded text-xs transition-colors whitespace-nowrap ${
-                isEffisBurnedAreasEnabled
-                  ? "bg-amber-50/80 text-amber-900 border border-amber-200/50"
-                  : "text-gray-700 hover:bg-gray-50/80"
-              }`}
-            >
-              <div
-                className={`w-3 h-3 rounded border mr-2 flex items-center justify-center ${
-                  isEffisBurnedAreasEnabled
-                    ? "border-amber-700 bg-amber-700"
-                    : "border-gray-300/50"
-                }`}
-              >
-                {isEffisBurnedAreasEnabled && (
-                  <svg
-                    className="w-2 h-2 text-white"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                )}
-              </div>
-              <span>{t("baseLayer.effisBurnedAreas")}</span>
-            </button>
-
-            {isEffisBurnedAreasEnabled && (
-              <PeriodSelector
-                options={["today", "week", "season"] as const}
-                value={effisBurnedAreasPeriod}
-                onChange={onEffisBurnedAreasPeriodChange}
-                getLabel={(option) => t(BURNED_AREA_PERIOD_I18N_KEYS[option])}
-                ariaLabel={t("baseLayer.firePeriodBurnedAria")}
-                accent="amber"
-              />
-            )}
-
-            {featureFlags.wildfireLayer && (
-              <button
-                type="button"
-                onClick={handleWildfireLayerToggle}
-                className={`w-full flex items-center px-2.5 py-1.5 rounded text-xs transition-colors whitespace-nowrap ${
-                  isWildfireLayerEnabled
-                    ? "bg-red-50/80 text-red-900 border border-red-200/50"
-                    : "text-gray-700 hover:bg-gray-50/80"
-                }`}
-              >
-                <div
-                  className={`w-3 h-3 rounded border mr-2 flex items-center justify-center ${
-                    isWildfireLayerEnabled
-                      ? "border-red-600 bg-red-600"
-                      : "border-gray-300/50"
+                <button
+                  type="button"
+                  onClick={handleEffisHotspotsToggle}
+                  className={`w-full flex items-center px-2.5 py-1.5 rounded text-xs transition-colors whitespace-nowrap ${
+                    isEffisHotspotsEnabled
+                      ? "bg-orange-50/80 text-orange-900 border border-orange-200/50"
+                      : "text-gray-700 hover:bg-gray-50/80"
                   }`}
                 >
-                  {isWildfireLayerEnabled && (
-                    <svg
-                      className="w-2 h-2 text-white"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
+                  <div
+                    className={`w-3 h-3 rounded border mr-2 flex items-center justify-center ${
+                      isEffisHotspotsEnabled
+                        ? "border-orange-600 bg-orange-600"
+                        : "border-gray-300/50"
+                    }`}
+                  >
+                    {isEffisHotspotsEnabled && (
+                      <svg
+                        className="w-2 h-2 text-white"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    )}
+                  </div>
+                  <span>{t("baseLayer.effisHotspots")}</span>
+                </button>
+
+                {isEffisHotspotsEnabled && (
+                  <PeriodSelector
+                    options={["24h", "7d"] as const}
+                    value={effisHotspotsPeriod}
+                    onChange={onEffisHotspotsPeriodChange}
+                    getLabel={(option) => t(HOTSPOT_PERIOD_I18N_KEYS[option])}
+                    ariaLabel={t("baseLayer.firePeriodHotspotsAria")}
+                    accent="orange"
+                  />
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleEffisBurnedAreasToggle}
+                  className={`w-full flex items-center px-2.5 py-1.5 rounded text-xs transition-colors whitespace-nowrap ${
+                    isEffisBurnedAreasEnabled
+                      ? "bg-amber-50/80 text-amber-900 border border-amber-200/50"
+                      : "text-gray-700 hover:bg-gray-50/80"
+                  }`}
+                >
+                  <div
+                    className={`w-3 h-3 rounded border mr-2 flex items-center justify-center ${
+                      isEffisBurnedAreasEnabled
+                        ? "border-amber-700 bg-amber-700"
+                        : "border-gray-300/50"
+                    }`}
+                  >
+                    {isEffisBurnedAreasEnabled && (
+                      <svg
+                        className="w-2 h-2 text-white"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    )}
+                  </div>
+                  <span>{t("baseLayer.effisBurnedAreas")}</span>
+                </button>
+
+                {isEffisBurnedAreasEnabled && (
+                  <PeriodSelector
+                    options={["today", "week", "season"] as const}
+                    value={effisBurnedAreasPeriod}
+                    onChange={onEffisBurnedAreasPeriodChange}
+                    getLabel={(option) =>
+                      t(BURNED_AREA_PERIOD_I18N_KEYS[option])
+                    }
+                    ariaLabel={t("baseLayer.firePeriodBurnedAria")}
+                    accent="amber"
+                  />
+                )}
+
+                {featureFlags.wildfireLayer && (
+                  <button
+                    type="button"
+                    onClick={handleWildfireLayerToggle}
+                    className={`w-full flex items-center px-2.5 py-1.5 rounded text-xs transition-colors whitespace-nowrap ${
+                      isWildfireLayerEnabled
+                        ? "bg-red-50/80 text-red-900 border border-red-200/50"
+                        : "text-gray-700 hover:bg-gray-50/80"
+                    }`}
+                  >
+                    <div
+                      className={`w-3 h-3 rounded border mr-2 flex items-center justify-center ${
+                        isWildfireLayerEnabled
+                          ? "border-red-600 bg-red-600"
+                          : "border-gray-300/50"
+                      }`}
                     >
-                      <path
-                        fillRule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  )}
-                </div>
-                <span>{t("baseLayer.wildfire")}</span>
-              </button>
-            )}
+                      {isWildfireLayerEnabled && (
+                        <svg
+                          className="w-2 h-2 text-white"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      )}
+                    </div>
+                    <span>{t("baseLayer.wildfire")}</span>
+                  </button>
+                )}
               </div>
             </LayerDisclosure>
 
+            {/* 3. Fond de carte : styles de fond + découpage communal */}
+            <LayerDisclosure
+              label={t("baseLayer.groupBaseMap")}
+              hint={getLayerLabel(currentBaseLayer)}
+              active={isCommunalLayerEnabled}
+            >
+              <div className="pl-4 pr-1">
+                {BASE_LAYER_KEYS.map((layerKey) => (
+                  <button
+                    key={layerKey}
+                    type="button"
+                    onClick={() => handleLayerSelect(layerKey as BaseLayerKey)}
+                    className={`w-full flex items-center px-2.5 py-1.5 rounded text-xs transition-colors whitespace-nowrap ${
+                      currentBaseLayer === layerKey
+                        ? "bg-blue-50/80 text-blue-900 border border-blue-200/50"
+                        : "text-gray-700 hover:bg-gray-50/80"
+                    }`}
+                  >
+                    <div
+                      className={`w-3 h-3 rounded-full border mr-2 flex items-center justify-center ${
+                        currentBaseLayer === layerKey
+                          ? "border-blue-600"
+                          : "border-gray-300/50"
+                      }`}
+                    >
+                      {currentBaseLayer === layerKey && (
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+                      )}
+                    </div>
+                    <span>{getLayerLabel(layerKey as BaseLayerKey)}</span>
+                  </button>
+                ))}
+
+                <div className="my-1 border-t border-gray-200/50" />
+
+                <button
+                  type="button"
+                  onClick={handleCommunalLayerToggle}
+                  className={`w-full flex items-center px-2.5 py-1.5 rounded text-xs transition-colors whitespace-nowrap ${
+                    isCommunalLayerEnabled
+                      ? "bg-green-50/80 text-green-900 border border-green-200/50"
+                      : "text-gray-700 hover:bg-gray-50/80"
+                  }`}
+                >
+                  <div
+                    className={`w-3 h-3 rounded border mr-2 flex items-center justify-center ${
+                      isCommunalLayerEnabled
+                        ? "border-green-600 bg-green-600"
+                        : "border-gray-300/50"
+                    }`}
+                  >
+                    {isCommunalLayerEnabled && (
+                      <svg
+                        className="w-2 h-2 text-white"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    )}
+                  </div>
+                  <span>{t("baseLayer.communal")}</span>
+                </button>
+              </div>
+            </LayerDisclosure>
           </div>
       </PopoverContent>
     </Popover>

@@ -756,7 +756,8 @@
     "fireLegendBurnedArea": "Burned perimeter",
     "fireLegendBurnedNote": "Perimeters mapped by MODIS. A recent fire may take several days to appear.",
     "groupModeling": "Modelling",
-    "groupFire": "Fire"
+    "groupFire": "Fire",
+    "groupBaseMap": "Base map"
   },
   "toast": {
     "sourceUnavailable": "{{name}} unavailable",
