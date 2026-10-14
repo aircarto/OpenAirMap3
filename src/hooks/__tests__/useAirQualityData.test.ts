@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { StrictMode } from "react";
 import { renderHook, waitFor, act } from "@testing-library/react";
 import { useAirQualityData } from "../useAirQualityData";
 import { DataServiceFactory } from "../../services/DataServiceFactory";
@@ -77,11 +78,10 @@ describe("useAirQualityData", () => {
     );
 
     await waitFor(() => {
-      expect(result.current.loading).toBe(false);
+      expect(result.current.devices).toHaveLength(1);
+      expect(result.current.atmoMicroOutage).toBe(true);
     });
 
-    expect(result.current.atmoMicroOutage).toBe(true);
-    expect(result.current.devices).toHaveLength(1);
     expect(result.current.devices[0]).toMatchObject({
       source: "atmoMicro",
       status: "inactive",
@@ -185,5 +185,45 @@ describe("useAirQualityData", () => {
       selectedSensors: ["sensor-a"],
       mobileAirPartialReplace: true,
     });
+  });
+
+  it("charge les devices malgré le double montage React StrictMode", async () => {
+    const mockService = {
+      fetchData: vi.fn().mockResolvedValue([
+        {
+          id: "FR03029",
+          name: "Aix",
+          latitude: 43.5,
+          longitude: 5.4,
+          source: "atmoRef",
+          pollutant: "pm25",
+          value: 8,
+          unit: "µg/m³",
+          timestamp: "2026-10-14T10:00:00Z",
+          status: "active",
+        },
+      ]),
+    };
+
+    vi.mocked(DataServiceFactory.getServices).mockReturnValue([
+      mockService as any,
+    ]);
+
+    const { result } = renderHook(
+      () =>
+        useAirQualityData({
+          selectedPollutant: "pm25",
+          selectedSources: ["atmoRef"],
+          selectedTimeStep: "heure",
+          autoRefreshEnabled: false,
+        }),
+      { wrapper: StrictMode }
+    );
+
+    await waitFor(() => {
+      expect(result.current.devices).toHaveLength(1);
+    });
+
+    expect(mockService.fetchData).toHaveBeenCalled();
   });
 });

@@ -688,21 +688,20 @@ export const useAirQualityData = ({
 
     // Si c'est le premier montage ou si les paramètres ont vraiment changé
     if (!hasMountedRef.current || lastFetchParamsRef.current !== fetchParams) {
-      hasMountedRef.current = true;
-      lastFetchParamsRef.current = fetchParams;
-
+      // Important (StrictMode) : ne marquer les params comme « fetchés » que quand
+      // le timer s’exécute. Sinon le cleanup annule le setTimeout avant le fetch,
+      // le remount voit les mêmes params et ne relance jamais le chargement.
+      const delay = meteoSelected && boundsKey ? 400 : 0;
       const timer = window.setTimeout(() => {
+        hasMountedRef.current = true;
+        lastFetchParamsRef.current = fetchParams;
         fetchDataRef.current?.();
-      }, meteoSelected && boundsKey ? 400 : 0);
+      }, delay);
 
       return () => window.clearTimeout(timer);
     }
 
-    // Cleanup: réinitialiser le flag au démontage pour le mode StrictMode
-    return () => {
-      // Ne pas réinitialiser hasMountedRef ici car on veut éviter les appels multiples
-      // même lors du remontage en StrictMode si les paramètres n'ont pas changé
-    };
+    return undefined;
   }, [
     selectedPollutant,
     selectedMeteoVariable,
