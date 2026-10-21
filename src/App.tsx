@@ -56,6 +56,10 @@ import { useAppUrlSync } from "./hooks/useAppUrlSync";
 import InformationModal from "./components/modals/InformationModal";
 import { ModelingLayerType } from "./constants/mapLayers";
 import {
+  AROME_DOMAIN_DEFAULT,
+  type AromeDomainId,
+} from "./constants/aromeDomains";
+import {
   getModelingLayerHour,
   isModelingAvailable,
 } from "./services/ModelingLayerService";
@@ -180,6 +184,8 @@ const AppContent: React.FC = () => {
   );
   const [currentModelingLayer, setCurrentModelingLayer] =
     useState<ModelingLayerType | null>(null);
+  const [aromeDomain, setAromeDomain] =
+    useState<AromeDomainId>(AROME_DOMAIN_DEFAULT);
 
   // Vue carte (déclarée tôt : useAirQualityData utilise zoom/bbox pour Météo-France)
   const [mapCenter, setMapCenter] = useState<[number, number]>([
@@ -1496,8 +1502,10 @@ const AppContent: React.FC = () => {
     () => ({
       currentModelingLayer,
       onModelingLayerChange: handleModelingLayerChange,
+      aromeDomain,
+      onAromeDomainChange: setAromeDomain,
     }),
-    [currentModelingLayer, handleModelingLayerChange],
+    [currentModelingLayer, handleModelingLayerChange, aromeDomain],
   );
 
   const refreshValue = useMemo<MapControlsRefresh>(
@@ -1800,6 +1808,11 @@ const AppContent: React.FC = () => {
             mobilityPeriodRange={mobilityPeriodRange}
             currentModelingLayer={currentModelingLayer}
             modelingHourIndex={modelingHourIndex}
+            aromeInstant={{
+              date: effectiveInstant.date,
+              hour: effectiveInstant.hour,
+            }}
+            aromeDomain={aromeDomain}
             loading={mapLoading}
             signalAirSelectedTypes={signalAirSelectedTypes}
             onSignalAirTypesChange={handleSignalAirTypesChange}

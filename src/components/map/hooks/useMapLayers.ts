@@ -7,6 +7,12 @@ import {
   getBaseLayerMaxZoom,
 } from "../../../constants/mapLayers";
 import {
+  AROME_DOMAIN_DEFAULT,
+  aromeDomainLeafletBounds,
+  isAromeDomainId,
+  type AromeDomainId,
+} from "../../../constants/aromeDomains";
+import {
   getModelingLayerHour,
   formatHourLayerName,
   getPollutantLayerName,
@@ -15,6 +21,9 @@ import {
   getModelingLegendTitle,
   isModelingAvailable,
   loadWindFromAtmoSud,
+  loadAromeWind,
+  loadAromeField,
+  AromeInstant,
 } from "../../../services/ModelingLayerService";
 import { createCommunalGeoJSONLayer } from "../../../services/CommunalLayerService";
 import {
@@ -38,6 +47,10 @@ interface UseMapLayersProps {
   selectedPollutant: string;
   currentModelingLayer: ModelingLayerType | null;
   modelingHourIndex?: number | null;
+  /** Instant carte (live ou exploration) pour synchroniser AROME */
+  aromeInstant?: AromeInstant | null;
+  /** Domaine AROME (Marseille / Nice / Toulon / Fos) */
+  aromeDomain?: string;
   isCommunalLayerEnabled: boolean;
   isEffisHotspotsEnabled: boolean;
   isEffisBurnedAreasEnabled: boolean;
@@ -62,6 +75,8 @@ export const useMapLayers = ({
   selectedPollutant,
   currentModelingLayer,
   modelingHourIndex,
+  aromeInstant,
+  aromeDomain = AROME_DOMAIN_DEFAULT,
   isCommunalLayerEnabled,
   isEffisHotspotsEnabled,
   isEffisBurnedAreasEnabled,
@@ -94,10 +109,20 @@ export const useMapLayers = ({
   const [effisBurnedAreasError, setEffisBurnedAreasError] = useState<
     string | null
   >(null);
+  const [aromeError, setAromeError] = useState<string | null>(null);
+  const [aromeLegend, setAromeLegend] = useState<{
+    title: string;
+    min: number;
+    max: number;
+    units: string;
+  } | null>(null);
 
   const modelingLayerRef = useRef<L.TileLayer | null>(null);
   const windLayerRef = useRef<L.Layer | null>(null);
   const windLayerGroupRef = useRef<L.LayerGroup | null>(null);
+  const aromeFieldLayerRef = useRef<L.ImageOverlay | null>(null);
+  const aromeObjectUrlRef = useRef<string | null>(null);
+  const aromeFittedDomainRef = useRef<string | null>(null);
   const communalLayerRef = useRef<L.LayerGroup | null>(null);
   const effisHotspotsLayerRef = useRef<L.GeoJSON | null>(null);
   const effisBurnedAreasLayerRef = useRef<L.GeoJSON | null>(null);
@@ -111,22 +136,60 @@ export const useMapLayers = ({
     hotspotsRendererRef.current = L.canvas({ padding: 0.5 });
   }
 
-  // Fonction pour charger la modélisation de vent
+  const clearWindLayers = useCallback(() => {
+    const map = mapRef.current;
+    if (windLayerGroupRef.current && map) {
+      map.removeLayer(windLayerGroupRef.current);
+      windLayerGroupRef.current = null;
+    }
+    if (windLayerRef.current && map) {
+      map.removeLayer(windLayerRef.current);
+      windLayerRef.current = null;
+    }
+  }, [mapRef]);
+
+  const clearAromeFieldLayer = useCallback(() => {
+    const map = mapRef.current;
+    if (aromeFieldLayerRef.current && map) {
+      map.removeLayer(aromeFieldLayerRef.current);
+      aromeFieldLayerRef.current = null;
+    }
+    if (aromeObjectUrlRef.current) {
+      URL.revokeObjectURL(aromeObjectUrlRef.current);
+      aromeObjectUrlRef.current = null;
+    }
+  }, [mapRef]);
+
+  const addVelocityLayer = useCallback(
+    (data: unknown, overlayName: string) => {
+      if (!mapRef.current) return;
+      const windLayerGroup = L.layerGroup();
+      const velocityLayer = (L as any).velocityLayer({
+        displayValues: false,
+        displayOptions: false,
+        data,
+        velocityScale: 0.004,
+        lineWidth: 2,
+        colorScale: ["#8cb38a"],
+        minVelocity: 0,
+        maxVelocity: 30,
+        overlayName,
+      });
+      velocityLayer.addTo(windLayerGroup);
+      windLayerRef.current = velocityLayer;
+      windLayerGroup.addTo(mapRef.current);
+      windLayerGroupRef.current = windLayerGroup;
+    },
+    [mapRef]
+  );
+
+  // Fonction pour charger la modélisation de vent AtmoSud
   const loadWindModeling = useCallback(async () => {
     if (!mapRef.current) return;
 
     try {
-      // Nettoyage de la couche existante
-      if (windLayerGroupRef.current && mapRef.current) {
-        mapRef.current.removeLayer(windLayerGroupRef.current);
-        windLayerGroupRef.current = null;
-      }
-      if (windLayerRef.current && mapRef.current) {
-        mapRef.current.removeLayer(windLayerRef.current);
-        windLayerRef.current = null;
-      }
+      clearWindLayers();
 
-      // Calculer la date et l'heure
       const now = new Date();
       const yyyy = now.getFullYear();
       const MM = String(now.getMonth() + 1).padStart(2, "0");
@@ -134,45 +197,86 @@ export const useMapLayers = ({
       const HH = String(now.getHours()).padStart(2, "0");
       const dateStr = `${yyyy}${MM}${dd}`;
 
-      // Charger les données de vent depuis AtmoSud
       const data = await loadWindFromAtmoSud(dateStr, HH);
-
-      // Créer le LayerGroup pour le vent
-      const windLayerGroup = L.layerGroup();
-
-      // Utiliser leaflet-velocity pour afficher les données de vent
-      const velocityLayer = (L as any).velocityLayer({
-        displayValues: false,
-        displayOptions: false,
-        data: data,
-        velocityScale: 0.004,
-        lineWidth: 2,
-        colorScale: [
-          "#8cb38a", // couleur unique pour tout le vent
-        ],
-        minVelocity: 0,
-        maxVelocity: 30,
-        overlayName: "wind_layer",
-      });
-
-      // Ajouter le layer au groupe
-      velocityLayer.addTo(windLayerGroup);
-      windLayerRef.current = velocityLayer;
-
-      // Ajouter le groupe à la carte
-      if (mapRef.current) {
-        windLayerGroup.addTo(mapRef.current);
-        windLayerGroupRef.current = windLayerGroup;
-      }
+      addVelocityLayer(data, "wind_layer");
     } catch (error) {
       console.error(
         "❌ [WIND] Erreur lors du chargement des données de vent:",
         error
       );
-      // Afficher un message d'erreur dans la console (vous pouvez adapter pour un système de notification)
       alert(`Impossible de charger les données de vent à cette heure.`);
     }
-  }, [mapRef]);
+  }, [mapRef, clearWindLayers, addVelocityLayer]);
+
+  const loadAromeModeling = useCallback(
+    async (instant: AromeInstant, domain: AromeDomainId) => {
+      if (!mapRef.current) return;
+      const map = mapRef.current;
+      setAromeError(null);
+
+      try {
+        clearWindLayers();
+        clearAromeFieldLayer();
+        setAromeLegend(null);
+
+        const [windData, field] = await Promise.all([
+          loadAromeWind(instant, domain),
+          loadAromeField(instant, "t2m", domain),
+        ]);
+
+        if (!mapRef.current) {
+          URL.revokeObjectURL(field.objectUrl);
+          return;
+        }
+
+        aromeObjectUrlRef.current = field.objectUrl;
+        const imageOverlay = L.imageOverlay(field.objectUrl, field.bounds, {
+          opacity: 0.75,
+          interactive: false,
+          pane: "overlayPane",
+        });
+        imageOverlay.addTo(map);
+        aromeFieldLayerRef.current = imageOverlay;
+
+        addVelocityLayer(windData, "arome_wind_layer");
+
+        // Même convention que la modélisation Azur : borne début–fin en heure locale.
+        const startHour = ((instant.hour % 24) + 24) % 24;
+        const endHour = (startHour + 1) % 24;
+        const timeRangeLabel = `${startHour}h-${endHour}h`;
+
+        setAromeLegend({
+          title: `AROME PAAROME · ${domain} · ${field.varName} (${field.units}) · ${timeRangeLabel}`,
+          min: field.min,
+          max: field.max,
+          units: field.units,
+        });
+        setCurrentModelingLegendTitle(
+          `AROME ${domain}\n${instant.date} ${timeRangeLabel}`
+        );
+        setCurrentModelingLegendUrl(null);
+
+        if (aromeFittedDomainRef.current !== domain) {
+          map.fitBounds(aromeDomainLeafletBounds(domain), {
+            padding: [40, 40],
+            maxZoom: 12,
+          });
+          aromeFittedDomainRef.current = domain;
+        }
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Impossible de charger AROME";
+        console.error("❌ [AROME]", error);
+        setAromeError(message);
+        setAromeLegend(null);
+        clearWindLayers();
+        clearAromeFieldLayer();
+      }
+    },
+    [mapRef, clearWindLayers, clearAromeFieldLayer, addVelocityLayer]
+  );
 
   // Effet pour mettre à jour le fond de carte et le maxZoom (tous les fonds, y compris Positron)
   useEffect(() => {
@@ -215,16 +319,37 @@ export const useMapLayers = ({
     setCurrentModelingLegendUrl(null);
     setCurrentModelingLegendTitle(null);
 
-    // Cleanup: retirer l'ancien layer de vent s'il existe
+    // Cleanup: retirer l'ancien layer de vent / AROME
     if (windLayerGroupRef.current && map) {
       map.removeLayer(windLayerGroupRef.current);
       windLayerGroupRef.current = null;
       windLayerRef.current = null;
     }
+    clearAromeFieldLayer();
+    setAromeError(null);
+    setAromeLegend(null);
 
-    // Pour le vent, pas besoin de vérifier isModelingAvailable car il utilise une API différente
+    if (currentModelingLayer !== "arome") {
+      aromeFittedDomainRef.current = null;
+    }
+
+    // Pour le vent AtmoSud, pas besoin de vérifier isModelingAvailable
     if (currentModelingLayer === "vent") {
       loadWindModeling();
+      return;
+    }
+
+    // POC AROME : vent + t2m depuis le partage stomod2
+    if (currentModelingLayer === "arome") {
+      if (!aromeInstant?.date) {
+        setAromeError("Instant AROME indisponible");
+        return;
+      }
+      if (!isAromeDomainId(aromeDomain)) {
+        setAromeError(`Domaine AROME invalide: ${aromeDomain}`);
+        return;
+      }
+      void loadAromeModeling(aromeInstant, aromeDomain);
       return;
     }
 
@@ -292,16 +417,23 @@ export const useMapLayers = ({
           windLayerRef.current = null;
         }
       }
+      clearAromeFieldLayer();
       setCurrentModelingWMTSLayer(null);
       setCurrentModelingLegendUrl(null);
       setCurrentModelingLegendTitle(null);
+      setAromeLegend(null);
     };
   }, [
     currentModelingLayer,
     selectedTimeStep,
     selectedPollutant,
     modelingHourIndex,
+    aromeInstant?.date,
+    aromeInstant?.hour,
+    aromeDomain,
     loadWindModeling,
+    loadAromeModeling,
+    clearAromeFieldLayer,
     mapRef,
   ]);
 
@@ -485,6 +617,8 @@ export const useMapLayers = ({
     currentModelingWMTSLayer,
     currentModelingLegendUrl,
     currentModelingLegendTitle,
+    aromeLegend,
+    aromeError,
     isEffisHotspotsLoading,
     isEffisBurnedAreasLoading,
     effisHotspotsStats,

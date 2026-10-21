@@ -56,6 +56,8 @@ export const RailBaseLayerSection: React.FC<RailBaseLayerSectionProps> = ({
             variant="inline"
             currentModelingLayer={modeling.currentModelingLayer}
             onModelingLayerChange={modeling.onModelingLayerChange}
+            aromeDomain={modeling.aromeDomain}
+            onAromeDomainChange={modeling.onAromeDomainChange}
             selectedPollutant={filters.selectedPollutant}
             selectedTimeStep={filters.selectedTimeStep}
           />

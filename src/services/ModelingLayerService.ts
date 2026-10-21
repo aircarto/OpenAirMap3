@@ -1,4 +1,5 @@
 import L from "leaflet";
+import { mapInstantToAromeUtc } from "../constants/aromeDomains";
 
 // Configuration WMTS
 const WMTS_CONFIG = {
@@ -259,5 +260,114 @@ export async function loadWindFromAtmoSud(
     throw new Error(`Erreur HTTP: ${response.status}`);
   }
   return await response.json();
+}
+
+/** Instant calendaire pour le POC AROME (date ISO + heure 0–23). */
+export type AromeInstant = {
+  date: string;
+  hour: number;
+};
+
+export type AromeFieldOverlay = {
+  objectUrl: string;
+  bounds: L.LatLngBoundsExpression;
+  units: string;
+  min: number;
+  max: number;
+  varName: string;
+};
+
+/**
+ * Vent AROME (u10/v10) au format wind-js via l'API locale.
+ * `instant` est en heure locale carte ; conversion UTC avant fetch.
+ */
+export async function loadAromeWind(
+  instant: AromeInstant,
+  domain: string = 'Marseille'
+): Promise<unknown> {
+  const utc = mapInstantToAromeUtc(instant);
+  const params = new URLSearchParams({
+    date: utc.date,
+    hour: String(utc.hour),
+    domain,
+  });
+  const response = await fetch(`/api/arome/wind?${params.toString()}`);
+  if (!response.ok) {
+    let detail = `HTTP ${response.status}`;
+    try {
+      const body = await response.json();
+      if (body?.message) detail = body.message;
+    } catch {
+      /* ignore */
+    }
+    throw new Error(detail);
+  }
+  return response.json();
+}
+
+/**
+ * Champ scalaire AROME (PNG) + bounds pour L.imageOverlay.
+ * `instant` est en heure locale carte ; conversion UTC avant fetch.
+ * L'appelant doit révoquer `objectUrl` au cleanup.
+ */
+export async function loadAromeField(
+  instant: AromeInstant,
+  varName: string = 't2m',
+  domain: string = 'Marseille'
+): Promise<AromeFieldOverlay> {
+  const utc = mapInstantToAromeUtc(instant);
+  const params = new URLSearchParams({
+    date: utc.date,
+    hour: String(utc.hour),
+    var: varName,
+    domain,
+  });
+  const response = await fetch(`/api/arome/field?${params.toString()}`);
+  if (!response.ok) {
+    let detail = `HTTP ${response.status}`;
+    try {
+      const body = await response.json();
+      if (body?.message) detail = body.message;
+    } catch {
+      /* ignore */
+    }
+    throw new Error(detail);
+  }
+
+  const boundsHeader = response.headers.get('X-Arome-Bounds');
+  if (!boundsHeader) {
+    throw new Error('En-tête X-Arome-Bounds manquant');
+  }
+  const [south, west, north, east] = boundsHeader.split(',').map(Number);
+  if ([south, west, north, east].some((n) => Number.isNaN(n))) {
+    throw new Error(`Bounds AROME invalides: ${boundsHeader}`);
+  }
+
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+
+  return {
+    objectUrl,
+    bounds: [
+      [south, west],
+      [north, east],
+    ],
+    units: response.headers.get('X-Arome-Units') || '',
+    min: Number(response.headers.get('X-Arome-Min') || 'NaN'),
+    max: Number(response.headers.get('X-Arome-Max') || 'NaN'),
+    varName: response.headers.get('X-Arome-Var') || varName,
+  };
+}
+
+export async function listAromeDates(
+  domain: string = 'Marseille'
+): Promise<string[]> {
+  const params = new URLSearchParams({ domain });
+  const response = await fetch(`/api/arome/dates?${params.toString()}`);
+  if (!response.ok) {
+    throw new Error(`Liste dates AROME: HTTP ${response.status}`);
+  }
+  const body = (await response.json()) as { dates?: string[] };
+  return body.dates ?? [];
 }
 

@@ -107,7 +107,9 @@
     "visibleOnMap": "مرئي على الخريطة",
     "hiddenOnMap": "مخفي على الخريطة",
     "active": "نشط",
-    "inactive": "غير نشط"
+    "inactive": "غير نشط",
+    "modelingArome": "AROME",
+    "aromeDomain": "المنطقة"
   },
   "historical": {
     "periodLabel": "تاريخي",
@@ -513,7 +515,8 @@
     "effisBurnedAreasEmpty": "لا توجد منطقة محروقة مرسومة لهذه الفترة.",
     "effisHotspotsError": "بؤر الحرائق EFFIS غير متاحة.",
     "effisBurnedAreasError": "المناطق المحروقة EFFIS غير متاحة.",
-    "effisHotspotsBeyondRetention": "بؤر الحرائق متاحة فقط لآخر 365 يومًا (حد Copernicus EFFIS)."
+    "effisHotspotsBeyondRetention": "بؤر الحرائق متاحة فقط لآخر 365 يومًا (حد Copernicus EFFIS).",
+    "aromeError": "AROME غير متاح: {{detail}}"
   },
   "promo": {
     "sensor": {
@@ -763,7 +766,8 @@
     "fireLegendBurnedNote": "محيطات مرسومة بواسطة MODIS. قد يستغرق ظهور حريق حديث عدة أيام.",
     "groupModeling": "النمذجة",
     "groupFire": "الحرائق",
-    "groupBaseMap": "خلفية الخريطة"
+    "groupBaseMap": "خلفية الخريطة",
+    "overlayLegendsAromeChip": "AROME"
   },
   "toast": {
     "sourceUnavailable": "{{name}} غير متاح",

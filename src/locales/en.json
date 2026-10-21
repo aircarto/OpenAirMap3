@@ -116,7 +116,9 @@
     "visibleOnMap": "Visible on the map",
     "hiddenOnMap": "Hidden on the map",
     "active": "On",
-    "inactive": "Off"
+    "inactive": "Off",
+    "modelingArome": "AROME",
+    "aromeDomain": "Domain"
   },
   "historical": {
     "periodLabel": "Historical",
@@ -522,7 +524,8 @@
     "effisBurnedAreasEmpty": "No burned area mapped for this period.",
     "effisHotspotsError": "EFFIS fire hotspots unavailable.",
     "effisBurnedAreasError": "EFFIS burned areas unavailable.",
-    "effisHotspotsBeyondRetention": "Fire hotspots are only available for the last 365 days (Copernicus EFFIS limit)."
+    "effisHotspotsBeyondRetention": "Fire hotspots are only available for the last 365 days (Copernicus EFFIS limit).",
+    "aromeError": "AROME unavailable: {{detail}}"
   },
   "promo": {
     "sensor": {
@@ -757,7 +760,8 @@
     "fireLegendBurnedNote": "Perimeters mapped by MODIS. A recent fire may take several days to appear.",
     "groupModeling": "Modelling",
     "groupFire": "Fire",
-    "groupBaseMap": "Base map"
+    "groupBaseMap": "Base map",
+    "overlayLegendsAromeChip": "AROME"
   },
   "toast": {
     "sourceUnavailable": "{{name}} unavailable",

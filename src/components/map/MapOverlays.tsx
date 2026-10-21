@@ -117,6 +117,36 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
     });
   }
 
+  if (mapLayers.aromeLegend) {
+    const { title, min, max, units } = mapLayers.aromeLegend;
+    overlayLegendItems.push({
+      id: "arome",
+      chipLabel: t("baseLayer.overlayLegendsAromeChip"),
+      title: mapLayers.currentModelingLegendTitle ?? title,
+      content: (
+        <div className="space-y-2 text-xs text-gray-700">
+          <p>{title}</p>
+          <div
+            className="h-3 w-full rounded"
+            style={{
+              background:
+                "linear-gradient(to right, #0066ff, #00ffff, #ffff00, #ff0000)",
+            }}
+          />
+          <div className="flex justify-between tabular-nums text-[11px] text-gray-600">
+            <span>
+              {Number.isFinite(min) ? min.toFixed(1) : "—"} {units}
+            </span>
+            <span>
+              {Number.isFinite(max) ? max.toFixed(1) : "—"} {units}
+            </span>
+          </div>
+        </div>
+      ),
+      accentClass: "bg-sky-50 text-sky-900 border-sky-200",
+    });
+  }
+
   // Légendes feux : rendues localement, le style ne vient plus du serveur
   if (isEffisHotspotsEnabled) {
     overlayLegendItems.push({
@@ -237,6 +267,13 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
           tone: "neutral" as const,
           message: t("panels.effisBurnedAreasEmpty"),
         },
+        mapLayers.aromeError && {
+          id: "arome-error",
+          tone: "error" as const,
+          message: t("panels.aromeError", {
+            detail: mapLayers.aromeError,
+          }),
+        },
       ]),
     [
       appNotices,
@@ -256,6 +293,7 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
       mapLayers.isEffisBurnedAreasLoading,
       mapLayers.effisBurnedAreasError,
       showBurnedAreasEmpty,
+      mapLayers.aromeError,
       t,
     ]
   );

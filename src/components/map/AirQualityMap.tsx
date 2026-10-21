@@ -116,6 +116,10 @@ interface AirQualityMapProps {
   currentModelingLayer: ModelingLayerType | null;
   /** Index Azur 0–47 ; `null` masque la couche (hors fenêtre) ; absent = heure live */
   modelingHourIndex?: number | null;
+  /** Instant carte pour synchroniser la couche AROME (date + heure) */
+  aromeInstant?: { date: string; hour: number } | null;
+  /** Domaine AROME (Marseille / Nice / Toulon / Fos) */
+  aromeDomain?: string;
   loading?: boolean;
   signalAirSelectedTypes: string[];
   onSignalAirTypesChange: (types: string[]) => void;
@@ -222,6 +226,8 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
   selectedTimeStep,
   currentModelingLayer,
   modelingHourIndex,
+  aromeInstant,
+  aromeDomain,
   loading,
   signalAirSelectedTypes: _signalAirSelectedTypes,
   onSignalAirTypesChange: _onSignalAirTypesChange,
@@ -350,6 +356,8 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
     selectedPollutant,
     currentModelingLayer,
     modelingHourIndex,
+    aromeInstant,
+    aromeDomain,
     isCommunalLayerEnabled,
     isEffisHotspotsEnabled:
       isEffisHotspotsEnabled && !isHotspotsBeyondRetention,

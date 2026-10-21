@@ -107,7 +107,9 @@
     "visibleOnMap": "Auf der Karte sichtbar",
     "hiddenOnMap": "Auf der Karte ausgeblendet",
     "active": "Ein",
-    "inactive": "Aus"
+    "inactive": "Aus",
+    "modelingArome": "AROME",
+    "aromeDomain": "Gebiet"
   },
   "historical": {
     "periodLabel": "Verlauf",
@@ -513,7 +515,8 @@
     "effisBurnedAreasEmpty": "Keine Brandfläche für diesen Zeitraum kartiert.",
     "effisHotspotsError": "EFFIS-Feuer-Hotspots nicht verfügbar.",
     "effisBurnedAreasError": "EFFIS-Brandflächen nicht verfügbar.",
-    "effisHotspotsBeyondRetention": "Feuer-Hotspots sind nur für die letzten 365 Tage verfügbar (Copernicus-EFFIS-Grenze)."
+    "effisHotspotsBeyondRetention": "Feuer-Hotspots sind nur für die letzten 365 Tage verfügbar (Copernicus-EFFIS-Grenze).",
+    "aromeError": "AROME nicht verfügbar: {{detail}}"
   },
   "promo": {
     "sensor": {
@@ -747,7 +750,8 @@
     "fireLegendBurnedNote": "Von MODIS kartierte Umrisse. Ein aktuelles Feuer kann mehrere Tage bis zur Anzeige benötigen.",
     "groupModeling": "Modellierung",
     "groupFire": "Brände",
-    "groupBaseMap": "Kartengrundlage"
+    "groupBaseMap": "Kartengrundlage",
+    "overlayLegendsAromeChip": "AROME"
   },
   "toast": {
     "sourceUnavailable": "{{name}} nicht verfügbar",

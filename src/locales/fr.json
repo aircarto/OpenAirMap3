@@ -75,6 +75,7 @@
     "modeling": "Carte de modélisation",
     "modelingUnavailable": "Modélisation (indisponible)",
     "modelingVent": "Vent",
+    "modelingArome": "AROME",
     "modelingPollutant": "Modélisation",
     "openSignalAir": "Ouvrir SignalAir",
     "openMobileAir": "Ouvrir MobileAir",
@@ -116,7 +117,8 @@
     "visibleOnMap": "Visible sur la carte",
     "hiddenOnMap": "Masqué sur la carte",
     "active": "Actif",
-    "inactive": "Inactif"
+    "inactive": "Inactif",
+    "aromeDomain": "Domaine"
   },
   "historical": {
     "periodLabel": "Historique",
@@ -522,7 +524,8 @@
       "sixMonths": "6 mois",
       "limitationLabel": "Limitation :",
       "timeStepLabelsSeparator": " et "
-    }
+    },
+    "aromeError": "AROME indisponible : {{detail}}"
   },
   "promo": {
     "sensor": {
@@ -757,7 +760,8 @@
     "overlayLegendsError": "Légende indisponible",
     "groupModeling": "Modélisation",
     "groupFire": "Incendie",
-    "groupBaseMap": "Fond de carte"
+    "groupBaseMap": "Fond de carte",
+    "overlayLegendsAromeChip": "AROME"
   },
   "toast": {
     "sourceUnavailable": "{{name}} non disponible",

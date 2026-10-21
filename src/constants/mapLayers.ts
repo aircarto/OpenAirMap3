@@ -85,9 +85,18 @@ export const createBaseLayer = (key: BaseLayerKey): L.Layer => {
 // Types de layers de modélisation
 export type ModelingLayerType =
   | 'pollutant' // Modélisation polluant sélectionné
-  | 'vent'; // Vent
+  | 'vent' // Vent AtmoSud
+  | 'arome'; // POC AROME (netCDF partage stomod2)
 
 export const modelingLayers: Record<ModelingLayerType, string> = {
   pollutant: 'Modélisation polluant sélectionné',
   vent: 'Vent',
+  arome: 'AROME',
 };
+
+export {
+  AROME_DOMAIN_DEFAULT,
+  AROME_DOMAIN_IDS,
+  aromeDomainLeafletBounds,
+  type AromeDomainId,
+} from './aromeDomains';

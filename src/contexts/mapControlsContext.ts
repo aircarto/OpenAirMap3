@@ -1,5 +1,6 @@
 import { createContext, useContext } from "react";
 import { ModelingLayerType } from "../constants/mapLayers";
+import type { AromeDomainId } from "../constants/aromeDomains";
 import type { MeteoVariableCode } from "../constants/meteoVariables";
 import { Toast } from "../components/ui/toast";
 import type { Notice } from "../components/map/notifications/notice";
@@ -62,6 +63,9 @@ export interface MapControlsFilters {
 export interface MapControlsModeling {
   currentModelingLayer: ModelingLayerType | null;
   onModelingLayerChange: (layer: ModelingLayerType | null) => void;
+  /** Domaine AROME actif (Marseille / Nice / Toulon / Fos) */
+  aromeDomain: AromeDomainId;
+  onAromeDomainChange: (domain: AromeDomainId) => void;
 }
 
 export interface MapControlsRefresh {
