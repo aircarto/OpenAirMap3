@@ -29,6 +29,12 @@ out
 .env
 .env.*.local
 
+# POC AROME netCDF (retarome) — garder le dossier, ignorer les grilles
+data/AROME_DATA/**
+!data/AROME_DATA/.gitkeep
+!data/AROME_DATA/README.txt
+
+
 # Tests - artefacts uniquement
 coverage/
 playwright-report/

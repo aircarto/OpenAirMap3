@@ -62,6 +62,12 @@ NEXT_PUBLIC_USE_MICROSPOT_API=boolean
 # Masque les microcapteurs AtmoMicro co-localises sur une station de reference (QAQC)
 NEXT_PUBLIC_HIDE_ATMOMICRO_STATION_QAQC=boolean
 
+# POC AROME (serveur Next uniquement) — archive netCDF montée
+# Défaut: /mnt/partage_stomod2/AROME_DATA
+AROME_DATA_ROOT=string
+# Interpréteur Python avec xarray/netCDF4 (défaut: prod_retarome .venv)
+AROME_PYTHON=string
+
 
 # =====================================================
 # Debug / diagnostics
