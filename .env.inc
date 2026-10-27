@@ -83,3 +83,11 @@ VITE_MATOMO_SITE_ID=string|number
 # Active des logs console detailles pour le mode historique
 # (fusion multi-sources, collisions d'ID entre AtmoRef/AtmoMicro/NebuleAir)
 VITE_HISTORICAL_MODE_LOGS=boolean
+
+# =====================================================
+# AtmoMicro / microspot
+# =====================================================
+
+# true = API export microspot (api-export-prod.uspot.probesys.net/microspot)
+# false = ancienne API (api.atmosud.org/observations/capteurs) — défaut recommandé
+VITE_USE_MICROSPOT_API=boolean

@@ -262,6 +262,32 @@ export interface HistoricalDataPoint {
   has_correction?: boolean; // Indique si une correction a été appliquée
 }
 
+/** Intervalle de présence d'un capteur AtmoMicro sur un site. */
+export interface DeviceLocationInterval {
+  start: string; // ISO 8601
+  end: string; // ISO 8601
+}
+
+/**
+ * Historique des sites d'un microcapteur (plusieurs location_id dans le temps).
+ * Dérivé des observations ; enrichi via /lists/locations quand l'id y figure.
+ */
+export interface DeviceLocationStay {
+  locationId: string;
+  /** Libellé affiché (nom catalogue, sinon fallback Site A/B). */
+  label: string;
+  lat: number;
+  lon: number;
+  intervals: DeviceLocationInterval[];
+  isCurrent: boolean;
+  influence?: string | null;
+  typology?: string | null;
+  /** true si enrichi depuis /lists/locations */
+  fromCatalog?: boolean;
+  /** Nom brut API (ex. auto created for device …) */
+  rawName?: string | null;
+}
+
 export interface StationVariable {
   label: string;
   code_iso: string;
@@ -372,6 +398,123 @@ export interface AtmoMicroSitesResponse {
 
 export interface AtmoMicroMeasuresResponse {
   mesures: AtmoMicroMeasure[];
+}
+
+// =====================================================
+// Types spécifiques pour l'API microspot (nouvelle API microcapteurs)
+//
+// Remplace https://api.atmosud.org/observations/capteurs. Identifiants sans
+// correspondance avec les anciens `id_site`. Modèle = CAPTEUR (`id`), pas site.
+// =====================================================
+
+/** Une variable mesurée par un capteur, telle que listée par /lists/devices. */
+export interface MicrospotDeviceVariable {
+  variable_iso_code: string;
+  variable_name: string;
+  scan_interval: number | null;
+}
+
+/** Un capteur diffusé, tel que renvoyé par /lists/devices. */
+export interface MicrospotDevice {
+  id: string;
+  internal_id: number;
+  name: string | null;
+  brand: string | null;
+  model: string | null;
+  variables: MicrospotDeviceVariable[];
+  actual_location: string | null;
+  location_id: string | null;
+  lat: number | null;
+  lon: number | null;
+  alt: number | null;
+  last_measure?: string;
+}
+
+export interface MicrospotCampaign {
+  campaign_id: number;
+  campaign_name: string;
+  start_date: string | null;
+  end_date: string | null;
+}
+
+/** Un site de mesure, tel que renvoyé par /lists/locations. */
+export interface MicrospotLocation {
+  id: string;
+  name: string;
+  typology: string | null;
+  influence: string | null;
+  lat: number;
+  lon: number;
+  alt: number | null;
+  start_date: string | null;
+  end_date: string | null;
+  campaigns: MicrospotCampaign[];
+}
+
+/** Une mesure, telle que renvoyée par /observations et /observations/latest. */
+export interface MicrospotObservation {
+  id: string;
+  name: string | null;
+  location_id: string | null;
+  location_name: string | null;
+  variable_iso_code: string;
+  variable_name: string;
+  time: string;
+  lat: number;
+  lon: number;
+  value: number | null;
+  value_ref: number | null;
+  value_raw?: number | null;
+  unit: string;
+  scan_interval?: number | null;
+  brand?: string;
+  model?: string;
+  manually_validated?: boolean;
+}
+
+/**
+ * Contrat commun aux deux implémentations AtmoMicro (ancienne API et microspot).
+ */
+export interface AtmoMicroLikeService {
+  fetchData(params: DataFetchParams): Promise<MeasurementDevice[]>;
+
+  fetchSiteVariables(siteId: string): Promise<{
+    variables: Record<string, StationVariable>;
+    sensorModel?: string;
+  }>;
+
+  fetchSensorTimeStep(
+    siteId: string,
+    pollutant: string
+  ): Promise<number | null>;
+
+  fetchSiteCoordinates(
+    siteId: string
+  ): Promise<{ latitude: number; longitude: number } | null>;
+
+  fetchHistoricalData(params: {
+    siteId: string;
+    pollutant: string;
+    timeStep: string;
+    startDate: string;
+    endDate: string;
+  }): Promise<Array<{ timestamp: string; value: number; unit: string }>>;
+
+  fetchDeviceLocationHistory?(params: {
+    deviceId: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<DeviceLocationStay[]>;
+
+  fetchTemporalData(params: {
+    pollutant: string;
+    timeStep: string;
+    startDate: string;
+    endDate: string;
+    sites?: string[];
+  }): Promise<TemporalDataPoint[]>;
+
+  isMeasuresUnavailableIncident(): boolean;
 }
 
 // Types pour le clustering

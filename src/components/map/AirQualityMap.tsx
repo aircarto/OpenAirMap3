@@ -24,6 +24,7 @@ declare module "leaflet" {
   }
 }
 import {
+  AtmoMicroLikeService,
   MeasurementDevice,
   SignalAirReport,
   StationInfo,
@@ -54,7 +55,6 @@ import MapOverlays from "./MapOverlays";
 import MapViewSyncHandler from "./MapViewSyncHandler";
 import SensorPromoCard from "./SensorPromoCard";
 import { AtmoRefService } from "../../services/AtmoRefService";
-import { AtmoMicroService } from "../../services/AtmoMicroService";
 import { NebuleAirService } from "../../services/NebuleAirService";
 import { DataServiceFactory } from "../../services/DataServiceFactory";
 // Hooks personnalisés
@@ -595,7 +595,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
         const atmoRefService = DataServiceFactory.getService('atmoRef') as AtmoRefService;
         variables = await atmoRefService.fetchStationVariables(device.id);
       } else if (device.source === "atmoMicro") {
-        const atmoMicroService = DataServiceFactory.getService('atmoMicro') as AtmoMicroService;
+        const atmoMicroService = DataServiceFactory.getService('atmoMicro') as AtmoMicroLikeService;
         const siteInfo = await atmoMicroService.fetchSiteVariables(device.id);
         variables = siteInfo.variables;
         sensorModel = siteInfo.sensorModel;
@@ -822,7 +822,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
             const atmoRefService = DataServiceFactory.getService('atmoRef') as AtmoRefService;
             variables = await atmoRefService.fetchStationVariables(device.id);
           } else if (device.source === "atmoMicro") {
-            const atmoMicroService = DataServiceFactory.getService('atmoMicro') as AtmoMicroService;
+            const atmoMicroService = DataServiceFactory.getService('atmoMicro') as AtmoMicroLikeService;
             const siteInfo = await atmoMicroService.fetchSiteVariables(
               device.id
             );

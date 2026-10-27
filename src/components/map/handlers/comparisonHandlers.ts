@@ -1,6 +1,9 @@
-import { StationInfo, ComparisonState } from "../../../types";
+import {
+  AtmoMicroLikeService,
+  StationInfo,
+  ComparisonState,
+} from "../../../types";
 import { AtmoRefService } from "../../../services/AtmoRefService";
-import { AtmoMicroService } from "../../../services/AtmoMicroService";
 import { NebuleAirService } from "../../../services/NebuleAirService";
 import { DataServiceFactory } from "../../../services/DataServiceFactory";
 import { getCustomRangeISO } from "../../../utils/historicalTimeRange";
@@ -77,7 +80,7 @@ export const createLoadComparisonDataHandler = (
             endDate,
           });
         } else if (station.source === "atmoMicro") {
-          const atmoMicroService = DataServiceFactory.getService('atmoMicro') as AtmoMicroService;
+          const atmoMicroService = DataServiceFactory.getService('atmoMicro') as AtmoMicroLikeService;
           stationData = await atmoMicroService.fetchHistoricalData({
             siteId: station.id,
             pollutant,

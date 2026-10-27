@@ -1,6 +1,8 @@
 import { DataService } from "../types";
+import { featureFlags } from "../config/featureFlags";
 import { AtmoRefService } from "./AtmoRefService";
 import { AtmoMicroService } from "./AtmoMicroService";
+import { AtmoMicroV2Service } from "./AtmoMicroV2Service";
 import { NebuleAirService } from "./NebuleAirService";
 import { SignalAirService } from "./SignalAirService";
 import { MobileAirService } from "./MobileAirService";
@@ -14,7 +16,10 @@ export class DataServiceFactory {
     new () => DataService
   > = {
     atmoRef: AtmoRefService,
-    atmoMicro: AtmoMicroService,
+    // Microcapteurs : microspot (V2) ou ancienne API (repli tant que le flag est off).
+    atmoMicro: featureFlags.useMicrospotApi
+      ? AtmoMicroV2Service
+      : AtmoMicroService,
     nebuleair: NebuleAirService,
     signalair: SignalAirService,
     mobileair: MobileAirService,

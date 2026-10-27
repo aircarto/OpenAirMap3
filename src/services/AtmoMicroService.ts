@@ -1,5 +1,6 @@
 import { BaseDataService } from "./BaseDataService";
 import {
+  AtmoMicroLikeService,
   MeasurementDevice,
   AtmoMicroSite,
   AtmoMicroMeasure,
@@ -18,7 +19,10 @@ export class AtmoMicroMeasuresUnavailableError extends Error {
   }
 }
 
-export class AtmoMicroService extends BaseDataService {
+export class AtmoMicroService
+  extends BaseDataService
+  implements AtmoMicroLikeService
+{
   private readonly BASE_URL = "https://api.atmosud.org/observations/capteurs";
   private lastMeasuresUnavailable = false;
   

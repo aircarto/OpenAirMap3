@@ -1,0 +1,2287 @@
+{
+  "generated_at": "2026-10-27T10:53:37.523Z",
+  "old_base": "https://api.atmosud.org/observations/capteurs",
+  "new_base": "https://api-export-prod.uspot.probesys.net/microspot",
+  "join_strategy": "nom_site≈location_name (normalisé) sinon coords<40m ; id_site ne matche PAS location_id",
+  "decision": {
+    "decision": "GO_AVEC_RESERVE",
+    "reasons": [
+      "Couverture jointure ≥ 90% sur PM2.5/PM10 (horaire + scan).",
+      "Valeurs BRUTES alignées en horaire (mean≈0.05, p95≈0.1). Scan plus bruité (timestamps/délais) — attendu.",
+      "Historique 24h (8 sites × 2 polluants) : écarts moyens < 0.1 µg/m³.",
+      "RESERVE: écarts DISPLAY PM10 hourly (p95≈10.6) sur cluster Gardanne/Meyreuil — même raw, corrections différentes (N1/N2).",
+      "id_site !== location_id ; jointure nom/coords. Export adresse les devices par id.",
+      "GO service+pipeline : mapping microspot fiable ; réserve métier sur corrections PM10 affichées."
+    ],
+    "analysis_raw_vs_display": [
+      {
+        "pollutant": "PM2.5",
+        "timestep": "hourly",
+        "coverage_pct": 93.4,
+        "display_value_diff": {
+          "n": 113,
+          "mean": 0.162,
+          "max": 3,
+          "p50": 0.1,
+          "p95": 0.6,
+          "rmse": 0.439
+        },
+        "raw_value_diff": {
+          "n": 113,
+          "mean": 0.046,
+          "max": 0.3,
+          "p50": 0,
+          "p95": 0.1,
+          "rmse": 0.073
+        }
+      },
+      {
+        "pollutant": "PM2.5",
+        "timestep": "scan",
+        "coverage_pct": 93.5,
+        "display_value_diff": {
+          "n": 115,
+          "mean": 0.348,
+          "max": 13.8,
+          "p50": 0.1,
+          "p95": 1.6,
+          "rmse": 1.391
+        },
+        "raw_value_diff": {
+          "n": 115,
+          "mean": 0.329,
+          "max": 13.8,
+          "p50": 0,
+          "p95": 1.6,
+          "rmse": 1.387
+        }
+      },
+      {
+        "pollutant": "PM10",
+        "timestep": "hourly",
+        "coverage_pct": 93.4,
+        "display_value_diff": {
+          "n": 113,
+          "mean": 0.803,
+          "max": 19,
+          "p50": 0.1,
+          "p95": 10.6,
+          "rmse": 3.072
+        },
+        "raw_value_diff": {
+          "n": 113,
+          "mean": 0.053,
+          "max": 0.8,
+          "p50": 0,
+          "p95": 0.1,
+          "rmse": 0.101
+        }
+      },
+      {
+        "pollutant": "PM10",
+        "timestep": "scan",
+        "coverage_pct": 93.5,
+        "display_value_diff": {
+          "n": 116,
+          "mean": 0.846,
+          "max": 34.9,
+          "p50": 0.1,
+          "p95": 4,
+          "rmse": 3.563
+        },
+        "raw_value_diff": {
+          "n": 116,
+          "mean": 0.833,
+          "max": 34.9,
+          "p50": 0.1,
+          "p95": 4.1,
+          "rmse": 3.569
+        }
+      }
+    ]
+  },
+  "latest": [
+    {
+      "pollutant": "PM2.5",
+      "timestep": "hourly",
+      "join_note": "id_site !== location_id ; jointure nom normalisé puis coords < 40m",
+      "counts": {
+        "old_rows": 121,
+        "new_rows": 127,
+        "new_locations": 124,
+        "new_without_location": 1,
+        "matched": 113,
+        "unmatched_old": 8,
+        "coverage_pct": 93.4,
+        "name_joins": 52,
+        "coord_joins": 61,
+        "export_only_devices": 14,
+        "multi_device_locations": 2,
+        "extra_devices_beyond_one_per_site": 2
+      },
+      "value_abs_diff": {
+        "n": 113,
+        "mean": 0.162,
+        "max": 3,
+        "p50": 0.1,
+        "p95": 0.6,
+        "rmse": 0.439
+      },
+      "raw_abs_diff": {
+        "n": 113,
+        "mean": 0.046,
+        "max": 0.3,
+        "p50": 0,
+        "p95": 0.1,
+        "rmse": 0.073
+      },
+      "time_diff_minutes": {
+        "n": 113,
+        "mean": 0,
+        "max": 0,
+        "p50": 0,
+        "p95": 0,
+        "rmse": 0
+      },
+      "coord_diff_meters": {
+        "n": 113,
+        "mean": 0,
+        "max": 0,
+        "p50": 0,
+        "p95": 0,
+        "rmse": 0
+      },
+      "unmatched_old_sample": [
+        {
+          "id_site": 1291,
+          "nom_site": "Fos Carabins",
+          "lat": 43.458927,
+          "lon": 4.934572,
+          "value": 4.1,
+          "time": "2026-10-27T10:00:00Z"
+        },
+        {
+          "id_site": 1040,
+          "nom_site": "Office de tourisme Aiguines",
+          "lat": 43.77491,
+          "lon": 6.24304,
+          "value": 2.8,
+          "time": "2026-10-27T10:00:00Z"
+        },
+        {
+          "id_site": 1039,
+          "nom_site": "Collège Henri Nans",
+          "lat": 43.630416,
+          "lon": 6.225606,
+          "value": 4.9,
+          "time": "2026-10-27T10:00:00Z"
+        },
+        {
+          "id_site": 1282,
+          "nom_site": "nebuleair-pro054",
+          "lat": 44.2353883,
+          "lon": 4.884460868,
+          "value": 5.9,
+          "time": "2026-10-27T10:00:00Z"
+        },
+        {
+          "id_site": 1216,
+          "nom_site": "nebuleair-072",
+          "lat": 43.5510339,
+          "lon": 6.030343,
+          "value": 6.4,
+          "time": "2026-10-27T10:00:00Z"
+        },
+        {
+          "id_site": 1138,
+          "nom_site": "nebuleair-067",
+          "lat": 43.41653571,
+          "lon": 6.07187212,
+          "value": 7.7,
+          "time": "2026-10-27T10:00:00Z"
+        },
+        {
+          "id_site": 1109,
+          "nom_site": "nebuleair-075",
+          "lat": 44.0895911,
+          "lon": 7.5928752,
+          "value": 3.5,
+          "time": "2026-10-27T10:00:00Z"
+        },
+        {
+          "id_site": 1234,
+          "nom_site": "Marseille Plombières",
+          "lat": 43.3181977,
+          "lon": 5.3799504,
+          "value": 4.4,
+          "time": "2026-10-27T10:00:00Z"
+        }
+      ],
+      "export_only_sample": [
+        {
+          "device_id": "0324140196",
+          "location_id": "2279",
+          "location_name": "Marseille_18_Bd_Poussardin",
+          "value_ref": 8.3,
+          "time": "2026-10-27T10:00:00+00:00"
+        },
+        {
+          "device_id": "0324160217",
+          "location_id": "2285",
+          "location_name": "Marseille_Rue_De_La_Vallouise",
+          "value_ref": 3.9,
+          "time": "2026-10-27T10:00:00+00:00"
+        },
+        {
+          "device_id": "0324160218",
+          "location_id": "2335",
+          "location_name": "Marseille Port Nord",
+          "value_ref": 7.8,
+          "time": "2026-10-27T10:00:00+00:00"
+        },
+        {
+          "device_id": "2750C64C",
+          "location_id": "16",
+          "location_name": "Cannes Broussailles",
+          "value_ref": 3.9,
+          "time": "2026-10-27T10:00:00+00:00"
+        },
+        {
+          "device_id": "303CFF8E",
+          "location_id": null,
+          "location_name": null,
+          "value_ref": 5.2,
+          "time": "2026-10-27T10:00:00+00:00"
+        },
+        {
+          "device_id": "8C29F6A1",
+          "location_id": "29",
+          "location_name": "Gardanne",
+          "value_ref": 4.9,
+          "time": "2026-10-27T10:00:00+00:00"
+        },
+        {
+          "device_id": "B091559D",
+          "location_id": "1935",
+          "location_name": "Toulon TCA",
+          "value_ref": 9.5,
+          "time": "2026-10-27T10:00:00+00:00"
+        },
+        {
+          "device_id": "BD6AB6",
+          "location_id": "2428",
+          "location_name": "Carpentras_1678 chemin de la Sournaresse",
+          "value_ref": 5.1,
+          "time": "2026-10-27T10:00:00+00:00"
+        },
+        {
+          "device_id": "BD6AB9",
+          "location_id": "11",
+          "location_name": "Avignon Mairie",
+          "value_ref": 11.9,
+          "time": "2026-10-27T10:00:00+00:00"
+        },
+        {
+          "device_id": "BD6B24",
+          "location_id": "2425",
+          "location_name": "Sarrians_1348 route de la petite Grange",
+          "value_ref": 9.4,
+          "time": "2026-10-27T10:00:00+00:00"
+        },
+        {
+          "device_id": "BD6B2E",
+          "location_id": "2022",
+          "location_name": "Avignon Rocade CDG",
+          "value_ref": 11.3,
+          "time": "2026-10-27T10:00:00+00:00"
+        },
+        {
+          "device_id": "BD6B34",
+          "location_id": "11",
+          "location_name": "Avignon Mairie",
+          "value_ref": 11.9,
+          "time": "2026-10-27T10:00:00+00:00"
+        },
+        {
+          "device_id": "BD6BAF",
+          "location_id": "2430",
+          "location_name": "Orange_381 avenue Rodolphe d’Aymard",
+          "value_ref": 8.6,
+          "time": "2026-10-27T10:00:00+00:00"
+        },
+        {
+          "device_id": "BD6BBB",
+          "location_id": "2022",
+          "location_name": "Avignon Rocade CDG",
+          "value_ref": 12,
+          "time": "2026-10-27T10:00:00+00:00"
+        }
+      ],
+      "multi_device_sample": [
+        {
+          "location_id": "11",
+          "location_name": "Avignon Mairie",
+          "device_count": 2,
+          "device_ids": [
+            "BD6AB9",
+            "BD6B34"
+          ]
+        },
+        {
+          "location_id": "2022",
+          "location_name": "Avignon Rocade CDG",
+          "device_count": 2,
+          "device_ids": [
+            "BD6B2E",
+            "BD6BBB"
+          ]
+        }
+      ],
+      "value_mismatch_sample": [
+        {
+          "id_site": 1455,
+          "location_id": "2436",
+          "device_id": "070879D8",
+          "name": "Toulon port Quai du Parti",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 6.4,
+          "new_value_ref": 9.4,
+          "old_raw": 5,
+          "new_raw": 5,
+          "old_corrected": 6.4,
+          "new_corrected": 9.4,
+          "old_time": "2026-10-27T10:00:00Z",
+          "new_time": "2026-10-27T10:00:00+00:00",
+          "diff": 3
+        },
+        {
+          "id_site": 1452,
+          "location_id": "2458",
+          "device_id": "74CF97F4",
+          "name": "La Seyne Port Corniche Giovannini",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 6.3,
+          "new_value_ref": 9.2,
+          "old_raw": 4.9,
+          "new_raw": 5,
+          "old_corrected": 6.3,
+          "new_corrected": 9.2,
+          "old_time": "2026-10-27T10:00:00Z",
+          "new_time": "2026-10-27T10:00:00+00:00",
+          "diff": 2.9
+        },
+        {
+          "id_site": 1428,
+          "location_id": "2226",
+          "device_id": "1211D0F6",
+          "name": "Gardanne_Mat'Ild",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 7.8,
+          "new_value_ref": 8.5,
+          "old_raw": 6.5,
+          "new_raw": 6.6,
+          "old_corrected": 7.8,
+          "new_corrected": 8.5,
+          "old_time": "2026-10-27T10:00:00Z",
+          "new_time": "2026-10-27T10:00:00+00:00",
+          "diff": 0.7
+        },
+        {
+          "id_site": 1434,
+          "location_id": "24500",
+          "device_id": "BD6BB8",
+          "name": "Villar St. Pancrace",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 5.5,
+          "new_value_ref": 6.2,
+          "old_raw": 2.3,
+          "new_raw": 2.3,
+          "old_corrected": 5.5,
+          "new_corrected": 6.2,
+          "old_time": "2026-10-27T10:00:00Z",
+          "new_time": "2026-10-27T10:00:00+00:00",
+          "diff": 0.7
+        },
+        {
+          "id_site": 315,
+          "location_id": "2099",
+          "device_id": "BD6B38",
+          "name": "Embrun_RelaisCovoiturage",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 5.8,
+          "new_value_ref": 6.5,
+          "old_raw": 3.8,
+          "new_raw": 3.9,
+          "old_corrected": 5.8,
+          "new_corrected": 6.5,
+          "old_time": "2026-10-27T10:00:00Z",
+          "new_time": "2026-10-27T10:00:00+00:00",
+          "diff": 0.7
+        },
+        {
+          "id_site": 1385,
+          "location_id": "103",
+          "device_id": "05C1A382",
+          "name": "Meyreuil Fauvettes",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 5.8,
+          "new_value_ref": 6.4,
+          "old_raw": 3.8,
+          "new_raw": 3.8,
+          "old_corrected": 5.8,
+          "new_corrected": 6.4,
+          "old_time": "2026-10-27T10:00:00Z",
+          "new_time": "2026-10-27T10:00:00+00:00",
+          "diff": 0.6
+        },
+        {
+          "id_site": 1382,
+          "location_id": "2229",
+          "device_id": "8E86600E",
+          "name": "Gardanne_Arménie",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 5.2,
+          "new_value_ref": 5.8,
+          "old_raw": 4.8,
+          "new_raw": 4.8,
+          "old_corrected": 5.2,
+          "new_corrected": 5.8,
+          "old_time": "2026-10-27T10:00:00Z",
+          "new_time": "2026-10-27T10:00:00+00:00",
+          "diff": 0.6
+        },
+        {
+          "id_site": 308,
+          "location_id": "27",
+          "device_id": "BD6B9C",
+          "name": "Gap Commanderie",
+          "how": "coord",
+          "sibling_devices": 1,
+          "old_value": 4.6,
+          "new_value_ref": 5.2,
+          "old_raw": 2.4,
+          "new_raw": 2.4,
+          "old_corrected": 4.6,
+          "new_corrected": 5.2,
+          "old_time": "2026-10-27T10:00:00Z",
+          "new_time": "2026-10-27T10:00:00+00:00",
+          "diff": 0.6
+        },
+        {
+          "id_site": 303,
+          "location_id": "2097",
+          "device_id": "BD6BB6",
+          "name": "Briançon_AncienneEcoleDuProrel",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 4.1,
+          "new_value_ref": 4.7,
+          "old_raw": 1.7,
+          "new_raw": 1.8,
+          "old_corrected": 4.1,
+          "new_corrected": 4.7,
+          "old_time": "2026-10-27T10:00:00Z",
+          "new_time": "2026-10-27T10:00:00+00:00",
+          "diff": 0.6
+        }
+      ]
+    },
+    {
+      "pollutant": "PM2.5",
+      "timestep": "scan",
+      "join_note": "id_site !== location_id ; jointure nom normalisé puis coords < 40m",
+      "counts": {
+        "old_rows": 123,
+        "new_rows": 127,
+        "new_locations": 124,
+        "new_without_location": 1,
+        "matched": 115,
+        "unmatched_old": 8,
+        "coverage_pct": 93.5,
+        "name_joins": 54,
+        "coord_joins": 61,
+        "export_only_devices": 12,
+        "multi_device_locations": 2,
+        "extra_devices_beyond_one_per_site": 2
+      },
+      "value_abs_diff": {
+        "n": 115,
+        "mean": 0.348,
+        "max": 13.8,
+        "p50": 0.1,
+        "p95": 1.6,
+        "rmse": 1.391
+      },
+      "raw_abs_diff": {
+        "n": 115,
+        "mean": 0.329,
+        "max": 13.8,
+        "p50": 0,
+        "p95": 1.6,
+        "rmse": 1.387
+      },
+      "time_diff_minutes": {
+        "n": 115,
+        "mean": 0.339,
+        "max": 2.167,
+        "p50": 0,
+        "p95": 2.167,
+        "rmse": 0.774
+      },
+      "coord_diff_meters": {
+        "n": 115,
+        "mean": 0,
+        "max": 0,
+        "p50": 0,
+        "p95": 0,
+        "rmse": 0
+      },
+      "unmatched_old_sample": [
+        {
+          "id_site": 1291,
+          "nom_site": "Fos Carabins",
+          "lat": 43.458927,
+          "lon": 4.934572,
+          "value": 3.4,
+          "time": "2026-10-27T10:52:55Z"
+        },
+        {
+          "id_site": 1040,
+          "nom_site": "Office de tourisme Aiguines",
+          "lat": 43.77491,
+          "lon": 6.24304,
+          "value": 2.6,
+          "time": "2026-10-27T10:52:41Z"
+        },
+        {
+          "id_site": 1039,
+          "nom_site": "Collège Henri Nans",
+          "lat": 43.630416,
+          "lon": 6.225606,
+          "value": 5.2,
+          "time": "2026-10-27T10:52:01Z"
+        },
+        {
+          "id_site": 1282,
+          "nom_site": "nebuleair-pro054",
+          "lat": 44.2353883,
+          "lon": 4.884460868,
+          "value": 5.8,
+          "time": "2026-10-27T10:52:30Z"
+        },
+        {
+          "id_site": 1216,
+          "nom_site": "nebuleair-072",
+          "lat": 43.5510339,
+          "lon": 6.030343,
+          "value": 3.8,
+          "time": "2026-10-27T10:52:35Z"
+        },
+        {
+          "id_site": 1138,
+          "nom_site": "nebuleair-067",
+          "lat": 43.41653571,
+          "lon": 6.07187212,
+          "value": 4.6,
+          "time": "2026-10-27T10:51:48Z"
+        },
+        {
+          "id_site": 1109,
+          "nom_site": "nebuleair-075",
+          "lat": 44.0895911,
+          "lon": 7.5928752,
+          "value": 1.6,
+          "time": "2026-10-27T10:52:04Z"
+        },
+        {
+          "id_site": 1234,
+          "nom_site": "Marseille Plombières",
+          "lat": 43.3181977,
+          "lon": 5.3799504,
+          "value": 5.8,
+          "time": "2026-10-27T10:52:01Z"
+        }
+      ],
+      "export_only_sample": [
+        {
+          "device_id": "0324140196",
+          "location_id": "2279",
+          "location_name": "Marseille_18_Bd_Poussardin",
+          "value_ref": 7.6,
+          "time": "2026-10-27T10:47:38+00:00"
+        },
+        {
+          "device_id": "0324160218",
+          "location_id": "2335",
+          "location_name": "Marseille Port Nord",
+          "value_ref": 5,
+          "time": "2026-10-27T10:31:59+00:00"
+        },
+        {
+          "device_id": "2750C64C",
+          "location_id": "16",
+          "location_name": "Cannes Broussailles",
+          "value_ref": 3.8,
+          "time": "2026-10-27T10:53:04+00:00"
+        },
+        {
+          "device_id": "303CFF8E",
+          "location_id": null,
+          "location_name": null,
+          "value_ref": 6.1,
+          "time": "2026-10-27T10:53:08+00:00"
+        },
+        {
+          "device_id": "8C29F6A1",
+          "location_id": "29",
+          "location_name": "Gardanne",
+          "value_ref": 2.9,
+          "time": "2026-10-27T10:52:39+00:00"
+        },
+        {
+          "device_id": "B091559D",
+          "location_id": "1935",
+          "location_name": "Toulon TCA",
+          "value_ref": 7.3,
+          "time": "2026-10-27T10:53:12+00:00"
+        },
+        {
+          "device_id": "BD6AB9",
+          "location_id": "11",
+          "location_name": "Avignon Mairie",
+          "value_ref": 7.5,
+          "time": "2026-10-27T10:48:02+00:00"
+        },
+        {
+          "device_id": "BD6B24",
+          "location_id": "2425",
+          "location_name": "Sarrians_1348 route de la petite Grange",
+          "value_ref": 3.4,
+          "time": "2026-10-27T10:38:13+00:00"
+        },
+        {
+          "device_id": "BD6B2E",
+          "location_id": "2022",
+          "location_name": "Avignon Rocade CDG",
+          "value_ref": 6.7,
+          "time": "2026-10-27T10:53:10+00:00"
+        },
+        {
+          "device_id": "BD6B34",
+          "location_id": "11",
+          "location_name": "Avignon Mairie",
+          "value_ref": 8,
+          "time": "2026-10-27T10:48:32+00:00"
+        },
+        {
+          "device_id": "BD6BAF",
+          "location_id": "2430",
+          "location_name": "Orange_381 avenue Rodolphe d’Aymard",
+          "value_ref": 3.6,
+          "time": "2026-10-27T10:48:49+00:00"
+        },
+        {
+          "device_id": "BD6BBB",
+          "location_id": "2022",
+          "location_name": "Avignon Rocade CDG",
+          "value_ref": 7.4,
+          "time": "2026-10-27T10:40:04+00:00"
+        }
+      ],
+      "multi_device_sample": [
+        {
+          "location_id": "11",
+          "location_name": "Avignon Mairie",
+          "device_count": 2,
+          "device_ids": [
+            "BD6AB9",
+            "BD6B34"
+          ]
+        },
+        {
+          "location_id": "2022",
+          "location_name": "Avignon Rocade CDG",
+          "device_count": 2,
+          "device_ids": [
+            "BD6B2E",
+            "BD6BBB"
+          ]
+        }
+      ],
+      "value_mismatch_sample": [
+        {
+          "id_site": 1388,
+          "location_id": "10010",
+          "device_id": "C753AA57",
+          "name": "Via Michelangelo_125",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 21.2,
+          "new_value_ref": 7.4,
+          "old_raw": 21.2,
+          "new_raw": 7.4,
+          "old_corrected": null,
+          "new_corrected": null,
+          "old_time": "2026-10-27T10:52:22Z",
+          "new_time": "2026-10-27T10:53:22+00:00",
+          "diff": 13.8
+        },
+        {
+          "id_site": 1094,
+          "location_id": "AC3E66F9D108_1a5a4c80-f190-4e59-a15f-179bb0e61bec",
+          "device_id": "AC3E66F9D108",
+          "name": "nebuleair-138",
+          "how": "coord",
+          "sibling_devices": 1,
+          "old_value": 6.5,
+          "new_value_ref": 4.1,
+          "old_raw": 5.8,
+          "new_raw": 3.3,
+          "old_corrected": 6.5,
+          "new_corrected": 4.1,
+          "old_time": "2026-10-27T10:51:02Z",
+          "new_time": "2026-10-27T10:53:12+00:00",
+          "diff": 2.4
+        },
+        {
+          "id_site": 1348,
+          "location_id": "2413",
+          "device_id": "E6F6D758",
+          "name": "La_Penne_sur_Huveaune_300-306_bd_Voltaire",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 11.1,
+          "new_value_ref": 8.8,
+          "old_raw": 11.1,
+          "new_raw": 8.8,
+          "old_corrected": 11.1,
+          "new_corrected": null,
+          "old_time": "2026-10-27T10:52:09Z",
+          "new_time": "2026-10-27T10:53:10+00:00",
+          "diff": 2.3
+        },
+        {
+          "id_site": 1393,
+          "location_id": "10006",
+          "device_id": "58BDEB52",
+          "name": "Corpo dei Piloti_124",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 6.2,
+          "new_value_ref": 8,
+          "old_raw": 6.2,
+          "new_raw": 8,
+          "old_corrected": null,
+          "new_corrected": null,
+          "old_time": "2026-10-27T10:52:03Z",
+          "new_time": "2026-10-27T10:53:04+00:00",
+          "diff": 1.8
+        },
+        {
+          "id_site": 1394,
+          "location_id": "10005",
+          "device_id": "72EAA96C",
+          "name": "TDT_123",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 6.5,
+          "new_value_ref": 4.9,
+          "old_raw": 6.5,
+          "new_raw": 4.9,
+          "old_corrected": null,
+          "new_corrected": null,
+          "old_time": "2026-10-27T10:52:21Z",
+          "new_time": "2026-10-27T10:53:22+00:00",
+          "diff": 1.6
+        },
+        {
+          "id_site": 1390,
+          "location_id": "10009",
+          "device_id": "0C4B3A02",
+          "name": "Piazzale PL2000_122",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 5.1,
+          "new_value_ref": 6.7,
+          "old_raw": 5.1,
+          "new_raw": 6.7,
+          "old_corrected": null,
+          "new_corrected": null,
+          "old_time": "2026-10-27T10:52:10Z",
+          "new_time": "2026-10-27T10:53:11+00:00",
+          "diff": 1.6
+        },
+        {
+          "id_site": 1295,
+          "location_id": "B8EFCA1815AC_478a532d-9365-433f-9c62-a66007a5ee0f",
+          "device_id": "B8EFCA1815AC",
+          "name": "nebuleair-202",
+          "how": "coord",
+          "sibling_devices": 1,
+          "old_value": 3,
+          "new_value_ref": 4.6,
+          "old_raw": 2.7,
+          "new_raw": 3.9,
+          "old_corrected": 3,
+          "new_corrected": 4.6,
+          "old_time": "2026-10-27T10:50:52Z",
+          "new_time": "2026-10-27T10:53:01+00:00",
+          "diff": 1.6
+        },
+        {
+          "id_site": 1160,
+          "location_id": "4DCCA1815AC_4d4421c6-1939-4adf-8f48-443d835a7484",
+          "device_id": "4DCCA1815AC",
+          "name": "nebuleair-077",
+          "how": "coord",
+          "sibling_devices": 1,
+          "old_value": 5.1,
+          "new_value_ref": 6.6,
+          "old_raw": 3.8,
+          "new_raw": 5.1,
+          "old_corrected": 5.1,
+          "new_corrected": 6.6,
+          "old_time": "2026-10-27T10:51:12Z",
+          "new_time": "2026-10-27T10:53:22+00:00",
+          "diff": 1.5
+        },
+        {
+          "id_site": 1382,
+          "location_id": "2229",
+          "device_id": "8E86600E",
+          "name": "Gardanne_Arménie",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 3.9,
+          "new_value_ref": 5.2,
+          "old_raw": 3.7,
+          "new_raw": 4.7,
+          "old_corrected": 3.9,
+          "new_corrected": 5.2,
+          "old_time": "2026-10-27T10:52:17Z",
+          "new_time": "2026-10-27T10:53:17+00:00",
+          "diff": 1.3
+        },
+        {
+          "id_site": 1162,
+          "location_id": "340750F9D108_6484faac-5937-4ece-bc8c-01cd76efe6de",
+          "device_id": "340750F9D108",
+          "name": "nebuleair-171",
+          "how": "coord",
+          "sibling_devices": 1,
+          "old_value": 8.1,
+          "new_value_ref": 6.8,
+          "old_raw": 9.8,
+          "new_raw": 8.1,
+          "old_corrected": 8.1,
+          "new_corrected": 6.8,
+          "old_time": "2026-10-27T10:50:58Z",
+          "new_time": "2026-10-27T10:53:08+00:00",
+          "diff": 1.3
+        },
+        {
+          "id_site": 1428,
+          "location_id": "2226",
+          "device_id": "1211D0F6",
+          "name": "Gardanne_Mat'Ild",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 6.7,
+          "new_value_ref": 7.7,
+          "old_raw": 5.7,
+          "new_raw": 6.5,
+          "old_corrected": 6.7,
+          "new_corrected": 7.7,
+          "old_time": "2026-10-27T10:52:12Z",
+          "new_time": "2026-10-27T10:53:11+00:00",
+          "diff": 1
+        },
+        {
+          "id_site": 1373,
+          "location_id": "2392",
+          "device_id": "F4F3D45D",
+          "name": "Cannes_Promenade_de_la_Pantiero",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 2.8,
+          "new_value_ref": 1.9,
+          "old_raw": 3,
+          "new_raw": 2.1,
+          "old_corrected": 2.8,
+          "new_corrected": 1.9,
+          "old_time": "2026-10-27T10:52:08Z",
+          "new_time": "2026-10-27T10:53:08+00:00",
+          "diff": 0.9
+        },
+        {
+          "id_site": 1301,
+          "location_id": "84CFCA1815AC_9feb887d-0015-4dc2-85ec-f4a6f073653e",
+          "device_id": "84CFCA1815AC",
+          "name": "nebuleair-207",
+          "how": "coord",
+          "sibling_devices": 1,
+          "old_value": 2.3,
+          "new_value_ref": 1.5,
+          "old_raw": 2.3,
+          "new_raw": 1.6,
+          "old_corrected": 2.3,
+          "new_corrected": 1.5,
+          "old_time": "2026-10-27T10:50:54Z",
+          "new_time": "2026-10-27T10:53:03+00:00",
+          "diff": 0.8
+        },
+        {
+          "id_site": 1469,
+          "location_id": "2466",
+          "device_id": "37ACB6C7",
+          "name": "Lambesc_2_impasse_Jacques_Prevert_cour_école_sport",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 5.6,
+          "new_value_ref": 4.9,
+          "old_raw": 4,
+          "new_raw": 3.1,
+          "old_corrected": 5.6,
+          "new_corrected": 4.9,
+          "old_time": "2026-10-27T10:52:19Z",
+          "new_time": "2026-10-27T10:53:20+00:00",
+          "diff": 0.7
+        },
+        {
+          "id_site": 1201,
+          "location_id": "543F66F9D108_c6ad78c9-21ad-4c02-9c9d-637986cb22b5",
+          "device_id": "543F66F9D108",
+          "name": "nebuleair-129",
+          "how": "coord",
+          "sibling_devices": 1,
+          "old_value": 3.1,
+          "new_value_ref": 2.4,
+          "old_raw": 2.8,
+          "new_raw": 2.2,
+          "old_corrected": 3.1,
+          "new_corrected": 2.4,
+          "old_time": "2026-10-27T10:51:08Z",
+          "new_time": "2026-10-27T10:53:17+00:00",
+          "diff": 0.7
+        }
+      ]
+    },
+    {
+      "pollutant": "PM10",
+      "timestep": "hourly",
+      "join_note": "id_site !== location_id ; jointure nom normalisé puis coords < 40m",
+      "counts": {
+        "old_rows": 121,
+        "new_rows": 127,
+        "new_locations": 124,
+        "new_without_location": 1,
+        "matched": 113,
+        "unmatched_old": 8,
+        "coverage_pct": 93.4,
+        "name_joins": 52,
+        "coord_joins": 61,
+        "export_only_devices": 14,
+        "multi_device_locations": 2,
+        "extra_devices_beyond_one_per_site": 2
+      },
+      "value_abs_diff": {
+        "n": 113,
+        "mean": 0.803,
+        "max": 19,
+        "p50": 0.1,
+        "p95": 10.6,
+        "rmse": 3.072
+      },
+      "raw_abs_diff": {
+        "n": 113,
+        "mean": 0.053,
+        "max": 0.8,
+        "p50": 0,
+        "p95": 0.1,
+        "rmse": 0.101
+      },
+      "time_diff_minutes": {
+        "n": 113,
+        "mean": 0,
+        "max": 0,
+        "p50": 0,
+        "p95": 0,
+        "rmse": 0
+      },
+      "coord_diff_meters": {
+        "n": 113,
+        "mean": 0,
+        "max": 0,
+        "p50": 0,
+        "p95": 0,
+        "rmse": 0
+      },
+      "unmatched_old_sample": [
+        {
+          "id_site": 1291,
+          "nom_site": "Fos Carabins",
+          "lat": 43.458927,
+          "lon": 4.934572,
+          "value": 9,
+          "time": "2026-10-27T10:00:00Z"
+        },
+        {
+          "id_site": 1040,
+          "nom_site": "Office de tourisme Aiguines",
+          "lat": 43.77491,
+          "lon": 6.24304,
+          "value": 3.4,
+          "time": "2026-10-27T10:00:00Z"
+        },
+        {
+          "id_site": 1039,
+          "nom_site": "Collège Henri Nans",
+          "lat": 43.630416,
+          "lon": 6.225606,
+          "value": 7.9,
+          "time": "2026-10-27T10:00:00Z"
+        },
+        {
+          "id_site": 1282,
+          "nom_site": "nebuleair-pro054",
+          "lat": 44.2353883,
+          "lon": 4.884460868,
+          "value": 11.9,
+          "time": "2026-10-27T10:00:00Z"
+        },
+        {
+          "id_site": 1216,
+          "nom_site": "nebuleair-072",
+          "lat": 43.5510339,
+          "lon": 6.030343,
+          "value": 11.4,
+          "time": "2026-10-27T10:00:00Z"
+        },
+        {
+          "id_site": 1138,
+          "nom_site": "nebuleair-067",
+          "lat": 43.41653571,
+          "lon": 6.07187212,
+          "value": 12.9,
+          "time": "2026-10-27T10:00:00Z"
+        },
+        {
+          "id_site": 1109,
+          "nom_site": "nebuleair-075",
+          "lat": 44.0895911,
+          "lon": 7.5928752,
+          "value": 6.3,
+          "time": "2026-10-27T10:00:00Z"
+        },
+        {
+          "id_site": 1234,
+          "nom_site": "Marseille Plombières",
+          "lat": 43.3181977,
+          "lon": 5.3799504,
+          "value": 8.7,
+          "time": "2026-10-27T10:00:00Z"
+        }
+      ],
+      "export_only_sample": [
+        {
+          "device_id": "0324140196",
+          "location_id": "2279",
+          "location_name": "Marseille_18_Bd_Poussardin",
+          "value_ref": 21.1,
+          "time": "2026-10-27T10:00:00+00:00"
+        },
+        {
+          "device_id": "0324160217",
+          "location_id": "2285",
+          "location_name": "Marseille_Rue_De_La_Vallouise",
+          "value_ref": 9.9,
+          "time": "2026-10-27T10:00:00+00:00"
+        },
+        {
+          "device_id": "0324160218",
+          "location_id": "2335",
+          "location_name": "Marseille Port Nord",
+          "value_ref": 21.5,
+          "time": "2026-10-27T10:00:00+00:00"
+        },
+        {
+          "device_id": "2750C64C",
+          "location_id": "16",
+          "location_name": "Cannes Broussailles",
+          "value_ref": 6.9,
+          "time": "2026-10-27T10:00:00+00:00"
+        },
+        {
+          "device_id": "303CFF8E",
+          "location_id": null,
+          "location_name": null,
+          "value_ref": 11.4,
+          "time": "2026-10-27T10:00:00+00:00"
+        },
+        {
+          "device_id": "8C29F6A1",
+          "location_id": "29",
+          "location_name": "Gardanne",
+          "value_ref": 16.4,
+          "time": "2026-10-27T10:00:00+00:00"
+        },
+        {
+          "device_id": "B091559D",
+          "location_id": "1935",
+          "location_name": "Toulon TCA",
+          "value_ref": 11.3,
+          "time": "2026-10-27T10:00:00+00:00"
+        },
+        {
+          "device_id": "BD6AB6",
+          "location_id": "2428",
+          "location_name": "Carpentras_1678 chemin de la Sournaresse",
+          "value_ref": 12.3,
+          "time": "2026-10-27T10:00:00+00:00"
+        },
+        {
+          "device_id": "BD6AB9",
+          "location_id": "11",
+          "location_name": "Avignon Mairie",
+          "value_ref": 22.4,
+          "time": "2026-10-27T10:00:00+00:00"
+        },
+        {
+          "device_id": "BD6B24",
+          "location_id": "2425",
+          "location_name": "Sarrians_1348 route de la petite Grange",
+          "value_ref": 22.9,
+          "time": "2026-10-27T10:00:00+00:00"
+        },
+        {
+          "device_id": "BD6B2E",
+          "location_id": "2022",
+          "location_name": "Avignon Rocade CDG",
+          "value_ref": 24.1,
+          "time": "2026-10-27T10:00:00+00:00"
+        },
+        {
+          "device_id": "BD6B34",
+          "location_id": "11",
+          "location_name": "Avignon Mairie",
+          "value_ref": 23.5,
+          "time": "2026-10-27T10:00:00+00:00"
+        },
+        {
+          "device_id": "BD6BAF",
+          "location_id": "2430",
+          "location_name": "Orange_381 avenue Rodolphe d’Aymard",
+          "value_ref": 20.2,
+          "time": "2026-10-27T10:00:00+00:00"
+        },
+        {
+          "device_id": "BD6BBB",
+          "location_id": "2022",
+          "location_name": "Avignon Rocade CDG",
+          "value_ref": 25.7,
+          "time": "2026-10-27T10:00:00+00:00"
+        }
+      ],
+      "multi_device_sample": [
+        {
+          "location_id": "11",
+          "location_name": "Avignon Mairie",
+          "device_count": 2,
+          "device_ids": [
+            "BD6AB9",
+            "BD6B34"
+          ]
+        },
+        {
+          "location_id": "2022",
+          "location_name": "Avignon Rocade CDG",
+          "device_count": 2,
+          "device_ids": [
+            "BD6B2E",
+            "BD6BBB"
+          ]
+        }
+      ],
+      "value_mismatch_sample": [
+        {
+          "id_site": 1428,
+          "location_id": "2226",
+          "device_id": "1211D0F6",
+          "name": "Gardanne_Mat'Ild",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 15.8,
+          "new_value_ref": 34.8,
+          "old_raw": 13.9,
+          "new_raw": 13.9,
+          "old_corrected": 15.8,
+          "new_corrected": 34.8,
+          "old_time": "2026-10-27T10:00:00Z",
+          "new_time": "2026-10-27T10:00:00+00:00",
+          "diff": 19
+        },
+        {
+          "id_site": 1385,
+          "location_id": "103",
+          "device_id": "05C1A382",
+          "name": "Meyreuil Fauvettes",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 11.4,
+          "new_value_ref": 25.2,
+          "old_raw": 7.6,
+          "new_raw": 7.6,
+          "old_corrected": 11.4,
+          "new_corrected": 25.2,
+          "old_time": "2026-10-27T10:00:00Z",
+          "new_time": "2026-10-27T10:00:00+00:00",
+          "diff": 13.8
+        },
+        {
+          "id_site": 1378,
+          "location_id": "2225",
+          "device_id": "0E1C3E25",
+          "name": "Gardanne_La_Palun",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 10.3,
+          "new_value_ref": 22.7,
+          "old_raw": 10,
+          "new_raw": 10.1,
+          "old_corrected": 10.3,
+          "new_corrected": 22.7,
+          "old_time": "2026-10-27T10:00:00Z",
+          "new_time": "2026-10-27T10:00:00+00:00",
+          "diff": 12.4
+        },
+        {
+          "id_site": 1358,
+          "location_id": "102",
+          "device_id": "7AC4C800",
+          "name": "Meyreuil Malet",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 9.1,
+          "new_value_ref": 20.2,
+          "old_raw": 7.4,
+          "new_raw": 7.4,
+          "old_corrected": 9.1,
+          "new_corrected": 20.2,
+          "old_time": "2026-10-27T10:00:00Z",
+          "new_time": "2026-10-27T10:00:00+00:00",
+          "diff": 11.1
+        },
+        {
+          "id_site": 1380,
+          "location_id": "2227",
+          "device_id": "DE0B8E93",
+          "name": "Gardanne_NotreDame",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 8.9,
+          "new_value_ref": 19.6,
+          "old_raw": 8.4,
+          "new_raw": 8.5,
+          "old_corrected": 8.9,
+          "new_corrected": 19.6,
+          "old_time": "2026-10-27T10:00:00Z",
+          "new_time": "2026-10-27T10:00:00+00:00",
+          "diff": 10.7
+        },
+        {
+          "id_site": 1382,
+          "location_id": "2229",
+          "device_id": "8E86600E",
+          "name": "Gardanne_Arménie",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 8.8,
+          "new_value_ref": 19.4,
+          "old_raw": 7.5,
+          "new_raw": 7.6,
+          "old_corrected": 8.8,
+          "new_corrected": 19.4,
+          "old_time": "2026-10-27T10:00:00Z",
+          "new_time": "2026-10-27T10:00:00+00:00",
+          "diff": 10.6
+        },
+        {
+          "id_site": 1377,
+          "location_id": "2224",
+          "device_id": "AFAB4616",
+          "name": "Meyreuil_Ecole_Robert_Lagier",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 1.2,
+          "new_value_ref": 2.8,
+          "old_raw": 0,
+          "new_raw": 0,
+          "old_corrected": 1.2,
+          "new_corrected": 2.8,
+          "old_time": "2026-10-27T10:00:00Z",
+          "new_time": "2026-10-27T10:00:00+00:00",
+          "diff": 1.6
+        },
+        {
+          "id_site": 1383,
+          "location_id": "2223",
+          "device_id": "C3F37C3A",
+          "name": "Meyreuil_Mairie",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 1,
+          "new_value_ref": 2.4,
+          "old_raw": 0,
+          "new_raw": 0,
+          "old_corrected": 1,
+          "new_corrected": 2.4,
+          "old_time": "2026-10-27T10:00:00Z",
+          "new_time": "2026-10-27T10:00:00+00:00",
+          "diff": 1.4
+        },
+        {
+          "id_site": 315,
+          "location_id": "2099",
+          "device_id": "BD6B38",
+          "name": "Embrun_RelaisCovoiturage",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 17.4,
+          "new_value_ref": 16,
+          "old_raw": 8.4,
+          "new_raw": 8.5,
+          "old_corrected": 17.4,
+          "new_corrected": 16,
+          "old_time": "2026-10-27T10:00:00Z",
+          "new_time": "2026-10-27T10:00:00+00:00",
+          "diff": 1.4
+        },
+        {
+          "id_site": 1069,
+          "location_id": "2284",
+          "device_id": "0324160213",
+          "name": "Marseille_86_Bd_Charles_Livon",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 17.4,
+          "new_value_ref": 18.7,
+          "old_raw": 13.4,
+          "new_raw": 14.2,
+          "old_corrected": 17.4,
+          "new_corrected": 18.7,
+          "old_time": "2026-10-27T10:00:00Z",
+          "new_time": "2026-10-27T10:00:00+00:00",
+          "diff": 1.3
+        },
+        {
+          "id_site": 1434,
+          "location_id": "24500",
+          "device_id": "BD6BB8",
+          "name": "Villar St. Pancrace",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 12.7,
+          "new_value_ref": 11.7,
+          "old_raw": 3.3,
+          "new_raw": 3.4,
+          "old_corrected": 12.7,
+          "new_corrected": 11.7,
+          "old_time": "2026-10-27T10:00:00Z",
+          "new_time": "2026-10-27T10:00:00+00:00",
+          "diff": 1
+        },
+        {
+          "id_site": 303,
+          "location_id": "2097",
+          "device_id": "BD6BB6",
+          "name": "Briançon_AncienneEcoleDuProrel",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 10.3,
+          "new_value_ref": 9.5,
+          "old_raw": 2.8,
+          "new_raw": 2.9,
+          "old_corrected": 10.3,
+          "new_corrected": 9.5,
+          "old_time": "2026-10-27T10:00:00Z",
+          "new_time": "2026-10-27T10:00:00+00:00",
+          "diff": 0.8
+        },
+        {
+          "id_site": 308,
+          "location_id": "27",
+          "device_id": "BD6B9C",
+          "name": "Gap Commanderie",
+          "how": "coord",
+          "sibling_devices": 1,
+          "old_value": 9.7,
+          "new_value_ref": 9,
+          "old_raw": 2.5,
+          "new_raw": 2.6,
+          "old_corrected": 9.7,
+          "new_corrected": 9,
+          "old_time": "2026-10-27T10:00:00Z",
+          "new_time": "2026-10-27T10:00:00+00:00",
+          "diff": 0.7
+        }
+      ]
+    },
+    {
+      "pollutant": "PM10",
+      "timestep": "scan",
+      "join_note": "id_site !== location_id ; jointure nom normalisé puis coords < 40m",
+      "counts": {
+        "old_rows": 124,
+        "new_rows": 128,
+        "new_locations": 125,
+        "new_without_location": 1,
+        "matched": 116,
+        "unmatched_old": 8,
+        "coverage_pct": 93.5,
+        "name_joins": 54,
+        "coord_joins": 62,
+        "export_only_devices": 12,
+        "multi_device_locations": 2,
+        "extra_devices_beyond_one_per_site": 2
+      },
+      "value_abs_diff": {
+        "n": 116,
+        "mean": 0.846,
+        "max": 34.9,
+        "p50": 0.1,
+        "p95": 4,
+        "rmse": 3.563
+      },
+      "raw_abs_diff": {
+        "n": 116,
+        "mean": 0.833,
+        "max": 34.9,
+        "p50": 0.1,
+        "p95": 4.1,
+        "rmse": 3.569
+      },
+      "time_diff_minutes": {
+        "n": 116,
+        "mean": 0.345,
+        "max": 2.167,
+        "p50": 0,
+        "p95": 2.167,
+        "rmse": 0.776
+      },
+      "coord_diff_meters": {
+        "n": 116,
+        "mean": 0,
+        "max": 0,
+        "p50": 0,
+        "p95": 0,
+        "rmse": 0
+      },
+      "unmatched_old_sample": [
+        {
+          "id_site": 1291,
+          "nom_site": "Fos Carabins",
+          "lat": 43.458927,
+          "lon": 4.934572,
+          "value": 8.7,
+          "time": "2026-10-27T10:52:55Z"
+        },
+        {
+          "id_site": 1040,
+          "nom_site": "Office de tourisme Aiguines",
+          "lat": 43.77491,
+          "lon": 6.24304,
+          "value": 4.1,
+          "time": "2026-10-27T10:52:41Z"
+        },
+        {
+          "id_site": 1039,
+          "nom_site": "Collège Henri Nans",
+          "lat": 43.630416,
+          "lon": 6.225606,
+          "value": 8.7,
+          "time": "2026-10-27T10:52:01Z"
+        },
+        {
+          "id_site": 1282,
+          "nom_site": "nebuleair-pro054",
+          "lat": 44.2353883,
+          "lon": 4.884460868,
+          "value": 12.5,
+          "time": "2026-10-27T10:52:30Z"
+        },
+        {
+          "id_site": 1216,
+          "nom_site": "nebuleair-072",
+          "lat": 43.5510339,
+          "lon": 6.030343,
+          "value": 10.1,
+          "time": "2026-10-27T10:52:35Z"
+        },
+        {
+          "id_site": 1138,
+          "nom_site": "nebuleair-067",
+          "lat": 43.41653571,
+          "lon": 6.07187212,
+          "value": 7.7,
+          "time": "2026-10-27T10:51:48Z"
+        },
+        {
+          "id_site": 1109,
+          "nom_site": "nebuleair-075",
+          "lat": 44.0895911,
+          "lon": 7.5928752,
+          "value": 3.9,
+          "time": "2026-10-27T10:52:04Z"
+        },
+        {
+          "id_site": 1234,
+          "nom_site": "Marseille Plombières",
+          "lat": 43.3181977,
+          "lon": 5.3799504,
+          "value": 11.1,
+          "time": "2026-10-27T10:52:01Z"
+        }
+      ],
+      "export_only_sample": [
+        {
+          "device_id": "0324140196",
+          "location_id": "2279",
+          "location_name": "Marseille_18_Bd_Poussardin",
+          "value_ref": 18.3,
+          "time": "2026-10-27T10:47:38+00:00"
+        },
+        {
+          "device_id": "0324160218",
+          "location_id": "2335",
+          "location_name": "Marseille Port Nord",
+          "value_ref": 11.9,
+          "time": "2026-10-27T10:31:59+00:00"
+        },
+        {
+          "device_id": "2750C64C",
+          "location_id": "16",
+          "location_name": "Cannes Broussailles",
+          "value_ref": 8.8,
+          "time": "2026-10-27T10:53:04+00:00"
+        },
+        {
+          "device_id": "303CFF8E",
+          "location_id": null,
+          "location_name": null,
+          "value_ref": 14.5,
+          "time": "2026-10-27T10:53:08+00:00"
+        },
+        {
+          "device_id": "8C29F6A1",
+          "location_id": "29",
+          "location_name": "Gardanne",
+          "value_ref": 4.5,
+          "time": "2026-10-27T10:52:39+00:00"
+        },
+        {
+          "device_id": "B091559D",
+          "location_id": "1935",
+          "location_name": "Toulon TCA",
+          "value_ref": 13.7,
+          "time": "2026-10-27T10:53:12+00:00"
+        },
+        {
+          "device_id": "BD6AB9",
+          "location_id": "11",
+          "location_name": "Avignon Mairie",
+          "value_ref": 13.1,
+          "time": "2026-10-27T10:48:02+00:00"
+        },
+        {
+          "device_id": "BD6B24",
+          "location_id": "2425",
+          "location_name": "Sarrians_1348 route de la petite Grange",
+          "value_ref": 8.3,
+          "time": "2026-10-27T10:53:23+00:00"
+        },
+        {
+          "device_id": "BD6B2E",
+          "location_id": "2022",
+          "location_name": "Avignon Rocade CDG",
+          "value_ref": 12.2,
+          "time": "2026-10-27T10:53:10+00:00"
+        },
+        {
+          "device_id": "BD6B34",
+          "location_id": "11",
+          "location_name": "Avignon Mairie",
+          "value_ref": 13.8,
+          "time": "2026-10-27T10:48:32+00:00"
+        },
+        {
+          "device_id": "BD6BAF",
+          "location_id": "2430",
+          "location_name": "Orange_381 avenue Rodolphe d’Aymard",
+          "value_ref": 8.2,
+          "time": "2026-10-27T10:48:49+00:00"
+        },
+        {
+          "device_id": "BD6BBB",
+          "location_id": "2022",
+          "location_name": "Avignon Rocade CDG",
+          "value_ref": 12.7,
+          "time": "2026-10-27T10:40:04+00:00"
+        }
+      ],
+      "multi_device_sample": [
+        {
+          "location_id": "11",
+          "location_name": "Avignon Mairie",
+          "device_count": 2,
+          "device_ids": [
+            "BD6AB9",
+            "BD6B34"
+          ]
+        },
+        {
+          "location_id": "2022",
+          "location_name": "Avignon Rocade CDG",
+          "device_count": 2,
+          "device_ids": [
+            "BD6B2E",
+            "BD6BBB"
+          ]
+        }
+      ],
+      "value_mismatch_sample": [
+        {
+          "id_site": 1388,
+          "location_id": "10010",
+          "device_id": "C753AA57",
+          "name": "Via Michelangelo_125",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 56.3,
+          "new_value_ref": 21.4,
+          "old_raw": 56.3,
+          "new_raw": 21.4,
+          "old_corrected": null,
+          "new_corrected": null,
+          "old_time": "2026-10-27T10:52:22Z",
+          "new_time": "2026-10-27T10:53:22+00:00",
+          "diff": 34.9
+        },
+        {
+          "id_site": 1348,
+          "location_id": "2413",
+          "device_id": "E6F6D758",
+          "name": "La_Penne_sur_Huveaune_300-306_bd_Voltaire",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 30,
+          "new_value_ref": 22.1,
+          "old_raw": 30.4,
+          "new_raw": 22.1,
+          "old_corrected": 30,
+          "new_corrected": null,
+          "old_time": "2026-10-27T10:52:09Z",
+          "new_time": "2026-10-27T10:53:10+00:00",
+          "diff": 7.9
+        },
+        {
+          "id_site": 1396,
+          "location_id": "10003",
+          "device_id": "9EDDC83D",
+          "name": "Molo Italia_129",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 15.5,
+          "new_value_ref": 8.3,
+          "old_raw": 15.5,
+          "new_raw": 8.3,
+          "old_corrected": null,
+          "new_corrected": null,
+          "old_time": "2026-10-27T10:52:19Z",
+          "new_time": "2026-10-27T10:53:19+00:00",
+          "diff": 7.2
+        },
+        {
+          "id_site": 1393,
+          "location_id": "10006",
+          "device_id": "58BDEB52",
+          "name": "Corpo dei Piloti_124",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 7.2,
+          "new_value_ref": 13,
+          "old_raw": 7.2,
+          "new_raw": 13,
+          "old_corrected": null,
+          "new_corrected": null,
+          "old_time": "2026-10-27T10:52:03Z",
+          "new_time": "2026-10-27T10:53:04+00:00",
+          "diff": 5.8
+        },
+        {
+          "id_site": 1435,
+          "location_id": "2433",
+          "device_id": "12A36DC9",
+          "name": "Villeneuve-Loubet Gare",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 6,
+          "new_value_ref": 10.5,
+          "old_raw": 3.4,
+          "new_raw": 7.6,
+          "old_corrected": 6,
+          "new_corrected": 10.5,
+          "old_time": "2026-10-27T10:52:23Z",
+          "new_time": "2026-10-27T10:53:23+00:00",
+          "diff": 4.5
+        },
+        {
+          "id_site": 1094,
+          "location_id": "AC3E66F9D108_1a5a4c80-f190-4e59-a15f-179bb0e61bec",
+          "device_id": "AC3E66F9D108",
+          "name": "nebuleair-138",
+          "how": "coord",
+          "sibling_devices": 1,
+          "old_value": 13.8,
+          "new_value_ref": 9.8,
+          "old_raw": 10.6,
+          "new_raw": 6.6,
+          "old_corrected": 13.8,
+          "new_corrected": 9.8,
+          "old_time": "2026-10-27T10:51:02Z",
+          "new_time": "2026-10-27T10:53:12+00:00",
+          "diff": 4
+        },
+        {
+          "id_site": 1394,
+          "location_id": "10005",
+          "device_id": "72EAA96C",
+          "name": "TDT_123",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 6.5,
+          "new_value_ref": 10.4,
+          "old_raw": 6.5,
+          "new_raw": 10.4,
+          "old_corrected": null,
+          "new_corrected": null,
+          "old_time": "2026-10-27T10:52:21Z",
+          "new_time": "2026-10-27T10:53:22+00:00",
+          "diff": 3.9
+        },
+        {
+          "id_site": 1160,
+          "location_id": "4DCCA1815AC_4d4421c6-1939-4adf-8f48-443d835a7484",
+          "device_id": "4DCCA1815AC",
+          "name": "nebuleair-077",
+          "how": "coord",
+          "sibling_devices": 1,
+          "old_value": 11.8,
+          "new_value_ref": 15.2,
+          "old_raw": 7.6,
+          "new_raw": 10.9,
+          "old_corrected": 11.8,
+          "new_corrected": 15.2,
+          "old_time": "2026-10-27T10:51:12Z",
+          "new_time": "2026-10-27T10:53:22+00:00",
+          "diff": 3.4
+        },
+        {
+          "id_site": 1469,
+          "location_id": "2466",
+          "device_id": "37ACB6C7",
+          "name": "Lambesc_2_impasse_Jacques_Prevert_cour_école_sport",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 11.5,
+          "new_value_ref": 14.7,
+          "old_raw": 5,
+          "new_raw": 9.1,
+          "old_corrected": 11.5,
+          "new_corrected": 14.7,
+          "old_time": "2026-10-27T10:52:19Z",
+          "new_time": "2026-10-27T10:53:20+00:00",
+          "diff": 3.2
+        },
+        {
+          "id_site": 1358,
+          "location_id": "102",
+          "device_id": "7AC4C800",
+          "name": "Meyreuil Malet",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 5.5,
+          "new_value_ref": 7.9,
+          "old_raw": 4,
+          "new_raw": 6.2,
+          "old_corrected": 5.5,
+          "new_corrected": 7.9,
+          "old_time": "2026-10-27T10:52:18Z",
+          "new_time": "2026-10-27T10:53:19+00:00",
+          "diff": 2.4
+        },
+        {
+          "id_site": 1390,
+          "location_id": "10009",
+          "device_id": "0C4B3A02",
+          "name": "Piazzale PL2000_122",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 8.9,
+          "new_value_ref": 11.2,
+          "old_raw": 8.9,
+          "new_raw": 11.2,
+          "old_corrected": null,
+          "new_corrected": null,
+          "old_time": "2026-10-27T10:52:10Z",
+          "new_time": "2026-10-27T10:53:11+00:00",
+          "diff": 2.3
+        },
+        {
+          "id_site": 1245,
+          "location_id": "34B052F9D108_bded284e-dc8d-47f6-a597-61584c6e0622",
+          "device_id": "34B052F9D108",
+          "name": "nebuleair-167",
+          "how": "coord",
+          "sibling_devices": 1,
+          "old_value": 18.1,
+          "new_value_ref": 15.8,
+          "old_raw": 14,
+          "new_raw": 12.1,
+          "old_corrected": 18.1,
+          "new_corrected": 15.8,
+          "old_time": "2026-10-27T10:51:06Z",
+          "new_time": "2026-10-27T10:53:15+00:00",
+          "diff": 2.3
+        },
+        {
+          "id_site": 1201,
+          "location_id": "543F66F9D108_c6ad78c9-21ad-4c02-9c9d-637986cb22b5",
+          "device_id": "543F66F9D108",
+          "name": "nebuleair-129",
+          "how": "coord",
+          "sibling_devices": 1,
+          "old_value": 7.8,
+          "new_value_ref": 5.9,
+          "old_raw": 4.8,
+          "new_raw": 3.6,
+          "old_corrected": 7.8,
+          "new_corrected": 5.9,
+          "old_time": "2026-10-27T10:51:08Z",
+          "new_time": "2026-10-27T10:53:17+00:00",
+          "diff": 1.9
+        },
+        {
+          "id_site": 1162,
+          "location_id": "340750F9D108_6484faac-5937-4ece-bc8c-01cd76efe6de",
+          "device_id": "340750F9D108",
+          "name": "nebuleair-171",
+          "how": "coord",
+          "sibling_devices": 1,
+          "old_value": 13.3,
+          "new_value_ref": 15.2,
+          "old_raw": 13.2,
+          "new_raw": 15.4,
+          "old_corrected": 13.3,
+          "new_corrected": 15.2,
+          "old_time": "2026-10-27T10:50:58Z",
+          "new_time": "2026-10-27T10:53:08+00:00",
+          "diff": 1.9
+        },
+        {
+          "id_site": 1428,
+          "location_id": "2226",
+          "device_id": "1211D0F6",
+          "name": "Gardanne_Mat'Ild",
+          "how": "name",
+          "sibling_devices": 1,
+          "old_value": 13.5,
+          "new_value_ref": 15.2,
+          "old_raw": 11.8,
+          "new_raw": 13.3,
+          "old_corrected": 13.5,
+          "new_corrected": 15.2,
+          "old_time": "2026-10-27T10:52:12Z",
+          "new_time": "2026-10-27T10:53:11+00:00",
+          "diff": 1.7
+        }
+      ]
+    }
+  ],
+  "historical": [
+    {
+      "pollutant": "PM2.5",
+      "aggregation": "hourly",
+      "window_hours": 24,
+      "sample_size": 8,
+      "pairs": [
+        {
+          "id_site": 1453,
+          "location_id": "2339",
+          "device_id": "6730DDC7",
+          "join_how": "name",
+          "site_name": "Lambesc_2_impasse_Jacques_Prevert_ecole",
+          "window_hours": 24,
+          "old_points": 24,
+          "new_points": 24,
+          "common_hourly_buckets": 24,
+          "only_old_buckets": 0,
+          "only_new_buckets": 0,
+          "value_abs_diff": {
+            "n": 24,
+            "mean": 0.054,
+            "max": 0.1,
+            "p50": 0.1,
+            "p95": 0.1,
+            "rmse": 0.074
+          },
+          "error": null
+        },
+        {
+          "id_site": 1450,
+          "location_id": "17",
+          "device_id": "BD6B1F",
+          "join_how": "name",
+          "site_name": "Carpentras",
+          "window_hours": 24,
+          "old_points": 24,
+          "new_points": 24,
+          "common_hourly_buckets": 24,
+          "only_old_buckets": 0,
+          "only_new_buckets": 0,
+          "value_abs_diff": {
+            "n": 24,
+            "mean": 0.042,
+            "max": 0.1,
+            "p50": 0,
+            "p95": 0.1,
+            "rmse": 0.065
+          },
+          "error": null
+        },
+        {
+          "id_site": 1443,
+          "location_id": "2431",
+          "device_id": "BD6B97",
+          "join_how": "name",
+          "site_name": "Camaret-sur-Aigues_D43",
+          "window_hours": 24,
+          "old_points": 24,
+          "new_points": 24,
+          "common_hourly_buckets": 24,
+          "only_old_buckets": 0,
+          "only_new_buckets": 0,
+          "value_abs_diff": {
+            "n": 24,
+            "mean": 0.037,
+            "max": 0.1,
+            "p50": 0,
+            "p95": 0.1,
+            "rmse": 0.061
+          },
+          "error": null
+        },
+        {
+          "id_site": 1439,
+          "location_id": "2427",
+          "device_id": "BD6AAD",
+          "join_how": "name",
+          "site_name": "Carpentras_104 chemin de Saint Labre",
+          "window_hours": 24,
+          "old_points": 24,
+          "new_points": 24,
+          "common_hourly_buckets": 24,
+          "only_old_buckets": 0,
+          "only_new_buckets": 0,
+          "value_abs_diff": {
+            "n": 24,
+            "mean": 0.042,
+            "max": 0.1,
+            "p50": 0,
+            "p95": 0.1,
+            "rmse": 0.065
+          },
+          "error": null
+        },
+        {
+          "id_site": 1436,
+          "location_id": "2424",
+          "device_id": "BD6B2F",
+          "join_how": "name",
+          "site_name": "Aubignan_230 avenue Marcel Pagnol",
+          "window_hours": 24,
+          "old_points": 24,
+          "new_points": 24,
+          "common_hourly_buckets": 24,
+          "only_old_buckets": 0,
+          "only_new_buckets": 0,
+          "value_abs_diff": {
+            "n": 24,
+            "mean": 0.05,
+            "max": 0.1,
+            "p50": 0.1,
+            "p95": 0.1,
+            "rmse": 0.071
+          },
+          "error": null
+        },
+        {
+          "id_site": 1415,
+          "location_id": "2394",
+          "device_id": "FAD1A756",
+          "join_how": "name",
+          "site_name": "MIQASS_Contes_2157_D15",
+          "window_hours": 24,
+          "old_points": 24,
+          "new_points": 24,
+          "common_hourly_buckets": 24,
+          "only_old_buckets": 0,
+          "only_new_buckets": 0,
+          "value_abs_diff": {
+            "n": 24,
+            "mean": 0.029,
+            "max": 0.1,
+            "p50": 0,
+            "p95": 0.1,
+            "rmse": 0.054
+          },
+          "error": null
+        },
+        {
+          "id_site": 1401,
+          "location_id": "IRD_4",
+          "device_id": "AIR_QAM04",
+          "join_how": "name",
+          "site_name": "Gardanne_880_route_de_Mimet",
+          "window_hours": 24,
+          "old_points": 19,
+          "new_points": 19,
+          "common_hourly_buckets": 19,
+          "only_old_buckets": 0,
+          "only_new_buckets": 0,
+          "value_abs_diff": {
+            "n": 19,
+            "mean": 0.037,
+            "max": 0.1,
+            "p50": 0,
+            "p95": 0.1,
+            "rmse": 0.061
+          },
+          "error": null
+        },
+        {
+          "id_site": 1398,
+          "location_id": "IRD_1",
+          "device_id": "AIR_QAM01",
+          "join_how": "name",
+          "site_name": "Gardanne_2637_route_de_Mimet",
+          "window_hours": 24,
+          "old_points": 20,
+          "new_points": 20,
+          "common_hourly_buckets": 20,
+          "only_old_buckets": 0,
+          "only_new_buckets": 0,
+          "value_abs_diff": {
+            "n": 20,
+            "mean": 0.04,
+            "max": 0.1,
+            "p50": 0,
+            "p95": 0.1,
+            "rmse": 0.063
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "pollutant": "PM10",
+      "aggregation": "hourly",
+      "window_hours": 24,
+      "sample_size": 8,
+      "pairs": [
+        {
+          "id_site": 1456,
+          "location_id": "1984",
+          "device_id": "4D321C89",
+          "join_how": "name",
+          "site_name": "Nice Port Quai du Commerce",
+          "window_hours": 24,
+          "old_points": 24,
+          "new_points": 24,
+          "common_hourly_buckets": 24,
+          "only_old_buckets": 0,
+          "only_new_buckets": 0,
+          "value_abs_diff": {
+            "n": 24,
+            "mean": 0.037,
+            "max": 0.1,
+            "p50": 0,
+            "p95": 0.1,
+            "rmse": 0.061
+          },
+          "error": null
+        },
+        {
+          "id_site": 1453,
+          "location_id": "2339",
+          "device_id": "6730DDC7",
+          "join_how": "name",
+          "site_name": "Lambesc_2_impasse_Jacques_Prevert_ecole",
+          "window_hours": 24,
+          "old_points": 24,
+          "new_points": 24,
+          "common_hourly_buckets": 24,
+          "only_old_buckets": 0,
+          "only_new_buckets": 0,
+          "value_abs_diff": {
+            "n": 24,
+            "mean": 0.025,
+            "max": 0.1,
+            "p50": 0,
+            "p95": 0.1,
+            "rmse": 0.05
+          },
+          "error": null
+        },
+        {
+          "id_site": 1452,
+          "location_id": "2458",
+          "device_id": "74CF97F4",
+          "join_how": "name",
+          "site_name": "La Seyne Port Corniche Giovannini",
+          "window_hours": 24,
+          "old_points": 24,
+          "new_points": 24,
+          "common_hourly_buckets": 24,
+          "only_old_buckets": 0,
+          "only_new_buckets": 0,
+          "value_abs_diff": {
+            "n": 24,
+            "mean": 0.038,
+            "max": 0.1,
+            "p50": 0,
+            "p95": 0.1,
+            "rmse": 0.061
+          },
+          "error": null
+        },
+        {
+          "id_site": 1450,
+          "location_id": "17",
+          "device_id": "BD6B1F",
+          "join_how": "name",
+          "site_name": "Carpentras",
+          "window_hours": 24,
+          "old_points": 24,
+          "new_points": 24,
+          "common_hourly_buckets": 24,
+          "only_old_buckets": 0,
+          "only_new_buckets": 0,
+          "value_abs_diff": {
+            "n": 24,
+            "mean": 0.05,
+            "max": 0.1,
+            "p50": 0.1,
+            "p95": 0.1,
+            "rmse": 0.071
+          },
+          "error": null
+        },
+        {
+          "id_site": 1444,
+          "location_id": "2432",
+          "device_id": "BD6B8A",
+          "join_how": "name",
+          "site_name": "Courthézon_51 allée des Clèdes",
+          "window_hours": 24,
+          "old_points": 24,
+          "new_points": 24,
+          "common_hourly_buckets": 24,
+          "only_old_buckets": 0,
+          "only_new_buckets": 0,
+          "value_abs_diff": {
+            "n": 24,
+            "mean": 0.05,
+            "max": 0.1,
+            "p50": 0.1,
+            "p95": 0.1,
+            "rmse": 0.071
+          },
+          "error": null
+        },
+        {
+          "id_site": 1443,
+          "location_id": "2431",
+          "device_id": "BD6B97",
+          "join_how": "name",
+          "site_name": "Camaret-sur-Aigues_D43",
+          "window_hours": 24,
+          "old_points": 24,
+          "new_points": 24,
+          "common_hourly_buckets": 24,
+          "only_old_buckets": 0,
+          "only_new_buckets": 0,
+          "value_abs_diff": {
+            "n": 24,
+            "mean": 0.054,
+            "max": 0.1,
+            "p50": 0.1,
+            "p95": 0.1,
+            "rmse": 0.074
+          },
+          "error": null
+        },
+        {
+          "id_site": 1438,
+          "location_id": "2426",
+          "device_id": "BD6B11",
+          "join_how": "name",
+          "site_name": "Carpentras_1158 avenue des Marchés",
+          "window_hours": 24,
+          "old_points": 24,
+          "new_points": 24,
+          "common_hourly_buckets": 24,
+          "only_old_buckets": 0,
+          "only_new_buckets": 0,
+          "value_abs_diff": {
+            "n": 24,
+            "mean": 0.063,
+            "max": 0.1,
+            "p50": 0.1,
+            "p95": 0.1,
+            "rmse": 0.079
+          },
+          "error": null
+        },
+        {
+          "id_site": 1396,
+          "location_id": "10003",
+          "device_id": "9EDDC83D",
+          "join_how": "name",
+          "site_name": "Molo Italia_129",
+          "window_hours": 24,
+          "old_points": 24,
+          "new_points": 24,
+          "common_hourly_buckets": 24,
+          "only_old_buckets": 0,
+          "only_new_buckets": 0,
+          "value_abs_diff": {
+            "n": 24,
+            "mean": 0.046,
+            "max": 0.1,
+            "p50": 0,
+            "p95": 0.1,
+            "rmse": 0.068
+          },
+          "error": null
+        }
+      ]
+    }
+  ]
+}
