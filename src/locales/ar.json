@@ -846,6 +846,17 @@
       }
     }
   },
+  "auth": {
+    "login": "تسجيل الدخول",
+    "loginCaption": "Auth",
+    "loginHint": "تسجيل الدخول عبر Keycloak AtmoSud — يفتح بيانات microspot الموسّعة",
+    "logout": "تسجيل الخروج",
+    "loading": "جارٍ التحقق من الجلسة…",
+    "signedIn": "متصل",
+    "signedInCaption": "OK",
+    "account": "الحساب {{name}}",
+    "privilegedHint": "بيانات microspot الموسّعة مفعّلة (حملات غير معروضة، قياسات غير صالحة)."
+  },
   "rail": {
     "regionLabel": "عناصر التحكم بالخريطة",
     "toolbarLabel": "شريط أدوات الخريطة",

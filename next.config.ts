@@ -3,6 +3,12 @@ import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
+/** Cible du proxy same-origin `/microspot` (Bearer Keycloak fiable depuis localhost). */
+const microspotProxyTarget = (
+  process.env.MICROSPOT_PROXY_TARGET ||
+  'http://172.16.13.183:3032/microspot'
+).replace(/\/+$/, '');
+
 const nextConfig: NextConfig = {
   output: 'standalone',
   reactStrictMode: true,
@@ -15,7 +21,8 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   transpilePackages: ['geoportal-extensions-leaflet'],
-  // Proxies same-origin vers les APIs qui bloquent le CORS navigateur.
+  // Proxies same-origin vers les APIs qui bloquent le CORS navigateur
+  // (et pour microspot : conserver le header Authorization depuis localhost).
   async rewrites() {
     return {
       beforeFiles: [
@@ -26,6 +33,10 @@ const nextConfig: NextConfig = {
         {
           source: '/feuxdeforet/:path*',
           destination: 'https://feuxdeforet.fr/:path*',
+        },
+        {
+          source: '/microspot/:path*',
+          destination: `${microspotProxyTarget}/:path*`,
         },
       ],
     };

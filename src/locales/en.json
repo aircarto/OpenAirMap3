@@ -830,6 +830,17 @@
       }
     }
   },
+  "auth": {
+    "login": "Sign in",
+    "loginCaption": "Auth",
+    "loginHint": "AtmoSud Keycloak sign-in — unlocks extended microspot data",
+    "logout": "Sign out",
+    "loading": "Checking session…",
+    "signedIn": "Signed in",
+    "signedInCaption": "OK",
+    "account": "Account {{name}}",
+    "privilegedHint": "Extended microspot data active (non-exposed campaigns, invalid measurements)."
+  },
   "rail": {
     "regionLabel": "Map controls",
     "toolbarLabel": "Map toolbar",

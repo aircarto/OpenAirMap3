@@ -830,6 +830,17 @@
       }
     }
   },
+  "auth": {
+    "login": "Anmelden",
+    "loginCaption": "Auth",
+    "loginHint": "AtmoSud-Keycloak-Anmeldung — schaltet erweiterte Microspot-Daten frei",
+    "logout": "Abmelden",
+    "loading": "Sitzung wird geprüft…",
+    "signedIn": "Angemeldet",
+    "signedInCaption": "OK",
+    "account": "Konto {{name}}",
+    "privilegedHint": "Erweiterte Microspot-Daten aktiv (nicht exponierte Kampagnen, ungültige Messungen)."
+  },
   "rail": {
     "regionLabel": "Kartensteuerung",
     "toolbarLabel": "Karten-Werkzeugleiste",

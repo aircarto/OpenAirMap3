@@ -2,6 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "../../../../i18n/navigation";
 import LanguageSwitcher from "../../../controls/LanguageSwitcher";
+import AuthRailControl from "../../../auth/AuthRailControl";
 import { useMapControls } from "../../../../contexts/mapControlsContext";
 import RailItem from "../RailItem";
 import RailSection from "../RailSection";
@@ -57,6 +58,8 @@ export const RailFooter: React.FC<RailFooterProps> = ({
           />
         )}
       />
+
+      <AuthRailControl orientation={orientation} onItemFocus={onItemFocus} />
 
       <RailItem
         itemId="info"

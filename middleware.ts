@@ -24,17 +24,23 @@ const attachHostCookie = (request: NextRequest, response: NextResponse) => {
 };
 
 const isSameOriginApiProxy = (pathname: string): boolean =>
-  pathname.startsWith('/aircarto') || pathname.startsWith('/feuxdeforet');
+  pathname.startsWith('/aircarto') ||
+  pathname.startsWith('/feuxdeforet') ||
+  pathname.startsWith('/microspot');
+
+const isAuthCallback = (pathname: string): boolean =>
+  pathname === '/auth/callback' || pathname.startsWith('/auth/');
 
 /**
  * next-intl pour les pages ; robots/sitemap hors i18n mais avec cookie Host.
- * Les proxies /aircarto et /feuxdeforet doivent rester hors i18n, sinon
- * next-intl les préfixe (ex. /en/aircarto) et le rewrite Next ne s'applique plus.
+ * Les proxies /aircarto, /feuxdeforet et /microspot doivent rester hors i18n,
+ * sinon next-intl les préfixe (ex. /en/microspot) et le rewrite Next ne
+ * s'applique plus. /auth/* (callback OIDC Keycloak) idem.
  */
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (isSameOriginApiProxy(pathname)) {
+  if (isSameOriginApiProxy(pathname) || isAuthCallback(pathname)) {
     return NextResponse.next();
   }
 
@@ -51,6 +57,6 @@ export const config = {
     '/(fr|en|es|it|de|ar)/:path*',
     '/robots.txt',
     '/sitemap.xml',
-    '/((?!_next|_vercel|aircarto|feuxdeforet|.*\\..*).*)',
+    '/((?!_next|_vercel|aircarto|feuxdeforet|microspot|auth|.*\\..*).*)',
   ],
 };

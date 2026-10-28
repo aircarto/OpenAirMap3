@@ -85,6 +85,31 @@ export const env = {
   get noIndex() {
     return process.env.NOINDEX ?? process.env.NEXT_PUBLIC_NOINDEX;
   },
+
+  /** Auth Keycloak (opt-in) — littéraux NEXT_PUBLIC_* pour le bundle client. */
+  get keycloakEnabled() {
+    return process.env.NEXT_PUBLIC_KEYCLOAK_ENABLED;
+  },
+  get keycloakUrl() {
+    return process.env.NEXT_PUBLIC_KEYCLOAK_URL;
+  },
+  get keycloakRealm() {
+    return process.env.NEXT_PUBLIC_KEYCLOAK_REALM;
+  },
+  get keycloakClientId() {
+    return process.env.NEXT_PUBLIC_KEYCLOAK_CLIENT_ID;
+  },
+  /**
+   * Origine forcée pour redirect_uri / post_logout (ex. http://172.16.13.184:3000).
+   * Utile en LAN quand Keycloak n'a que l'IP en Valid redirect URIs.
+   */
+  get authOrigin() {
+    return process.env.NEXT_PUBLIC_AUTH_ORIGIN;
+  },
+  /** Base API microspot (ex. http://172.16.13.183:3032/microspot). */
+  get microspotApiUrl() {
+    return process.env.NEXT_PUBLIC_MICROSPOT_API_URL;
+  },
 };
 
 export const isDevRuntime = (): boolean =>

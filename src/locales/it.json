@@ -830,6 +830,17 @@
       }
     }
   },
+  "auth": {
+    "login": "Accedi",
+    "loginCaption": "Auth",
+    "loginHint": "Accesso Keycloak AtmoSud — sblocca i dati microspot estesi",
+    "logout": "Esci",
+    "loading": "Verifica della sessione…",
+    "signedIn": "Connesso",
+    "signedInCaption": "OK",
+    "account": "Account {{name}}",
+    "privilegedHint": "Dati microspot estesi attivi (campagne non esposte, misure non valide)."
+  },
   "rail": {
     "regionLabel": "Controlli della mappa",
     "toolbarLabel": "Barra degli strumenti della mappa",

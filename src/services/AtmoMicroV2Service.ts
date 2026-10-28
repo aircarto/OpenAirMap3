@@ -18,6 +18,8 @@ import {
   getCachedQaqcRefStations,
   resetQaqcStationsCache,
 } from "../utils/atmoMicroStationQaqc";
+import { getMicrospotApiBaseUrl } from "../auth/keycloakConfig";
+import { getAccessToken } from "../auth/tokenStore";
 
 /**
  * Service microcapteurs AtmoSud adossé à la nouvelle API « microspot ».
@@ -121,10 +123,91 @@ export class AtmoMicroV2Service
   extends BaseDataService
   implements AtmoMicroLikeService
 {
-  private readonly BASE_URL =
-    "https://api-export-prod.uspot.probesys.net/microspot";
+  private readonly BASE_URL = getMicrospotApiBaseUrl();
 
   private lastMeasuresUnavailable = false;
+
+  /** Auth Keycloak / params privilégiés : uniquement l'API microspot. */
+  private isMicrospotUrl(url: string): boolean {
+    if (url.startsWith(this.BASE_URL)) {
+      return true;
+    }
+    // BASE relative `/microspot` vs URL absolue same-origin
+    try {
+      const parsed = new URL(
+        url,
+        typeof window !== 'undefined' ? window.location.origin : 'http://localhost'
+      );
+      return parsed.pathname === '/microspot' || parsed.pathname.startsWith('/microspot/');
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Injecte le Bearer Keycloak + params privilégiés sur les appels microspot.
+   * Les autres URLs (ex. AtmoRef pour le QAQC) restent intactes — pas d'auth.
+   * Si l'API refuse le Bearer (401), repli sur l'appel public.
+   *
+   * @see uspot-api-export docs/auth-keycloak-front.md
+   */
+  protected async makeRequest(
+    url: string,
+    options?: RequestInit
+  ): Promise<unknown> {
+    const token = getAccessToken();
+    if (!token || !this.isMicrospotUrl(url)) {
+      return super.makeRequest(url, options);
+    }
+
+    const enrichedUrl = this.withPrivilegedParams(url);
+    // Plain object : BaseDataService fusionne via spread (Headers ne s'étale pas).
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${token}`,
+    };
+    if (options?.headers) {
+      new Headers(options.headers).forEach((value, key) => {
+        headers[key] = value;
+      });
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    try {
+      return await super.makeRequest(enrichedUrl, { ...options, headers });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      // Bearer absent côté API / expiré / azp refusé → ne pas casser la carte.
+      if (/\bstatus: 401\b/.test(message)) {
+        console.warn(
+          '[AtmoMicro] appel privilégié refusé (401), repli public:',
+          enrichedUrl
+        );
+        return super.makeRequest(url, options);
+      }
+      throw error;
+    }
+  }
+
+  /** `invalid` / `include_non_exposed` selon la route microspot. */
+  private withPrivilegedParams(url: string): string {
+    const base =
+      typeof window !== 'undefined' ? window.location.origin : 'http://localhost';
+    const parsed = new URL(url, base);
+    const path = parsed.pathname;
+
+    if (path.includes('/observations')) {
+      parsed.searchParams.set('invalid', 'true');
+      parsed.searchParams.set('include_non_exposed', 'true');
+    } else if (path.includes('/lists/')) {
+      parsed.searchParams.set('include_non_exposed', 'true');
+    }
+
+    // Conserver une URL relative si l'appel l'était (proxy `/microspot`).
+    if (url.startsWith('/')) {
+      return `${parsed.pathname}${parsed.search}`;
+    }
+    return parsed.toString();
+  }
 
   // Caches STATIQUES partagés entre instances, pour éviter les requêtes
   // redondantes : plusieurs composants instancient le service.
