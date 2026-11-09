@@ -85,16 +85,22 @@ const aircartoFr = (cfg: DomainConfig): LegalContent => ({
     {
       heading: 'Éditeur',
       lines: [
-        'AirCarto',
-        'SIRET / adresse : à compléter par AirCarto (placeholder — relecture métier).',
-        `Contact : ${cfg.links.contact}`,
+        'AirCarto SAS, société par actions simplifiée au capital de 2 000 €',
+        'RCS Marseille 903 885 523 — SIRET 903 885 523 00022 — TVA FR47903885523',
+        'Siège social : 39 rue Auguste Blanqui, 13006 Marseille, France',
+        'Téléphone : +33 4 91 53 90 85',
+        'E-mail : contact@aircarto.fr',
         `Site : ${cfg.links.website}`,
       ],
     },
     {
+      heading: 'Directeur de la publication',
+      lines: ['Paul Vuarambon, président d’AirCarto'],
+    },
+    {
       heading: 'Hébergement',
       lines: [
-        'Hébergement et exploitation : AirCarto (détails d’hébergeur à compléter).',
+        'Site auto-hébergé par AirCarto SAS, 39 rue Auguste Blanqui, 13006 Marseille, France — +33 4 91 53 90 85',
       ],
     },
     {
@@ -142,15 +148,23 @@ const aircartoEn = (cfg: DomainConfig): LegalContent => ({
     {
       heading: 'Publisher',
       lines: [
-        'AirCarto',
-        'SIRET / address: to be completed by AirCarto (placeholder).',
-        `Contact: ${cfg.links.contact}`,
+        'AirCarto SAS, a French société par actions simplifiée with share capital of €2,000',
+        'RCS Marseille 903 885 523 — SIRET 903 885 523 00022 — VAT FR47903885523',
+        'Registered office: 39 rue Auguste Blanqui, 13006 Marseille, France',
+        'Phone: +33 4 91 53 90 85',
+        'Email: contact@aircarto.fr',
         `Website: ${cfg.links.website}`,
       ],
     },
     {
+      heading: 'Publication director',
+      lines: ['Paul Vuarambon, President of AirCarto'],
+    },
+    {
       heading: 'Hosting',
-      lines: ['Hosting and operations: AirCarto (hosting provider details TBD).'],
+      lines: [
+        'Self-hosted by AirCarto SAS, 39 rue Auguste Blanqui, 13006 Marseille, France — +33 4 91 53 90 85',
+      ],
     },
     {
       heading: 'Project',

@@ -177,7 +177,7 @@ const aircartoConfig: DomainConfig = {
   seoTitle: "OpenAirMap – Qualité de l'air en temps réel | AirCarto",
   links: {
     website: 'https://aircarto.fr',
-    contact: 'https://aircarto.fr/contact',
+    contact: 'https://aircarto.fr/#contact',
     about: 'https://aircarto.fr',
   },
   organization: 'AirCarto',
