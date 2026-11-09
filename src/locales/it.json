@@ -58,6 +58,8 @@
     "modelingSuffix": "(modellizzazione)",
     "rawSuffix": "(grezzo)",
     "correctedSuffix": "(corretto)",
+    "n1Suffix": "(N1)",
+    "n2Suffix": "(N2)",
     "thresholdLegendAria": "Soglie di qualità ({{unit}})"
   },
   "controls": {
@@ -101,6 +103,8 @@
     "modelingAzurDescription": "Mostra le previsioni di modellizzazione sul grafico",
     "rawData": "Dati grezzi",
     "rawDataDescription": "Mostra i dati non corretti sul grafico",
+    "correctionLevels": "Dettaglio livelli di correzione",
+    "correctionLevelsDescription": "Sovrappone grezzo, N1 e N2 sul grafico",
     "thresholdBackgroundDisabled": "Soglie disattivate",
     "thresholdBackgroundDisabledDescription": "Nasconde lo sfondo colorato per soglia (consigliato per daltonici)",
     "specialSourcesActive": "Almeno una fonte attiva",

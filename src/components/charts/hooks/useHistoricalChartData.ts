@@ -24,6 +24,7 @@ interface UseHistoricalChartDataProps {
   stations: any[];
   isMobile: boolean;
   showRawData: boolean;
+  showCorrectionLevels?: boolean;
   useSolidNebuleAirLines: boolean;
   timeStep?: string;
   modelingData?: Record<string, HistoricalDataPoint[]>;
@@ -36,6 +37,7 @@ export const useHistoricalChartData = ({
   stations,
   isMobile,
   showRawData,
+  showCorrectionLevels = false,
   useSolidNebuleAirLines,
   timeStep,
   modelingData,
@@ -186,8 +188,15 @@ export const useHistoricalChartData = ({
 
   // Pré-calculer les données de correction par polluant
   const pollutantDataFlags = useMemo(() => {
-    const flags: Record<string, { hasCorrected: boolean; hasRaw: boolean }> =
-      {};
+    const flags: Record<
+      string,
+      {
+        hasCorrected: boolean;
+        hasRaw: boolean;
+        hasN1: boolean;
+        hasN2: boolean;
+      }
+    > = {};
     selectedPollutants.forEach((pollutant) => {
       flags[pollutant] = {
         hasCorrected: chartData.some(
@@ -195,6 +204,12 @@ export const useHistoricalChartData = ({
         ),
         hasRaw: chartData.some(
           (point) => point[`${pollutant}_raw`] !== undefined
+        ),
+        hasN1: chartData.some(
+          (point) => point[`${pollutant}_n1`] !== undefined
+        ),
+        hasN2: chartData.some(
+          (point) => point[`${pollutant}_n2`] !== undefined
         ),
       };
     });
@@ -236,6 +251,7 @@ export const useHistoricalChartData = ({
       unitGroups: JSON.stringify(unitGroups),
       pollutantDataFlags: JSON.stringify(pollutantDataFlags),
       showRawData,
+      showCorrectionLevels,
       useSolidNebuleAirLines,
       timeStep,
       chartDataLength: chartData.length,
@@ -263,7 +279,8 @@ export const useHistoricalChartData = ({
       fallbackColors,
       timeStep,
       chartData,
-      t
+      t,
+      showCorrectionLevels
     );
 
     // Mémoriser le résultat
@@ -281,6 +298,7 @@ export const useHistoricalChartData = ({
     unitGroups,
     pollutantDataFlags,
     showRawData,
+    showCorrectionLevels,
     useSolidNebuleAirLines,
     timeStep,
     chartData,

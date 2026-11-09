@@ -58,6 +58,8 @@
     "modelingSuffix": "(modelización)",
     "rawSuffix": "(bruto)",
     "correctedSuffix": "(corregido)",
+    "n1Suffix": "(N1)",
+    "n2Suffix": "(N2)",
     "thresholdLegendAria": "Umbrales de calidad ({{unit}})"
   },
   "controls": {
@@ -101,6 +103,8 @@
     "modelingAzurDescription": "Mostrar las previsiones de modelización en el gráfico",
     "rawData": "Datos brutos",
     "rawDataDescription": "Mostrar los datos no corregidos en el gráfico",
+    "correctionLevels": "Detalle de niveles de corrección",
+    "correctionLevelsDescription": "Superpone bruto, N1 y N2 en el gráfico",
     "thresholdBackgroundDisabled": "Umbrales desactivados",
     "thresholdBackgroundDisabledDescription": "Oculta el fondo coloreado por umbral (recomendado para daltónicos)",
     "specialSourcesActive": "Al menos una fuente activa",

@@ -58,6 +58,8 @@
     "modelingSuffix": "(Modellierung)",
     "rawSuffix": "(Rohdaten)",
     "correctedSuffix": "(korrigiert)",
+    "n1Suffix": "(N1)",
+    "n2Suffix": "(N2)",
     "thresholdLegendAria": "Qualitätsschwellen ({{unit}})"
   },
   "controls": {
@@ -101,6 +103,8 @@
     "modelingAzurDescription": "Modellierungsprognosen im Diagramm anzeigen",
     "rawData": "Rohdaten",
     "rawDataDescription": "Unkorrigierte Daten im Diagramm anzeigen",
+    "correctionLevels": "Detail der Korrekturstufen",
+    "correctionLevelsDescription": "Rohdaten, N1 und N2 im Diagramm überlagern",
     "thresholdBackgroundDisabled": "Schwellen deaktiviert",
     "thresholdBackgroundDisabledDescription": "Farbigen Schwellen-Hintergrund ausblenden (empfohlen für Farbenblinde)",
     "specialSourcesActive": "Mindestens eine aktive Quelle",

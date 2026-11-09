@@ -58,6 +58,8 @@
     "modelingSuffix": "(modeling)",
     "rawSuffix": "(raw)",
     "correctedSuffix": "(corrected)",
+    "n1Suffix": "(N1)",
+    "n2Suffix": "(N2)",
     "thresholdLegendAria": "Quality thresholds ({{unit}})"
   },
   "controls": {
@@ -101,6 +103,8 @@
     "modelingAzurDescription": "Show modeling forecasts on the chart",
     "rawData": "Raw data",
     "rawDataDescription": "Show uncorrected data on the chart",
+    "correctionLevels": "Correction level detail",
+    "correctionLevelsDescription": "Overlay raw, N1 and N2 on the chart",
     "thresholdBackgroundDisabled": "Thresholds disabled",
     "thresholdBackgroundDisabledDescription": "Hide colored threshold background (recommended for colorblind users)",
     "specialSourcesActive": "At least one active source",

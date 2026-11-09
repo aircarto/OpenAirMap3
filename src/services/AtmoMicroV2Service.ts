@@ -1309,6 +1309,12 @@ export class AtmoMicroV2Service
       const from = this.formatDateForHistoricalMode(params.startDate, false);
       const to = this.formatDateForHistoricalMode(params.endDate, true);
 
+      // corrections_detail (value_n1, is_n1/n2_applied) réservé aux sessions
+      // authentifiées : l'API microspot l'expose via Keycloak.
+      const includeFields = getAccessToken()
+        ? 'raw_value,corrections_detail'
+        : 'raw_value';
+
       const url =
         `${this.BASE_URL}/observations` +
         `?aggregation=${timeStepConfig.aggregation}` +
@@ -1317,7 +1323,7 @@ export class AtmoMicroV2Service
         `&from_date_time=${from}` +
         `&date_time=${to}` +
         `&decimals=1` +
-        `&include=raw_value` +
+        `&include=${includeFields}` +
         // gapfill : renvoie tous les pas de temps de la période, pour que le
         // graphique montre les trous au lieu de relier deux points distants.
         // Attention : une grille par location_id → doublons si le capteur a
@@ -1344,6 +1350,7 @@ export class AtmoMicroV2Service
 
       return observations.map((observation) => {
         const hasCorrection = observation.value !== null;
+        const isN1Applied = observation.is_n1_applied === true;
 
         return {
           timestamp: observation.time,
@@ -1354,6 +1361,12 @@ export class AtmoMicroV2Service
             : undefined,
           raw_value: observation.value_raw ?? undefined,
           has_correction: hasCorrection,
+          n1_value:
+            isN1Applied && observation.value_n1 != null
+              ? observation.value_n1
+              : undefined,
+          is_n1_applied: observation.is_n1_applied,
+          is_n2_applied: observation.is_n2_applied,
         };
       });
     } catch (error) {

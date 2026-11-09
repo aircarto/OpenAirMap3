@@ -23,6 +23,11 @@ interface ExpertMenuProps {
   onRawDataChange?: (checked: boolean) => void;
   rawDataAvailable?: boolean;
 
+  // Détail des niveaux de correction N1/N2 (AtmoMicroV2, auth)
+  showCorrectionLevels?: boolean;
+  onCorrectionLevelsChange?: (checked: boolean) => void;
+  correctionLevelsAvailable?: boolean;
+
   // Option fond coloré par seuil (mode daltoniens)
   hideThresholdBackgroundForColorblind?: boolean;
   onHideThresholdBackgroundForColorblindChange?: (checked: boolean) => void;
@@ -40,15 +45,21 @@ const ExpertMenu: React.FC<ExpertMenuProps> = ({
   showRawData = false,
   onRawDataChange,
   rawDataAvailable = false,
+  showCorrectionLevels = false,
+  onCorrectionLevelsChange,
+  correctionLevelsAvailable = false,
   hideThresholdBackgroundForColorblind = false,
   onHideThresholdBackgroundForColorblindChange,
   historicalLocked = false,
 }) => {
   const { t } = useTranslation();
+  const showRawDataOption =
+    Boolean(onRawDataChange) && rawDataAvailable && !showCorrectionLevels;
   // Compter le nombre d'options actives pour l'indicateur
   const activeOptionsCount =
     (showModeling ? 1 : 0) +
-    (showRawData ? 1 : 0) +
+    (showRawDataOption && showRawData ? 1 : 0) +
+    (correctionLevelsAvailable && showCorrectionLevels ? 1 : 0) +
     (hideThresholdBackgroundForColorblind ? 1 : 0);
 
   return (
@@ -149,10 +160,10 @@ const ExpertMenu: React.FC<ExpertMenuProps> = ({
           </DropdownMenuCheckboxItem>
         )}
 
-        {/* Option Données brutes */}
-        {onRawDataChange && rawDataAvailable && (
+        {/* Option Données brutes — masquée quand le détail N1/N2 est actif */}
+        {showRawDataOption && (
           <>
-            {(onModelingChange && onRawDataChange) && <DropdownMenuSeparator />}
+            {onModelingChange && <DropdownMenuSeparator />}
             <DropdownMenuCheckboxItem
               checked={showRawData}
               onCheckedChange={onRawDataChange}
@@ -170,10 +181,35 @@ const ExpertMenu: React.FC<ExpertMenuProps> = ({
           </>
         )}
 
+        {/* Détail niveaux de correction N1/N2 (auth + AtmoMicroV2) */}
+        {onCorrectionLevelsChange && correctionLevelsAvailable && (
+          <>
+            {(onModelingChange || showRawDataOption) && (
+              <DropdownMenuSeparator />
+            )}
+            <DropdownMenuCheckboxItem
+              checked={showCorrectionLevels}
+              onCheckedChange={onCorrectionLevelsChange}
+              className="px-3 py-2.5 cursor-pointer"
+            >
+              <div className="flex flex-col gap-1">
+                <span className="text-sm font-medium text-gray-900">
+                  {t("controls.correctionLevels")}
+                </span>
+                <span className="text-xs text-gray-500 ml-5">
+                  {t("controls.correctionLevelsDescription")}
+                </span>
+              </div>
+            </DropdownMenuCheckboxItem>
+          </>
+        )}
+
         {/* Option Désactivé seuils (daltoniens) */}
         {onHideThresholdBackgroundForColorblindChange && (
           <>
-            {(onModelingChange || (onRawDataChange && rawDataAvailable)) && (
+            {(onModelingChange ||
+              showRawDataOption ||
+              (onCorrectionLevelsChange && correctionLevelsAvailable)) && (
               <DropdownMenuSeparator />
             )}
             <DropdownMenuCheckboxItem

@@ -58,6 +58,8 @@
     "modelingSuffix": "(modélisation)",
     "rawSuffix": "(brute)",
     "correctedSuffix": "(corrigé)",
+    "n1Suffix": "(N1)",
+    "n2Suffix": "(N2)",
     "thresholdLegendAria": "Seuils de qualité ({{unit}})"
   },
   "controls": {
@@ -101,6 +103,8 @@
     "modelingAzurDescription": "Affiche les prévisions de modélisation sur le graphique",
     "rawData": "Données brutes",
     "rawDataDescription": "Affiche les données non corrigées sur le graphique",
+    "correctionLevels": "Détail des niveaux de correction",
+    "correctionLevelsDescription": "Superpose brute, N1 et N2 sur le graphique",
     "thresholdBackgroundDisabled": "Désactivé seuils",
     "thresholdBackgroundDisabledDescription": "Masque le fond coloré par seuil (recommandé pour les daltoniens)",
     "specialSourcesActive": "Au moins une source active",

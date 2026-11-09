@@ -276,6 +276,10 @@ export interface HistoricalDataPoint {
   corrected_value?: number; // Valeur corrigée si disponible
   raw_value?: number; // Valeur brute originale
   has_correction?: boolean; // Indique si une correction a été appliquée
+  /** Valeur après correction N1 — include=corrections_detail (microspot, auth). */
+  n1_value?: number;
+  is_n1_applied?: boolean;
+  is_n2_applied?: boolean;
 }
 
 /** Intervalle de présence d'un capteur AtmoMicro sur un site. */
@@ -486,12 +490,18 @@ export interface MicrospotObservation {
   time: string; // ISO 8601 UTC, avec décalage explicite (+00:00)
   lat: number;
   lon: number;
-  /** Valeur corrigée, null quand aucune correction ne s'applique. */
+  /** Valeur corrigée (N2), null quand aucune correction N2 ne s'applique. */
   value: number | null;
   /** Meilleure valeur disponible : corrigée sinon brute. Jamais nulle quand une mesure existe. */
   value_ref: number | null;
   /** Valeur brute — uniquement avec include=raw_value. */
   value_raw?: number | null;
+  /** Valeur après correction N1 — uniquement avec include=corrections_detail. */
+  value_n1?: number | null;
+  /** True si la correction N1 a été appliquée — include=corrections_detail. */
+  is_n1_applied?: boolean;
+  /** True si la correction N2 a été appliquée — include=corrections_detail. */
+  is_n2_applied?: boolean;
   unit: string;
   /** Cadence du capteur en secondes — uniquement avec include=metadata. */
   scan_interval?: number | null;

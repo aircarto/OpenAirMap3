@@ -58,6 +58,8 @@
     "modelingSuffix": "(نموذج)",
     "rawSuffix": "(خام)",
     "correctedSuffix": "(مصحح)",
+    "n1Suffix": "(N1)",
+    "n2Suffix": "(N2)",
     "thresholdLegendAria": "عتبات الجودة ({{unit}})"
   },
   "controls": {
@@ -101,6 +103,8 @@
     "modelingAzurDescription": "عرض توقعات النمذجة على الرسم البياني",
     "rawData": "البيانات الخام",
     "rawDataDescription": "عرض البيانات غير المصححة على الرسم البياني",
+    "correctionLevels": "تفاصيل مستويات التصحيح",
+    "correctionLevelsDescription": "عرض الخام وN1 وN2 على الرسم البياني",
     "thresholdBackgroundDisabled": "العتبات معطلة",
     "thresholdBackgroundDisabledDescription": "إخفاء الخلفية الملونة حسب العتبة (موصى به للمصابين بعمى الألوان)",
     "specialSourcesActive": "مصدر واحد نشط على الأقل",

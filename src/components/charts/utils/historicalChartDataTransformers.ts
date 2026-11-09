@@ -450,26 +450,51 @@ export const transformNormalData = (
         }, undefined);
 
         if (dataPoint) {
-          // Valeur corrigée si disponible
+          // Valeur N2 / corrigée classique
           if (dataPoint.corrected_value !== undefined) {
             point[`${pollutant}_corrected`] = ensureNonNegativeValue(
               dataPoint.corrected_value
             );
           }
 
-          // Valeur brute
+          // N2 explicite uniquement quand corrections_detail confirme l'application
+          if (
+            dataPoint.is_n2_applied === true &&
+            dataPoint.corrected_value !== undefined
+          ) {
+            point[`${pollutant}_n2`] = ensureNonNegativeValue(
+              dataPoint.corrected_value
+            );
+          }
+
+          // Valeur N1 (include=corrections_detail)
+          if (dataPoint.n1_value !== undefined) {
+            point[`${pollutant}_n1`] = ensureNonNegativeValue(
+              dataPoint.n1_value
+            );
+          }
+
+          // Valeur brute (ne pas écraser ensuite avec value_ref)
           if (dataPoint.raw_value !== undefined) {
             point[`${pollutant}_raw`] = ensureNonNegativeValue(
               dataPoint.raw_value
             );
           }
 
-          // Valeur principale : pour AtmoMicro avec données corrigées, utiliser _corrected
+          // AtmoMicro sans N2 : la courbe principale classique doit rester
+          // value_ref (souvent N1). On la mappe en _corrected pour le label
+          // « corrigé », tout en gardant _raw = value_raw si présent.
           if (source === "atmoMicro") {
             if (dataPoint.corrected_value === undefined) {
-              point[`${pollutant}_raw`] = ensureNonNegativeValue(
-                dataPoint.value
-              );
+              if (dataPoint.n1_value !== undefined) {
+                point[`${pollutant}_corrected`] = ensureNonNegativeValue(
+                  dataPoint.n1_value
+                );
+              } else if (dataPoint.raw_value === undefined) {
+                point[`${pollutant}_raw`] = ensureNonNegativeValue(
+                  dataPoint.value
+                );
+              }
             }
           } else {
             point[pollutant] = ensureNonNegativeValue(dataPoint.value);
