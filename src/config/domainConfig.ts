@@ -164,9 +164,30 @@ const atmosudConfig: DomainConfig = {
   },
 };
 
+// Instance AirCarto (openairmap.fr) : logo AirCarto en principal, AtmoSud crédité
+// en secondaire. Sélectionnée par hostname, donc sans effet sur les autres domaines.
+const aircartoConfig: DomainConfig = {
+  ...defaultConfig,
+  logo: './LogoAirCarto.png',
+  logo2: './logo_atmosud_inspirer_ok_web.png',
+  favicon: './LogoAirCarto.png',
+  markSquare: './LogoAirCarto.png',
+  mapCenter: [43.7102, 7.262], // Nice
+  mapZoom: 9,
+  seoTitle: "OpenAirMap – Qualité de l'air en temps réel | AirCarto",
+  links: {
+    website: 'https://aircarto.fr',
+    contact: 'https://aircarto.fr/contact',
+    about: 'https://aircarto.fr',
+  },
+  organization: 'AirCarto',
+};
+
 export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
   default: defaultConfig,
   atmosud: atmosudConfig,
+  'openairmap.fr': aircartoConfig,
+  'www.openairmap.fr': aircartoConfig,
 };
 
 const isAtmoSudHost = (hostname: string) => hostname.endsWith('.atmosud.org');

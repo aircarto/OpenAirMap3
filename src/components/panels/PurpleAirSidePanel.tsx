@@ -4,6 +4,7 @@ import { StationInfo } from "../../types";
 import { getAirQualityLevel } from "../../utils";
 import { pollutants } from "../../constants/pollutants";
 import { QUALITY_COLORS } from "../../constants/qualityColors";
+import PanelComments from "./PanelComments";
 import SidePanelShell, { type PanelSize } from "./SidePanelShell";
 import PanelReopenBadge from "./PanelReopenBadge";
 
@@ -300,6 +301,7 @@ const PurpleAirSidePanel: React.FC<PurpleAirSidePanelProps> = ({
           </p>
         </div>
       </div>
+      <PanelComments deviceId={selectedStation.id} />
     </SidePanelShell>
     );
   };

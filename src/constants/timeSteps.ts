@@ -1,8 +1,14 @@
+import { env } from "../lib/env";
+
+// Pas de temps affiché à l'ouverture : « heure » sauf si le déploiement demande
+// le Scan (NEXT_PUBLIC_DEFAULT_TIME_STEP=instantane).
+const scanByDefault = env.defaultTimeStep === "instantane";
+
 export const pasDeTemps = {
-  instantane: { name: "Scan", code: "instantane", activated: false }, // Valeurs instantanées
+  instantane: { name: "Scan", code: "instantane", activated: scanByDefault }, // Valeurs instantanées
   deuxMin: { name: "≤ 2 min", code: "2min", activated: false }, // Moyenne sur 2 minutes
   quartHeure: { name: "15 min", code: "qh", activated: false }, // Moyenne sur 15 minutes
-  heure: { name: "Heure", code: "h", activated: true }, // Moyenne horaire
+  heure: { name: "Heure", code: "h", activated: !scanByDefault }, // Moyenne horaire
   jour: { name: "Jour", code: "d", activated: false }, // Moyenne journalière
 };
 

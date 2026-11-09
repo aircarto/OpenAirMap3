@@ -3,11 +3,18 @@ import { useTranslation } from "react-i18next";
 import MapFloatingActions from "../../MapFloatingActions";
 import RailSection from "../RailSection";
 import type { RailOrientation } from "../useRailRoving";
-import type { RailShortcutsBinding } from "../railBindings";
+import RailItem from "../RailItem";
+import { MapPinPlus } from "lucide-react";
+import type {
+  RailShortcutsBinding,
+  RailSignalementsBinding,
+} from "../railBindings";
 
 export interface RailShortcutsSectionProps {
   orientation: RailOrientation;
   shortcuts: RailShortcutsBinding;
+  signalements?: RailSignalementsBinding;
+  onItemFocus?: (event: React.FocusEvent<HTMLElement>) => void;
 }
 
 /**
@@ -24,6 +31,8 @@ export interface RailShortcutsSectionProps {
 export const RailShortcutsSection: React.FC<RailShortcutsSectionProps> = ({
   orientation,
   shortcuts,
+  signalements,
+  onItemFocus,
 }) => {
   const { t } = useTranslation();
 
@@ -34,6 +43,20 @@ export const RailShortcutsSection: React.FC<RailShortcutsSectionProps> = ({
       separated
     >
       <MapFloatingActions {...shortcuts} t={t} />
+      {signalements && (
+        <RailItem
+          itemId="signalement-add"
+          aria-label={t("signalements.addButton")}
+          aria-pressed={signalements.placingMode}
+          title={t("signalements.addButton")}
+          onClick={signalements.onToggle}
+          onFocus={onItemFocus}
+          active={signalements.placingMode}
+          label={t("signalements.addButton")}
+          icon={<MapPinPlus className="h-5 w-5" />}
+          caption={t("signalements.railCaption")}
+        />
+      )}
     </RailSection>
   );
 };

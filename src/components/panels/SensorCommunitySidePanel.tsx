@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { StationInfo } from "../../types";
+import PanelComments from "./PanelComments";
 import SidePanelShell, { type PanelSize } from "./SidePanelShell";
 import PanelReopenBadge from "./PanelReopenBadge";
 
@@ -260,6 +261,7 @@ const SensorCommunitySidePanel: React.FC<SensorCommunitySidePanelProps> = ({
           </div>
         </div>
       </div>
+      <PanelComments deviceId={selectedStation.id} />
     </SidePanelShell>
     );
   };

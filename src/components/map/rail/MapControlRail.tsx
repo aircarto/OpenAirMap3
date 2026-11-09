@@ -10,6 +10,7 @@ import RailFooter from "./sections/RailFooter";
 import { useRailRoving, type RailOrientation } from "./useRailRoving";
 import { useRailOrientation } from "./useRailBreakpoint";
 import type {
+  RailSignalementsBinding,
   BaseLayerControlBinding,
   CommunitySourcesBinding,
   RailShortcutsBinding,
@@ -26,6 +27,7 @@ export interface MapControlRailProps {
   /** État local à la carte : voyage par props, pas par contexte */
   baseLayer: BaseLayerControlBinding;
   shortcuts: RailShortcutsBinding;
+  signalements?: RailSignalementsBinding;
   communitySources: CommunitySourcesBinding;
 }
 
@@ -51,6 +53,7 @@ export const MapControlRail: React.FC<MapControlRailProps> = ({
   compact = false,
   baseLayer,
   shortcuts,
+  signalements,
   communitySources,
 }) => {
   const detectedOrientation = useRailOrientation();
@@ -194,6 +197,8 @@ export const MapControlRail: React.FC<MapControlRailProps> = ({
           <RailShortcutsSection
             orientation={orientation}
             shortcuts={shortcuts}
+            signalements={signalements}
+            onItemFocus={onItemFocus}
           />
           {/* Dernier de la zone défilante, donc directement au-dessus du pied :
               le fond de carte se range avec les réglages d'affichage. */}

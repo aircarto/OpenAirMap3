@@ -22,6 +22,7 @@ import ChartTimeControls from "../controls/ChartTimeControls";
 import { getMaxHistoryDays, getCustomRangeISO, type TimeRange } from "../../utils/historicalTimeRange";
 import { cn } from "../../lib/utils";
 import ExpertMenu from "../controls/ExpertMenu";
+import PanelComments from "./PanelComments";
 import SidePanelShell, {
   CHART_PANEL_BODY_CLASS,
   type PanelSize,
@@ -1418,6 +1419,7 @@ const NebuleAirSidePanel: React.FC<NebuleAirSidePanelProps> = ({
             </>
           )}
         </div>
+        <PanelComments deviceId={selectedStation.id} />
       </SidePanelShell>
     );
   };

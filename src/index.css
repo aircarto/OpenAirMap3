@@ -863,3 +863,40 @@ html {
 .driver-overlay {
   z-index: var(--z-tour-overlay) !important;
 }
+
+/* Signalements : classe posée sur la carte uniquement si la fonctionnalité est
+   activée, pour ne rien changer aux autres déploiements. */
+.leaflet-container.oam-signalements {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
+.leaflet-container.oam-signalements input,
+.leaflet-container.oam-signalements textarea,
+.leaflet-container.oam-signalements select {
+  -webkit-user-select: text;
+  user-select: text;
+}
+.leaflet-container.oam-placing,
+.leaflet-container.oam-placing .leaflet-grab,
+.leaflet-container.oam-placing .leaflet-interactive {
+  cursor: crosshair;
+}
+.oam-signalements .leaflet-popup-content {
+  margin: 12px 14px;
+}
+/* iOS : une police < 16px déclenche un zoom au focus */
+@media (pointer: coarse) {
+  .oam-signalements .leaflet-popup-content input,
+  .oam-signalements .leaflet-popup-content textarea,
+  .oam-signalements .leaflet-popup-content select {
+    font-size: 16px;
+  }
+}
+@keyframes oam-bounce {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.08); }
+  100% { transform: scale(1); opacity: 1; }
+}

@@ -160,6 +160,141 @@ export interface WildfireReport {
   postModified: string;
 }
 
+// Types pour le suivi des avions (ADS-B)
+export interface PlaneTrackPoint {
+  time: number;
+  lat: number;
+  lon: number;
+}
+
+export interface PlaneTrack {
+  /** Adresse ICAO 24 bits (hex) */
+  id: string;
+  /** Indicatif de vol (callsign), ex: "DAH1155" */
+  callsign: string | null;
+  /** Immatriculation, ex: "7T-VKA" */
+  registration: string | null;
+  /** Code type aéronef, ex: "B738" */
+  type: string | null;
+  /** Description du type, ex: "BOEING 737-800" */
+  typeDesc: string | null;
+  /** Catégorie d'émetteur ADS-B (A1..A7, B*) */
+  category: string | null;
+  points: PlaneTrackPoint[];
+  lastPoint: PlaneTrackPoint;
+  /** Cap/route en degrés (0 = nord) */
+  trackDeg: number | null;
+  /** Vitesse sol en nœuds */
+  speedKnots: number | null;
+  /** Altitude barométrique en pieds */
+  altitudeFt: number | null;
+  /** Taux de montée/descente (pieds/min) */
+  verticalRate: number | null;
+  /** Au sol ? */
+  onGround: boolean;
+  squawk: string | null;
+}
+
+// Aperçu Open Graph d'un article de presse lié à un commentaire (snapshot mis en
+// cache côté API, alimenté depuis la modération). Tous les champs og_* peuvent être
+// null si le site cible n'expose pas de métadonnées.
+export interface ContextLink {
+  url: string;
+  og_title: string | null;
+  og_description: string | null;
+  og_image: string | null;
+  og_site_name: string | null;
+}
+
+// Types pour les commentaires & signalements (API context)
+export interface ContextComment {
+  /** Identifiant unique de l'entrée (clé primaire côté API), null si absent */
+  id: number | null;
+  /** Auteur (texte libre, "anonymous" par défaut) */
+  user: string;
+  /** Texte du commentaire */
+  comment: string;
+  /** Type de contexte (fire/industrial/traffic/neighbourhood) ou null */
+  contextType: string | null;
+  /** Horodatage ISO 8601 (UTC) */
+  datetime: string;
+  /** Article de presse lié (aperçu), ou null */
+  link: ContextLink | null;
+  /** true si ce commentaire déclare l'événement comme terminé (clôture) */
+  resolved: boolean;
+}
+
+// Un signalement géolocalisé = un fil de commentaires partageant le même id
+export interface Signalement {
+  /** Identifiant du fil (= capteur_id côté API) */
+  id: string;
+  lat: number;
+  lon: number;
+  /** Type du signalement d'origine */
+  contextType: string | null;
+  /** Commentaires du fil, du plus ancien au plus récent */
+  comments: ContextComment[];
+  /** true si l'événement a été déclaré terminé (au moins un commentaire de clôture) */
+  resolved: boolean;
+}
+
+// Types pour le suivi des bateaux (AIS)
+// Une position horodatée d'un navire (timestamp en millisecondes epoch)
+export interface BoatTrackPoint {
+  time: number;
+  lat: number;
+  lon: number;
+}
+
+// Trajectoire d'un navire sur la fenêtre de temps demandée à l'API.
+// Les points sont triés par temps croissant ; le dernier est la position courante.
+export interface BoatTrack {
+  /** MMSI du navire (identifiant AIS, 9 chiffres) */
+  id: string;
+  /** Nom du navire si connu (diffusé par les messages AIS statiques) */
+  name: string | null;
+  /** Code AIS du type de navire (ITU-R M.1371), ex: 70-79 = cargo */
+  shipType: number | null;
+  points: BoatTrackPoint[];
+  lastPoint: BoatTrackPoint;
+  /** Cap sur le fond (COG) en degrés (0 = nord) : direction du déplacement */
+  courseDeg: number | null;
+  /**
+   * Heading AIS (HDG) en degrés (0 = nord) : orientation réelle de la coque,
+   * diffusée par le transpondeur. Sert à orienter le marqueur quand le navire
+   * est à l'arrêt (à quai / au mouillage), où le COG n'a aucun sens.
+   */
+  headingDeg: number | null;
+  /** Vitesse en nœuds, calculée sur les deux dernières positions */
+  speedKnots: number | null;
+  /** Classe AIS : "A" (gros navires) ou "B" (petites embarcations) */
+  aisClass: string | null;
+  /** Statut de navigation AIS (0 = en route, 1 = au mouillage, 5 = amarré...) */
+  navStatus: number | null;
+  /** Indicatif radio */
+  callsign: string | null;
+  /** Port de destination déclaré */
+  destination: string | null;
+  /** Numéro IMO */
+  imo: number | null;
+  /** Tirant d'eau maximal (mètres) */
+  draughtM: number | null;
+  /** Longueur hors tout (mètres) */
+  lengthM: number | null;
+  /** Largeur (mètres) */
+  widthM: number | null;
+  /**
+   * Dimensions AIS mesurées depuis l'antenne GPS (mètres) : distance vers la
+   * proue (A), la poupe (B), bâbord (C), tribord (D). L'antenne n'étant pas
+   * au centre, elles servent à dessiner la coque à la vraie échelle et bien
+   * ancrée sur la position. `null` si le navire ne les diffuse pas.
+   */
+  dimA: number | null;
+  dimB: number | null;
+  dimC: number | null;
+  dimD: number | null;
+}
+
 // Types pour les services de données
 export interface DataService {
   fetchData(params: DataFetchParams): Promise<MeasurementDevice[] | SignalAirReport[]>;

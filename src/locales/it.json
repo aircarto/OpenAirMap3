@@ -755,7 +755,10 @@
     "fireLegendBurnedNote": "Perimetri cartografati da MODIS. Un incendio recente può richiedere alcuni giorni per comparire.",
     "groupModeling": "Modellazione",
     "groupFire": "Incendio",
-    "groupBaseMap": "Sfondo mappa"
+    "groupBaseMap": "Sfondo mappa",
+    "boats": "Barche",
+    "planes": "Aerei",
+    "groupTraffic": "Traffico"
   },
   "toast": {
     "sourceUnavailable": "{{name}} non disponibile",
@@ -917,6 +920,159 @@
       "meeting": "Gathering",
       "fault": "Fault",
       "other": "Other"
+    }
+  },
+  "boats": {
+    "panel": {
+      "photoLoading": "Ricerca di una foto…",
+      "photoCredit": "Foto: Wikimedia Commons",
+      "navigationSection": "Navigazione",
+      "trailSection": "Tragitto osservato",
+      "identitySection": "Identità",
+      "characteristicsSection": "Caratteristiche",
+      "externalLinks": "Schede esterne",
+      "externalLinksHint": "Foto e storico completo della nave sui siti specializzati:",
+      "centerOnMap": "Centra mappa",
+      "navStatus": "Stato",
+      "destination": "Destinazione",
+      "position": "Posizione",
+      "trailDistance": "Distanza percorsa",
+      "trailDuration": "Durata del tragitto",
+      "trailPoints": "Punti registrati",
+      "imo": "Numero IMO",
+      "callsign": "Nominativo",
+      "flag": "Bandiera",
+      "aisClass": "Classe AIS",
+      "aisClassValue": "Classe",
+      "dimensions": "Dimensioni (L × L)",
+      "draught": "Pescaggio"
+    },
+    "navStatus": {
+      "0": "In rotta (motore)",
+      "1": "All'ancora",
+      "2": "Non governabile",
+      "3": "Manovrabilità limitata",
+      "4": "Vincolata dal pescaggio",
+      "5": "Ormeggiata",
+      "6": "Incagliata",
+      "7": "In pesca",
+      "8": "In rotta (vela)"
+    },
+    "loadingTracks": "Caricamento delle posizioni delle barche…",
+    "trackedCount_one": "{{count}} barca tracciata",
+    "trackedCount_other": "{{count}} barche tracciate",
+    "popup": {
+      "mmsi": "MMSI",
+      "type": "Tipo",
+      "speed": "Velocità",
+      "course": "Rotta",
+      "lastUpdate": "Ultima posizione",
+      "knots": "nodi"
+    },
+    "types": {
+      "fishing": "Pesca",
+      "special": "Nave di servizio",
+      "pleasure": "Diporto / vela",
+      "highspeed": "Mezzo ad alta velocità",
+      "passenger": "Passeggeri",
+      "cargo": "Cargo",
+      "tanker": "Petroliera",
+      "other": "Altro"
+    }
+  },
+  "signalements": {
+    "reportTag": "Segnalazione",
+    "noReplies": "Nessuna risposta — reagisci!",
+    "repliesTitle": "Risposte",
+    "replyPlaceholder": "La tua risposta…",
+    "placeholder": "Descrivi cosa segnali…",
+    "title": "Segnalazione",
+    "newTitle": "Nuova segnalazione",
+    "newHint": "Scegli un tipo (facoltativo) e scrivi la tua segnalazione. Altri potranno rispondere.",
+    "markResolved": "Segna l'evento come terminato",
+    "resolvedBadge": "Terminato",
+    "resolvedNote": "Questo evento è stato segnato come terminato. Puoi comunque aggiungere un commento.",
+    "railCaption": "Segnala"
+  },
+  "comments": {
+    "title": "Commenti",
+    "loading": "Caricamento…",
+    "empty": "Ancora nessun commento. Sii il primo!",
+    "loadError": "Impossibile caricare i commenti.",
+    "postError": "Invio non riuscito. Riprova.",
+    "placeholder": "Il tuo commento…",
+    "namePlaceholder": "Il tuo nome (facoltativo)",
+    "submit": "Pubblica",
+    "sending": "Invio…",
+    "types": {
+      "fire": "Incendio",
+      "industrial": "Industriale",
+      "traffic": "Traffico",
+      "neighbourhood": "Vicinato"
+    }
+  },
+  "zones": {
+    "panel": {
+      "activity": "Attività",
+      "companySection": "Azienda",
+      "sector": "Settore",
+      "since": "Dal",
+      "category": "Categoria",
+      "workforce": "Personale",
+      "activities": "Attività classificate",
+      "aerialCredit": "Vista aerea © IGN",
+      "photoLoading": "Ricerca di una foto…",
+      "photoCredit": "Foto: Wikipedia",
+      "type": "Tipo",
+      "codes": "Codici (IATA/ICAO)",
+      "seuil": "Classificazione",
+      "regime": "Regime",
+      "commune": "Comune",
+      "address": "Indirizzo",
+      "operator": "Gestore",
+      "website": "Sito web",
+      "centerOnMap": "Centra mappa"
+    },
+    "title": "Zone",
+    "types": {
+      "airport": "Aeroporti",
+      "port": "Porti",
+      "seveso": "Siti Seveso"
+    },
+    "kind": {
+      "airport": "Aeroporto",
+      "port": "Porto",
+      "seveso": "Sito Seveso"
+    }
+  },
+  "planes": {
+    "types": {
+      "airliner": "Linea",
+      "jet": "Jet privato",
+      "helicopter": "Elicottero",
+      "light": "Leggero / aliante",
+      "other": "Altro"
+    },
+    "panel": {
+      "photoCredit": "Foto: airport-data.com",
+      "routeSection": "Rotta",
+      "from": "Partenza",
+      "to": "Arrivo",
+      "owner": "Operatore",
+      "photoLoading": "Ricerca di una foto…",
+      "flightSection": "Volo in corso",
+      "altitude": "Altitudine",
+      "speed": "Velocità",
+      "heading": "Rotta",
+      "verticalRate": "Vario",
+      "squawk": "Squawk",
+      "onGround": "A terra",
+      "identitySection": "Velivolo",
+      "callsign": "Nominativo",
+      "registration": "Immatricolazione",
+      "aircraft": "Tipo",
+      "icao": "Indirizzo ICAO",
+      "centerOnMap": "Centra mappa"
     }
   }
 }

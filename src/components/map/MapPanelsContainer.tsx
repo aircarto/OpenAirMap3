@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import {
   StationInfo,
   SignalAirReport,
@@ -15,10 +15,22 @@ import MobileAirDetailPanel from "../panels/MobileAirDetailPanel";
 import SignalAirDetailPanel from "../panels/SignalAirDetailPanel";
 import type { TimeRange } from "../../utils/historicalTimeRange";
 
+// Chargés à la demande : absents du téléchargement initial sur les déploiements
+// qui n'activent pas ces fonctionnalités.
+const BoatSidePanel = lazy(() => import("../panels/BoatSidePanel"));
+const PlaneSidePanel = lazy(() => import("../panels/PlaneSidePanel"));
+const ZoneDetailPanel = lazy(() => import("../panels/ZoneDetailPanel"));
+
 interface MapPanelsContainerProps {
   sidePanels: any;
   signalAir: any;
   mobileAir: any;
+  boats?: any;
+  planes?: any;
+  zones?: any;
+  onCenterOnBoat?: (boat: any) => void;
+  onCenterOnPlane?: (plane: any) => void;
+  onCenterOnZone?: (selection: any) => void;
   selectedPollutant: string;
   isComparisonPanelVisible: boolean;
   handleRemoveStationFromComparison: (stationId: string) => void;
@@ -65,6 +77,12 @@ const MapPanelsContainer: React.FC<MapPanelsContainerProps> = ({
   sidePanels,
   signalAir,
   mobileAir,
+  boats,
+  planes,
+  zones,
+  onCenterOnBoat,
+  onCenterOnPlane,
+  onCenterOnZone,
   selectedPollutant,
   isComparisonPanelVisible,
   handleRemoveStationFromComparison,
@@ -210,6 +228,39 @@ const MapPanelsContainer: React.FC<MapPanelsContainerProps> = ({
         panelSize={signalAir.signalAirDetailPanelSize}
         onCenterMap={signalAir.handleCenterOnSignalAirReport}
       />
+
+      <Suspense fallback={null}>
+        {boats?.isBoatLayerEnabled && boats.selectedBoat && (
+          <BoatSidePanel
+            isOpen
+            boat={boats.selectedBoat}
+            onClose={boats.handleCloseBoatPanel}
+            onSizeChange={boats.setBoatPanelSize}
+            panelSize={boats.boatPanelSize}
+            onCenterMap={onCenterOnBoat}
+          />
+        )}
+        {planes?.isPlaneLayerEnabled && planes.selectedPlane && (
+          <PlaneSidePanel
+            isOpen
+            plane={planes.selectedPlane}
+            onClose={planes.handleClosePlanePanel}
+            onSizeChange={planes.setPlanePanelSize}
+            panelSize={planes.planePanelSize}
+            onCenterMap={onCenterOnPlane}
+          />
+        )}
+        {zones?.enabled && zones.selectedZone && (
+          <ZoneDetailPanel
+            isOpen
+            selection={zones.selectedZone}
+            onClose={zones.closePanel}
+            onSizeChange={zones.setPanelSize}
+            panelSize={zones.panelSize}
+            onCenterMap={onCenterOnZone}
+          />
+        )}
+      </Suspense>
 
       <MobileAirDetailPanel
         isOpen={mobileAir.isMobileAirDetailPanelOpen}
