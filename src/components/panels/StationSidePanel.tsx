@@ -16,6 +16,7 @@ import ChartTimeControls from "../controls/ChartTimeControls";
 import { getMaxHistoryDays, getCustomRangeISO, type TimeRange } from "../../utils/historicalTimeRange";
 import ExpertMenu from "../controls/ExpertMenu";
 import { cn } from "../../lib/utils";
+import PanelComments from "./PanelComments";
 import SidePanelShell, {
   CHART_PANEL_BODY_CLASS,
   type PanelSize,
@@ -1339,6 +1340,7 @@ const StationSidePanel: React.FC<StationSidePanelProps> = ({
             </>
           )}
         </div>
+        <PanelComments deviceId={selectedStation.id} />
       </SidePanelShell>
     );
   };

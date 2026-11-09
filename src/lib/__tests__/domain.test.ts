@@ -11,7 +11,12 @@ describe('resolveDomainConfig', () => {
     expect(resolveDomainConfig('openairmap.atmosud.org')).toBe(
       DOMAIN_CONFIG.atmosud
     );
-    expect(resolveDomainConfig('openairmap.fr')).toBe(DOMAIN_CONFIG.default);
+    expect(resolveDomainConfig('example.org')).toBe(DOMAIN_CONFIG.default);
+  });
+
+  it("sélectionne l'instance AirCarto sur openairmap.fr", () => {
+    expect(resolveDomainConfig('openairmap.fr').organization).toBe('AirCarto');
+    expect(resolveDomainConfig('www.openairmap.fr').organization).toBe('AirCarto');
   });
 
   it('honore NEXT_PUBLIC_FORCE_DOMAIN_CONFIG', () => {

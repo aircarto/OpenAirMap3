@@ -78,39 +78,67 @@ const atmosudFr = (cfg: DomainConfig): LegalContent => {
   };
 };
 
-const aircartoFr = (cfg: DomainConfig): LegalContent => ({
-  title: 'Mentions légales',
-  intro: `Informations légales relatives à l’instance ${cfg.title} opérée par AirCarto. Le projet OpenAirMap est porté par AirCarto et AtmoSud ; l’exploitation de ce domaine relève d’AirCarto.`,
-  blocks: [
-    {
-      heading: 'Éditeur',
-      lines: [
-        'AirCarto',
-        'SIRET / adresse : à compléter par AirCarto (placeholder — relecture métier).',
-        `Contact : ${cfg.links.contact}`,
-        `Site : ${cfg.links.website}`,
-      ],
-    },
-    {
-      heading: 'Hébergement',
-      lines: [
-        'Hébergement et exploitation : AirCarto (détails d’hébergeur à compléter).',
-      ],
-    },
-    {
-      heading: 'Projet',
-      lines: [
-        'OpenAirMap est un projet open source co-porté par AirCarto et AtmoSud. Les mentions légales détaillées d’AtmoSud s’appliquent uniquement aux instances hébergées sur les domaines .atmosud.org.',
-      ],
-    },
-    {
-      heading: 'Données personnelles',
-      lines: [
-        'L’application cartographique affiche des mesures environnementales. Pour toute demande relative aux données personnelles, contactez l’éditeur de cette instance.',
-      ],
-    },
-  ],
-});
+const withoutEmptyBlocks = (blocks: LegalBlock[]): LegalBlock[] =>
+  blocks
+    .map((b) => ({ ...b, lines: b.lines.filter(Boolean) }))
+    .filter((b) => b.lines.length > 0);
+
+// Le domaine par défaut laisse le bloc `legal` vide : seules les lignes renseignées s'affichent.
+const aircartoFr = (cfg: DomainConfig): LegalContent => {
+  const legal = cfg.legal;
+  const host = legal?.hostingProvider;
+  return {
+    title: 'Mentions légales',
+    intro: `Informations légales relatives à l’instance ${cfg.title} opérée par AirCarto. Le projet OpenAirMap est porté par AirCarto et AtmoSud ; l’exploitation de ce domaine relève d’AirCarto.`,
+    blocks: withoutEmptyBlocks([
+      {
+        heading: 'Éditeur',
+        lines: [
+          legal?.legalName
+            ? `${legal.legalName}, ${legal.legalForm} au capital de ${legal.shareCapital}`
+            : 'AirCarto',
+          legal?.siret
+            ? `RCS ${legal.rcs} — SIRET ${legal.siret} — TVA ${legal.vatNumber}`
+            : '',
+          legal?.address ? `Siège social : ${legal.address}` : '',
+          legal?.phone ? `Téléphone : ${legal.phone}` : '',
+          legal?.email
+            ? `E-mail : ${legal.email}`
+            : `Contact : ${cfg.links.contact}`,
+          `Site : ${cfg.links.website}`,
+        ],
+      },
+      {
+        heading: 'Directeur de la publication',
+        lines: [
+          legal?.publicationDirector
+            ? `${legal.publicationDirector}, président d’AirCarto`
+            : '',
+        ],
+      },
+      {
+        heading: 'Hébergement',
+        lines: [
+          host?.name
+            ? `Site auto-hébergé par ${host.name}, ${host.address} — ${host.phone}`
+            : '',
+        ],
+      },
+      {
+        heading: 'Projet',
+        lines: [
+          'OpenAirMap est un projet open source co-porté par AirCarto et AtmoSud. Les mentions légales détaillées d’AtmoSud s’appliquent uniquement aux instances hébergées sur les domaines .atmosud.org.',
+        ],
+      },
+      {
+        heading: 'Données personnelles',
+        lines: [
+          'L’application cartographique affiche des mesures environnementales. Pour toute demande relative aux données personnelles, contactez l’éditeur de cette instance.',
+        ],
+      },
+    ]),
+  };
+};
 
 const atmosudEn = (cfg: DomainConfig): LegalContent => {
   const fr = atmosudFr(cfg);
@@ -135,37 +163,61 @@ const atmosudEn = (cfg: DomainConfig): LegalContent => {
   };
 };
 
-const aircartoEn = (cfg: DomainConfig): LegalContent => ({
-  title: 'Legal notice',
-  intro: `Legal information for the ${cfg.title} instance operated by AirCarto. OpenAirMap is a joint AirCarto and AtmoSud project; this domain is operated by AirCarto.`,
-  blocks: [
-    {
-      heading: 'Publisher',
-      lines: [
-        'AirCarto',
-        'SIRET / address: to be completed by AirCarto (placeholder).',
-        `Contact: ${cfg.links.contact}`,
-        `Website: ${cfg.links.website}`,
-      ],
-    },
-    {
-      heading: 'Hosting',
-      lines: ['Hosting and operations: AirCarto (hosting provider details TBD).'],
-    },
-    {
-      heading: 'Project',
-      lines: [
-        'OpenAirMap is an open-source project by AirCarto and AtmoSud. Detailed AtmoSud legal notices apply only to instances on .atmosud.org domains.',
-      ],
-    },
-    {
-      heading: 'Personal data',
-      lines: [
-        'The map displays environmental measurements. For personal-data requests, contact the publisher of this instance.',
-      ],
-    },
-  ],
-});
+const aircartoEn = (cfg: DomainConfig): LegalContent => {
+  const legal = cfg.legal;
+  const host = legal?.hostingProvider;
+  return {
+    title: 'Legal notice',
+    intro: `Legal information for the ${cfg.title} instance operated by AirCarto. OpenAirMap is a joint AirCarto and AtmoSud project; this domain is operated by AirCarto.`,
+    blocks: withoutEmptyBlocks([
+      {
+        heading: 'Publisher',
+        lines: [
+          legal?.legalName
+            ? `${legal.legalName}, a French ${legal.legalForm} with share capital of ${legal.shareCapital}`
+            : 'AirCarto',
+          legal?.siret
+            ? `RCS ${legal.rcs} — SIRET ${legal.siret} — VAT ${legal.vatNumber}`
+            : '',
+          legal?.address ? `Registered office: ${legal.address}` : '',
+          legal?.phone ? `Phone: ${legal.phone}` : '',
+          legal?.email
+            ? `Email: ${legal.email}`
+            : `Contact: ${cfg.links.contact}`,
+          `Website: ${cfg.links.website}`,
+        ],
+      },
+      {
+        heading: 'Publication director',
+        lines: [
+          legal?.publicationDirector
+            ? `${legal.publicationDirector}, President of AirCarto`
+            : '',
+        ],
+      },
+      {
+        heading: 'Hosting',
+        lines: [
+          host?.name
+            ? `Self-hosted by ${host.name}, ${host.address} — ${host.phone}`
+            : '',
+        ],
+      },
+      {
+        heading: 'Project',
+        lines: [
+          'OpenAirMap is an open-source project by AirCarto and AtmoSud. Detailed AtmoSud legal notices apply only to instances on .atmosud.org domains.',
+        ],
+      },
+      {
+        heading: 'Personal data',
+        lines: [
+          'The map displays environmental measurements. For personal-data requests, contact the publisher of this instance.',
+        ],
+      },
+    ]),
+  };
+};
 
 export const getLegalContent = (
   locale: string,

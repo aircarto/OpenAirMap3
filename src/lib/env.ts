@@ -82,6 +82,27 @@ export const env = {
   get historicalModeLogs() {
     return process.env.NEXT_PUBLIC_HISTORICAL_MODE_LOGS;
   },
+  get boatLayer() {
+    return process.env.NEXT_PUBLIC_ENABLE_BOAT_LAYER;
+  },
+  get boatApiUrl() {
+    return process.env.NEXT_PUBLIC_BOAT_API_URL;
+  },
+  get planeLayer() {
+    return process.env.NEXT_PUBLIC_ENABLE_PLANE_LAYER;
+  },
+  get planeApiUrl() {
+    return process.env.NEXT_PUBLIC_PLANE_API_URL;
+  },
+  get zonesLayer() {
+    return process.env.NEXT_PUBLIC_ENABLE_ZONES_LAYER;
+  },
+  get contextComments() {
+    return process.env.NEXT_PUBLIC_ENABLE_CONTEXT_COMMENTS;
+  },
+  get defaultTimeStep() {
+    return process.env.NEXT_PUBLIC_DEFAULT_TIME_STEP;
+  },
   get noIndex() {
     return process.env.NOINDEX ?? process.env.NEXT_PUBLIC_NOINDEX;
   },

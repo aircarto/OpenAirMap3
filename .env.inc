@@ -19,6 +19,20 @@ NOINDEX=boolean
 # Active la couche feux de foret (marqueurs feuxdeforet.fr)
 NEXT_PUBLIC_ENABLE_WILDFIRE_LAYER=boolean
 
+# Fonctionnalités optionnelles : désactivées si la variable est absente.
+# Bateaux (AIS) ; nécessite aussi NEXT_PUBLIC_BOAT_API_URL
+NEXT_PUBLIC_ENABLE_BOAT_LAYER=boolean
+NEXT_PUBLIC_BOAT_API_URL=url
+# Avions (ADS-B) ; nécessite aussi NEXT_PUBLIC_PLANE_API_URL
+NEXT_PUBLIC_ENABLE_PLANE_LAYER=boolean
+NEXT_PUBLIC_PLANE_API_URL=url
+# Zones : aéroports, ports, sites Seveso
+NEXT_PUBLIC_ENABLE_ZONES_LAYER=boolean
+# Commentaires sur les capteurs/bateaux/zones et signalements GPS
+NEXT_PUBLIC_ENABLE_CONTEXT_COMMENTS=boolean
+# Pas de temps à l'ouverture : "instantane" pour le Scan (défaut : heure)
+NEXT_PUBLIC_DEFAULT_TIME_STEP=string
+
 # Affiche les traces NebuleAir en ligne continue
 NEXT_PUBLIC_SOLID_LINE_NEBULEAIR=boolean
 

@@ -9,6 +9,20 @@ export const featureFlags = {
   historicalModeLogs: parseBooleanEnv(env.historicalModeLogs, false),
 
   /**
+   * Fonctionnalités optionnelles, propres à certains déploiements.
+   * Désactivées par défaut : sans variable, aucune trace à l'écran et aucun
+   * appel réseau. Voir docs/FEATURE_FLAGS.md.
+   */
+  // Bateaux (AIS) ; nécessite aussi NEXT_PUBLIC_BOAT_API_URL
+  boatLayer: parseBooleanEnv(env.boatLayer, false),
+  // Avions (ADS-B) ; nécessite aussi NEXT_PUBLIC_PLANE_API_URL
+  planeLayer: parseBooleanEnv(env.planeLayer, false),
+  // Zones : aéroports, ports, sites Seveso
+  zonesLayer: parseBooleanEnv(env.zonesLayer, false),
+  // Commentaires sur les capteurs/bateaux/zones et signalements GPS
+  contextComments: parseBooleanEnv(env.contextComments, false),
+
+  /**
    * Sert les microcapteurs AtmoSud depuis la nouvelle API microspot
    * (api-export-prod.uspot.probesys.net/microspot) au lieu de l'ancienne
    * (api.atmosud.org/observations/capteurs).

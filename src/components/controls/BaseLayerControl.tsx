@@ -4,6 +4,7 @@ import { BASE_LAYER_KEYS, BaseLayerKey } from "../../constants/mapLayers";
 import { featureFlags } from "../../config/featureFlags";
 import { cn } from "../../lib/utils";
 import LayerDisclosure from "./LayerDisclosure";
+import { ZONE_TYPES, ZoneKind } from "../../constants/zones";
 import {
   Popover,
   PopoverContent,
@@ -107,6 +108,16 @@ interface BaseLayerControlProps {
   // Props pour la couche feux de foret en cours
   isWildfireLayerEnabled: boolean;
   onWildfireLayerToggle: (enabled: boolean) => void;
+  // Couches optionnelles (absentes de l'interface si désactivées)
+  isBoatLayerAvailable?: boolean;
+  isBoatLayerVisible?: boolean;
+  onBoatLayerToggle?: (visible: boolean) => void;
+  isPlaneLayerAvailable?: boolean;
+  isPlaneLayerVisible?: boolean;
+  onPlaneLayerToggle?: (visible: boolean) => void;
+  zonesVisible?: Record<ZoneKind, boolean>;
+  zonesLoading?: Record<ZoneKind, boolean>;
+  onZoneToggle?: (kind: ZoneKind) => void;
   /**
    * Côté d'ouverture du panneau. « right » pour le rail, « top » pour l'ancien
    * site bas-gauche. Le contenu est portalisé vers `document.body` : la zone
@@ -143,6 +154,45 @@ interface BaseLayerControlProps {
   }) => React.ReactNode;
 }
 
+const OptionalLayerToggle: React.FC<{
+  checked: boolean;
+  color: string;
+  label: string;
+  loading?: boolean;
+  onToggle: () => void;
+}> = ({ checked, color, label, loading = false, onToggle }) => (
+  <button
+    type="button"
+    aria-pressed={checked}
+    onClick={(e) => {
+      e.stopPropagation();
+      onToggle();
+    }}
+    className={`w-full flex items-center px-2.5 py-1.5 rounded text-xs transition-colors whitespace-nowrap ${
+      checked ? "bg-gray-50/80 text-gray-900" : "text-gray-700 hover:bg-gray-50/80"
+    }`}
+  >
+    <div
+      className="w-3 h-3 rounded border mr-2 flex items-center justify-center"
+      style={{ borderColor: color, backgroundColor: checked ? color : "transparent" }}
+    >
+      {checked && (
+        <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+          <path
+            fillRule="evenodd"
+            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+            clipRule="evenodd"
+          />
+        </svg>
+      )}
+    </div>
+    <span>{label}</span>
+    {loading && (
+      <span className="ml-1.5 inline-block w-3 h-3 border-[1.5px] border-gray-300 border-t-gray-500 rounded-full animate-spin" />
+    )}
+  </button>
+);
+
 const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
   currentBaseLayer,
   onBaseLayerChange,
@@ -158,6 +208,15 @@ const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
   onEffisBurnedAreasPeriodChange,
   isWildfireLayerEnabled,
   onWildfireLayerToggle,
+  isBoatLayerAvailable = false,
+  isBoatLayerVisible = false,
+  onBoatLayerToggle,
+  isPlaneLayerAvailable = false,
+  isPlaneLayerVisible = false,
+  onPlaneLayerToggle,
+  zonesVisible,
+  zonesLoading,
+  onZoneToggle,
   placement = "top",
   panelClassName,
   modelingSlot,
@@ -419,6 +478,54 @@ const BaseLayerControl: React.FC<BaseLayerControlProps> = ({
                 )}
               </div>
             </LayerDisclosure>
+
+            {/* Trafic : affiché uniquement si une couche est disponible */}
+            {(isBoatLayerAvailable || isPlaneLayerAvailable) && (
+              <LayerDisclosure
+                label={t("baseLayer.groupTraffic")}
+                active={isBoatLayerVisible || isPlaneLayerVisible}
+              >
+                <div className="pl-4 pr-1">
+                  {isBoatLayerAvailable && onBoatLayerToggle && (
+                    <OptionalLayerToggle
+                      checked={isBoatLayerVisible}
+                      color="#0284c7"
+                      label={t("baseLayer.boats")}
+                      onToggle={() => onBoatLayerToggle(!isBoatLayerVisible)}
+                    />
+                  )}
+                  {isPlaneLayerAvailable && onPlaneLayerToggle && (
+                    <OptionalLayerToggle
+                      checked={isPlaneLayerVisible}
+                      color="#4f46e5"
+                      label={t("baseLayer.planes")}
+                      onToggle={() => onPlaneLayerToggle(!isPlaneLayerVisible)}
+                    />
+                  )}
+                </div>
+              </LayerDisclosure>
+            )}
+
+            {/* Zones : aéroports, ports, sites Seveso */}
+            {zonesVisible && onZoneToggle && (
+              <LayerDisclosure
+                label={t("zones.title")}
+                active={ZONE_TYPES.some((zt) => zonesVisible[zt.kind])}
+              >
+                <div className="pl-4 pr-1">
+                  {ZONE_TYPES.map((zt) => (
+                    <OptionalLayerToggle
+                      key={zt.kind}
+                      checked={zonesVisible[zt.kind]}
+                      color={zt.color}
+                      label={t(`zones.types.${zt.kind}`)}
+                      loading={zonesLoading?.[zt.kind]}
+                      onToggle={() => onZoneToggle(zt.kind)}
+                    />
+                  ))}
+                </div>
+              </LayerDisclosure>
+            )}
 
             {/* 3. Fond de carte : styles de fond + découpage communal */}
             <LayerDisclosure

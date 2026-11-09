@@ -626,6 +626,7 @@
       "intro": "معلومات قانونية تتعلق بتطبيق {{app}}.",
       "editorTitle": "الناشر",
       "editorText": "تطبيق {{app}} تصدره {{organization}}، المرصد الإقليمي لجودة الهواء في منطقة جنوب بروفانس-ألب-كوت دازور، المعتمد من وزارة التحول البيئي الفرنسية.",
+      "editorTextGeneric": "تطبيق {{app}} تصدره {{organization}}.",
       "legalFormLabel": "الشكل القانوني",
       "siretLabel": "SIRET",
       "vatLabel": "رقم ضريبة القيمة المضافة",
@@ -635,6 +636,7 @@
       "publicationTitle": "مدير النشر",
       "hostingTitle": "الاستضافة",
       "hostingText": "يُستضاف الموقع بواسطة {{organization}} على Cloud XPR من Free Pro.",
+      "hostingTextGeneric": "يُستضاف الموقع بواسطة {{hosting}}.",
       "rcsLabel": "مسجّل في RCS في",
       "shareCapitalLabel": "رأس المال",
       "phoneLabel": "الهاتف",
@@ -771,7 +773,10 @@
     "fireLegendBurnedNote": "محيطات مرسومة بواسطة MODIS. قد يستغرق ظهور حريق حديث عدة أيام.",
     "groupModeling": "النمذجة",
     "groupFire": "الحرائق",
-    "groupBaseMap": "خلفية الخريطة"
+    "groupBaseMap": "خلفية الخريطة",
+    "boats": "القوارب",
+    "planes": "الطائرات",
+    "groupTraffic": "حركة المرور"
   },
   "toast": {
     "sourceUnavailable": "{{name}} غير متاح",
@@ -933,6 +938,159 @@
       "meeting": "Gathering",
       "fault": "Fault",
       "other": "Other"
+    }
+  },
+  "boats": {
+    "panel": {
+      "photoLoading": "البحث عن صورة…",
+      "photoCredit": "الصورة: ويكيميديا كومنز",
+      "navigationSection": "الملاحة",
+      "trailSection": "الرحلة المرصودة",
+      "identitySection": "الهوية",
+      "characteristicsSection": "الخصائص",
+      "externalLinks": "سجلات خارجية",
+      "externalLinksHint": "الصور والسجل الكامل للسفينة على المواقع المتخصصة:",
+      "centerOnMap": "توسيط الخريطة",
+      "navStatus": "الحالة",
+      "destination": "الوجهة",
+      "position": "الموقع",
+      "trailDistance": "المسافة المقطوعة",
+      "trailDuration": "مدة الرحلة",
+      "trailPoints": "النقاط المسجلة",
+      "imo": "رقم IMO",
+      "callsign": "نداء الراديو",
+      "flag": "العلم",
+      "aisClass": "فئة AIS",
+      "aisClassValue": "فئة",
+      "dimensions": "الأبعاد (ط × ع)",
+      "draught": "الغاطس"
+    },
+    "navStatus": {
+      "0": "في الطريق (محرك)",
+      "1": "راسية",
+      "2": "خارجة عن السيطرة",
+      "3": "مناورة محدودة",
+      "4": "مقيدة بالغاطس",
+      "5": "مربوطة بالرصيف",
+      "6": "جانحة",
+      "7": "تصطاد",
+      "8": "في الطريق (شراع)"
+    },
+    "loadingTracks": "جارٍ تحميل مواقع القوارب…",
+    "trackedCount_one": "قارب واحد متتبَّع",
+    "trackedCount_other": "{{count}} قوارب متتبَّعة",
+    "popup": {
+      "mmsi": "MMSI",
+      "type": "النوع",
+      "speed": "السرعة",
+      "course": "الاتجاه",
+      "lastUpdate": "آخر موقع",
+      "knots": "عقدة"
+    },
+    "types": {
+      "fishing": "صيد",
+      "special": "سفينة خدمات",
+      "pleasure": "نزهة / شراعي",
+      "highspeed": "مركبة عالية السرعة",
+      "passenger": "ركاب",
+      "cargo": "شحن",
+      "tanker": "ناقلة",
+      "other": "أخرى"
+    }
+  },
+  "signalements": {
+    "reportTag": "بلاغ",
+    "noReplies": "لا ردود بعد — تفاعل!",
+    "repliesTitle": "الردود",
+    "replyPlaceholder": "ردّك…",
+    "placeholder": "صف ما تبلّغ عنه…",
+    "title": "بلاغ",
+    "newTitle": "بلاغ جديد",
+    "newHint": "اختر نوعًا (اختياري) واكتب بلاغك. يمكن للآخرين الرد عليه.",
+    "markResolved": "وضع علامة على انتهاء الحدث",
+    "resolvedBadge": "منتهٍ",
+    "resolvedNote": "تم وضع علامة على انتهاء هذا الحدث. لا يزال بإمكانك إضافة تعليق.",
+    "railCaption": "إبلاغ"
+  },
+  "comments": {
+    "title": "التعليقات",
+    "loading": "جارٍ التحميل…",
+    "empty": "لا توجد تعليقات بعد. كن أول من يعلّق!",
+    "loadError": "تعذّر تحميل التعليقات.",
+    "postError": "فشل الإرسال. حاول مجددًا.",
+    "placeholder": "تعليقك…",
+    "namePlaceholder": "اسمك (اختياري)",
+    "submit": "نشر",
+    "sending": "جارٍ الإرسال…",
+    "types": {
+      "fire": "حريق",
+      "industrial": "صناعي",
+      "traffic": "حركة المرور",
+      "neighbourhood": "الحي"
+    }
+  },
+  "zones": {
+    "panel": {
+      "activity": "النشاط",
+      "companySection": "الشركة",
+      "sector": "القطاع",
+      "since": "منذ",
+      "category": "الفئة",
+      "workforce": "عدد الموظفين",
+      "activities": "الأنشطة المصنّفة",
+      "aerialCredit": "منظر جوي © IGN",
+      "photoLoading": "البحث عن صورة…",
+      "photoCredit": "الصورة: ويكيبيديا",
+      "type": "النوع",
+      "codes": "الرموز (IATA/ICAO)",
+      "seuil": "التصنيف",
+      "regime": "النظام",
+      "commune": "البلدية",
+      "address": "العنوان",
+      "operator": "المشغّل",
+      "website": "الموقع",
+      "centerOnMap": "توسيط الخريطة"
+    },
+    "title": "المناطق",
+    "types": {
+      "airport": "المطارات",
+      "port": "الموانئ",
+      "seveso": "مواقع سيفيزو"
+    },
+    "kind": {
+      "airport": "مطار",
+      "port": "ميناء",
+      "seveso": "موقع سيفيزو"
+    }
+  },
+  "planes": {
+    "types": {
+      "airliner": "خطوط",
+      "jet": "طائرة أعمال",
+      "helicopter": "مروحية",
+      "light": "خفيفة / شراعية",
+      "other": "أخرى"
+    },
+    "panel": {
+      "photoCredit": "الصورة: airport-data.com",
+      "routeSection": "المسار",
+      "from": "المغادرة",
+      "to": "الوصول",
+      "owner": "المشغّل",
+      "photoLoading": "البحث عن صورة…",
+      "flightSection": "الرحلة الحالية",
+      "altitude": "الارتفاع",
+      "speed": "السرعة",
+      "heading": "الاتجاه",
+      "verticalRate": "معدل عمودي",
+      "squawk": "سكوّك",
+      "onGround": "على الأرض",
+      "identitySection": "الطائرة",
+      "callsign": "النداء",
+      "registration": "التسجيل",
+      "aircraft": "النوع",
+      "icao": "عنوان ICAO",
+      "centerOnMap": "توسيط الخريطة"
     }
   }
 }

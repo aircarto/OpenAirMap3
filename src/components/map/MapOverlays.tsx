@@ -58,6 +58,8 @@ interface MapOverlaysProps {
   isComparisonPanelVisible: boolean;
   mapLayers: any;
   wildfire: any;
+  boats?: any;
+  signalements?: any;
   visibleDevices: any[];
   visibleReports: any[];
   totalDevices: number;
@@ -88,6 +90,8 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
   isComparisonPanelVisible,
   mapLayers,
   wildfire,
+  boats,
+  signalements,
   visibleDevices,
   visibleReports,
   totalDevices,
@@ -168,6 +172,30 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
     () =>
       compactNotices([
         ...appNotices,
+        signalements?.enabled &&
+          signalements.placingMode && {
+            id: "signalement-placing",
+            tone: "info" as const,
+            message: t("signalements.placingHint"),
+            onDismiss: signalements.stopPlacing,
+            dismissLabel: t("signalements.placingCancel"),
+          },
+        boats?.isBoatLayerEnabled &&
+          boats.isBoatLayerVisible &&
+          boats.boatLoading &&
+          boats.boatTracks.length === 0 && {
+            id: "boats-loading",
+            tone: "info" as const,
+            busy: true,
+            message: t("boats.loadingTracks"),
+          },
+        boats?.isBoatLayerEnabled &&
+          boats.isBoatLayerVisible &&
+          boats.boatError && {
+            id: "boats-error",
+            tone: "error" as const,
+            message: boats.boatError,
+          },
         signalAir.signalAirFeedback && {
           id: "signalair-feedback",
           tone: "info" as const,
@@ -240,6 +268,14 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
       ]),
     [
       appNotices,
+      signalements?.enabled,
+      signalements?.placingMode,
+      signalements?.stopPlacing,
+      boats?.isBoatLayerEnabled,
+      boats?.isBoatLayerVisible,
+      boats?.boatLoading,
+      boats?.boatTracks?.length,
+      boats?.boatError,
       signalAir.signalAirFeedback,
       signalAir.handleDismissSignalAirFeedback,
       isWildfireVisible,
@@ -341,6 +377,13 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
             <OverlayLegendsCard items={overlayLegendItems} />
           </div>
         )}
+        {boats?.isBoatLayerEnabled &&
+          boats.isBoatLayerVisible &&
+          boats.boatTracks.length > 0 && (
+            <div className="glass-3 pointer-events-auto shrink-0 rounded-[var(--r-md)] px-3 py-2 text-xs text-gray-600">
+              • {t("boats.trackedCount", { count: boats.boatTracks.length })}
+            </div>
+          )}
         {(isWildfireVisible && wildfire.wildfireReports.length > 0) ||
         (isEffisHotspotsEnabled && hotspotsStats && hotspotsStats.displayed > 0) ||
         (isEffisBurnedAreasEnabled &&

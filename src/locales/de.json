@@ -626,6 +626,7 @@
       "intro": "Rechtliche Informationen zur Anwendung {{app}}.",
       "editorTitle": "Herausgeber",
       "editorText": "Die Anwendung {{app}} wird herausgegeben von {{organization}}, dem regionalen Luftqualitätsobservatorium der Region Provence-Alpes-Côte d'Azur, zugelassen vom französischen Ministerium für den ökologischen Wandel.",
+      "editorTextGeneric": "Die Anwendung {{app}} wird von {{organization}} herausgegeben.",
       "legalFormLabel": "Rechtsform",
       "siretLabel": "SIRET",
       "vatLabel": "USt-IdNr.",
@@ -635,6 +636,7 @@
       "publicationTitle": "Verantwortlich für die Veröffentlichung",
       "hostingTitle": "Hosting",
       "hostingText": "Die Website wird von {{organization}} auf Free Pro Cloud XPR gehostet.",
+      "hostingTextGeneric": "Die Website wird von {{hosting}} gehostet.",
       "rcsLabel": "Eingetragen im RCS von",
       "shareCapitalLabel": "Stammkapital",
       "phoneLabel": "Tel.",
@@ -755,7 +757,10 @@
     "fireLegendBurnedNote": "Von MODIS kartierte Umrisse. Ein aktuelles Feuer kann mehrere Tage bis zur Anzeige benötigen.",
     "groupModeling": "Modellierung",
     "groupFire": "Brände",
-    "groupBaseMap": "Kartengrundlage"
+    "groupBaseMap": "Kartengrundlage",
+    "boats": "Schiffe",
+    "planes": "Flugzeuge",
+    "groupTraffic": "Verkehr"
   },
   "toast": {
     "sourceUnavailable": "{{name}} nicht verfügbar",
@@ -917,6 +922,159 @@
       "meeting": "Gathering",
       "fault": "Fault",
       "other": "Other"
+    }
+  },
+  "boats": {
+    "panel": {
+      "photoLoading": "Foto wird gesucht…",
+      "photoCredit": "Foto: Wikimedia Commons",
+      "navigationSection": "Navigation",
+      "trailSection": "Beobachtete Fahrt",
+      "identitySection": "Identität",
+      "characteristicsSection": "Eigenschaften",
+      "externalLinks": "Externe Datenblätter",
+      "externalLinksHint": "Fotos und vollständige Schiffshistorie auf Spezialseiten:",
+      "centerOnMap": "Karte zentrieren",
+      "navStatus": "Status",
+      "destination": "Ziel",
+      "position": "Position",
+      "trailDistance": "Zurückgelegte Strecke",
+      "trailDuration": "Fahrtdauer",
+      "trailPoints": "Aufgezeichnete Punkte",
+      "imo": "IMO-Nummer",
+      "callsign": "Rufzeichen",
+      "flag": "Flagge",
+      "aisClass": "AIS-Klasse",
+      "aisClassValue": "Klasse",
+      "dimensions": "Abmessungen (L × B)",
+      "draught": "Tiefgang"
+    },
+    "navStatus": {
+      "0": "In Fahrt (Motor)",
+      "1": "Vor Anker",
+      "2": "Manövrierunfähig",
+      "3": "Eingeschränkt manövrierfähig",
+      "4": "Tiefgangbeschränkt",
+      "5": "Festgemacht",
+      "6": "Auf Grund",
+      "7": "Beim Fischen",
+      "8": "In Fahrt (Segel)"
+    },
+    "loadingTracks": "Schiffspositionen werden geladen…",
+    "trackedCount_one": "{{count}} Schiff verfolgt",
+    "trackedCount_other": "{{count}} Schiffe verfolgt",
+    "popup": {
+      "mmsi": "MMSI",
+      "type": "Typ",
+      "speed": "Geschwindigkeit",
+      "course": "Kurs",
+      "lastUpdate": "Letzte Position",
+      "knots": "Knoten"
+    },
+    "types": {
+      "fishing": "Fischerei",
+      "special": "Dienstschiff",
+      "pleasure": "Freizeit / Segeln",
+      "highspeed": "Hochgeschwindigkeitsfahrzeug",
+      "passenger": "Passagiere",
+      "cargo": "Frachter",
+      "tanker": "Tanker",
+      "other": "Andere"
+    }
+  },
+  "signalements": {
+    "reportTag": "Meldung",
+    "noReplies": "Noch keine Antworten — reagieren!",
+    "repliesTitle": "Antworten",
+    "replyPlaceholder": "Ihre Antwort…",
+    "placeholder": "Beschreiben Sie Ihre Meldung…",
+    "title": "Meldung",
+    "newTitle": "Neue Meldung",
+    "newHint": "Wählen Sie einen Typ (optional) und schreiben Sie Ihre Meldung. Andere können antworten.",
+    "markResolved": "Ereignis als beendet markieren",
+    "resolvedBadge": "Beendet",
+    "resolvedNote": "Dieses Ereignis wurde als beendet markiert. Sie können weiterhin einen Kommentar hinzufügen.",
+    "railCaption": "Melden"
+  },
+  "comments": {
+    "title": "Kommentare",
+    "loading": "Wird geladen…",
+    "empty": "Noch keine Kommentare. Sei der Erste!",
+    "loadError": "Kommentare konnten nicht geladen werden.",
+    "postError": "Senden fehlgeschlagen. Erneut versuchen.",
+    "placeholder": "Ihr Kommentar…",
+    "namePlaceholder": "Ihr Name (optional)",
+    "submit": "Veröffentlichen",
+    "sending": "Senden…",
+    "types": {
+      "fire": "Brand",
+      "industrial": "Industrie",
+      "traffic": "Verkehr",
+      "neighbourhood": "Nachbarschaft"
+    }
+  },
+  "zones": {
+    "panel": {
+      "activity": "Tätigkeit",
+      "companySection": "Unternehmen",
+      "sector": "Sektor",
+      "since": "Seit",
+      "category": "Kategorie",
+      "workforce": "Belegschaft",
+      "activities": "Eingestufte Tätigkeiten",
+      "aerialCredit": "Luftbild © IGN",
+      "photoLoading": "Foto wird gesucht…",
+      "photoCredit": "Foto: Wikipedia",
+      "type": "Typ",
+      "codes": "Codes (IATA/ICAO)",
+      "seuil": "Einstufung",
+      "regime": "Regime",
+      "commune": "Gemeinde",
+      "address": "Adresse",
+      "operator": "Betreiber",
+      "website": "Webseite",
+      "centerOnMap": "Karte zentrieren"
+    },
+    "title": "Zonen",
+    "types": {
+      "airport": "Flughäfen",
+      "port": "Häfen",
+      "seveso": "Seveso-Standorte"
+    },
+    "kind": {
+      "airport": "Flughafen",
+      "port": "Hafen",
+      "seveso": "Seveso-Standort"
+    }
+  },
+  "planes": {
+    "types": {
+      "airliner": "Linienflug",
+      "jet": "Geschäftsjet",
+      "helicopter": "Hubschrauber",
+      "light": "Leicht / Segler",
+      "other": "Andere"
+    },
+    "panel": {
+      "photoCredit": "Foto: airport-data.com",
+      "routeSection": "Route",
+      "from": "Von",
+      "to": "Nach",
+      "owner": "Betreiber",
+      "photoLoading": "Foto wird gesucht…",
+      "flightSection": "Aktueller Flug",
+      "altitude": "Höhe",
+      "speed": "Geschwindigkeit",
+      "heading": "Kurs",
+      "verticalRate": "Steig./Sink.",
+      "squawk": "Squawk",
+      "onGround": "Am Boden",
+      "identitySection": "Luftfahrzeug",
+      "callsign": "Rufzeichen",
+      "registration": "Kennzeichen",
+      "aircraft": "Typ",
+      "icao": "ICAO-Adresse",
+      "centerOnMap": "Karte zentrieren"
     }
   }
 }

@@ -19,6 +19,7 @@ import { getMaxHistoryDays, getCustomRangeISO, type TimeRange } from "../../util
 import ExpertMenu from "../controls/ExpertMenu";
 import { cn } from "../../lib/utils";
 import { sources } from "../../constants/sources";
+import PanelComments from "./PanelComments";
 import SidePanelShell, {
   CHART_PANEL_BODY_CLASS,
   type PanelSize,
@@ -1502,6 +1503,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
             {t("panels.microSidePanel.buttonDiscover")}
           </a>
         </CollapsiblePanelSection>
+        <PanelComments deviceId={selectedStation.id} />
       </SidePanelShell>
     );
   };

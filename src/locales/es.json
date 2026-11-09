@@ -626,6 +626,7 @@
       "intro": "Información legal relativa a la aplicación {{app}}.",
       "editorTitle": "Editor",
       "editorText": "La aplicación {{app}} es editada por {{organization}}, observatorio regional de la calidad del aire de la Región Sur Provenza-Alpes-Costa Azul, acreditado por el Ministerio francés de la Transición Ecológica.",
+      "editorTextGeneric": "La aplicación {{app}} es editada por {{organization}}.",
       "legalFormLabel": "Forma jurídica",
       "siretLabel": "SIRET",
       "vatLabel": "N.º de IVA",
@@ -635,6 +636,7 @@
       "publicationTitle": "Director de la publicación",
       "hostingTitle": "Alojamiento",
       "hostingText": "El sitio está alojado por {{organization}} en Cloud XPR de Free Pro.",
+      "hostingTextGeneric": "El sitio está alojado por {{hosting}}.",
       "rcsLabel": "Inscrito en el RCS de",
       "shareCapitalLabel": "Capital social",
       "phoneLabel": "Tel.",
@@ -755,7 +757,10 @@
     "fireLegendBurnedNote": "Perímetros cartografiados por MODIS. Un incendio reciente puede tardar varios días en aparecer.",
     "groupModeling": "Modelización",
     "groupFire": "Incendio",
-    "groupBaseMap": "Mapa base"
+    "groupBaseMap": "Mapa base",
+    "boats": "Barcos",
+    "planes": "Aviones",
+    "groupTraffic": "Tráfico"
   },
   "toast": {
     "sourceUnavailable": "{{name}} no disponible",
@@ -917,6 +922,159 @@
       "meeting": "Gathering",
       "fault": "Fault",
       "other": "Other"
+    }
+  },
+  "boats": {
+    "panel": {
+      "photoLoading": "Buscando una foto…",
+      "photoCredit": "Foto: Wikimedia Commons",
+      "navigationSection": "Navegación",
+      "trailSection": "Trayecto observado",
+      "identitySection": "Identidad",
+      "characteristicsSection": "Características",
+      "externalLinks": "Fichas externas",
+      "externalLinksHint": "Fotos e historial completo del buque en sitios especializados:",
+      "centerOnMap": "Centrar mapa",
+      "navStatus": "Estado",
+      "destination": "Destino",
+      "position": "Posición",
+      "trailDistance": "Distancia recorrida",
+      "trailDuration": "Duración del trayecto",
+      "trailPoints": "Puntos registrados",
+      "imo": "Número IMO",
+      "callsign": "Indicativo",
+      "flag": "Bandera",
+      "aisClass": "Clase AIS",
+      "aisClassValue": "Clase",
+      "dimensions": "Dimensiones (E × M)",
+      "draught": "Calado"
+    },
+    "navStatus": {
+      "0": "En ruta (motor)",
+      "1": "Fondeado",
+      "2": "Sin gobierno",
+      "3": "Maniobrabilidad restringida",
+      "4": "Restringido por calado",
+      "5": "Amarrado",
+      "6": "Varado",
+      "7": "Pescando",
+      "8": "En ruta (vela)"
+    },
+    "loadingTracks": "Cargando posiciones de los barcos…",
+    "trackedCount_one": "{{count}} barco rastreado",
+    "trackedCount_other": "{{count}} barcos rastreados",
+    "popup": {
+      "mmsi": "MMSI",
+      "type": "Tipo",
+      "speed": "Velocidad",
+      "course": "Rumbo",
+      "lastUpdate": "Última posición",
+      "knots": "nudos"
+    },
+    "types": {
+      "fishing": "Pesca",
+      "special": "Buque de servicio",
+      "pleasure": "Recreo / vela",
+      "highspeed": "Embarcación de alta velocidad",
+      "passenger": "Pasajeros",
+      "cargo": "Carga",
+      "tanker": "Petrolero",
+      "other": "Otro"
+    }
+  },
+  "signalements": {
+    "reportTag": "Reporte",
+    "noReplies": "Sin respuestas — ¡reacciona!",
+    "repliesTitle": "Respuestas",
+    "replyPlaceholder": "Tu respuesta…",
+    "placeholder": "Describe lo que reportas…",
+    "title": "Reporte",
+    "newTitle": "Nuevo reporte",
+    "newHint": "Elige un tipo (opcional) y escribe tu reporte. Otros podrán responder.",
+    "markResolved": "Marcar el evento como finalizado",
+    "resolvedBadge": "Finalizado",
+    "resolvedNote": "Este evento se ha marcado como finalizado. Aún puedes añadir un comentario.",
+    "railCaption": "Reportar"
+  },
+  "comments": {
+    "title": "Comentarios",
+    "loading": "Cargando…",
+    "empty": "Aún no hay comentarios. ¡Sé el primero!",
+    "loadError": "No se pudieron cargar los comentarios.",
+    "postError": "Error al enviar. Inténtalo de nuevo.",
+    "placeholder": "Tu comentario…",
+    "namePlaceholder": "Tu nombre (opcional)",
+    "submit": "Publicar",
+    "sending": "Enviando…",
+    "types": {
+      "fire": "Incendio",
+      "industrial": "Industrial",
+      "traffic": "Tráfico",
+      "neighbourhood": "Vecindario"
+    }
+  },
+  "zones": {
+    "panel": {
+      "activity": "Actividad",
+      "companySection": "Empresa",
+      "sector": "Sector",
+      "since": "Desde",
+      "category": "Categoría",
+      "workforce": "Plantilla",
+      "activities": "Actividades clasificadas",
+      "aerialCredit": "Vista aérea © IGN",
+      "photoLoading": "Buscando una foto…",
+      "photoCredit": "Foto: Wikipedia",
+      "type": "Tipo",
+      "codes": "Códigos (IATA/ICAO)",
+      "seuil": "Clasificación",
+      "regime": "Régimen",
+      "commune": "Municipio",
+      "address": "Dirección",
+      "operator": "Operador",
+      "website": "Sitio web",
+      "centerOnMap": "Centrar mapa"
+    },
+    "title": "Zonas",
+    "types": {
+      "airport": "Aeropuertos",
+      "port": "Puertos",
+      "seveso": "Sitios Seveso"
+    },
+    "kind": {
+      "airport": "Aeropuerto",
+      "port": "Puerto",
+      "seveso": "Sitio Seveso"
+    }
+  },
+  "planes": {
+    "types": {
+      "airliner": "Línea",
+      "jet": "Jet privado",
+      "helicopter": "Helicóptero",
+      "light": "Ligero / planeador",
+      "other": "Otro"
+    },
+    "panel": {
+      "photoCredit": "Foto: airport-data.com",
+      "routeSection": "Ruta",
+      "from": "Origen",
+      "to": "Destino",
+      "owner": "Operador",
+      "photoLoading": "Buscando una foto…",
+      "flightSection": "Vuelo actual",
+      "altitude": "Altitud",
+      "speed": "Velocidad",
+      "heading": "Rumbo",
+      "verticalRate": "Vario",
+      "squawk": "Squawk",
+      "onGround": "En tierra",
+      "identitySection": "Aeronave",
+      "callsign": "Indicativo",
+      "registration": "Matrícula",
+      "aircraft": "Tipo",
+      "icao": "Dirección ICAO",
+      "centerOnMap": "Centrar mapa"
     }
   }
 }

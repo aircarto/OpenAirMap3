@@ -1,4 +1,5 @@
 import type { BaseLayerKey } from "../../../constants/mapLayers";
+import type { ZoneKind } from "../../../constants/zones";
 import type {
   MobileAirProps,
   SidePanelsProps,
@@ -32,6 +33,15 @@ export interface BaseLayerControlBinding {
   onEffisBurnedAreasPeriodChange: (period: BurnedAreaPeriod) => void;
   isWildfireLayerEnabled: boolean;
   onWildfireLayerToggle: (enabled: boolean) => void;
+  isBoatLayerAvailable?: boolean;
+  isBoatLayerVisible?: boolean;
+  onBoatLayerToggle?: (visible: boolean) => void;
+  isPlaneLayerAvailable?: boolean;
+  isPlaneLayerVisible?: boolean;
+  onPlaneLayerToggle?: (visible: boolean) => void;
+  zonesVisible?: Record<ZoneKind, boolean>;
+  zonesLoading?: Record<ZoneKind, boolean>;
+  onZoneToggle?: (kind: ZoneKind) => void;
 }
 
 /**
@@ -56,4 +66,10 @@ export interface RailShortcutsBinding {
   signalAir: SignalAirProps;
   mobileAir: MobileAirProps;
   isComparisonPanelVisible: boolean;
+}
+
+/** Bouton « Nouveau signalement », absent si la fonctionnalité est désactivée */
+export interface RailSignalementsBinding {
+  placingMode: boolean;
+  onToggle: () => void;
 }

@@ -235,3 +235,20 @@ Détail technique : [`docs/features/DOCUMENTATION_COUCHES_FEUX.md`](features/DOC
 3. **Toujours documenter** dans `.env.inc`
 4. **Ne jamais laisser un flag orphelin** (déclaré mais non consommé)
 5. **Rappeler** : changement de flag = rebuild en prod
+
+## Fonctionnalités optionnelles par déploiement
+
+Le code est commun à tous les déploiements. Ces fonctionnalités sont **désactivées
+par défaut** : sans variable, ni bouton, ni panneau, ni appel réseau, et leurs
+composants ne sont pas téléchargés par le navigateur.
+
+| Variable | Effet |
+| --- | --- |
+| `NEXT_PUBLIC_ENABLE_BOAT_LAYER` | Bateaux (AIS). Nécessite `NEXT_PUBLIC_BOAT_API_URL`. |
+| `NEXT_PUBLIC_ENABLE_PLANE_LAYER` | Avions (ADS-B). Nécessite `NEXT_PUBLIC_PLANE_API_URL`. |
+| `NEXT_PUBLIC_ENABLE_ZONES_LAYER` | Zones : aéroports, ports, sites Seveso. |
+| `NEXT_PUBLIC_ENABLE_CONTEXT_COMMENTS` | Commentaires et signalements GPS. |
+| `NEXT_PUBLIC_DEFAULT_TIME_STEP` | `instantane` pour ouvrir en Scan (défaut : heure). |
+
+Bateaux et avions ne s'affichent qu'en pas de temps Scan. Comme tout
+`NEXT_PUBLIC_*`, ces valeurs sont figées au build.

@@ -15,7 +15,7 @@ describe("getConfigForDomain", () => {
   });
 
   it("retourne la config par defaut pour un domaine non-atmosud", () => {
-    expect(getConfigForDomain("openairmap.fr")).toBe(DOMAIN_CONFIG.default);
+    expect(getConfigForDomain("example.org")).toBe(DOMAIN_CONFIG.default);
   });
 
   it("retourne la config par defaut pour localhost", () => {

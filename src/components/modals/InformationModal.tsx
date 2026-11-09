@@ -136,6 +136,8 @@ const InformationModal: React.FC<InformationModalProps> = ({
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const previousActiveRef = useRef<HTMLElement | null>(null);
   const legal = domainConfig.legal;
+  // Les formulations « observatoire agréé » et « Cloud XPR » ne valent que pour AtmoSud.
+  const isAtmoSudInstance = domainConfig.organization === 'AtmoSud';
 
   const getFocusables = useCallback(() => {
     if (!dialogRef.current) return [];
@@ -433,12 +435,17 @@ const InformationModal: React.FC<InformationModalProps> = ({
           {t('infoModal.legal.editorTitle')}
         </h3>
         <p className="mt-2 leading-relaxed">
-          {t('infoModal.legal.editorText', {
-            organization: domainConfig.organization,
-            app: domainConfig.title,
-          })}
+          {t(
+            isAtmoSudInstance
+              ? 'infoModal.legal.editorText'
+              : 'infoModal.legal.editorTextGeneric',
+            {
+              organization: domainConfig.organization,
+              app: domainConfig.title,
+            }
+          )}
         </p>
-        {legal && (
+        {legal?.siret && (
           <ul className="mt-3 list-disc space-y-1 pl-5">
             <li>
               {t('infoModal.legal.legalFormLabel')}: {legal.legalForm}
@@ -477,7 +484,7 @@ const InformationModal: React.FC<InformationModalProps> = ({
           {t('infoModal.legal.publicationTitle')}
         </h3>
         <p className="mt-2 leading-relaxed">
-          {legal?.publicationDirector ?? domainConfig.organization}
+          {legal?.publicationDirector || domainConfig.organization}
         </p>
       </section>
 
@@ -486,12 +493,17 @@ const InformationModal: React.FC<InformationModalProps> = ({
           {t('infoModal.legal.hostingTitle')}
         </h3>
         <p className="mt-2 leading-relaxed">
-          {t('infoModal.legal.hostingText', {
-            organization: domainConfig.organization,
-            hosting: legal?.hosting ?? domainConfig.organization,
-          })}
+          {t(
+            isAtmoSudInstance
+              ? 'infoModal.legal.hostingText'
+              : 'infoModal.legal.hostingTextGeneric',
+            {
+              organization: domainConfig.organization,
+              hosting: legal?.hosting || domainConfig.organization,
+            }
+          )}
         </p>
-        {legal?.hostingProvider && (
+        {legal?.hostingProvider?.name && (
           <ul className="mt-3 list-disc space-y-1 pl-5">
             <li>
               {t('infoModal.legal.legalFormLabel')} : {legal.hostingProvider.legalForm}
@@ -542,25 +554,23 @@ const InformationModal: React.FC<InformationModalProps> = ({
         )}
       </section>
 
-      <section className="rounded-xl border border-slate-200 bg-white px-6 py-6 text-sm text-slate-600 shadow-sm">
-        <h3 className="text-base font-semibold text-slate-800">
-          {t('infoModal.legal.dpoTitle')}
-        </h3>
-        <p className="mt-2 leading-relaxed">
-          {t('infoModal.legal.dpoTextBefore')}{' '}
-          {legal?.dpo ? (
+      {legal?.dpo && (
+        <section className="rounded-xl border border-slate-200 bg-white px-6 py-6 text-sm text-slate-600 shadow-sm">
+          <h3 className="text-base font-semibold text-slate-800">
+            {t('infoModal.legal.dpoTitle')}
+          </h3>
+          <p className="mt-2 leading-relaxed">
+            {t('infoModal.legal.dpoTextBefore')}{' '}
             <a
               className="text-[#4271B3] hover:underline"
               href={`mailto:${legal.dpo}`}
             >
               {legal.dpo}
             </a>
-          ) : (
-            '[À compléter]'
-          )}
-          .
-        </p>
-      </section>
+            .
+          </p>
+        </section>
+      )}
 
       <section className="rounded-xl border border-slate-200 bg-white px-6 py-6 text-sm text-slate-600 shadow-sm">
         <h3 className="text-base font-semibold text-slate-800">
