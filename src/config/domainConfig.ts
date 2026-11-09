@@ -13,7 +13,13 @@ export interface DomainHostingInfo {
 }
 
 export interface DomainLegalInfo {
+  /** Dénomination sociale complète de l'éditeur */
+  legalName?: string;
   siret: string;
+  rcs?: string;
+  shareCapital?: string;
+  phone?: string;
+  email?: string;
   legalForm: string;
   address: string;
   legalRepresentative: string;
@@ -164,6 +170,17 @@ const atmosudConfig: DomainConfig = {
   },
 };
 
+const AIRCARTO_LEGAL_NAME = 'AirCarto SAS';
+const AIRCARTO_LEGAL_FORM = 'société par actions simplifiée';
+const AIRCARTO_SIRET = '90388552300022';
+const AIRCARTO_RCS = 'Marseille 903 885 523';
+const AIRCARTO_SHARE_CAPITAL = '2 000 €';
+const AIRCARTO_ADDRESS = '39 rue Auguste Blanqui, 13006 Marseille, France';
+const AIRCARTO_VAT = 'FR47903885523';
+const AIRCARTO_PRESIDENT = 'Paul Vuarambon';
+const AIRCARTO_PHONE = '+33 4 91 53 90 85';
+const AIRCARTO_EMAIL = 'contact@aircarto.fr';
+
 // Instance AirCarto (openairmap.fr) : logo AirCarto en principal, AtmoSud crédité
 // en secondaire. Sélectionnée par hostname, donc sans effet sur les autres domaines.
 const aircartoConfig: DomainConfig = {
@@ -175,6 +192,34 @@ const aircartoConfig: DomainConfig = {
   mapCenter: [43.7102, 7.262], // Nice
   mapZoom: 9,
   seoTitle: "OpenAirMap – Qualité de l'air en temps réel | AirCarto",
+  legal: {
+    legalName: AIRCARTO_LEGAL_NAME,
+    siret: AIRCARTO_SIRET,
+    rcs: AIRCARTO_RCS,
+    shareCapital: AIRCARTO_SHARE_CAPITAL,
+    phone: AIRCARTO_PHONE,
+    email: AIRCARTO_EMAIL,
+    legalForm: AIRCARTO_LEGAL_FORM,
+    address: AIRCARTO_ADDRESS,
+    legalRepresentative: AIRCARTO_PRESIDENT,
+    publicationDirector: AIRCARTO_PRESIDENT,
+    hosting: AIRCARTO_LEGAL_NAME,
+    hostingProvider: {
+      name: AIRCARTO_LEGAL_NAME,
+      legalForm: AIRCARTO_LEGAL_FORM,
+      rcs: AIRCARTO_RCS,
+      siret: AIRCARTO_SIRET,
+      shareCapital: AIRCARTO_SHARE_CAPITAL,
+      address: AIRCARTO_ADDRESS,
+      vatNumber: AIRCARTO_VAT,
+      legalRepresentative: AIRCARTO_PRESIDENT,
+      phone: AIRCARTO_PHONE,
+      email: AIRCARTO_EMAIL,
+      website: 'https://aircarto.fr',
+    },
+    dpo: '',
+    vatNumber: AIRCARTO_VAT,
+  },
   links: {
     website: 'https://aircarto.fr',
     contact: 'https://aircarto.fr/#contact',
