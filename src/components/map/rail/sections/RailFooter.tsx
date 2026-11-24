@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "../../../../i18n/navigation";
+import { Link, useRouter } from "../../../../i18n/navigation";
+import { useAuth } from "../../../../auth/AuthContext";
 import LanguageSwitcher from "../../../controls/LanguageSwitcher";
 import AuthRailControl from "../../../auth/AuthRailControl";
 import { useMapControls } from "../../../../contexts/mapControlsContext";
@@ -11,7 +12,7 @@ import {
   RAIL_FLYOUT_SIDE_OFFSET,
   railFlyoutSide,
 } from "../railFlyout";
-import { IconInfo, IconLanguage } from "../railIcons";
+import { IconCampaigns, IconInfo, IconLanguage } from "../railIcons";
 import type { RailOrientation } from "../useRailRoving";
 
 export interface RailFooterProps {
@@ -32,6 +33,8 @@ export const RailFooter: React.FC<RailFooterProps> = ({
 }) => {
   const { ui } = useMapControls();
   const { t } = useTranslation();
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
 
   return (
     <RailSection
@@ -60,6 +63,21 @@ export const RailFooter: React.FC<RailFooterProps> = ({
       />
 
       <AuthRailControl orientation={orientation} onItemFocus={onItemFocus} />
+
+      {/* Extraction de campagnes microspot : réservée aux utilisateurs connectés */}
+      {isAuthenticated && (
+        <RailItem
+          itemId="campaigns"
+          data-testid="rail-campaigns-link"
+          aria-label={t("rail.campaigns")}
+          title={t("rail.campaigns")}
+          onClick={() => router.push("/campagnes")}
+          onFocus={onItemFocus}
+          label={t("rail.campaigns")}
+          icon={<IconCampaigns />}
+          caption={t("rail.campaignsCaption")}
+        />
+      )}
 
       <RailItem
         itemId="info"

@@ -109,3 +109,11 @@ export const IconUser: React.FC = () => (
     <path d="M5.5 19.25c1.6-3 4-4.5 6.5-4.5s4.9 1.5 6.5 4.5" />
   </svg>
 );
+
+/** Campagnes : courbe sur une grille, extraction de séries longues */
+export const IconCampaigns: React.FC = () => (
+  <svg {...base} aria-hidden="true">
+    <path d="M4 4.75v14.5h16" />
+    <path d="M7.5 15l3.25-4 3 2.5L19 7.5" />
+  </svg>
+);

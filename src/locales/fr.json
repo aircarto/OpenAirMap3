@@ -864,7 +864,9 @@
     "groupUtilities": "Utilitaires",
     "groupBaseLayer": "Fond de carte",
     "groupModes": "Modes",
-    "brandWebsite": "Site {{organization}}"
+    "brandWebsite": "Site {{organization}}",
+    "campaigns": "Campagnes",
+    "campaignsCaption": "Camp."
   },
   "timeBar": {
     "now": "Maintenant",
@@ -910,6 +912,10 @@
       "backToMap": "Retour à la carte",
       "ctaMap": "Ouvrir la carte",
       "ctaAbout": "À propos"
+    },
+    "campaigns": {
+      "metaTitle": "Campagnes microcapteurs",
+      "metaDescription": "Extraction des données horaires des campagnes de microcapteurs (accès réservé)."
     }
   },
   "mobileAir": {
@@ -932,6 +938,76 @@
       "meeting": "Rassemblement",
       "fault": "Panne",
       "other": "Autre"
+    }
+  },
+  "campaigns": {
+    "title": "Campagnes microcapteurs",
+    "backToMap": "Retour à la carte",
+    "loginRequired": "Cette page est réservée aux utilisateurs connectés. Elle permet d'extraire les données horaires complètes d'une campagne de microcapteurs.",
+    "authDisabled": "La connexion n'est pas configurée sur cette instance : la page Campagnes est indisponible.",
+    "listError": "Impossible de charger les campagnes",
+    "study": "Étude",
+    "allStudies": "Toutes les études",
+    "campaign": "Campagne",
+    "searchPlaceholder": "Rechercher une campagne…",
+    "loadingList": "Chargement des campagnes…",
+    "noCampaign": "Aucune campagne",
+    "deviceCount_one": "{{count}} capteur",
+    "deviceCount_other": "{{count}} capteurs",
+    "pollutants": "Polluants",
+    "period": "Période",
+    "hourly": "pas horaire",
+    "from": "Du",
+    "to": "Au (inclus)",
+    "periodSource": {
+      "campaign": "Date de la campagne",
+      "oldestDevice": "Capteur le plus ancien",
+      "lastDevice": "Fin du dernier capteur",
+      "today": "Aujourd'hui",
+      "none": "Non renseignée : à saisir"
+    },
+    "earlierDevices": "Des capteurs de cette campagne mesurent depuis le {{date}}.",
+    "extendPeriod": "Étendre la période",
+    "load": "Charger les données",
+    "cancel": "Annuler",
+    "plannedRequests_one": "{{count}} requête prévue",
+    "plannedRequests_other": "{{count}} requêtes prévues",
+    "progress": "{{done}} / {{total}} requêtes · {{rows}} lignes",
+    "aborted": "Chargement annulé : les données déjà reçues restent disponibles.",
+    "error": "Erreur pendant le chargement",
+    "sessionExpired": "Session expirée : reconnectez-vous puis relancez le chargement.",
+    "failures_one": "{{count}} tranche n'a pas pu être chargée :",
+    "failures_other": "{{count}} tranches n'ont pas pu être chargées :",
+    "retryFailures": "Relancer les tranches en échec",
+    "exportCsv": "Exporter en CSV ({{rows}} lignes)",
+    "exporting": "Préparation du CSV… {{pct}} %",
+    "selectAll": "Tous",
+    "selectNone": "Aucun",
+    "ongoing": "en cours",
+    "rows_one": "{{count}} ligne",
+    "rows_other": "{{count}} lignes",
+    "noData": "aucune donnée",
+    "mapLabel": "Carte des sites de la campagne",
+    "chartLabel": "Graphique des mesures horaires",
+    "chartTitle": "Mesures horaires",
+    "chartPollutant": "Polluant du graphique",
+    "chartHint": "Cliquez sur une localisation ou cochez-la ; le survol affiche temporairement ses courbes.",
+    "chartLoading": "Chargement en cours…",
+    "chartEmpty": "Choisissez une campagne et chargez ses données.",
+    "chartEmptySelection": "Sélectionnez des localisations sur la carte ou dans la liste.",
+    "sites": {
+      "title_one": "{{count}} localisation",
+      "title_other": "{{count}} localisations",
+      "toExtract_one": "{{count}} à extraire",
+      "toExtract_other": "{{count}} à extraire",
+      "hintExtract": "Cochez les localisations à extraire (clic sur la carte possible).",
+      "hintShow": "Cochez les localisations à afficher ; dépliez-les pour masquer un capteur.",
+      "extract": "Extraire {{name}}",
+      "show": "Afficher {{name}}",
+      "showDevice": "Afficher le capteur {{name}}",
+      "undeclared": "position non déclarée",
+      "discovered": "vue dans les mesures",
+      "resolving": "recherche de l'adresse…"
     }
   }
 }

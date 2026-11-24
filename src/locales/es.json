@@ -864,7 +864,9 @@
     "groupUtilities": "Utilidades",
     "groupBaseLayer": "Mapa base",
     "groupModes": "Modos",
-    "brandWebsite": "Sitio de {{organization}}"
+    "brandWebsite": "Sitio de {{organization}}",
+    "campaigns": "Campaigns",
+    "campaignsCaption": "Camp."
   },
   "timeBar": {
     "now": "Ahora",
@@ -910,6 +912,10 @@
       "backToMap": "Volver al mapa",
       "ctaMap": "Abrir el mapa",
       "ctaAbout": "Acerca de"
+    },
+    "campaigns": {
+      "metaTitle": "Microsensor campaigns",
+      "metaDescription": "Hourly data extraction for microsensor campaigns (restricted access)."
     }
   },
   "mobileAir": {
@@ -932,6 +938,76 @@
       "meeting": "Gathering",
       "fault": "Fault",
       "other": "Other"
+    }
+  },
+  "campaigns": {
+    "title": "Microsensor campaigns",
+    "backToMap": "Back to map",
+    "loginRequired": "This page is for signed-in users. It extracts the full hourly data of a microsensor campaign.",
+    "authDisabled": "Sign-in is not configured on this instance: the Campaigns page is unavailable.",
+    "listError": "Unable to load campaigns",
+    "study": "Study",
+    "allStudies": "All studies",
+    "campaign": "Campaign",
+    "searchPlaceholder": "Search a campaign…",
+    "loadingList": "Loading campaigns…",
+    "noCampaign": "No campaign",
+    "deviceCount_one": "{{count}} sensor",
+    "deviceCount_other": "{{count}} sensors",
+    "pollutants": "Pollutants",
+    "period": "Period",
+    "hourly": "hourly",
+    "from": "From",
+    "to": "To (inclusive)",
+    "periodSource": {
+      "campaign": "Campaign date",
+      "oldestDevice": "Oldest sensor",
+      "lastDevice": "Last sensor end",
+      "today": "Today",
+      "none": "Not set: enter a date"
+    },
+    "earlierDevices": "Some sensors of this campaign have been measuring since {{date}}.",
+    "extendPeriod": "Extend the period",
+    "load": "Load data",
+    "cancel": "Cancel",
+    "plannedRequests_one": "{{count}} request planned",
+    "plannedRequests_other": "{{count}} requests planned",
+    "progress": "{{done}} / {{total}} requests · {{rows}} rows",
+    "aborted": "Loading cancelled: data already received remains available.",
+    "error": "Error while loading",
+    "sessionExpired": "Session expired: sign in again, then reload.",
+    "failures_one": "{{count}} chunk could not be loaded:",
+    "failures_other": "{{count}} chunks could not be loaded:",
+    "retryFailures": "Retry failed chunks",
+    "exportCsv": "Export CSV ({{rows}} rows)",
+    "exporting": "Preparing CSV… {{pct}}%",
+    "selectAll": "All",
+    "selectNone": "None",
+    "ongoing": "ongoing",
+    "rows_one": "{{count}} row",
+    "rows_other": "{{count}} rows",
+    "noData": "no data",
+    "mapLabel": "Map of campaign sites",
+    "chartLabel": "Hourly measurements chart",
+    "chartTitle": "Hourly measurements",
+    "chartPollutant": "Chart pollutant",
+    "chartHint": "Click or tick a location; hovering shows its curves temporarily.",
+    "chartLoading": "Loading…",
+    "chartEmpty": "Choose a campaign and load its data.",
+    "chartEmptySelection": "Select locations on the map or in the list.",
+    "sites": {
+      "title_one": "{{count}} location",
+      "title_other": "{{count}} locations",
+      "toExtract_one": "{{count}} to extract",
+      "toExtract_other": "{{count}} to extract",
+      "hintExtract": "Tick the locations to extract (you can also click them on the map).",
+      "hintShow": "Tick the locations to display; expand them to hide a sensor.",
+      "extract": "Extract {{name}}",
+      "show": "Show {{name}}",
+      "showDevice": "Show sensor {{name}}",
+      "undeclared": "undeclared position",
+      "discovered": "seen in measurements",
+      "resolving": "looking up address…"
     }
   }
 }
