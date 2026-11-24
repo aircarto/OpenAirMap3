@@ -38,7 +38,7 @@ import { getAccessToken } from "../auth/tokenStore";
  */
 
 /** Codes ISO des variables attendus par l'API, par code polluant interne. */
-const VARIABLE_ISO_CODES: Record<string, string> = {
+export const VARIABLE_ISO_CODES: Record<string, string> = {
   pm25: "39",
   pm10: "24",
   pm1: "68",
