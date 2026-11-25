@@ -50,3 +50,6 @@ PLAN_FONCTIONNALITE_DONNEES_PASSEES.md
 
 #Note personnelle
 NOTE.md
+
+# TypeScript (incrémental)
+*.tsbuildinfo

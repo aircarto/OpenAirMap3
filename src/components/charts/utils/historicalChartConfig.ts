@@ -224,17 +224,36 @@ export const generateSeriesConfigs = (
   unitGroups: Record<string, string[]>,
   pollutantDataFlags: Record<
     string,
-    { hasCorrected: boolean; hasRaw: boolean }
+    {
+      hasCorrected: boolean;
+      hasRaw: boolean;
+      hasN1?: boolean;
+      hasN2?: boolean;
+    }
   >,
   showRawData: boolean,
   useSolidNebuleAirLines: boolean,
   fallbackColors: string[],
   timeStep?: string,
   chartData?: any[],
-  t?: TFunction
+  t?: TFunction,
+  showCorrectionLevels: boolean = false
 ): SeriesConfig[] => {
-  const suffix = (key: "correctedSuffix" | "rawSuffix" | "modelingSuffix") =>
-    t ? t(`chart.${key}`) : key === "correctedSuffix" ? " (corrigé)" : key === "rawSuffix" ? " (brute)" : " (modélisation)";
+  const suffix = (
+    key:
+      | "correctedSuffix"
+      | "rawSuffix"
+      | "modelingSuffix"
+      | "n1Suffix"
+      | "n2Suffix"
+  ) => {
+    if (t) return t(`chart.${key}`);
+    if (key === "correctedSuffix") return " (corrigé)";
+    if (key === "rawSuffix") return " (brute)";
+    if (key === "n1Suffix") return " (N1)";
+    if (key === "n2Suffix") return " (N2)";
+    return " (modélisation)";
+  };
   const pollName = (code: string) =>
     t ? t(`pollutants.${code}`) : (pollutants[code]?.name || code);
 
@@ -351,28 +370,69 @@ export const generateSeriesConfigs = (
           connectNulls: shouldConnectNulls,
         });
       } else if (isAtmoMicro) {
-        // AtmoMicro : données corrigées (trait plein) et brutes (trait discontinu)
-        if (hasCorrectedData) {
-          configs.push({
-            dataKey: `${pollutant}_corrected`,
-            name: `${pollutantName} ${suffix("correctedSuffix")}`,
-            color: pollutantColor,
-            strokeWidth: 2,
-            strokeDasharray: "0",
-            yAxisId,
-            connectNulls: shouldConnectNulls,
-          });
-        }
-        if (hasRawData && (showRawData || !hasCorrectedData)) {
-          configs.push({
-            dataKey: `${pollutant}_raw`,
-            name: `${pollutantName} ${suffix("rawSuffix")}`,
-            color: pollutantColor,
-            strokeWidth: 2,
-            strokeDasharray: "3 3",
-            yAxisId,
-            connectNulls: shouldConnectNulls,
-          });
+        const hasN1 = flags.hasN1;
+        const hasN2 = flags.hasN2;
+
+        if (showCorrectionLevels) {
+          // Mode détail : brute (pointillés fins) + N1 (tirets si N2, sinon plein) + N2 (plein)
+          if (hasRawData) {
+            configs.push({
+              dataKey: `${pollutant}_raw`,
+              name: `${pollutantName} ${suffix("rawSuffix")}`,
+              color: pollutantColor,
+              strokeWidth: 2,
+              strokeDasharray: "2 2",
+              yAxisId,
+              connectNulls: shouldConnectNulls,
+            });
+          }
+          if (hasN1) {
+            configs.push({
+              dataKey: `${pollutant}_n1`,
+              name: `${pollutantName} ${suffix("n1Suffix")}`,
+              color: pollutantColor,
+              strokeWidth: 2,
+              // N1 = courbe principale (plein) s'il n'y a pas de N2
+              strokeDasharray: hasN2 ? "6 3" : "0",
+              yAxisId,
+              connectNulls: shouldConnectNulls,
+            });
+          }
+          if (hasN2) {
+            configs.push({
+              dataKey: `${pollutant}_n2`,
+              name: `${pollutantName} ${suffix("n2Suffix")}`,
+              color: pollutantColor,
+              strokeWidth: 2,
+              strokeDasharray: "0",
+              yAxisId,
+              connectNulls: shouldConnectNulls,
+            });
+          }
+        } else {
+          // AtmoMicro : données corrigées (trait plein) et brutes (trait discontinu)
+          if (hasCorrectedData) {
+            configs.push({
+              dataKey: `${pollutant}_corrected`,
+              name: `${pollutantName} ${suffix("correctedSuffix")}`,
+              color: pollutantColor,
+              strokeWidth: 2,
+              strokeDasharray: "0",
+              yAxisId,
+              connectNulls: shouldConnectNulls,
+            });
+          }
+          if (hasRawData && (showRawData || !hasCorrectedData)) {
+            configs.push({
+              dataKey: `${pollutant}_raw`,
+              name: `${pollutantName} ${suffix("rawSuffix")}`,
+              color: pollutantColor,
+              strokeWidth: 2,
+              strokeDasharray: "3 3",
+              yAxisId,
+              connectNulls: shouldConnectNulls,
+            });
+          }
         }
       } else if (useSolidNebuleAirLines) {
         configs.push({

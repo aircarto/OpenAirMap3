@@ -26,5 +26,7 @@ export const routing = defineRouting({
       de: '/impressum',
       ar: '/legal-notice',
     },
+    // Outil interne (Keycloak) : même URL partout, partageable entre collègues.
+    '/campagnes': '/campagnes',
   },
 });

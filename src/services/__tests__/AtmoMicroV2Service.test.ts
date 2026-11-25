@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { AtmoMicroV2Service } from "../AtmoMicroV2Service";
+import { setAccessToken } from "../../auth/tokenStore";
 
 const baseParams = {
   pollutant: "pm25",
@@ -114,6 +115,7 @@ describe("AtmoMicroV2Service", () => {
     // Les tests existants ne couvrent pas le filtre QAQC : le désactiver pour
     // ne pas imposer un mock AtmoRef à chaque cas.
     vi.stubEnv("NEXT_PUBLIC_HIDE_ATMOMICRO_STATION_QAQC", "false");
+    setAccessToken(null);
     AtmoMicroV2Service.resetCaches();
     service = new AtmoMicroV2Service();
     // Les logs de capteurs écartés sont volontairement bavards : on les tait
@@ -125,6 +127,7 @@ describe("AtmoMicroV2Service", () => {
   });
 
   afterEach(() => {
+    setAccessToken(null);
     vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
@@ -805,6 +808,60 @@ describe("AtmoMicroV2Service", () => {
         raw_value: 14.2,
         has_correction: true,
       });
+      expect(url).not.toContain("corrections_detail");
+    });
+
+    it("ajoute corrections_detail et mappe N1/N2 quand authentifié", async () => {
+      setAccessToken("tok-n1n2");
+      const spy = mockRoutes(service, {
+        observations: [
+          buildObservation({
+            value: 13.27,
+            value_ref: 13.27,
+            value_raw: 4.1,
+            value_n1: 5.66,
+            is_n1_applied: true,
+            is_n2_applied: true,
+          }),
+          buildObservation({
+            time: "2026-09-03T08:45:00+00:00",
+            value: null,
+            value_ref: 6.69,
+            value_raw: 5.2,
+            value_n1: 6.69,
+            is_n1_applied: true,
+            is_n2_applied: false,
+          }),
+        ],
+      });
+
+      const result = await service.fetchHistoricalData({
+        siteId: "05C1A382",
+        pollutant: "pm25",
+        timeStep: "heure",
+        startDate: "2026-09-01",
+        endDate: "2026-09-02",
+      });
+
+      const url = requestedUrls(spy)[0];
+      expect(url).toContain("include=raw_value,corrections_detail");
+
+      expect(result[0]).toMatchObject({
+        corrected_value: 13.27,
+        raw_value: 4.1,
+        n1_value: 5.66,
+        is_n1_applied: true,
+        is_n2_applied: true,
+        has_correction: true,
+      });
+      expect(result[1]).toMatchObject({
+        value: 6.69,
+        n1_value: 6.69,
+        is_n1_applied: true,
+        is_n2_applied: false,
+        has_correction: false,
+      });
+      expect(result[1].corrected_value).toBeUndefined();
     });
 
     it("déduplique les doublons gapfill multi-sites en préférant la mesure réelle", async () => {

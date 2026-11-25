@@ -24,6 +24,8 @@ export interface HistoricalChartProps {
   onHasCorrectedDataChange?: (hasCorrectedData: boolean) => void;
   stations?: any[]; // Stations pour le mode comparaison
   showRawData?: boolean; // Contrôler l'affichage des données brutes
+  /** Superpose brute / N1 / N2 sur le graphique (AtmoMicroV2 authentifié). */
+  showCorrectionLevels?: boolean;
   stationInfo?: StationInfo | null; // Informations de la station pour les exports
   timeStep?: string; // Pas de temps sélectionné (pour les métadonnées d'export)
   sensorTimeStep?: number | null; // Pas de temps du capteur en secondes (pour le mode instantane)
@@ -43,6 +45,7 @@ const HistoricalChart: React.FC<HistoricalChartProps> = ({
   onHasCorrectedDataChange,
   stations = [],
   showRawData = true,
+  showCorrectionLevels = false,
   stationInfo = null,
   timeStep,
   sensorTimeStep,
@@ -131,6 +134,7 @@ const HistoricalChart: React.FC<HistoricalChartProps> = ({
     stations,
     isMobile,
     showRawData,
+    showCorrectionLevels,
     useSolidNebuleAirLines,
     timeStep,
     modelingData,

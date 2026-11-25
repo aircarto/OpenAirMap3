@@ -276,6 +276,10 @@ export interface HistoricalDataPoint {
   corrected_value?: number; // Valeur corrigée si disponible
   raw_value?: number; // Valeur brute originale
   has_correction?: boolean; // Indique si une correction a été appliquée
+  /** Valeur après correction N1 — include=corrections_detail (microspot, auth). */
+  n1_value?: number;
+  is_n1_applied?: boolean;
+  is_n2_applied?: boolean;
 }
 
 /** Intervalle de présence d'un capteur AtmoMicro sur un site. */
@@ -486,18 +490,86 @@ export interface MicrospotObservation {
   time: string; // ISO 8601 UTC, avec décalage explicite (+00:00)
   lat: number;
   lon: number;
-  /** Valeur corrigée, null quand aucune correction ne s'applique. */
+  /** Valeur corrigée (N2), null quand aucune correction N2 ne s'applique. */
   value: number | null;
   /** Meilleure valeur disponible : corrigée sinon brute. Jamais nulle quand une mesure existe. */
   value_ref: number | null;
   /** Valeur brute — uniquement avec include=raw_value. */
   value_raw?: number | null;
+  /** Valeur après correction N1 — uniquement avec include=corrections_detail. */
+  value_n1?: number | null;
+  /** True si la correction N1 a été appliquée — include=corrections_detail. */
+  is_n1_applied?: boolean;
+  /** True si la correction N2 a été appliquée — include=corrections_detail. */
+  is_n2_applied?: boolean;
   unit: string;
   /** Cadence du capteur en secondes — uniquement avec include=metadata. */
   scan_interval?: number | null;
   brand?: string; // include=device_model
   model?: string; // include=device_model
   manually_validated?: boolean; // include=manually_validated
+  /** Code d'état — uniquement avec invalid=true + Bearer Keycloak. */
+  status_code?: string | null;
+}
+
+/** Une étude, telle que renvoyée par /lists/studies (Bearer requis). */
+export interface MicrospotStudy {
+  id: number;
+  name: string;
+  campaign?: number | string | null;
+  start_date: string | null;
+  end_date: string | null;
+}
+
+/** Période d'un capteur sur une campagne (/lists/campaigns?list_devices=true). */
+export interface MicrospotCampaignDevice {
+  id: string;
+  start_date: string | null;
+  /** null tant qu'au moins un datastream du couple capteur × campagne est ouvert. */
+  end_date: string | null;
+}
+
+/** Une campagne, telle que renvoyée par /lists/campaigns?list_devices=true. */
+export interface MicrospotCampaignListItem {
+  id: number;
+  name: string;
+  start_date: string | null;
+  end_date: string | null;
+  /** Présent seulement avec un Bearer Keycloak valide. */
+  study_id?: number | null;
+  devices?: MicrospotCampaignDevice[];
+}
+
+/**
+ * Entrée de /lists/devices?locations_history=true → locations_history[].
+ * Contrairement à /lists/locations, couvre aussi les sites « auto created for
+ * device … » des capteurs citoyens. Pas de location_id ; lat/lon en chaînes ;
+ * `campaign` est un nom ; `location` null = période sans site déclaré.
+ */
+export interface MicrospotDeviceLocationHistoryEntry {
+  study: string | null;
+  campaign: string | null;
+  location: string | null;
+  lat: string | number | null;
+  lon: string | number | null;
+  start_date: string | null;
+  end_date: string | null;
+}
+
+export interface MicrospotDeviceWithLocationHistory {
+  id: string;
+  internal_id?: number | null;
+  name: string | null;
+  brand?: string | null;
+  model?: string | null;
+  locations_history?: MicrospotDeviceLocationHistoryEntry[] | null;
+}
+
+/** Référentiel des codes d'état (/lists/observations/status_code, Bearer requis). */
+export interface MicrospotStatusCode {
+  id: string;
+  label: string | null;
+  description: string | null;
 }
 
 /**

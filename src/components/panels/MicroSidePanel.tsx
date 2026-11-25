@@ -19,6 +19,8 @@ import { getMaxHistoryDays, getCustomRangeISO, type TimeRange } from "../../util
 import ExpertMenu from "../controls/ExpertMenu";
 import { cn } from "../../lib/utils";
 import { sources } from "../../constants/sources";
+import { featureFlags } from "../../config/featureFlags";
+import { useAuth } from "../../auth/AuthContext";
 import SidePanelShell, {
   CHART_PANEL_BODY_CLASS,
   type PanelSize,
@@ -71,7 +73,10 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
   onCenterLocation,
 }) => {
   const { t } = useTranslation();
+  const { isAuthenticated } = useAuth();
   const isHistoricalLocked = Boolean(historicalMode);
+  const correctionLevelsAvailable =
+    isAuthenticated && featureFlags.useMicrospotApi;
   const [state, setState] = useState<SidePanelState>({
     isOpen: false,
     selectedStation: null,
@@ -100,6 +105,9 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
   const [showPollutantsList, setShowPollutantsList] = useState(false);
   const [hasCorrectedData, setHasCorrectedData] = useState(false);
   const [showRawData, setShowRawData] = useState(false);
+  const [showCorrectionLevels, setShowCorrectionLevels] = useState(false);
+  const effectiveShowCorrectionLevels =
+    showCorrectionLevels && correctionLevelsAvailable;
   const [sensorTimeStep, setSensorTimeStep] = useState<number | null>(null);
   const stationIdRef = useRef<string | null>(null);
 
@@ -419,6 +427,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
       // Réinitialiser la taille du panel
       setHasCorrectedData(false);
       setShowRawData(false); // Réinitialiser l'affichage des données brutes (désactivé par défaut)
+      setShowCorrectionLevels(false);
 
       // Réinitialiser les états de modélisation AVANT le chargement des données
       setShowModeling(false);
@@ -1257,6 +1266,9 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                   showRawData={showRawData}
                   onRawDataChange={(checked) => setShowRawData(checked)}
                   rawDataAvailable={hasCorrectedData}
+                  showCorrectionLevels={effectiveShowCorrectionLevels}
+                  onCorrectionLevelsChange={setShowCorrectionLevels}
+                  correctionLevelsAvailable={correctionLevelsAvailable}
                   hideThresholdBackgroundForColorblind={
                     hideThresholdBackgroundForColorblind
                   }
@@ -1293,8 +1305,8 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                 <DeviceLocationsSection
                   stays={locationStays}
                   highlightedLocationId={highlightedLocationId}
-                  onHighlightLocation={setHighlightedLocationId}
                   onCenterLocation={handleCenterDeviceLocation}
+                  onHighlightLocation={setHighlightedLocationId}
                   onLoadPeriod={handleLoadDeviceLocationPeriod}
                   storageKey={`device-locations-${selectedStation?.id ?? 'unknown'}`}
                   className="shrink-0"
@@ -1308,6 +1320,7 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                 source="atmoMicro"
                 onHasCorrectedDataChange={handleHasCorrectedDataChange}
                 showRawData={showRawData}
+                showCorrectionLevels={effectiveShowCorrectionLevels}
                 stationInfo={selectedStation}
                 timeStep={dataTimeStep}
                 sensorTimeStep={sensorTimeStep}

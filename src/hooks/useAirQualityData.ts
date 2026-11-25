@@ -13,6 +13,7 @@ import type {
 } from "../constants/mobileAir";
 import { MOBILEAIR_LIVE_SOURCE } from "../constants/mobileAir";
 import { MobileAirService } from "../services/MobileAirService";
+import { OAM_AUTH_CHANGED_EVENT } from "../auth/authEvents";
 
 interface UseAirQualityDataProps {
   selectedPollutant: string;
@@ -585,6 +586,17 @@ export const useAirQualityData = ({
   useEffect(() => {
     fetchDataRef.current = fetchData;
   }, [fetchData]);
+
+  // Recharger après login / logout Keycloak (données publiques ≠ privilégiées)
+  useEffect(() => {
+    const onAuthChanged = () => {
+      fetchDataRef.current?.();
+    };
+    window.addEventListener(OAM_AUTH_CHANGED_EVENT, onAuthChanged);
+    return () => {
+      window.removeEventListener(OAM_AUTH_CHANGED_EVENT, onAuthChanged);
+    };
+  }, []);
 
   // Effet pour gérer l'auto-refresh
   useEffect(() => {

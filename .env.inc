@@ -59,8 +59,32 @@ NEXT_PUBLIC_MATOMO_SITE_ID=string|number
 
 NEXT_PUBLIC_USE_MICROSPOT_API=boolean
 
+# URL de base de l'API microspot (sans slash final).
+# Dev recommandé : /microspot (proxy Next same-origin, Bearer OK)
+# Cible du proxy (serveur only) : MICROSPOT_PROXY_TARGET=http://172.16.13.183:3032/microspot
+# Prod directe : https://api-export-prod.uspot.probesys.net/microspot
+NEXT_PUBLIC_MICROSPOT_API_URL=url
+MICROSPOT_PROXY_TARGET=url
+
 # Masque les microcapteurs AtmoMicro co-localises sur une station de reference (QAQC)
 NEXT_PUBLIC_HIDE_ATMOMICRO_STATION_QAQC=boolean
+
+
+# =====================================================
+# Auth Keycloak (opt-in) — login optionnel
+# =====================================================
+# Active le bouton « Se connecter » et l'envoi du Bearer vers microspot.
+# Requis aussi : URL + realm + client_id. Client public + PKCE.
+# Côté API : ajouter le client_id dans KEYCLOAK_ACCEPTED_AZP (CSV).
+# Redirect URI Keycloak : {origine_OAM}/auth/callback
+# Voir docs/KEYCLOAK_AUTH.md
+
+NEXT_PUBLIC_KEYCLOAK_ENABLED=boolean
+NEXT_PUBLIC_KEYCLOAK_URL=url
+NEXT_PUBLIC_KEYCLOAK_REALM=string
+NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=string
+# Origine OIDC forcée (redirect_uri). Ex. http://localhost:3000
+NEXT_PUBLIC_AUTH_ORIGIN=url
 
 
 # =====================================================
