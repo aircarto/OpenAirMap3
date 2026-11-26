@@ -51,6 +51,27 @@ Points importants de l’unité systemd ([`deploy/openairmap.service`](../deploy
 
 Après tout changement de `NEXT_PUBLIC_*` : rebuild puis `systemctl restart openairmap`.
 
+## Preprod (`web-preprod`)
+
+La preprod ne suit pas l’unité système ci-dessus :
+
+- dossier : `~/webapps/preprod-openairmap.atmosud.org` (user `airpaca`) ;
+- service **systemd user** `openairmap` (`~/.config/systemd/user/`), port **3001** ;
+- Nginx `proxy_pass http://127.0.0.1:3001`.
+
+```bash
+cd ~/webapps/preprod-openairmap.atmosud.org
+git pull --ff-only origin preprod
+npm ci
+npm run build
+systemctl --user restart openairmap
+systemctl --user status openairmap --no-pager
+journalctl --user -u openairmap -n 50 --no-pager
+```
+
+Le workflow Gitea [`preprod-deploy`](../.gitea/workflows/preprod-deploy.yaml)
+fait la même chose à chaque push sur `preprod`.
+
 ## Variables importantes
 
 | Variable | Rôle |
