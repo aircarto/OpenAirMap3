@@ -42,142 +42,132 @@ const makeCommunity = (
   ...overrides,
 });
 
-const renderDisclosure = (
+const renderGroup = (
   overrides: Partial<MapControlsCommunitySources> = {},
   selectedTimeStep = "heure"
 ) => {
   const community = makeCommunity(overrides);
-  const onLoaded = vi.fn();
   render(
     <SignalAirSourceDisclosure
       community={community}
       selectedTimeStep={selectedTimeStep}
-      onLoaded={onLoaded}
     />
   );
-  const header = screen
-    .getAllByRole("button")
-    .find((button) => button.hasAttribute("aria-expanded"));
-  if (!header) {
-    throw new Error("En-tête SignalAir introuvable");
-  }
-  return { community, onLoaded, header };
+  return { community, parent: screen.getByTestId("sources-signalair-enable") };
 };
 
+const type = (id: string) => screen.getByTestId(`sources-signalair-type-${id}`);
+
 /**
- * Le dépliant sépare trois actions : replier, masquer les marqueurs, désactiver.
+ * Groupe SignalAir : case parente à trois états + une ligne par type, sur le
+ * modèle des « Autres capteurs communautaires ».
  */
 describe("SignalAirSourceDisclosure", () => {
-  it("replier ne touche ni à l'activation ni à la visibilité", () => {
-    const { community, header } = renderDisclosure();
+  it("tout est visible d'emblée, sans dépliant ni bouton de masquage", () => {
+    renderGroup();
 
-    fireEvent.click(header);
-    expect(screen.getByTestId("sources-signalair-body")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { expanded: false })).toBeNull();
+    expect(screen.queryByTestId("sources-signalair-visibility")).toBeNull();
+    ALL_TYPES.forEach((id) => expect(type(id)).toBeInTheDocument());
+  });
 
-    fireEvent.click(header);
-    expect(header).toHaveAttribute("aria-expanded", "false");
-    expect(screen.queryByTestId("sources-signalair-body")).toBeNull();
-    expect(community.onSignalAirEnabledChange).not.toHaveBeenCalled();
-    expect(community.onSignalAirToggle).not.toHaveBeenCalled();
+  it("case parente cochée quand la source est allumée avec tous les types", () => {
+    const { parent } = renderGroup();
+    expect(parent).toHaveAttribute("aria-checked", "true");
+  });
+
+  it("case parente indéterminée quand seuls certains types sont retenus", () => {
+    const { parent } = renderGroup({ signalAirSelectedTypes: ["odeur"] });
+    expect(parent).toHaveAttribute("aria-checked", "mixed");
+    expect(type("odeur")).toHaveAttribute("aria-checked", "true");
+    expect(type("bruit")).toHaveAttribute("aria-checked", "false");
+  });
+
+  it("source éteinte : parente et types décochés", () => {
+    const { parent } = renderGroup({ isSignalAirEnabled: false });
+    expect(parent).toHaveAttribute("aria-checked", "false");
+    ALL_TYPES.forEach((id) =>
+      expect(type(id)).toHaveAttribute("aria-checked", "false")
+    );
+  });
+
+  it("affiche le nombre de types retenus et de signalements chargés", () => {
+    renderGroup({ signalAirSelectedTypes: ["odeur", "bruit"] });
+    // Les traductions ne sont pas chargées en test : seul le suffixe est stable
+    expect(screen.getByText(/· 12$/)).toBeInTheDocument();
+  });
+
+  it("cocher la parente allume la source avec tous les types", () => {
+    const { community, parent } = renderGroup({ isSignalAirEnabled: false });
+    fireEvent.click(parent);
+    expect(community.onSignalAirEnabledChange).toHaveBeenCalledWith(
+      true,
+      ALL_TYPES
+    );
+  });
+
+  it("décocher la parente, même partielle, éteint la source", () => {
+    const { community, parent } = renderGroup({
+      signalAirSelectedTypes: ["odeur"],
+    });
+    fireEvent.click(parent);
+    expect(community.onSignalAirEnabledChange).toHaveBeenCalledWith(false);
+  });
+
+  it("cocher un type alors que la source est éteinte l'allume avec ce seul type", () => {
+    const { community } = renderGroup({ isSignalAirEnabled: false });
+    fireEvent.click(type("brulage"));
+    expect(community.onSignalAirEnabledChange).toHaveBeenCalledWith(true, [
+      "brulage",
+    ]);
     expect(community.onSignalAirTypesChange).not.toHaveBeenCalled();
   });
 
-  it("masquer les marqueurs bascule la seule visibilité, sans désactiver", () => {
-    const { community, header } = renderDisclosure();
-    fireEvent.click(header);
-
-    fireEvent.click(screen.getByTestId("sources-signalair-visibility"));
-
-    expect(community.onSignalAirToggle).toHaveBeenCalledWith(false);
-    expect(community.onSignalAirEnabledChange).not.toHaveBeenCalled();
+  it("décocher un type le retire de la sélection", () => {
+    const { community } = renderGroup();
+    fireEvent.click(type("bruit"));
+    expect(community.onSignalAirTypesChange).toHaveBeenCalledWith([
+      "odeur",
+      "brulage",
+      "visuel",
+    ]);
   });
 
-  it("n'offre le masquage que lorsqu'il y a des marqueurs à masquer", () => {
-    const { header } = renderDisclosure({ hasSignalAirData: false });
-    fireEvent.click(header);
-
-    expect(screen.queryByTestId("sources-signalair-visibility")).toBeNull();
-  });
-
-  it("désactiver via la case éteint la source", () => {
-    const { community, header } = renderDisclosure();
-    fireEvent.click(header);
-
-    fireEvent.click(screen.getByTestId("sources-signalair-enable"));
-
-    expect(community.onSignalAirEnabledChange).toHaveBeenCalledWith(false);
-    expect(community.onSignalAirToggle).not.toHaveBeenCalled();
-  });
-
-  it("activer via la case allume la source", () => {
-    const { community, header } = renderDisclosure({
-      isSignalAirEnabled: false,
-      hasSignalAirData: false,
-      signalAirHasLoaded: false,
-    });
-    fireEvent.click(header);
-
-    fireEvent.click(screen.getByTestId("sources-signalair-enable"));
-
-    expect(community.onSignalAirEnabledChange).toHaveBeenCalledWith(true);
-  });
-
-  it("s'ouvre de lui-même quand la source est allumée sans données chargées", () => {
-    renderDisclosure({
-      isSignalAirEnabled: true,
-      signalAirHasLoaded: false,
-      hasSignalAirData: false,
-    });
-
-    expect(screen.getByTestId("sources-signalair-body")).toBeInTheDocument();
-  });
-
-  it("grise et bloque l'activation hors pas TimeBar", () => {
-    const { community, header } = renderDisclosure(
-      {
-        isSignalAirEnabled: false,
-        hasSignalAirData: false,
-        signalAirHasLoaded: false,
-      },
-      "instantane"
-    );
-    fireEvent.click(header);
-
-    expect(screen.getByTestId("sources-signalair-incompatible")).toBeInTheDocument();
-    const enable = screen.getByTestId("sources-signalair-enable");
-    expect(enable).toBeDisabled();
-    fireEvent.click(enable);
-    expect(community.onSignalAirEnabledChange).not.toHaveBeenCalled();
-  });
-
-  it("tout décocher les types demande une liste vide", () => {
-    const { community, header } = renderDisclosure();
-    fireEvent.click(header);
-
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: /aucun|none|deselect|tout désélectionner/i,
-      })
-    );
-
+  it("décocher le dernier type demande une liste vide", () => {
+    const { community } = renderGroup({ signalAirSelectedTypes: ["visuel"] });
+    fireEvent.click(type("visuel"));
     expect(community.onSignalAirTypesChange).toHaveBeenCalledWith([]);
   });
 
-  it("en mode mobilité, un clic sur activer sort du mode", () => {
-    const { community, header } = renderDisclosure({
+  it("grise et bloque tout hors pas TimeBar", () => {
+    const { community, parent } = renderGroup(
+      { isSignalAirEnabled: false },
+      "instantane"
+    );
+
+    expect(
+      screen.getByTestId("sources-signalair-incompatible")
+    ).toBeInTheDocument();
+    expect(parent).toBeDisabled();
+    expect(type("odeur")).toBeDisabled();
+    fireEvent.click(parent);
+    fireEvent.click(type("odeur"));
+    expect(community.onSignalAirEnabledChange).not.toHaveBeenCalled();
+  });
+
+  it("en mode mobilité, un clic sur la parente ou un type sort du mode", () => {
+    const { community, parent } = renderGroup({
       isMobileAirMobilityMode: true,
       isSignalAirEnabled: false,
-      signalAirHasLoaded: false,
     });
 
-    // Ouvrir le dépliant si besoin
-    if (header.getAttribute("aria-expanded") !== "true") {
-      fireEvent.click(header);
-    }
-
-    expect(screen.getByTestId("sources-signalair-mobility-hint")).toBeInTheDocument();
-    fireEvent.click(screen.getByTestId("sources-signalair-enable"));
-    expect(community.onExitMobilityModeViaSignalAir).toHaveBeenCalledTimes(1);
+    expect(
+      screen.getByTestId("sources-signalair-mobility-hint")
+    ).toBeInTheDocument();
+    fireEvent.click(parent);
+    fireEvent.click(type("odeur"));
+    expect(community.onExitMobilityModeViaSignalAir).toHaveBeenCalledTimes(2);
     expect(community.onSignalAirEnabledChange).not.toHaveBeenCalled();
+    expect(community.onSignalAirTypesChange).not.toHaveBeenCalled();
   });
 });

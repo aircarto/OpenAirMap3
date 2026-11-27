@@ -550,10 +550,12 @@ const AppContent: React.FC = () => {
   // Activation des deux sources. Les noms d'événement analytiques restent ceux
   // de l'époque des panneaux latéraux : les renommer romprait les séries déjà
   // collectées, alors que la mesure porte sur le même geste utilisateur.
-  const handleSignalAirEnable = useCallback(() => {
+  const handleSignalAirEnable = useCallback((types?: string[]) => {
     setIsSignalAirEnabled(true);
     setIsSignalAirVisible(true);
-    if (signalAirSelectedTypes.length === 0) {
+    if (types && types.length > 0) {
+      setSignalAirSelectedTypes(types);
+    } else if (signalAirSelectedTypes.length === 0) {
       setSignalAirSelectedTypes([...SIGNAL_AIR_DEFAULT_TYPES]);
     }
     setSignalAirFetchToken((prev) => prev + 1);
@@ -574,9 +576,9 @@ const AppContent: React.FC = () => {
    * côté MobileAir pour les parcours.
    */
   const handleSignalAirEnabledChange = useCallback(
-    (enabled: boolean) => {
+    (enabled: boolean, types?: string[]) => {
       if (enabled) {
-        handleSignalAirEnable();
+        handleSignalAirEnable(types);
       } else {
         handleSignalAirSourceDeselected();
       }

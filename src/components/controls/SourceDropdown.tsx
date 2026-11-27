@@ -2,9 +2,9 @@ import React, { useEffect, useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { COMMUNAUTAIRE_SOURCE_CODES } from "../../constants/sources";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { Checkbox } from "../ui/checkbox";
 import { DropdownButton } from "./DropdownButton";
 import SourceGroupCheckbox from "./SourceGroupCheckbox";
+import SourceCheckboxRow from "./SourceCheckboxRow";
 import type { CustomTriggerProps } from "./dropdownTriggerContract";
 import { cn } from "../../lib/utils";
 import {
@@ -69,58 +69,6 @@ export interface SourceSlotApi {
   /** Referme le flyout — l'utilisateur veut voir la carte après un chargement */
   close: () => void;
 }
-
-/**
- * Ligne de source cochable.
- *
- * Un `Checkbox` et une étiquette liée par `htmlFor`, et non un
- * `DropdownMenuCheckboxItem` : celui-ci **ferme le menu à chaque cochage**.
- * Vérifié dans `@radix-ui/react-menu` — `MenuItem.handleSelect` appelle
- * `rootContext.onClose()` dès que l'événement de sélection n'est pas prévenu, et
- * `MenuCheckboxItem` compose son `onSelect` sans le prévenir. Sur un menu à choix
- * multiple, cocher deux sources demandait donc deux réouvertures ; et lorsque la
- * source était incompatible avec le pas de temps courant, le clic fermait le
- * menu, affichait un toast et ne changeait rien.
- */
-const SourceCheckboxRow: React.FC<{
-  code: string;
-  label: string;
-  checked: boolean;
-  onToggle: () => void;
-  indented?: boolean;
-  /** Apparence grisée (mode mobilité) tout en restant cliquable */
-  muted?: boolean;
-}> = ({ code, label, checked, onToggle, indented = false, muted = false }) => {
-  const id = useId();
-
-  return (
-    <div
-      className={cn(
-        "flex w-full items-center gap-3 rounded-md px-2 py-2 transition-colors",
-        indented && "ml-4",
-        muted && "opacity-50",
-        checked && !muted ? "bg-[#e7eef8]" : "hover:bg-black/[0.04]"
-      )}
-    >
-      <Checkbox
-        id={id}
-        data-testid={`source-${code}`}
-        checked={checked}
-        onCheckedChange={onToggle}
-        aria-disabled={muted || undefined}
-      />
-      <label
-        htmlFor={id}
-        className={cn(
-          "flex-1 cursor-pointer text-sm",
-          muted ? "text-gray-500" : checked ? "text-[#1f3c6d]" : "text-gray-700"
-        )}
-      >
-        {label}
-      </label>
-    </div>
-  );
-};
 
 const SourceDropdown: React.FC<SourceDropdownProps> = ({
   selectedSources,
@@ -405,7 +353,7 @@ const SourceDropdown: React.FC<SourceDropdownProps> = ({
                 <div className="mb-1 px-2 text-xs font-medium uppercase tracking-wide text-gray-500">
                   {t("controls.sourceSignalements")}
                 </div>
-                <div className="ml-1">{signalAirSlot(slotApi)}</div>
+                {signalAirSlot(slotApi)}
               </div>
             </>
           )}

@@ -221,8 +221,6 @@
     "showSignalAir": "Mostra dati SignalAir",
     "hideMobileAir": "Nascondi dati MobileAir",
     "showMobileAir": "Mostra dati MobileAir",
-    "hideSignalAirAria": "Nascondi SignalAir",
-    "showSignalAirAria": "Mostra SignalAir",
     "hideMobileAirAria": "Nascondi MobileAir",
     "showMobileAirAria": "Mostra MobileAir",
     "openComparisonPanel": "Riapri pannello confronto",
@@ -306,9 +304,6 @@
     "signalAirSelection": {
       "title": "Selezione SignalAir",
       "reopenButtonTooltip": "Pulsante SignalAir per riaprire il pannello",
-      "typesTitle": "Tipi di segnalazioni ({{selected}}/{{total}})",
-      "selectAll": "Tutti",
-      "deselectAll": "Nessuno",
       "loadReports": "Carica segnalazioni",
       "selectAtLeastOne": "Selezionare almeno un tipo di segnalazione.",
       "types": {
@@ -340,8 +335,6 @@
         "quickRangeLastWeek": "Ultima settimana",
         "quickRangeLastMonth": "Ultimo mese"
       },
-      "enable": "Mostra segnalazioni",
-      "typesShort": "Tipi",
       "incompatibleTimeStep": "Disponibile solo a 15 min, ora o giorno.",
       "incompatibleTimeStepToast": "SignalAir disattivato: scegliere il passo 15 min, ora o giorno."
     },

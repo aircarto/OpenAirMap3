@@ -221,8 +221,6 @@
     "showSignalAir": "Show SignalAir data",
     "hideMobileAir": "Hide MobileAir data",
     "showMobileAir": "Show MobileAir data",
-    "hideSignalAirAria": "Hide SignalAir",
-    "showSignalAirAria": "Show SignalAir",
     "hideMobileAirAria": "Hide MobileAir",
     "showMobileAirAria": "Show MobileAir",
     "openComparisonPanel": "Reopen comparison panel",
@@ -306,9 +304,6 @@
     "signalAirSelection": {
       "title": "SignalAir selection",
       "reopenButtonTooltip": "SignalAir button to reopen panel",
-      "typesTitle": "Report types ({{selected}}/{{total}})",
-      "selectAll": "All",
-      "deselectAll": "None",
       "loadReports": "Load reports",
       "selectAtLeastOne": "Select at least one report type.",
       "types": {
@@ -340,8 +335,6 @@
         "quickRangeLastWeek": "Last week",
         "quickRangeLastMonth": "Last month"
       },
-      "enable": "Show reports",
-      "typesShort": "Types",
       "incompatibleTimeStep": "Available only for 15 min, hour or day.",
       "incompatibleTimeStepToast": "SignalAir disabled: choose the 15 min, hour or day time step."
     },

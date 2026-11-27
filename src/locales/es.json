@@ -221,8 +221,6 @@
     "showSignalAir": "Mostrar datos SignalAir",
     "hideMobileAir": "Ocultar datos MobileAir",
     "showMobileAir": "Mostrar datos MobileAir",
-    "hideSignalAirAria": "Ocultar SignalAir",
-    "showSignalAirAria": "Mostrar SignalAir",
     "hideMobileAirAria": "Ocultar MobileAir",
     "showMobileAirAria": "Mostrar MobileAir",
     "openComparisonPanel": "Reabrir panel de comparación",
@@ -306,9 +304,6 @@
     "signalAirSelection": {
       "title": "Selección SignalAir",
       "reopenButtonTooltip": "Botón SignalAir para reabrir el panel",
-      "typesTitle": "Tipos de informes ({{selected}}/{{total}})",
-      "selectAll": "Todos",
-      "deselectAll": "Ninguno",
       "loadReports": "Cargar informes",
       "selectAtLeastOne": "Seleccione al menos un tipo de reporte.",
       "types": {
@@ -340,8 +335,6 @@
         "quickRangeLastWeek": "Última semana",
         "quickRangeLastMonth": "Último mes"
       },
-      "enable": "Mostrar reportes",
-      "typesShort": "Tipos",
       "incompatibleTimeStep": "Disponible solo en 15 min, hora o día.",
       "incompatibleTimeStepToast": "SignalAir desactivado: elija el paso 15 min, hora o día."
     },
