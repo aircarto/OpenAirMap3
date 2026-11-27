@@ -260,7 +260,7 @@ selectedSensors?: string[];
 3. **NebuleAirService**
 4. **PurpleAirService**
 5. **SensorCommunityService**
-6. **SignalAirService**
+6. **SignalAirService** — fenêtres d’affichage et compteur : voir [DOCUMENTATION_SIGNALAIR.md](./DOCUMENTATION_SIGNALAIR.md)
 7. **MobileAirService**
 
 ## Flux de données

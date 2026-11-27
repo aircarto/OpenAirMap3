@@ -71,4 +71,19 @@ describe("SourceGroupCheckbox", () => {
     fireEvent.click(label);
     expect(onToggle).toHaveBeenCalledTimes(1);
   });
+
+  it("un état imposé par `checked` prime sur le calcul du périmètre", () => {
+    render(
+      <SourceGroupCheckbox
+        label="SignalAir"
+        checked="indeterminate"
+        onToggle={vi.fn()}
+        testId="forced"
+      />
+    );
+    expect(screen.getByTestId("forced")).toHaveAttribute(
+      "aria-checked",
+      "mixed"
+    );
+  });
 });

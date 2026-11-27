@@ -21,7 +21,8 @@ import SidePanelShell, {
   type PanelSize,
 } from "./SidePanelShell";
 import CollapsiblePanelSection from "./CollapsiblePanelSection";
-import DeviceLocationsSection from "./DeviceLocationsSection";
+import DeviceLocationsList from "./DeviceLocationsList";
+import { fallbackColors } from "../charts/utils/historicalChartUtils";
 import PanelReopenBadge from "./PanelReopenBadge";
 
 interface ComparisonSidePanelProps {
@@ -73,6 +74,17 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
   const [staysByStation, setStaysByStation] = useState<
     Record<string, DeviceLocationStay[]>
   >({});
+  const [expandedStationIds, setExpandedStationIds] = useState<Set<string>>(
+    () => new Set()
+  );
+  const toggleStationLocations = useCallback((stationId: string) => {
+    setExpandedStationIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(stationId)) next.delete(stationId);
+      else next.add(stationId);
+      return next;
+    });
+  }, []);
   const [highlightedLocationId, setHighlightedLocationId] = useState<
     string | null
   >(null);
@@ -555,49 +567,120 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
           storageKey="comparison-stations"
         >
           <div className="space-y-2">
-            {comparisonState.comparedStations.map((station) => (
-              <div
-                key={station.id}
-                className="flex items-center justify-between rounded-[var(--r-sm)] bg-[rgb(16_32_56_/_0.03)] p-2"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-[color:var(--fg)]">
-                    {station.name}
-                  </p>
-                  <p className="truncate text-xs text-[color:var(--fg-muted)]">
-                    {station.source === "atmoRef"
-                      ? t("panels.comparisonSidePanel.sourceAtmoRef")
-                      : station.source === "atmoMicro"
-                      ? t("panels.comparisonSidePanel.sourceAtmoMicro")
-                      : station.source === "nebuleair"
-                      ? t("panels.comparisonSidePanel.sourceNebuleAir")
-                      : t("panels.comparisonSidePanel.sourceOther")}{" "}
-                    - {station.address}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => onRemoveStation(station.id)}
-                  className="ml-2 p-1 text-[color:var(--fg-muted)] transition-colors hover:text-red-600"
-                  title={t("panels.removeFromComparison")}
+            {comparisonState.comparedStations.map((station, index) => {
+              const stays = staysByStation[station.id];
+              const hasLocations = !!stays && stays.length >= 2;
+              const expanded =
+                hasLocations && expandedStationIds.has(station.id);
+              const locationsListId = `comparison-locs-${station.id}`;
+              return (
+                <div
+                  key={station.id}
+                  className="rounded-[var(--r-sm)] bg-[rgb(16_32_56_/_0.03)] p-2"
                 >
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
+                  <div className="flex items-center justify-between gap-2">
+                    <span
+                      aria-hidden="true"
+                      className="h-2.5 w-2.5 shrink-0 rounded-full"
+                      style={{
+                        backgroundColor:
+                          fallbackColors[index % fallbackColors.length],
+                      }}
                     />
-                  </svg>
-                </button>
-              </div>
-            ))}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-[color:var(--fg)]">
+                        {station.name}
+                      </p>
+                      <p className="truncate text-xs text-[color:var(--fg-muted)]">
+                        {station.source === "atmoRef"
+                          ? t("panels.comparisonSidePanel.sourceAtmoRef")
+                          : station.source === "atmoMicro"
+                          ? t("panels.comparisonSidePanel.sourceAtmoMicro")
+                          : station.source === "nebuleair"
+                          ? t("panels.comparisonSidePanel.sourceNebuleAir")
+                          : t("panels.comparisonSidePanel.sourceOther")}{" "}
+                        - {station.address}
+                      </p>
+                    </div>
+                    {hasLocations ? (
+                      <button
+                        type="button"
+                        onClick={() => toggleStationLocations(station.id)}
+                        aria-expanded={expanded}
+                        aria-controls={locationsListId}
+                        aria-label={t(
+                          "panels.comparisonSidePanel.toggleLocations",
+                          {
+                            name: station.name,
+                            defaultValue:
+                              "Afficher les localisations de {{name}}",
+                          }
+                        )}
+                        className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)] ${
+                          expanded
+                            ? "border-blue-200 bg-blue-50 text-blue-700"
+                            : "border-[rgb(16_32_56_/_0.12)] bg-white text-[color:var(--fg-muted)] hover:bg-slate-50"
+                        }`}
+                      >
+                        {t("panels.deviceLocations.count", {
+                          count: stays.length,
+                        })}
+                        <svg
+                          className={`h-3 w-3 transition-transform motion-reduce:transition-none ${
+                            expanded ? "rotate-180" : ""
+                          }`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => onRemoveStation(station.id)}
+                      className="p-1 text-[color:var(--fg-muted)] transition-colors hover:text-red-600"
+                      title={t("panels.removeFromComparison")}
+                    >
+                      <svg
+                        className="h-4 w-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                  {expanded ? (
+                    <div id={locationsListId}>
+                      <DeviceLocationsList
+                        variant="compact"
+                        className="mt-2 border-t border-[rgb(16_32_56_/_0.08)] pt-2"
+                        stays={stays}
+                        highlightedLocationId={highlightedLocationId}
+                        onHighlightLocation={setHighlightedLocationId}
+                        onCenterLocation={handleCenterDeviceLocation}
+                        onLoadPeriod={handleLoadDeviceLocationPeriod}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
         </CollapsiblePanelSection>
 
@@ -795,24 +878,6 @@ const ComparisonSidePanel: React.FC<ComparisonSidePanelProps> = ({
                   </p>
                 </div>
               )}
-
-              {comparisonState.comparedStations.map((station) => {
-                const stays = staysByStation[station.id];
-                if (!stays || stays.length < 2) return null;
-                return (
-                  <DeviceLocationsSection
-                    key={`locs-${station.id}`}
-                    stays={stays}
-                    stationLabel={station.name}
-                    highlightedLocationId={highlightedLocationId}
-                    onHighlightLocation={setHighlightedLocationId}
-                    onCenterLocation={handleCenterDeviceLocation}
-                    onLoadPeriod={handleLoadDeviceLocationPeriod}
-                    storageKey={`comparison-locations-${station.id}`}
-                    className="shrink-0"
-                  />
-                );
-              })}
 
               <PanelChartBlock
                 loading={comparisonState.loading}

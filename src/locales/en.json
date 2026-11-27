@@ -58,8 +58,8 @@
     "modelingSuffix": "(modeling)",
     "rawSuffix": "(raw)",
     "correctedSuffix": "(corrected)",
-    "n1Suffix": "(N1)",
-    "n2Suffix": "(N2)",
+    "n1Suffix": "(level 1 correction)",
+    "n2Suffix": "(level 2 correction)",
     "thresholdLegendAria": "Quality thresholds ({{unit}})"
   },
   "controls": {
@@ -104,7 +104,7 @@
     "rawData": "Raw data",
     "rawDataDescription": "Show uncorrected data on the chart",
     "correctionLevels": "Correction level detail",
-    "correctionLevelsDescription": "Overlay raw, N1 and N2 on the chart",
+    "correctionLevelsDescription": "Overlay raw, level 1 and level 2 corrections on the chart",
     "thresholdBackgroundDisabled": "Thresholds disabled",
     "thresholdBackgroundDisabledDescription": "Hide colored threshold background (recommended for colorblind users)",
     "specialSourcesActive": "At least one active source",
@@ -221,8 +221,6 @@
     "showSignalAir": "Show SignalAir data",
     "hideMobileAir": "Hide MobileAir data",
     "showMobileAir": "Show MobileAir data",
-    "hideSignalAirAria": "Hide SignalAir",
-    "showSignalAirAria": "Show SignalAir",
     "hideMobileAirAria": "Hide MobileAir",
     "showMobileAirAria": "Show MobileAir",
     "openComparisonPanel": "Reopen comparison panel",
@@ -268,6 +266,15 @@
       "loadPeriod": "Load this period"
     },
     "microSidePanel": {
+      "correctionLevelsInfo": {
+        "label": "How are these corrections made?",
+        "buttonAria": "Learn more about correction levels",
+        "title": "Correction levels",
+        "level1Title": "Level 1 correction",
+        "level1Body": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+        "level2Title": "Level 2 correction",
+        "level2Body": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+      },
       "sourceLabel": "AtmoSud qualified micro-sensor",
       "temporalEvolutionAtmoMicro": "Temporal evolution",
       "pollutantsLabel": "Pollutants displayed",
@@ -297,9 +304,6 @@
     "signalAirSelection": {
       "title": "SignalAir selection",
       "reopenButtonTooltip": "SignalAir button to reopen panel",
-      "typesTitle": "Report types ({{selected}}/{{total}})",
-      "selectAll": "All",
-      "deselectAll": "None",
       "loadReports": "Load reports",
       "selectAtLeastOne": "Select at least one report type.",
       "types": {
@@ -331,8 +335,6 @@
         "quickRangeLastWeek": "Last week",
         "quickRangeLastMonth": "Last month"
       },
-      "enable": "Show reports",
-      "typesShort": "Types",
       "incompatibleTimeStep": "Available only for 15 min, hour or day.",
       "incompatibleTimeStepToast": "SignalAir disabled: choose the 15 min, hour or day time step."
     },
@@ -501,6 +503,7 @@
       "stationsSelected_other": "{{count}}/{{max}} stations selected",
       "limitMessage": "Comparison limited to {{max}} sensors at a time.",
       "stationsSelectedTitle": "Selected stations",
+      "toggleLocations": "Show locations of {{name}}",
       "disableComparison": "Disable comparison",
       "sourceAtmoRef": "Reference station",
       "sourceAtmoMicro": "Microsensor",

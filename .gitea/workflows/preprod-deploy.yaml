@@ -58,11 +58,11 @@ jobs:
             git checkout preprod
             git pull --ff-only origin preprod
             npm ci
+            # build = next build + scripts/prepare-standalone.mjs (copie public/ et .next/static)
             npm run build
-            # Copier les assets publics dans le standalone (requis par Next)
-            cp -r public .next/standalone/public 2>/dev/null || true
-            cp -r .next/static .next/standalone/.next/static 2>/dev/null || true
-            sudo systemctl restart openairmap
+            # Preprod : service systemd *user* (port 3001), pas d'unite systeme ni de sudo
+            export XDG_RUNTIME_DIR=/run/user/\$(id -u)
+            systemctl --user restart openairmap
             echo 'SHA deploye:' \$(git rev-parse --short HEAD)
-            systemctl is-active openairmap
+            systemctl --user is-active openairmap
           "

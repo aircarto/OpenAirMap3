@@ -58,22 +58,43 @@ const POLLUTANT_BY_ISO_CODE: Record<string, string> = Object.fromEntries(
 interface TimeStepConfig {
   /** Libellé d'agrégation attendu par l'API (anglais). */
   aggregation: "scan" | "quarter-hourly" | "hourly" | "daily";
-  /** Fenêtre de fraîcheur en minutes, pour /observations/latest. */
+  /**
+   * Fenêtre de fraîcheur en minutes, pour /observations/latest.
+   * Ignorée en `daily` : voir getDailyLatestDelayMinutes.
+   */
   delay: number;
 }
 
 /**
  * Pas de temps de l'application vers l'agrégation de l'API.
- *
- * `daily` existe désormais côté API mais n'est pas exposé ici : ajouter `jour`
- * aux pas de temps supportés touche sources.ts, HISTORICAL_MODE_ALLOWED_TIME_STEPS
- * et le sélecteur, et sort du périmètre de la migration.
  */
 const TIME_STEP_CONFIGS: Record<string, TimeStepConfig> = {
   instantane: { aggregation: "scan", delay: 181 },
   deuxMin: { aggregation: "scan", delay: 3 },
   quartHeure: { aggregation: "quarter-hourly", delay: 19 },
   heure: { aggregation: "hourly", delay: 64 },
+  jour: { aggregation: "daily", delay: 2880 },
+};
+
+/**
+ * Fenêtre de fraîcheur, en minutes, pour la moyenne journalière de la veille.
+ *
+ * L'API horodate une moyenne journalière au début du jour UTC (J-1 → J-1T00:00Z).
+ * Son âge varie donc de 24 h à 48 h au fil de la journée : aucune constante ne
+ * convient. Trop courte, la carte se vide en fin de journée ; trop longue, J-2
+ * entre dans la fenêtre juste après minuit UTC et s'affiche comme la veille pour
+ * les capteurs dont J-1 manque (ou n'est pas encore publiée).
+ *
+ * On calcule donc la fenêtre pour qu'elle s'arrête pile à J-1 00:00 UTC
+ * (+1 min pour inclure la borne) : J-1 toujours incluse, J-2 jamais.
+ */
+export const getDailyLatestDelayMinutes = (now: Date = new Date()): number => {
+  const startOfYesterdayUtc = Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate() - 1
+  );
+  return Math.ceil((now.getTime() - startOfYesterdayUtc) / 60000) + 1;
 };
 
 /** Plafond dur de l'API. Toujours le demander : le défaut est 500 et tronque en silence. */
@@ -501,7 +522,9 @@ export class AtmoMicroV2Service
         this.fetchLatestObservations(
           variableIsoCode,
           timeStepConfig.aggregation,
-          timeStepConfig.delay
+          timeStepConfig.aggregation === "daily"
+            ? getDailyLatestDelayMinutes()
+            : timeStepConfig.delay
         ).catch((error: unknown) => {
           // Panne réelle : on garde les capteurs grisés issus de /lists/devices.
           this.lastMeasuresUnavailable = true;
@@ -1309,11 +1332,9 @@ export class AtmoMicroV2Service
       const from = this.formatDateForHistoricalMode(params.startDate, false);
       const to = this.formatDateForHistoricalMode(params.endDate, true);
 
-      // corrections_detail (value_n1, is_n1/n2_applied) réservé aux sessions
-      // authentifiées : l'API microspot l'expose via Keycloak.
-      const includeFields = getAccessToken()
-        ? 'raw_value,corrections_detail'
-        : 'raw_value';
+      // corrections_detail (value_n1, is_n1/n2_applied) : exposé par l'API
+      // microspot même sans jeton, demandé pour tous les visiteurs.
+      const includeFields = 'raw_value,corrections_detail';
 
       const url =
         `${this.BASE_URL}/observations` +

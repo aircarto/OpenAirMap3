@@ -11,7 +11,7 @@ export const sources: Sources = {
     name: "Microcapteurs qualifiés AtmoSud",
     code: "atmoMicro",
     activated: true,
-    supportedTimeSteps: ["instantane", "deuxMin", "quartHeure", "heure"],
+    supportedTimeSteps: ["instantane", "deuxMin", "quartHeure", "heure", "jour"],
   }, // Micro-stations AtmoSud
   communautaire: {
     name: "Autres capteurs communautaires",

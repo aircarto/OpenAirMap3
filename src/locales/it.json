@@ -58,8 +58,8 @@
     "modelingSuffix": "(modellizzazione)",
     "rawSuffix": "(grezzo)",
     "correctedSuffix": "(corretto)",
-    "n1Suffix": "(N1)",
-    "n2Suffix": "(N2)",
+    "n1Suffix": "(correzione livello 1)",
+    "n2Suffix": "(correzione livello 2)",
     "thresholdLegendAria": "Soglie di qualità ({{unit}})"
   },
   "controls": {
@@ -104,7 +104,7 @@
     "rawData": "Dati grezzi",
     "rawDataDescription": "Mostra i dati non corretti sul grafico",
     "correctionLevels": "Dettaglio livelli di correzione",
-    "correctionLevelsDescription": "Sovrappone grezzo, N1 e N2 sul grafico",
+    "correctionLevelsDescription": "Sovrappone grezzo, correzione livello 1 e correzione livello 2 sul grafico",
     "thresholdBackgroundDisabled": "Soglie disattivate",
     "thresholdBackgroundDisabledDescription": "Nasconde lo sfondo colorato per soglia (consigliato per daltonici)",
     "specialSourcesActive": "Almeno una fonte attiva",
@@ -221,8 +221,6 @@
     "showSignalAir": "Mostra dati SignalAir",
     "hideMobileAir": "Nascondi dati MobileAir",
     "showMobileAir": "Mostra dati MobileAir",
-    "hideSignalAirAria": "Nascondi SignalAir",
-    "showSignalAirAria": "Mostra SignalAir",
     "hideMobileAirAria": "Nascondi MobileAir",
     "showMobileAirAria": "Mostra MobileAir",
     "openComparisonPanel": "Riapri pannello confronto",
@@ -268,6 +266,15 @@
       "loadPeriod": "Carica questo periodo"
     },
     "microSidePanel": {
+      "correctionLevelsInfo": {
+        "label": "Come vengono fatte queste correzioni?",
+        "buttonAria": "Ulteriori informazioni sui livelli di correzione",
+        "title": "Livelli di correzione",
+        "level1Title": "Correzione livello 1",
+        "level1Body": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+        "level2Title": "Correzione livello 2",
+        "level2Body": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+      },
       "sourceLabel": "Microsensore qualificato AtmoSud",
       "temporalEvolutionAtmoMicro": "Evoluzione temporale",
       "pollutantsLabel": "Inquinanti visualizzati",
@@ -297,9 +304,6 @@
     "signalAirSelection": {
       "title": "Selezione SignalAir",
       "reopenButtonTooltip": "Pulsante SignalAir per riaprire il pannello",
-      "typesTitle": "Tipi di segnalazioni ({{selected}}/{{total}})",
-      "selectAll": "Tutti",
-      "deselectAll": "Nessuno",
       "loadReports": "Carica segnalazioni",
       "selectAtLeastOne": "Selezionare almeno un tipo di segnalazione.",
       "types": {
@@ -331,8 +335,6 @@
         "quickRangeLastWeek": "Ultima settimana",
         "quickRangeLastMonth": "Ultimo mese"
       },
-      "enable": "Mostra segnalazioni",
-      "typesShort": "Tipi",
       "incompatibleTimeStep": "Disponibile solo a 15 min, ora o giorno.",
       "incompatibleTimeStepToast": "SignalAir disattivato: scegliere il passo 15 min, ora o giorno."
     },

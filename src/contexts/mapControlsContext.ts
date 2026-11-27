@@ -120,8 +120,11 @@ export interface MapControlsCommunitySources {
    * Bascule l'activation. `false` ne se contente pas d'éteindre : il réinitialise
    * aussi la sélection, sans quoi une réactivation ferait réapparaître les
    * signalements ou les parcours de la session précédente.
+   *
+   * `types` (activation seulement) remplace les types par défaut : cocher un
+   * type alors que la source est éteinte l'allume avec ce seul type.
    */
-  onSignalAirEnabledChange: (enabled: boolean) => void;
+  onSignalAirEnabledChange: (enabled: boolean, types?: string[]) => void;
   onMobileAirEnabledChange: (enabled: boolean) => void;
   /** Affichage des marqueurs, indépendant de l'activation */
   isSignalAirVisible: boolean;

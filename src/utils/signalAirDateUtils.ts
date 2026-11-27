@@ -11,56 +11,89 @@ export interface PeriodMs {
   endMs: number;
 }
 
+const HOUR_MS = 60 * 60 * 1000;
+const DAY_MS = 24 * HOUR_MS;
+
 /**
- * Parse une chaîne de durée (ex: "1 heure", "30 minutes", "2h", "moins de 5 min")
- * en millisecondes.
- * Gère les formats français courants.
+ * Durée maximale retenue pour une nuisance (« Plusieurs jours »).
+ * Sert aussi de marge de chargement : voir `extendSignalAirFetchStart`.
  */
-export function parseSignalDuration(duration: string): number {
+export const SIGNAL_AIR_MAX_DURATION_DAYS = 3;
+
+/**
+ * Convertit la durée déclarée d'une nuisance en millisecondes.
+ *
+ * Le flux SignalAir ne renvoie pas de texte libre mais quatre catégories
+ * (relevé du 27/11/2026) :
+ *
+ * | Catégorie           | Durée retenue                          |
+ * |---------------------|----------------------------------------|
+ * | « Moins d'une heure » | 1 h                                  |
+ * | « Quelques heures »   | 3 h                                  |
+ * | « Plusieurs jours »   | 3 jours                              |
+ * | « Ne sait pas » / vide | `null` → jusqu'à minuit le même jour |
+ *
+ * Les formats numériques (« 2h », « 30 minutes », « 3 jours ») restent lus,
+ * par prudence si le formulaire évolue.
+ *
+ * @returns la durée en ms, ou `null` si elle est inconnue : l'appelant borne
+ *   alors la nuisance à la fin de la journée déclarée.
+ */
+export function parseSignalDuration(
+  duration: string | null | undefined
+): number | null {
   if (!duration || typeof duration !== 'string') {
-    return 0;
+    return null;
   }
 
-  const s = duration.trim().toLowerCase();
+  // Minuscules, apostrophe typographique, accents : « Moins d’une heure » et
+  // « moins d'une heure » doivent donner la même chose.
+  const s = duration
+    .trim()
+    .toLowerCase()
+    .replace(/\u2019/g, "'")
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
 
-  // Durées textuelles sans nombre (ex: "Plusieurs jours")
-  if (/\b(plusieurs|plusieurs jours|quelques jours)\b/.test(s)) {
-    return 7 * 24 * 60 * 60 * 1000; // 7 jours
-  }
-  if (/\b(toute la journée|journée entière)\b/.test(s)) {
-    return 24 * 60 * 60 * 1000; // 24 h
-  }
+  if (!s) return null;
 
-  // Extraire les nombres (supporte "1,5", "2", etc.)
+  // Catégories du flux, avant toute lecture de nombre
+  if (/\bmoins d'une heure\b/.test(s)) return HOUR_MS;
+  if (/\bquelques heures\b/.test(s)) return 3 * HOUR_MS;
+  if (/\b(plusieurs|quelques) jours\b/.test(s)) {
+    return SIGNAL_AIR_MAX_DURATION_DAYS * DAY_MS;
+  }
+  if (/\b(toute la journee|journee entiere)\b/.test(s)) return DAY_MS;
+
+  // Formats numériques (supporte "1,5", "2", etc.)
   const numberMatch = s.match(/(\d+([.,]\d+)?)/);
   if (!numberMatch) {
-    return 0;
+    return null;
   }
 
   const num = parseFloat(numberMatch[1].replace(',', '.'));
 
-  // Unités en jours
   if (/\b(jour|jours|j)\b/.test(s)) {
-    return Math.round(num * 24 * 60 * 60 * 1000);
+    return Math.round(num * DAY_MS);
   }
 
-  // Unités en heures
   if (
     /\b(h|heure|heures|hr|hrs)\b/.test(s) ||
     s.includes('h ') ||
     s.endsWith('h')
   ) {
-    return Math.round(num * 60 * 60 * 1000);
+    return Math.round(num * HOUR_MS);
   }
 
-  // Unités en minutes (défaut)
+  // Minutes par défaut
   return Math.round(num * 60 * 1000);
 }
 
 /**
  * Calcule la période du signalement en temps local (millisecondes).
  * Début = date déclarée de la nuisance (`signalDate`) uniquement ;
- * fin = début + `signalDuration`.
+ * fin = début + `signalDuration`, ou fin de la journée déclarée (23:59:59.999
+ * local) quand la durée est inconnue.
  */
 export function getReportPeriodInLocal(report: SignalAirReport): PeriodMs {
   const startStr = report.signalDate?.trim();
@@ -75,10 +108,40 @@ export function getReportPeriodInLocal(report: SignalAirReport): PeriodMs {
   }
 
   const startMs = startDate.getTime();
-  const durationMs = parseSignalDuration(report.signalDuration || '');
-  const endMs = startMs + durationMs;
+  const durationMs = parseSignalDuration(report.signalDuration);
+  const endMs =
+    durationMs === null
+      ? new Date(
+          startDate.getFullYear(),
+          startDate.getMonth(),
+          startDate.getDate(),
+          23,
+          59,
+          59,
+          999
+        ).getTime()
+      : startMs + durationMs;
 
   return { startMs, endMs };
+}
+
+/**
+ * Recule la date de début d'une requête SignalAir (`YYYY-MM-DD`) de la durée
+ * maximale d'une nuisance.
+ *
+ * Le flux sélectionne les signalements par date de DÉBUT de nuisance, alors
+ * que l'affichage retient tout ce qui CHEVAUCHE le créneau. Sans cette marge,
+ * une nuisance « Plusieurs jours » commencée avant la fenêtre chargée
+ * (24 h en pas horaire) concerne bien le créneau affiché mais n'est jamais
+ * téléchargée. Le filtre d'affichage écarte ensuite ce qui ne chevauche pas.
+ */
+export function extendSignalAirFetchStart(startDate: string): string {
+  const [y, m, d] = startDate.split('-').map(Number);
+  if (!y || !m || !d) return startDate;
+  const date = new Date(y, m - 1, d - SIGNAL_AIR_MAX_DURATION_DAYS);
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${mm}-${dd}`;
 }
 
 /**

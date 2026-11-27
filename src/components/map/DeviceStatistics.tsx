@@ -20,6 +20,8 @@ interface DeviceStatisticsProps {
   selectedSources?: string[];
   selectedTimeStep?: string;
   historicalCurrentDate?: string;
+  /** Jour réellement affiché en pas `jour`, déduit des observations (ISO). */
+  observedDailyPeriodStart?: string;
   /** Plage formatée du mode « mesure en mobilité » (remplace la période TimeBar) */
   mobilityPeriodRange?: string;
   statistics?: DeviceStatisticsType;
@@ -44,6 +46,7 @@ const DeviceStatistics: React.FC<DeviceStatisticsProps> = ({
   selectedSources = [],
   selectedTimeStep = '',
   historicalCurrentDate,
+  observedDailyPeriodStart,
   mobilityPeriodRange,
   statistics,
   sourceStatistics,
@@ -56,9 +59,13 @@ const DeviceStatistics: React.FC<DeviceStatisticsProps> = ({
   const displayedPeriod = isMobilityPeriod
     ? mobilityPeriodRange
     : selectedTimeStep &&
-      getDisplayedPeriod(selectedTimeStep, historicalCurrentDate, i18n.language, {
-        compact: isCompact,
-      });
+      getDisplayedPeriod(
+        selectedTimeStep,
+        historicalCurrentDate,
+        i18n.language,
+        { compact: isCompact },
+        observedDailyPeriodStart
+      );
   const periodLabel = isMobilityPeriod
     ? t('controls.mobilityModePeriod')
     : t('controls.period');

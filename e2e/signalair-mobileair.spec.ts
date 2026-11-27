@@ -2,16 +2,17 @@ import { test, expect, type Locator, type Page } from "@playwright/test";
 import { seedToursCompleted } from "./tourSetup";
 
 /**
- * Dépliants SignalAir et MobileAir dans le menu Sources du rail.
+ * Groupe SignalAir et dépliant MobileAir dans le menu Sources du rail.
  *
  * Ils ont remplacé deux panneaux latéraux ouverts depuis un menu « Sources
- * spéciales », lui-même supprimé. Trois enseignements de l'ancienne version de
- * ce fichier restent valables et expliquent sa forme :
+ * spéciales », lui-même supprimé. SignalAir n'est plus un dépliant : il suit le
+ * modèle « Autres capteurs communautaires » (case parente à trois états + une
+ * ligne par type), toujours visible. Les enseignements de l'ancienne version
+ * de ce fichier restent valables et expliquent sa forme :
  *
- * 1. **Le nom accessible doit être ancré.** `/^SignalAir/` exclut « Masquer
- *    SignalAir », le bouton de visibilité qui apparaît dans le corps du
- *    dépliant dès que des données sont chargées. Le scoping au flyout est la
- *    seconde ceinture, pas le correctif.
+ * 1. **Le nom accessible doit être ancré.** `/^MobileAir/` vise l'en-tête du
+ *    dépliant et non un bouton du corps qui contiendrait le même mot. Le
+ *    scoping au flyout est la seconde ceinture, pas le correctif.
  *
  * 2. **Aucun `test.skip` sur l'échafaudage.** Les neuf `try/catch → test.skip`
  *    d'une version antérieure rapportaient quatre tests « ignorés » — donc
@@ -54,7 +55,7 @@ const expandDisclosure = async (
   return { flyout, header };
 };
 
-test.describe("Dépliants SignalAir et MobileAir du menu Sources", () => {
+test.describe("SignalAir et MobileAir dans le menu Sources", () => {
   // Locale figée : i18next suit `navigator.language`, et Chromium démarre en
   // en-US. Sans cela les assertions textuelles portent sur des libellés
   // anglais alors que le reste du dépôt raisonne en français.
@@ -64,56 +65,64 @@ test.describe("Dépliants SignalAir et MobileAir du menu Sources", () => {
     await load(page);
   });
 
-  test("ouvrir le menu Sources puis déplier SignalAir", async ({ page }) => {
-    await expandDisclosure(page, /^SignalAir/);
-
-    await expect(page.getByTestId("sources-signalair-body")).toBeVisible({
-      timeout: 15000,
-    });
-  });
-
-  test("SignalAir : types cochés par défaut et activation immédiate", async ({
+  test("SignalAir : groupe visible d'emblée, source éteinte par défaut", async ({
     page,
   }) => {
-    await expandDisclosure(page, /^SignalAir/);
+    await openSourcesMenu(page);
 
     const body = page.getByTestId("sources-signalair-body");
     await expect(body).toBeVisible({ timeout: 15000 });
 
+    const parent = page.getByTestId("sources-signalair-enable");
+    await expect(parent).toBeEnabled();
+    await expect(parent).toHaveAttribute("aria-checked", "false");
+    for (const type of ["odeur", "bruit", "brulage", "visuel"]) {
+      await expect(
+        page.getByTestId(`sources-signalair-type-${type}`)
+      ).toHaveAttribute("aria-checked", "false");
+    }
+  });
+
+  test("SignalAir : la case parente allume tous les types, un décochage la rend mixte", async ({
+    page,
+  }) => {
+    await openSourcesMenu(page);
+
+    const parent = page.getByTestId("sources-signalair-enable");
+    await parent.click();
+    await expect(parent).toHaveAttribute("aria-checked", "true");
     for (const type of ["odeur", "bruit", "brulage", "visuel"]) {
       await expect(
         page.getByTestId(`sources-signalair-type-${type}`)
       ).toHaveAttribute("aria-checked", "true");
     }
 
-    const enable = page.getByTestId("sources-signalair-enable");
-    await expect(enable).toBeVisible();
-    await expect(enable).toBeEnabled();
-    await expect(enable).toHaveAttribute("aria-checked", "false");
-    await enable.click();
-    await expect(enable).toHaveAttribute("aria-checked", "true");
-  });
-
-  test("SignalAir : replier le dépliant ne touche pas à la sélection", async ({
-    page,
-  }) => {
-    const { header } = await expandDisclosure(page, /^SignalAir/);
-
     const odeur = page.getByTestId("sources-signalair-type-odeur");
     await odeur.click();
     await expect(odeur).toHaveAttribute("aria-checked", "false");
+    await expect(parent).toHaveAttribute("aria-checked", "mixed");
 
-    // Le repli n'est qu'un geste d'affichage. C'est précisément ce que
-    // l'ancien `onSignalAirClick` confondait avec une désactivation, jetant la
-    // sélection à chaque fermeture accidentelle.
-    await header.click();
-    await expect(header).toHaveAttribute("aria-expanded", "false");
-    await expect(page.getByTestId("sources-signalair-body")).toBeHidden();
+    await parent.click();
+    await expect(parent).toHaveAttribute("aria-checked", "false");
+  });
 
-    await header.click();
+  test("SignalAir : cocher un type sur la source éteinte l'allume avec ce seul type", async ({
+    page,
+  }) => {
+    await openSourcesMenu(page);
+
+    await page.getByTestId("sources-signalair-type-bruit").click();
+
+    await expect(
+      page.getByTestId("sources-signalair-type-bruit")
+    ).toHaveAttribute("aria-checked", "true");
     await expect(
       page.getByTestId("sources-signalair-type-odeur")
     ).toHaveAttribute("aria-checked", "false");
+    await expect(page.getByTestId("sources-signalair-enable")).toHaveAttribute(
+      "aria-checked",
+      "mixed"
+    );
   });
 
   test("ouvrir le menu Sources puis déplier MobileAir", async ({ page }) => {

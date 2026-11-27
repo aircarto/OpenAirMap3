@@ -4,8 +4,16 @@ import { Checkbox } from "../ui/checkbox";
 export interface SourceGroupCheckboxProps {
   label: string;
   /** Codes de sources que la case pilote — voir COMMUNAUTAIRE_SOURCE_CODES */
-  scope: string[];
-  selectedSources: string[];
+  scope?: string[];
+  selectedSources?: string[];
+  /**
+   * État imposé, prioritaire sur le calcul `scope`/`selectedSources`.
+   * Sert aux groupes dont l'état ne se lit pas dans `selectedSources`
+   * (ex. SignalAir : source allumée × types retenus).
+   */
+  checked?: boolean | "indeterminate";
+  /** Réellement inactif (pas de temps incompatible) */
+  disabled?: boolean;
   onToggle: () => void;
   /** Résumé `n/total`, sans quoi « tout coché » sur un périmètre partiel se lit comme un bug */
   hint?: string;
@@ -39,8 +47,10 @@ export interface SourceGroupCheckboxProps {
  */
 export const SourceGroupCheckbox: React.FC<SourceGroupCheckboxProps> = ({
   label,
-  scope,
-  selectedSources,
+  scope = [],
+  selectedSources = [],
+  checked: forcedChecked,
+  disabled = false,
   onToggle,
   hint,
   testId,
@@ -52,30 +62,33 @@ export const SourceGroupCheckbox: React.FC<SourceGroupCheckboxProps> = ({
   ).length;
 
   const checked: boolean | "indeterminate" =
-    selectedCount === 0
-      ? false
-      : selectedCount === scope.length
-        ? true
-        : "indeterminate";
+    forcedChecked !== undefined
+      ? forcedChecked
+      : selectedCount === 0
+        ? false
+        : selectedCount === scope.length
+          ? true
+          : "indeterminate";
 
   return (
     <div
-      className={`flex w-full items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-black/[0.04]${
-        muted ? " opacity-50" : ""
-      }`}
+      className={`flex w-full items-center gap-3 rounded-md px-2 py-2 transition-colors${
+        disabled ? "" : " hover:bg-black/[0.04]"
+      }${muted || disabled ? " opacity-50" : ""}`}
     >
       <Checkbox
         id={id}
         data-testid={testId}
         checked={checked}
         onCheckedChange={onToggle}
+        disabled={disabled}
         aria-disabled={muted || undefined}
       />
       <label
         htmlFor={id}
-        className={`flex flex-1 cursor-pointer items-center gap-2 text-sm ${
-          muted ? "text-gray-500" : "text-gray-700"
-        }`}
+        className={`flex flex-1 items-center gap-2 text-sm ${
+          disabled ? "cursor-not-allowed" : "cursor-pointer"
+        } ${muted || disabled ? "text-gray-500" : "text-gray-700"}`}
       >
         <span className="flex-1 font-medium">{label}</span>
         {hint && (

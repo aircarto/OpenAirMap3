@@ -20,7 +20,7 @@ import ExpertMenu from "../controls/ExpertMenu";
 import { cn } from "../../lib/utils";
 import { sources } from "../../constants/sources";
 import { featureFlags } from "../../config/featureFlags";
-import { useAuth } from "../../auth/AuthContext";
+import CorrectionLevelsInfo from "./CorrectionLevelsInfo";
 import SidePanelShell, {
   CHART_PANEL_BODY_CLASS,
   type PanelSize,
@@ -73,10 +73,8 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
   onCenterLocation,
 }) => {
   const { t } = useTranslation();
-  const { isAuthenticated } = useAuth();
   const isHistoricalLocked = Boolean(historicalMode);
-  const correctionLevelsAvailable =
-    isAuthenticated && featureFlags.useMicrospotApi;
+  const correctionLevelsAvailable = featureFlags.useMicrospotApi;
   const [state, setState] = useState<SidePanelState>({
     isOpen: false,
     selectedStation: null,
@@ -1311,6 +1309,10 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                   storageKey={`device-locations-${selectedStation?.id ?? 'unknown'}`}
                   className="shrink-0"
                 />
+              ) : null}
+
+              {effectiveShowCorrectionLevels ? (
+                <CorrectionLevelsInfo className="shrink-0" />
               ) : null}
 
               <PanelChartBlock
