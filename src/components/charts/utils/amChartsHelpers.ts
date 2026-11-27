@@ -350,13 +350,53 @@ export const setupLegend = (
   return legend;
 };
 
-/** Nombre de colonnes pour la légende en mode export (sans scroll, tout visible, plus compact) */
-const LEGEND_EXPORT_MAX_COLUMNS = 5;
+/**
+ * Légende en mode export : 2 colonnes dès qu'il y a plus de 2 éléments.
+ *
+ * On ne s'appuie pas sur la détection automatique de GridLayout (qui retombe à
+ * 1 colonne au moindre pixel de trop) : la légende prend toute la largeur et
+ * chaque item une demi-largeur fixe, ce qui donne toujours 2 colonnes. Les
+ * libellés passent à la ligne dans leur cellule au lieu d'être tronqués.
+ */
+const LEGEND_EXPORT_COLUMNS = 2;
+/** Largeur d'un item en % de la légende (un peu moins de 50 % contre les arrondis). */
+const LEGEND_EXPORT_ITEM_WIDTH_PERCENT = 49.5;
+/** Valeur de repli pour la place prise par un item hors libellé (marqueur, marges). */
+const LEGEND_EXPORT_ITEM_CHROME_FALLBACK_PX = 40;
+/** Marge de sécurité entre la fin d'un libellé et la colonne suivante. */
+const LEGEND_EXPORT_SAFETY_PX = 12;
+
+/**
+ * Largeur maximale d'un libellé pour qu'il tienne dans sa cellule : largeur de
+ * la cellule moins la place réelle d'un item hors libellé (marqueur, marges),
+ * mesurée sur le premier item.
+ */
+function computeExportLabelMaxWidth(legend: am5.Legend): number {
+  const availableWidth =
+    legend.maxWidth() -
+    legend.get("paddingLeft", 0) -
+    legend.get("paddingRight", 0);
+  const cellWidth = (availableWidth * LEGEND_EXPORT_ITEM_WIDTH_PERCENT) / 100;
+
+  let chrome = LEGEND_EXPORT_ITEM_CHROME_FALLBACK_PX;
+  const item = legend.itemContainers.getIndex(0);
+  const label = legend.labels.getIndex(0);
+  if (item && label && item.width() > 0) {
+    chrome = Math.max(0, item.width() - label.width());
+  }
+
+  return Math.max(60, Math.floor(cellWidth - chrome - LEGEND_EXPORT_SAFETY_PX));
+}
 
 export interface LegendExportState {
   verticalScrollbar: am5.Scrollbar | undefined;
   height: number | am5.Percent | undefined;
+  maxHeight: number | undefined;
+  width: number | am5.Percent | undefined;
   layout: am5.Layout | undefined;
+  itemWidth: number | am5.Percent | undefined;
+  labelMaxWidth: number | undefined;
+  labelOversizedBehavior: am5.ILabelSettings["oversizedBehavior"] | undefined;
 }
 
 function toUndefined<T>(v: T | null | undefined): T | undefined {
@@ -395,18 +435,40 @@ export function prepareLegendForExport(root: am5.Root): LegendExportState | null
   const saved: LegendExportState = {
     verticalScrollbar: legend.get("verticalScrollbar"),
     height: toUndefined(legend.get("height")),
+    maxHeight: toUndefined(legend.get("maxHeight")),
+    width: toUndefined(legend.get("width")),
     layout: toUndefined(legend.get("layout")),
+    itemWidth: toUndefined(legend.itemContainers.template.get("width")),
+    labelMaxWidth: toUndefined(legend.labels.template.get("maxWidth")),
+    labelOversizedBehavior: toUndefined(
+      legend.labels.template.get("oversizedBehavior")
+    ),
   };
 
+  // Légende pleine : ni scroll, ni hauteur max (sinon les dernières lignes sont
+  // coupées), ni troncature des libellés.
   legend.set("verticalScrollbar", undefined);
   legend.set("height", undefined);
+  legend.set("maxHeight", undefined);
+  // Mesure faite avant de changer les largeurs (le premier item est encore dans
+  // son état d'affichage écran).
+  const labelMaxWidth = computeExportLabelMaxWidth(legend);
+  legend.set("width", am5.p100);
   legend.set(
     "layout",
     am5.GridLayout.new(root, {
-      maxColumns: LEGEND_EXPORT_MAX_COLUMNS,
+      maxColumns: LEGEND_EXPORT_COLUMNS,
       fixedWidthGrid: true,
     })
   );
+  legend.itemContainers.template.set(
+    "width",
+    am5.percent(LEGEND_EXPORT_ITEM_WIDTH_PERCENT)
+  );
+  legend.labels.template.setAll({
+    maxWidth: labelMaxWidth,
+    oversizedBehavior: "wrap",
+  });
 
   return saved;
 }
@@ -424,7 +486,14 @@ export function restoreLegendAfterExport(
 
   legend.set("verticalScrollbar", saved.verticalScrollbar);
   legend.set("height", saved.height);
+  legend.set("maxHeight", saved.maxHeight);
+  legend.set("width", saved.width);
   legend.set("layout", saved.layout);
+  legend.itemContainers.template.set("width", saved.itemWidth);
+  legend.labels.template.setAll({
+    maxWidth: saved.labelMaxWidth,
+    oversizedBehavior: saved.labelOversizedBehavior,
+  });
 }
 
 const PLAYBACK_MARKER_SERIES_ID = "__playback_marker__";
