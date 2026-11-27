@@ -58,8 +58,8 @@
     "modelingSuffix": "(modeling)",
     "rawSuffix": "(raw)",
     "correctedSuffix": "(corrected)",
-    "n1Suffix": "(N1)",
-    "n2Suffix": "(N2)",
+    "n1Suffix": "(level 1 correction)",
+    "n2Suffix": "(level 2 correction)",
     "thresholdLegendAria": "Quality thresholds ({{unit}})"
   },
   "controls": {
@@ -104,7 +104,7 @@
     "rawData": "Raw data",
     "rawDataDescription": "Show uncorrected data on the chart",
     "correctionLevels": "Correction level detail",
-    "correctionLevelsDescription": "Overlay raw, N1 and N2 on the chart",
+    "correctionLevelsDescription": "Overlay raw, level 1 and level 2 corrections on the chart",
     "thresholdBackgroundDisabled": "Thresholds disabled",
     "thresholdBackgroundDisabledDescription": "Hide colored threshold background (recommended for colorblind users)",
     "specialSourcesActive": "At least one active source",
@@ -268,6 +268,15 @@
       "loadPeriod": "Load this period"
     },
     "microSidePanel": {
+      "correctionLevelsInfo": {
+        "label": "How are these corrections made?",
+        "buttonAria": "Learn more about correction levels",
+        "title": "Correction levels",
+        "level1Title": "Level 1 correction",
+        "level1Body": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+        "level2Title": "Level 2 correction",
+        "level2Body": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+      },
       "sourceLabel": "AtmoSud qualified micro-sensor",
       "temporalEvolutionAtmoMicro": "Temporal evolution",
       "pollutantsLabel": "Pollutants displayed",

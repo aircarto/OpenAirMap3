@@ -58,8 +58,8 @@
     "modelingSuffix": "(modélisation)",
     "rawSuffix": "(brute)",
     "correctedSuffix": "(corrigé)",
-    "n1Suffix": "(N1)",
-    "n2Suffix": "(N2)",
+    "n1Suffix": "(correction niveau 1)",
+    "n2Suffix": "(correction niveau 2)",
     "thresholdLegendAria": "Seuils de qualité ({{unit}})"
   },
   "controls": {
@@ -104,7 +104,7 @@
     "rawData": "Données brutes",
     "rawDataDescription": "Affiche les données non corrigées sur le graphique",
     "correctionLevels": "Détail des niveaux de correction",
-    "correctionLevelsDescription": "Superpose brute, N1 et N2 sur le graphique",
+    "correctionLevelsDescription": "Superpose brute, correction niveau 1 et correction niveau 2 sur le graphique",
     "thresholdBackgroundDisabled": "Désactivé seuils",
     "thresholdBackgroundDisabledDescription": "Masque le fond coloré par seuil (recommandé pour les daltoniens)",
     "specialSourcesActive": "Au moins une source active",
@@ -273,6 +273,15 @@
       "loadPeriod": "Charger cette période"
     },
     "microSidePanel": {
+      "correctionLevelsInfo": {
+        "label": "Comment sont faites ces corrections ?",
+        "buttonAria": "En savoir plus sur les niveaux de correction",
+        "title": "Niveaux de correction",
+        "level1Title": "Correction niveau 1",
+        "level1Body": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+        "level2Title": "Correction niveau 2",
+        "level2Body": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+      },
       "sourceLabel": "Microcapteur qualifié AtmoSud",
       "temporalEvolutionAtmoMicro": "Évolution temporelle",
       "pollutantsLabel": "Polluants affichés",

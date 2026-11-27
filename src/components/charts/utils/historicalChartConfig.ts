@@ -250,8 +250,8 @@ export const generateSeriesConfigs = (
     if (t) return t(`chart.${key}`);
     if (key === "correctedSuffix") return " (corrigé)";
     if (key === "rawSuffix") return " (brute)";
-    if (key === "n1Suffix") return " (N1)";
-    if (key === "n2Suffix") return " (N2)";
+    if (key === "n1Suffix") return " (correction niveau 1)";
+    if (key === "n2Suffix") return " (correction niveau 2)";
     return " (modélisation)";
   };
   const pollName = (code: string) =>

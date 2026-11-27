@@ -20,6 +20,7 @@ import ExpertMenu from "../controls/ExpertMenu";
 import { cn } from "../../lib/utils";
 import { sources } from "../../constants/sources";
 import { featureFlags } from "../../config/featureFlags";
+import CorrectionLevelsInfo from "./CorrectionLevelsInfo";
 import SidePanelShell, {
   CHART_PANEL_BODY_CLASS,
   type PanelSize,
@@ -1308,6 +1309,10 @@ const MicroSidePanel: React.FC<MicroSidePanelProps> = ({
                   storageKey={`device-locations-${selectedStation?.id ?? 'unknown'}`}
                   className="shrink-0"
                 />
+              ) : null}
+
+              {effectiveShowCorrectionLevels ? (
+                <CorrectionLevelsInfo className="shrink-0" />
               ) : null}
 
               <PanelChartBlock
