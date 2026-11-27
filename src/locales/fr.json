@@ -506,6 +506,7 @@
       "stationsSelected_other": "{{count}}/{{max}} stations sélectionnées",
       "limitMessage": "Comparaison limitée à {{max}} capteurs simultanés.",
       "stationsSelectedTitle": "Stations sélectionnées",
+      "toggleLocations": "Afficher les localisations de {{name}}",
       "disableComparison": "Désactiver comparaison",
       "sourceAtmoRef": "Station de référence",
       "sourceAtmoMicro": "Microcapteur",
