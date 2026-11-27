@@ -75,7 +75,10 @@ import {
   type ModelingKind,
   type TimeBarCustomRange,
 } from "./utils/mapInstant";
-import { filterReportsByDisplayWindow } from "./utils/signalAirDateUtils";
+import {
+  extendSignalAirFetchStart,
+  filterReportsByDisplayWindow,
+} from "./utils/signalAirDateUtils";
 import { useToast } from "./hooks/useToast";
 import { ToastContainer } from "./components/ui/toast";
 import { useTranslation } from "react-i18next";
@@ -550,10 +553,12 @@ const AppContent: React.FC = () => {
   // Activation des deux sources. Les noms d'événement analytiques restent ceux
   // de l'époque des panneaux latéraux : les renommer romprait les séries déjà
   // collectées, alors que la mesure porte sur le même geste utilisateur.
-  const handleSignalAirEnable = useCallback(() => {
+  const handleSignalAirEnable = useCallback((types?: string[]) => {
     setIsSignalAirEnabled(true);
     setIsSignalAirVisible(true);
-    if (signalAirSelectedTypes.length === 0) {
+    if (types && types.length > 0) {
+      setSignalAirSelectedTypes(types);
+    } else if (signalAirSelectedTypes.length === 0) {
       setSignalAirSelectedTypes([...SIGNAL_AIR_DEFAULT_TYPES]);
     }
     setSignalAirFetchToken((prev) => prev + 1);
@@ -574,9 +579,9 @@ const AppContent: React.FC = () => {
    * côté MobileAir pour les parcours.
    */
   const handleSignalAirEnabledChange = useCallback(
-    (enabled: boolean) => {
+    (enabled: boolean, types?: string[]) => {
       if (enabled) {
-        handleSignalAirEnable();
+        handleSignalAirEnable(types);
       } else {
         handleSignalAirSourceDeselected();
       }
@@ -752,7 +757,9 @@ const AppContent: React.FC = () => {
       customRange,
     );
     return {
-      startDate: buffer.startInstant.date,
+      // Marge : une nuisance de plusieurs jours commencée avant le buffer
+      // chevauche quand même le créneau affiché.
+      startDate: extendSignalAirFetchStart(buffer.startInstant.date),
       endDate: buffer.endInstant.date,
     };
   }, [

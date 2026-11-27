@@ -221,8 +221,6 @@
     "showSignalAir": "عرض بيانات SignalAir",
     "hideMobileAir": "إخفاء بيانات MobileAir",
     "showMobileAir": "عرض بيانات MobileAir",
-    "hideSignalAirAria": "إخفاء SignalAir",
-    "showSignalAirAria": "عرض SignalAir",
     "hideMobileAirAria": "إخفاء MobileAir",
     "showMobileAirAria": "عرض MobileAir",
     "openComparisonPanel": "إعادة فتح لوحة المقارنة",
@@ -306,9 +304,6 @@
     "signalAirSelection": {
       "title": "اختيار SignalAir",
       "reopenButtonTooltip": "زر SignalAir لإعادة فتح اللوحة",
-      "typesTitle": "أنواع التقارير ({{selected}}/{{total}})",
-      "selectAll": "الكل",
-      "deselectAll": "لا شيء",
       "loadReports": "تحميل التقارير",
       "selectAtLeastOne": "حدد نوعًا واحدًا على الأقل من البلاغات.",
       "types": {
@@ -340,8 +335,6 @@
         "quickRangeLastWeek": "آخر أسبوع",
         "quickRangeLastMonth": "آخر شهر"
       },
-      "enable": "عرض البلاغات",
-      "typesShort": "الأنواع",
       "incompatibleTimeStep": "متاح فقط لـ 15 دقيقة أو ساعة أو يوم.",
       "incompatibleTimeStepToast": "تم تعطيل SignalAir: اختر الخطوة 15 دقيقة أو ساعة أو يوم."
     },

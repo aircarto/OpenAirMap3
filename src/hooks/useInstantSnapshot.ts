@@ -27,7 +27,10 @@ import {
   mergeTemporalDataPoints,
   resolveSnapshotTemporalSources,
 } from '../utils/instantSnapshot';
-import { filterReportsByDisplayWindow } from '../utils/signalAirDateUtils';
+import {
+  extendSignalAirFetchStart,
+  filterReportsByDisplayWindow,
+} from '../utils/signalAirDateUtils';
 import {
   chunkDatePeriod,
   mergeSignalAirReportsById,
@@ -287,7 +290,8 @@ export const useInstantSnapshot = ({
             ? fetchSignalAirChunked({
                 pollutant: context.pollutant,
                 timeStep: context.timeStep,
-                startDate: window.startInstant.date,
+                // Marge : nuisances de plusieurs jours commencées avant le buffer
+                startDate: extendSignalAirFetchStart(window.startInstant.date),
                 endDate: window.endInstant.date,
                 selectedTypes: signalAirTypes,
               })

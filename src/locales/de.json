@@ -221,8 +221,6 @@
     "showSignalAir": "SignalAir-Daten anzeigen",
     "hideMobileAir": "MobileAir-Daten ausblenden",
     "showMobileAir": "MobileAir-Daten anzeigen",
-    "hideSignalAirAria": "SignalAir ausblenden",
-    "showSignalAirAria": "SignalAir anzeigen",
     "hideMobileAirAria": "MobileAir ausblenden",
     "showMobileAirAria": "MobileAir anzeigen",
     "openComparisonPanel": "Vergleichspanel wieder öffnen",
@@ -306,9 +304,6 @@
     "signalAirSelection": {
       "title": "SignalAir-Auswahl",
       "reopenButtonTooltip": "SignalAir-Button zum erneuten Öffnen des Panels",
-      "typesTitle": "Meldungstypen ({{selected}}/{{total}})",
-      "selectAll": "Alle",
-      "deselectAll": "Keine",
       "loadReports": "Meldungen laden",
       "selectAtLeastOne": "Wählen Sie mindestens einen Meldungstyp.",
       "types": {
@@ -340,8 +335,6 @@
         "quickRangeLastWeek": "Letzte Woche",
         "quickRangeLastMonth": "Letzter Monat"
       },
-      "enable": "Meldungen anzeigen",
-      "typesShort": "Typen",
       "incompatibleTimeStep": "Nur bei 15 Min, Stunde oder Tag verfügbar.",
       "incompatibleTimeStepToast": "SignalAir deaktiviert: wählen Sie 15 Min, Stunde oder Tag."
     },
