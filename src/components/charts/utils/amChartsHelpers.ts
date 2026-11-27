@@ -230,12 +230,21 @@ export const addThresholdZones = (
   });
 };
 
-/** Seuil au-delà duquel la légende passe en grille multi-colonnes avec hauteur limitée */
-const LEGEND_COMPACT_THRESHOLD = 5;
+/**
+ * Hauteur max de la légende (px) : ~3 lignes. Au-delà, scroll interne.
+ * La légende vit dans le canvas à hauteur fixe : sans plafond, chaque série
+ * ajoutée (mode comparaison) rognait la zone de tracé.
+ */
+const LEGEND_MAX_HEIGHT = 64;
+/** Largeur max d'un libellé de légende avant troncature (nom complet en infobulle). */
+const LEGEND_LABEL_MAX_WIDTH = { mobile: 120, desktop: 170 };
 
 /**
  * Configure la légende du graphique.
- * Au-delà de LEGEND_COMPACT_THRESHOLD séries : grille 3 colonnes + hauteur limitée avec scroll.
+ * Grille multi-colonnes et hauteur plafonnée en permanence : le nombre de
+ * séries change après la création (ajout de stations en comparaison), donc
+ * la décision ne peut pas être prise une fois pour toutes ici. amCharts
+ * masque la barre de défilement tant que le contenu tient.
  */
 export const setupLegend = (
   root: am5.Root,
@@ -243,34 +252,32 @@ export const setupLegend = (
   seriesConfigs: SeriesConfig[],
   isMobile: boolean
 ): am5.Legend => {
-  const seriesCount = seriesConfigs.length;
-  const useCompactLegend = seriesCount > LEGEND_COMPACT_THRESHOLD;
-
-  const legendOptions: am5.ILegendSettings & { layout?: am5.Layout; height?: am5.Percent; verticalScrollbar?: am5.Scrollbar } = {
+  const legendOptions: am5.ILegendSettings = {
     centerX: am5.p50,
     x: am5.p50,
     marginTop: isMobile ? 2 : 8,
     marginBottom: 0,
     marginLeft: isMobile ? 0 : 8,
     marginRight: isMobile ? 0 : 8,
-  };
-
-  if (useCompactLegend) {
-    legendOptions.layout = am5.GridLayout.new(root, {
+    layout: am5.GridLayout.new(root, {
       maxColumns: 3,
       fixedWidthGrid: true,
-    });
-    legendOptions.height = 72 as unknown as am5.Percent;
-    legendOptions.verticalScrollbar = am5.Scrollbar.new(root, {
+    }),
+    maxHeight: LEGEND_MAX_HEIGHT,
+    verticalScrollbar: am5.Scrollbar.new(root, {
       orientation: "vertical",
-    });
-  }
+    }),
+  };
 
   const legend = chart.children.push(am5.Legend.new(root, legendOptions));
 
   // Personnaliser les items de la légende
   legend.labels.template.setAll({
     fontSize: isMobile ? 9 : 12,
+    maxWidth: isMobile
+      ? LEGEND_LABEL_MAX_WIDTH.mobile
+      : LEGEND_LABEL_MAX_WIDTH.desktop,
+    oversizedBehavior: "truncate",
   });
 
   legend.markers.template.setAll({

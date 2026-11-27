@@ -501,6 +501,7 @@
       "stationsSelected_other": "{{count}}/{{max}} stations selected",
       "limitMessage": "Comparison limited to {{max}} sensors at a time.",
       "stationsSelectedTitle": "Selected stations",
+      "toggleLocations": "Show locations of {{name}}",
       "disableComparison": "Disable comparison",
       "sourceAtmoRef": "Reference station",
       "sourceAtmoMicro": "Microsensor",
