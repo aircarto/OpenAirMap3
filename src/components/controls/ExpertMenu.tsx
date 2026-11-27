@@ -23,7 +23,7 @@ interface ExpertMenuProps {
   onRawDataChange?: (checked: boolean) => void;
   rawDataAvailable?: boolean;
 
-  // Détail des niveaux de correction N1/N2 (AtmoMicroV2, auth)
+  // Détail des niveaux de correction N1/N2 (AtmoMicroV2)
   showCorrectionLevels?: boolean;
   onCorrectionLevelsChange?: (checked: boolean) => void;
   correctionLevelsAvailable?: boolean;
@@ -181,7 +181,7 @@ const ExpertMenu: React.FC<ExpertMenuProps> = ({
           </>
         )}
 
-        {/* Détail niveaux de correction N1/N2 (auth + AtmoMicroV2) */}
+        {/* Détail niveaux de correction N1/N2 (AtmoMicroV2) */}
         {onCorrectionLevelsChange && correctionLevelsAvailable && (
           <>
             {(onModelingChange || showRawDataOption) && (
