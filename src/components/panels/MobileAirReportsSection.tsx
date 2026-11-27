@@ -96,7 +96,6 @@ export const MobileAirReportsSection: React.FC<MobileAirReportsSectionProps> = (
                       : t('panels.mobileAirDetail.showPhoto')}
                   </button>
                   {photoOpen && (
-                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={photo.url}
                       alt={t('panels.mobileAirDetail.photoAlt')}
