@@ -1332,11 +1332,9 @@ export class AtmoMicroV2Service
       const from = this.formatDateForHistoricalMode(params.startDate, false);
       const to = this.formatDateForHistoricalMode(params.endDate, true);
 
-      // corrections_detail (value_n1, is_n1/n2_applied) réservé aux sessions
-      // authentifiées : l'API microspot l'expose via Keycloak.
-      const includeFields = getAccessToken()
-        ? 'raw_value,corrections_detail'
-        : 'raw_value';
+      // corrections_detail (value_n1, is_n1/n2_applied) : exposé par l'API
+      // microspot même sans jeton, demandé pour tous les visiteurs.
+      const includeFields = 'raw_value,corrections_detail';
 
       const url =
         `${this.BASE_URL}/observations` +

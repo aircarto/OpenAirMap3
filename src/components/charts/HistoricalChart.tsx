@@ -24,7 +24,7 @@ export interface HistoricalChartProps {
   onHasCorrectedDataChange?: (hasCorrectedData: boolean) => void;
   stations?: any[]; // Stations pour le mode comparaison
   showRawData?: boolean; // Contrôler l'affichage des données brutes
-  /** Superpose brute / N1 / N2 sur le graphique (AtmoMicroV2 authentifié). */
+  /** Superpose brute / N1 / N2 sur le graphique (AtmoMicroV2). */
   showCorrectionLevels?: boolean;
   stationInfo?: StationInfo | null; // Informations de la station pour les exports
   timeStep?: string; // Pas de temps sélectionné (pour les métadonnées d'export)

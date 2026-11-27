@@ -58,8 +58,8 @@
     "modelingSuffix": "(modelización)",
     "rawSuffix": "(bruto)",
     "correctedSuffix": "(corregido)",
-    "n1Suffix": "(N1)",
-    "n2Suffix": "(N2)",
+    "n1Suffix": "(corrección nivel 1)",
+    "n2Suffix": "(corrección nivel 2)",
     "thresholdLegendAria": "Umbrales de calidad ({{unit}})"
   },
   "controls": {
@@ -104,7 +104,7 @@
     "rawData": "Datos brutos",
     "rawDataDescription": "Mostrar los datos no corregidos en el gráfico",
     "correctionLevels": "Detalle de niveles de corrección",
-    "correctionLevelsDescription": "Superpone bruto, N1 y N2 en el gráfico",
+    "correctionLevelsDescription": "Superpone bruto, corrección nivel 1 y corrección nivel 2 en el gráfico",
     "thresholdBackgroundDisabled": "Umbrales desactivados",
     "thresholdBackgroundDisabledDescription": "Oculta el fondo coloreado por umbral (recomendado para daltónicos)",
     "specialSourcesActive": "Al menos una fuente activa",
@@ -268,6 +268,15 @@
       "loadPeriod": "Cargar este periodo"
     },
     "microSidePanel": {
+      "correctionLevelsInfo": {
+        "label": "¿Cómo se hacen estas correcciones?",
+        "buttonAria": "Más información sobre los niveles de corrección",
+        "title": "Niveles de corrección",
+        "level1Title": "Corrección nivel 1",
+        "level1Body": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+        "level2Title": "Corrección nivel 2",
+        "level2Body": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+      },
       "sourceLabel": "Microsensor cualificado AtmoSud",
       "temporalEvolutionAtmoMicro": "Evolución temporal",
       "pollutantsLabel": "Contaminantes mostrados",

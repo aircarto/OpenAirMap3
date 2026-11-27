@@ -58,8 +58,8 @@
     "modelingSuffix": "(نموذج)",
     "rawSuffix": "(خام)",
     "correctedSuffix": "(مصحح)",
-    "n1Suffix": "(N1)",
-    "n2Suffix": "(N2)",
+    "n1Suffix": "(تصحيح المستوى 1)",
+    "n2Suffix": "(تصحيح المستوى 2)",
     "thresholdLegendAria": "عتبات الجودة ({{unit}})"
   },
   "controls": {
@@ -104,7 +104,7 @@
     "rawData": "البيانات الخام",
     "rawDataDescription": "عرض البيانات غير المصححة على الرسم البياني",
     "correctionLevels": "تفاصيل مستويات التصحيح",
-    "correctionLevelsDescription": "عرض الخام وN1 وN2 على الرسم البياني",
+    "correctionLevelsDescription": "عرض الخام وتصحيح المستوى 1 وتصحيح المستوى 2 على الرسم البياني",
     "thresholdBackgroundDisabled": "العتبات معطلة",
     "thresholdBackgroundDisabledDescription": "إخفاء الخلفية الملونة حسب العتبة (موصى به للمصابين بعمى الألوان)",
     "specialSourcesActive": "مصدر واحد نشط على الأقل",
@@ -268,6 +268,15 @@
       "loadPeriod": "تحميل هذه الفترة"
     },
     "microSidePanel": {
+      "correctionLevelsInfo": {
+        "label": "كيف تتم هذه التصحيحات؟",
+        "buttonAria": "معرفة المزيد عن مستويات التصحيح",
+        "title": "مستويات التصحيح",
+        "level1Title": "تصحيح المستوى 1",
+        "level1Body": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+        "level2Title": "تصحيح المستوى 2",
+        "level2Body": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+      },
       "sourceLabel": "مقياس مصغر مؤهل AtmoSud",
       "temporalEvolutionAtmoMicro": "التطور الزمني",
       "pollutantsLabel": "الملوثات المعروضة",

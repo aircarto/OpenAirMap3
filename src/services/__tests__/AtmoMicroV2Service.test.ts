@@ -861,11 +861,10 @@ describe("AtmoMicroV2Service", () => {
         raw_value: 14.2,
         has_correction: true,
       });
-      expect(url).not.toContain("corrections_detail");
+      expect(url).toContain("include=raw_value,corrections_detail");
     });
 
-    it("ajoute corrections_detail et mappe N1/N2 quand authentifié", async () => {
-      setAccessToken("tok-n1n2");
+    it("ajoute corrections_detail et mappe N1/N2 sans authentification", async () => {
       const spy = mockRoutes(service, {
         observations: [
           buildObservation({
