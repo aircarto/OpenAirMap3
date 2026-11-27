@@ -27,8 +27,15 @@ export default defineConfig([
     },
     rules: {
       ...jsxA11y.configs.recommended.rules,
+      // role="list" volontaire : Tailwind retire list-style et Safari/VoiceOver perd alors la sémantique de liste
+      'jsx-a11y/no-redundant-roles': ['error', { ul: ['list'], ol: ['list'] }],
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
     },
+  },
+  // Fichiers de config CommonJS (postcss, tailwind)
+  {
+    files: ['*.config.js'],
+    languageOptions: { sourceType: 'commonjs', globals: globals.node },
   },
   // TS/TSX
   {
@@ -50,6 +57,8 @@ export default defineConfig([
     },
     rules: {
       ...jsxA11y.configs.recommended.rules,
+      // role="list" volontaire : Tailwind retire list-style et Safari/VoiceOver perd alors la sémantique de liste
+      'jsx-a11y/no-redundant-roles': ['error', { ul: ['list'], ol: ['list'] }],
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
       'no-undef': 'off',
