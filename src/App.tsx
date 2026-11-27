@@ -75,7 +75,10 @@ import {
   type ModelingKind,
   type TimeBarCustomRange,
 } from "./utils/mapInstant";
-import { filterReportsByDisplayWindow } from "./utils/signalAirDateUtils";
+import {
+  extendSignalAirFetchStart,
+  filterReportsByDisplayWindow,
+} from "./utils/signalAirDateUtils";
 import { useToast } from "./hooks/useToast";
 import { ToastContainer } from "./components/ui/toast";
 import { useTranslation } from "react-i18next";
@@ -754,7 +757,9 @@ const AppContent: React.FC = () => {
       customRange,
     );
     return {
-      startDate: buffer.startInstant.date,
+      // Marge : une nuisance de plusieurs jours commencée avant le buffer
+      // chevauche quand même le créneau affiché.
+      startDate: extendSignalAirFetchStart(buffer.startInstant.date),
       endDate: buffer.endInstant.date,
     };
   }, [
