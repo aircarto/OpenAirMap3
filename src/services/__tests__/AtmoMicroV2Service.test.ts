@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { AtmoMicroV2Service } from "../AtmoMicroV2Service";
+import {
+  AtmoMicroV2Service,
+  getDailyLatestDelayMinutes,
+} from "../AtmoMicroV2Service";
 import { setAccessToken } from "../../auth/tokenStore";
 
 const baseParams = {
@@ -150,7 +153,7 @@ describe("AtmoMicroV2Service", () => {
 
       const result = await service.fetchData({
         ...baseParams,
-        timeStep: "jour",
+        timeStep: "semaine",
       });
 
       expect(result).toEqual([]);
@@ -196,6 +199,56 @@ describe("AtmoMicroV2Service", () => {
         expect(observationUrl).toContain(`delay=${delay}`);
       }
     );
+
+    describe("pas de temps jour (delay dynamique)", () => {
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
+      it("traduit jour en agrégation daily avec une fenêtre arrêtée à J-1 00:00 UTC", async () => {
+        vi.useFakeTimers({ toFake: ["Date"] });
+        vi.setSystemTime(new Date("2026-11-26T15:18:00Z"));
+        const spy = mockRoutes(service, {});
+
+        await service.fetchData({ ...baseParams, timeStep: "jour" });
+
+        const observationUrl = requestedUrls(spy).find((url) =>
+          url.includes("/observations/latest")
+        );
+        expect(observationUrl).toContain("aggregation=daily");
+        // 25/11 00:00Z → 26/11 15:18Z = 39 h 18 = 2358 min, +1 pour la borne.
+        expect(observationUrl).toContain("delay=2359");
+      });
+    });
+
+    describe("getDailyLatestDelayMinutes", () => {
+      const ageOf = (iso: string, now: string) =>
+        (new Date(now).getTime() - new Date(iso).getTime()) / 60000;
+
+      it.each([
+        "2026-11-26T00:00:00Z",
+        "2026-11-26T00:30:00Z",
+        "2026-11-26T12:00:00Z",
+        "2026-11-26T23:59:59Z",
+        "2026-03-01T00:10:00Z", // changement de mois
+        "2027-01-01T01:00:00Z", // changement d'année
+      ])("inclut J-1 et exclut J-2 à %s", (now) => {
+        const delay = getDailyLatestDelayMinutes(new Date(now));
+        const today = new Date(now);
+        const dayStart = (offset: number) =>
+          new Date(
+            Date.UTC(
+              today.getUTCFullYear(),
+              today.getUTCMonth(),
+              today.getUTCDate() - offset
+            )
+          ).toISOString();
+
+        expect(ageOf(dayStart(1), now)).toBeLessThanOrEqual(delay);
+        expect(ageOf(dayStart(2), now)).toBeGreaterThan(delay);
+        expect(Number.isInteger(delay) && delay > 0).toBe(true);
+      });
+    });
 
     it("demande toujours la limite maximale et les valeurs brutes", async () => {
       const spy = mockRoutes(service, {});
@@ -979,7 +1032,7 @@ describe("AtmoMicroV2Service", () => {
       const result = await service.fetchHistoricalData({
         siteId: "05C1A382",
         pollutant: "pm25",
-        timeStep: "jour",
+        timeStep: "semaine",
         startDate: "2026-09-01",
         endDate: "2026-09-02",
       });

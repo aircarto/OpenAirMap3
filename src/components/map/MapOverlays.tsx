@@ -65,6 +65,8 @@ interface MapOverlaysProps {
   selectedSources: string[];
   selectedTimeStep: string;
   historicalCurrentDate?: string;
+  /** Jour réellement affiché en pas `jour`, déduit des observations (ISO). */
+  observedDailyPeriodStart?: string;
   /** Plage formatée du mode « mesure en mobilité » */
   mobilityPeriodRange?: string;
   statistics: any;
@@ -95,6 +97,7 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
   selectedSources,
   selectedTimeStep,
   historicalCurrentDate,
+  observedDailyPeriodStart,
   mobilityPeriodRange,
   statistics,
   sourceStatistics,
@@ -303,6 +306,7 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
               selectedSources={selectedSources}
               selectedTimeStep={selectedTimeStep}
               historicalCurrentDate={historicalCurrentDate}
+              observedDailyPeriodStart={observedDailyPeriodStart}
               mobilityPeriodRange={mobilityPeriodRange}
               statistics={statistics}
               sourceStatistics={sourceStatistics}
@@ -320,6 +324,7 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
             selectedSources={selectedSources}
             selectedTimeStep={selectedTimeStep}
             historicalCurrentDate={historicalCurrentDate}
+            observedDailyPeriodStart={observedDailyPeriodStart}
             mobilityPeriodRange={mobilityPeriodRange}
             statistics={statistics}
             sourceStatistics={sourceStatistics}

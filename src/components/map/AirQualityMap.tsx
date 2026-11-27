@@ -73,6 +73,7 @@ import { useSignalAir } from "./hooks/useSignalAir";
 import { useMobileAir } from "./hooks/useMobileAir";
 import { useMarkerTooltip } from "./hooks/useMarkerTooltip";
 import { useVisibleDevices } from "./hooks/useVisibleDevices";
+import { getObservedDailyPeriodStart } from "../../utils/dataPeriodUtils";
 import { useMapSurfaceHints } from "./hooks/useMapSurfaceHints";
 
 // Utilitaires
@@ -392,6 +393,16 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
       reports,
       debounceMs: 100,
     });
+
+  // Jour réellement affiché en pas `jour`, lu sur l'ensemble des capteurs (pas
+  // seulement ceux du viewport) pour que le libellé ne change pas au déplacement.
+  const observedDailyPeriodStart = useMemo(
+    () =>
+      selectedTimeStep === "jour"
+        ? getObservedDailyPeriodStart(devices)
+        : undefined,
+    [devices, selectedTimeStep]
+  );
 
   // Trier les devices par priorité pour mettre en avant les valeurs hautes des sources fiables
   const sortedDevices = useMemo(() => {
@@ -1178,6 +1189,7 @@ const AirQualityMap: React.FC<AirQualityMapProps> = ({
           selectedSources={selectedSources}
           selectedTimeStep={selectedTimeStep}
           historicalCurrentDate={historicalCurrentDate}
+          observedDailyPeriodStart={observedDailyPeriodStart}
           mobilityPeriodRange={mobilityPeriodRange}
           statistics={statistics}
           sourceStatistics={sourceStatistics}
